@@ -1,0 +1,174 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Project;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use App\Models\ProjectFolder;
+
+class ProjectController extends Controller
+{
+    public function index()
+    {
+        $projects = Project::latest()->paginate(12);
+        return view('projects.index', compact('projects'));
+    }
+
+    public function create()
+    {
+        return view('projects.create');
+    }
+
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'short_code' => 'nullable|string|max:12',
+            'description' => 'nullable|string',
+            'status' => 'nullable|in:draft,active,on_hold,completed,cancelled',
+            'start_date' => 'nullable|date',
+        ]);
+
+        $validated['owner_id'] = Auth::id();
+        $project = Project::create($validated);
+
+        // Create a folder for the project: public/projectsofus/{id}-{slug}
+        $slug = Str::slug($project->name);
+        $path = 'projectsofus/' . $project->id . '-' . $slug;
+        $fullPath = public_path($path);
+        if (!file_exists($fullPath)) {
+            mkdir($fullPath, 0755, true);
+        }
+
+        // Create a root folder record with the same name
+        ProjectFolder::create([
+            'project_id' => $project->id,
+            'parent_id' => null,
+            'name' => $project->name,
+        ]);
+        return redirect()->route('projects.index')->with('success', 'Project created');
+    }
+
+    public function edit(Project $project)
+    {
+        return view('projects.edit', compact('project'));
+    }
+
+    public function show(Project $project)
+    {
+        // Build full folder tree for the project and support selecting a folder
+        $selectedFolderId = request()->query('folder');
+
+        // Fetch all folders for this project with task counts
+        $allFolders = ProjectFolder::where('project_id', $project->id)
+            ->withCount(['tasks', 'children'])
+            ->orderBy('name')
+            ->get();
+
+        // Add task counts for each folder (including incomplete tasks)
+        $allFolders->each(function ($folder) {
+            $folder->incomplete_tasks_count = $folder->tasks()->where('status', '!=', 'done')->count();
+        });
+
+        // Group children by parent_id
+        $childrenByParent = [];
+        foreach ($allFolders as $f) {
+            $parentId = $f->parent_id ?: 0; // use 0 to represent root
+            if (!isset($childrenByParent[$parentId])) {
+                $childrenByParent[$parentId] = [];
+            }
+            $childrenByParent[$parentId][] = $f;
+        }
+
+        // Attach children relation recursively for display
+        $attachChildren = function (ProjectFolder $node) use (&$attachChildren, &$childrenByParent) {
+            $childList = collect($childrenByParent[$node->id] ?? []);
+            $childList->each(function ($c) use (&$attachChildren) {
+                $attachChildren($c);
+            });
+            $node->setRelation('children', $childList);
+        };
+
+        // Root folders (parent_id null)
+        $rootFolders = collect($childrenByParent[0] ?? []);
+        $rootFolders->each(function ($root) use (&$attachChildren) {
+            $attachChildren($root);
+        });
+
+        // Determine selected folder (if provided and belongs to this project)
+        $selectedFolder = null;
+        $expandedFolderIds = [];
+        $breadcrumbs = [];
+        if ($selectedFolderId) {
+            $selectedFolder = $allFolders->firstWhere('id', (int) $selectedFolderId);
+            if (!$selectedFolder) {
+                $selectedFolderId = null;
+            } else {
+                // Build breadcrumbs for the selected folder
+                $current = $selectedFolder;
+                while ($current) {
+                    $breadcrumbs[] = $current;
+                    $current = $allFolders->firstWhere('id', $current->parent_id);
+                }
+                $breadcrumbs = array_reverse($breadcrumbs);
+            }
+        }
+
+        // Compute ancestor chain for auto-expansion in the tree
+        if ($selectedFolder) {
+            $current = $selectedFolder;
+            while ($current) {
+                $expandedFolderIds[] = (int) $current->id;
+                $current = $allFolders->firstWhere('id', (int) $current->parent_id);
+            }
+        }
+
+        // Collect descendant folder ids of the selected folder for task filtering
+        $descendantFolderIds = [];
+        if ($selectedFolder) {
+            $stack = [(int) $selectedFolder->id];
+            while (!empty($stack)) {
+                $currentId = array_pop($stack);
+                $descendantFolderIds[] = $currentId;
+                $children = $childrenByParent[$currentId] ?? [];
+                foreach ($children as $child) {
+                    $stack[] = (int) $child->id;
+                }
+            }
+        }
+
+        // Load tasks: if a folder is selected, include tasks in that folder and all descendants
+        $tasksQuery = $project->tasks()->with(['folder', 'creator'])->latest();
+        if (!empty($descendantFolderIds)) {
+            $tasksQuery->whereIn('folder_id', $descendantFolderIds);
+        }
+        $tasks = $tasksQuery->paginate(20);
+
+        return view('projects.show', compact('project', 'rootFolders', 'selectedFolder', 'tasks', 'descendantFolderIds', 'expandedFolderIds', 'allFolders', 'breadcrumbs'));
+    }
+
+    public function update(Request $request, Project $project)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'short_code' => 'nullable|string|max:12',
+            'description' => 'nullable|string',
+            'status' => 'nullable|in:draft,active,on_hold,completed,cancelled',
+            'start_date' => 'nullable|date',
+        ]);
+
+        $project->update($validated);
+        return redirect()->route('projects.index')->with('success', 'Project updated');
+    }
+
+    public function destroy(Project $project)
+    {
+        $project->delete();
+        return redirect()->route('projects.index')->with('success', 'Project deleted');
+    }
+}
+
+

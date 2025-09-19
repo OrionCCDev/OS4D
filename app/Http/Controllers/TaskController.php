@@ -1,0 +1,370 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Project;
+use App\Models\ProjectFolder;
+use App\Models\Task;
+use App\Models\User;
+use App\Models\TaskHistory;
+use App\Models\CustomNotification;
+use App\Models\TaskAttachment;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
+
+class TaskController extends Controller
+{
+    public function index()
+    {
+        $user = Auth::user();
+
+        // Managers and admins see all tasks
+        if ($user->isManager()) {
+            $tasks = Task::with('project', 'folder', 'creator', 'assignee')->latest()->paginate(15);
+        } else {
+            // Regular users only see tasks assigned to them
+            $tasks = Task::with('project', 'folder', 'creator', 'assignee')
+                ->where('assigned_to', $user->id)
+                ->latest()
+                ->paginate(15);
+        }
+
+        return view('tasks.index', compact('tasks'));
+    }
+
+    public function create()
+    {
+        // Only managers can create tasks
+        if (!Auth::user()->isManager()) {
+            abort(403, 'Access denied. Only managers can create tasks.');
+        }
+
+        $projects = Project::orderBy('name')->get();
+        $selectedProjectId = request()->query('project_id');
+        $folders = $selectedProjectId
+            ? ProjectFolder::where('project_id', $selectedProjectId)->orderBy('name')->get()
+            : ProjectFolder::orderBy('name')->get();
+        $users = User::where('id', '!=', Auth::id())->orderBy('name')->get();
+
+        // Preselect context if provided in query
+        $selectedFolderId = request()->query('folder_id');
+
+        // Default due date is one week from today
+        $defaultDueDate = now()->addWeek()->format('Y-m-d');
+
+        return view('tasks.create', compact(
+            'projects',
+            'folders',
+            'users',
+            'selectedProjectId',
+            'selectedFolderId',
+            'defaultDueDate'
+        ));
+    }
+
+    public function store(Request $request)
+    {
+        // Only managers can create tasks
+        if (!Auth::user()->isManager()) {
+            abort(403, 'Access denied. Only managers can create tasks.');
+        }
+
+        $rules = [
+            'project_id' => 'required|exists:projects,id',
+            'folder_id' => 'nullable|exists:project_folders,id',
+            'assigned_to' => 'nullable|exists:users,id',
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'due_date' => 'nullable|date',
+            'status' => 'nullable|in:pending,assigned,in_progress,in_review,approved,rejected,completed',
+            'priority' => 'nullable|in:low,normal,medium,high,urgent,critical',
+        ];
+
+        // Only add file validation if files are actually uploaded
+        if ($request->hasFile('attachments')) {
+            $rules['attachments.*'] = 'file|max:1024000'; // 1GB max per file
+        }
+
+        $validated = $request->validate($rules);
+
+        $validated['created_by'] = Auth::id();
+        // Fallback default due date to +1 week if not provided
+        if (empty($validated['due_date'])) {
+            $validated['due_date'] = now()->addWeek();
+        }
+        $task = Task::create($validated);
+
+        // Handle attachments on create
+        if ($request->hasFile('attachments')) {
+            foreach ($request->file('attachments') as $file) {
+                if (!$file) continue;
+                $disk = 'public';
+                $path = $file->store("tasks/{$task->id}", $disk);
+                $att = $task->attachments()->create([
+                    'uploaded_by' => Auth::id(),
+                    'original_name' => $file->getClientOriginalName(),
+                    'mime_type' => $file->getClientMimeType(),
+                    'size_bytes' => $file->getSize(),
+                    'disk' => $disk,
+                    'path' => $path,
+                ]);
+                $task->histories()->create([
+                    'user_id' => Auth::id(),
+                    'action' => 'file_uploaded',
+                    'description' => "Uploaded file: {$att->original_name}",
+                    'metadata' => ['attachment_id' => $att->id]
+                ]);
+            }
+        }
+
+        // If task is assigned, handle assignment and notify
+        if (!empty($task->assigned_to)) {
+            if ($assignee = User::find($task->assigned_to)) {
+                $task->assignTo($assignee);
+            }
+        }
+
+        return redirect()->route('tasks.index')->with('success', 'Task created');
+    }
+
+    public function edit(Task $task)
+    {
+        $user = Auth::user();
+
+        // Managers can edit any task, regular users can only edit tasks assigned to them
+        if (!$user->isManager() && $task->assigned_to !== $user->id) {
+            abort(403, 'Access denied. You can only edit tasks assigned to you.');
+        }
+
+        // Prevent editing tasks in review status (only managers can change status back)
+        if ($task->status === 'in_review' && !$user->isManager()) {
+            abort(403, 'Access denied. Task is under review and cannot be edited until manager changes status.');
+        }
+
+        $projects = Project::orderBy('name')->get();
+        $folders = ProjectFolder::orderBy('name')->get();
+        return view('tasks.edit', compact('task', 'projects', 'folders'));
+    }
+
+    public function update(Request $request, Task $task)
+    {
+        $user = Auth::user();
+
+        // Managers can edit any task, regular users can only edit tasks assigned to them
+        if (!$user->isManager() && $task->assigned_to !== $user->id) {
+            abort(403, 'Access denied. You can only edit tasks assigned to you.');
+        }
+
+        // Prevent editing tasks in review status (only managers can change status back)
+        if ($task->status === 'in_review' && !$user->isManager()) {
+            abort(403, 'Access denied. Task is under review and cannot be edited until manager changes status.');
+        }
+
+        // Define validation rules based on user role
+        if ($user->isManager()) {
+            // Managers can edit all fields
+            $rules = [
+                'project_id' => 'required|exists:projects,id',
+                'folder_id' => 'nullable|exists:project_folders,id',
+                'title' => 'required|string|max:255',
+                'description' => 'nullable|string',
+                'due_date' => 'nullable|date',
+                'status' => 'nullable|in:pending,assigned,in_progress,in_review,approved,rejected,completed',
+                'priority' => 'nullable|in:low,normal,medium,high,urgent,critical',
+            ];
+        } else {
+            // Regular users can only edit description, status, and upload files
+            $rules = [
+                'description' => 'nullable|string',
+                'status' => 'nullable|in:pending,assigned,in_progress,in_review,approved,rejected,completed',
+            ];
+        }
+
+        // Only add file validation if files are actually uploaded
+        if ($request->hasFile('attachments')) {
+            $rules['attachments.*'] = 'file|max:1024000'; // 1GB max per file
+        }
+
+        $validated = $request->validate($rules);
+
+        // For non-managers, only update allowed fields
+        if (!$user->isManager()) {
+            $allowedFields = ['description', 'status'];
+            $validated = array_intersect_key($validated, array_flip($allowedFields));
+        }
+
+        $task->update($validated);
+
+        // Handle attachments on update (append)
+        if ($request->hasFile('attachments')) {
+            foreach ($request->file('attachments') as $file) {
+                if (!$file) continue;
+                $disk = 'public';
+                $path = $file->store("tasks/{$task->id}", $disk);
+                $att = $task->attachments()->create([
+                    'uploaded_by' => Auth::id(),
+                    'original_name' => $file->getClientOriginalName(),
+                    'mime_type' => $file->getClientMimeType(),
+                    'size_bytes' => $file->getSize(),
+                    'disk' => $disk,
+                    'path' => $path,
+                ]);
+                $task->histories()->create([
+                    'user_id' => Auth::id(),
+                    'action' => 'file_uploaded',
+                    'description' => "Uploaded file: {$att->original_name}",
+                    'metadata' => ['attachment_id' => $att->id]
+                ]);
+            }
+        }
+        return redirect()->route('tasks.index')->with('success', 'Task updated');
+    }
+
+    public function destroy(Task $task)
+    {
+        // Only managers can delete tasks
+        if (!Auth::user()->isManager()) {
+            abort(403, 'Access denied. Only managers can delete tasks.');
+        }
+
+        $task->delete();
+        return redirect()->route('tasks.index')->with('success', 'Task deleted');
+    }
+
+    // Task assignment methods
+    public function assign(Request $request, Task $task)
+    {
+        $validated = $request->validate([
+            'assigned_to' => 'required|exists:users,id',
+        ]);
+
+        $user = User::find($validated['assigned_to']);
+        $task->assignTo($user);
+
+        return redirect()->back()->with('success', 'Task assigned successfully');
+    }
+
+    public function changeStatus(Request $request, Task $task)
+    {
+        $validated = $request->validate([
+            'status' => 'required|in:pending,assigned,in_progress,in_review,approved,rejected,completed',
+            'notes' => 'nullable|string|max:1000',
+        ]);
+
+        $task->changeStatus($validated['status'], $validated['notes'] ?? null);
+
+        return redirect()->back()->with('success', 'Task status updated successfully');
+    }
+
+    public function show(Task $task)
+    {
+        $task->load(['project', 'folder', 'creator', 'assignee', 'histories.user', 'attachments.uploader']);
+        return view('tasks.show', compact('task'));
+    }
+
+    // Attachments
+    public function uploadAttachment(Request $request, Task $task)
+    {
+        $request->validate([
+            'file' => 'required|file|max:1024000', // 1GB
+        ]);
+
+        $file = $request->file('file');
+        $disk = 'public';
+        $path = $file->store("tasks/{$task->id}", $disk);
+
+        $attachment = $task->attachments()->create([
+            'uploaded_by' => Auth::id(),
+            'original_name' => $file->getClientOriginalName(),
+            'mime_type' => $file->getClientMimeType(),
+            'size_bytes' => $file->getSize(),
+            'disk' => $disk,
+            'path' => $path,
+        ]);
+
+        // History record
+        $task->histories()->create([
+            'user_id' => Auth::id(),
+            'action' => 'file_uploaded',
+            'description' => "Uploaded file: {$attachment->original_name}",
+            'metadata' => ['attachment_id' => $attachment->id]
+        ]);
+
+        return back()->with('success', 'File uploaded');
+    }
+
+    public function deleteAttachment(Task $task, TaskAttachment $attachment)
+    {
+        abort_unless($attachment->task_id === $task->id, 403);
+
+        Storage::disk($attachment->disk)->delete($attachment->path);
+        $name = $attachment->original_name;
+        $attachment->delete();
+
+        $task->histories()->create([
+            'user_id' => Auth::id(),
+            'action' => 'file_deleted',
+            'description' => "Deleted file: {$name}",
+        ]);
+
+        return back()->with('success', 'Attachment deleted');
+    }
+
+    public function downloadAttachment(TaskAttachment $attachment)
+    {
+        // Check if user has access to this task
+        $user = Auth::user();
+        if (!$user->isManager() && $attachment->task->assigned_to !== $user->id) {
+            abort(403, 'Access denied. You can only download files from tasks assigned to you.');
+        }
+
+        // Check if file exists
+        if (!Storage::disk($attachment->disk)->exists($attachment->path)) {
+            abort(404, 'File not found');
+        }
+
+        return response()->download(Storage::disk($attachment->disk)->path($attachment->path), $attachment->original_name);
+    }
+
+    // Notification methods
+    public function notifications()
+    {
+        $notifications = Auth::user()->customNotifications()->latest()->paginate(20);
+        return view('notifications.index', compact('notifications'));
+    }
+
+    public function markNotificationAsRead(CustomNotification $notification)
+    {
+        if ($notification->user_id === Auth::id()) {
+            $notification->markAsRead();
+        }
+
+        return response()->json(['success' => true]);
+    }
+
+    public function markAllNotificationsAsRead()
+    {
+        Auth::user()->customNotifications()->unread()->update([
+            'read' => true,
+            'read_at' => now(),
+        ]);
+
+        return response()->json(['success' => true]);
+    }
+
+    // API endpoints for live notifications
+    public function getUnreadNotifications()
+    {
+        $notifications = Auth::user()->unreadNotifications()->latest()->take(10)->get();
+        return response()->json($notifications);
+    }
+
+    public function getNotificationCount()
+    {
+        $count = Auth::user()->unreadNotifications()->count();
+        return response()->json(['count' => $count]);
+    }
+}
+
+
