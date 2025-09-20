@@ -68,7 +68,7 @@
                                                     @endif
                                                     @if($notification->data && isset($notification->data['task_id']))
                                                         <a href="{{ route('tasks.show', $notification->data['task_id']) }}" class="btn btn-sm btn-outline-secondary" title="View Task">
-                                                            <i class="bx bx-eye"></i>
+                                                            <i class="bx bxs-show"></i>
                                                         </a>
                                                     @endif
                                                 </div>

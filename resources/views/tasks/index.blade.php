@@ -11,7 +11,9 @@
                     0
                 </span>
             </a>
-            <a href="{{ route('tasks.create') }}" class="btn btn-primary">New Task</a>
+            <a href="{{ route('tasks.create') }}" class="btn btn-primary">
+                <i class="bx bx-plus me-1"></i>New Task
+            </a>
         </div>
     </div>
 
@@ -21,8 +23,8 @@
                 <thead class="table-light">
                     <tr>
                         <th>Title</th>
-                        <th>Project</th>
-                        <th>Folder</th>
+                        {{--  <th>Project</th>  --}}
+                        {{--  <th>Folder</th>  --}}
                         <th>Assigned To</th>
                         <th>Status</th>
                         <th>Priority</th>
@@ -65,12 +67,12 @@
                                 </div>
                             </div>
                         </td>
-                        <td>
+                        {{--  <td>
                             <span class="badge bg-label-primary">{{ $task->project?->name }}</span>
                         </td>
                         <td>
                             <span class="badge bg-label-info">{{ $task->folder?->name ?? 'No Folder' }}</span>
-                        </td>
+                        </td>  --}}
                         <td>
                             @if($task->assignee)
                                 <div class="d-flex align-items-center">
@@ -120,7 +122,7 @@
                         <td>
                             <div class="d-flex gap-1">
                                 <a href="{{ route('tasks.show', $task) }}" class="btn btn-sm btn-outline-primary" title="View Details">
-                                    <i class="bx bx-eye"></i>
+                                    <i class="bx bxs-show"></i>
                                 </a>
                                 <a href="{{ route('tasks.edit', $task) }}" class="btn btn-sm btn-outline-secondary" title="Edit">
                                     <i class="bx bx-edit"></i>

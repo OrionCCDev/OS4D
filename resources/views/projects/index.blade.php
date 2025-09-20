@@ -195,9 +195,9 @@
 
                                 <!-- Action Buttons -->
                                 <div class="d-flex gap-2 mt-auto">
-                                    <button class="btn btn-primary flex-fill position-relative" style="z-index: 2;">
-                                        <i class="bx bx-right-arrow-alt me-1"></i>Open
-                                    </button>
+                                    <a href="{{ route('projects.show', $project) }}" class="btn btn-primary flex-fill position-relative" style="z-index: 2;">
+                                        <i class="bx bxs-show me-1"></i>Open
+                                    </a>
                                     <a href="{{ route('projects.edit', $project) }}"
                                        class="btn btn-outline-secondary position-relative"
                                        style="z-index: 2;"
@@ -261,7 +261,7 @@
                             <!-- Actions Column -->
                             <div class="actions-column">
                                 <button class="btn btn-primary btn-sm position-relative" style="z-index: 2;">
-                                    <i class="bx bx-right-arrow-alt"></i>
+                                    <i class="bx bxs-show"></i>
                                 </button>
                                 <a href="{{ route('projects.edit', $project) }}"
                                    class="btn btn-outline-secondary btn-sm position-relative"

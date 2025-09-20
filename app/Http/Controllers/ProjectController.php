@@ -43,12 +43,7 @@ class ProjectController extends Controller
             mkdir($fullPath, 0755, true);
         }
 
-        // Create a root folder record with the same name
-        ProjectFolder::create([
-            'project_id' => $project->id,
-            'parent_id' => null,
-            'name' => $project->name,
-        ]);
+        // Note: No automatic root folder creation - users can create folders as needed
         return redirect()->route('projects.index')->with('success', 'Project created');
     }
 

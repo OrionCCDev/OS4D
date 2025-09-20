@@ -166,9 +166,9 @@ class Task extends Model
         if ($this->status !== 'completed' && $this->due_date) {
             $now = now();
             if ($this->due_date && $this->due_date->isFuture()) {
-                return $this->due_date->diffInDays($now);
+                return ceil($this->due_date->diffInDays($now));
             } else {
-                return $this->due_date ? -$this->due_date->diffInDays($now) : null; // Negative for overdue
+                return $this->due_date ? -ceil($this->due_date->diffInDays($now)) : null; // Negative for overdue
             }
         }
         return null;

@@ -131,7 +131,9 @@
                   </div>
                 </div>
                 <div class="mb-3">
-                  <button class="btn btn-primary d-grid w-100" type="submit">Sign in</button>
+                  <button class="btn btn-primary d-grid w-100" type="submit">
+                    <i class="bx bx-log-in me-1"></i>Sign in
+                  </button>
                 </div>
               </form>
 

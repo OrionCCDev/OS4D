@@ -12,6 +12,7 @@ use App\Http\Controllers\ProjectFolderController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\ContractorController;
 use App\Http\Controllers\EmailTemplateController;
+use App\Http\Controllers\DashboardController;
 
 // Redirect root to dashboard (requires authentication)
 Route::get('/', function () {
@@ -19,9 +20,10 @@ Route::get('/', function () {
 });
 
 // Dashboard route - requires authentication
-Route::get('/dashboard', function () {
-    return view('welcome');
-})->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('/dashboard', [DashboardController::class, 'index'])->middleware(['auth', 'verified'])->name('dashboard');
+
+// Dashboard API routes for charts
+Route::get('/dashboard/chart-data', [DashboardController::class, 'getChartData'])->middleware(['auth', 'verified'])->name('dashboard.chart-data');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

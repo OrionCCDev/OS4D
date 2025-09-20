@@ -283,6 +283,9 @@
                                         </td>
                                         <td class="align-middle text-end">
                                             <div class="d-flex gap-1 justify-content-end">
+                                                <a href="{{ route('tasks.show', $task) }}" class="btn btn-sm btn-outline-primary" title="View Details">
+                                                    <i class="bx bxs-show"></i>
+                                                </a>
                                                 <a href="{{ route('tasks.edit', $task) }}" class="btn btn-sm btn-outline-secondary">
                                                     <i class="bx bx-edit"></i>
                                                 </a>

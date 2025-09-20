@@ -72,8 +72,12 @@
                 <small class="text-muted">You can select multiple files. Max size 20MB per file.</small>
             </div>
             <div class="d-flex gap-2">
-                <a href="{{ route('tasks.index') }}" class="btn btn-secondary">Cancel</a>
-                <button class="btn btn-primary">Save</button>
+                <a href="{{ route('tasks.index') }}" class="btn btn-secondary">
+                    <i class="bx bx-x me-1"></i>Cancel
+                </a>
+                <button class="btn btn-primary">
+                    <i class="bx bx-check me-1"></i>Save
+                </button>
             </div>
         </form>
     </div>
