@@ -13,6 +13,7 @@ use App\Http\Controllers\TaskController;
 use App\Http\Controllers\ContractorController;
 use App\Http\Controllers\EmailTemplateController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ExternalStakeholderController;
 
 // Redirect root to dashboard (requires authentication)
 Route::get('/', function () {
@@ -64,6 +65,7 @@ Route::middleware('auth')->group(function () {
         Route::resource('folders', ProjectFolderController::class)->parameters(['folders' => 'folder'])->except(['show']);
         Route::resource('contractors', ContractorController::class)->except(['show']);
         Route::resource('email-templates', EmailTemplateController::class)->parameters(['email-templates' => 'email_template'])->except(['show']);
+        Route::resource('external-stakeholders', ExternalStakeholderController::class);
     });
 
     // Tasks - Restricted access for non-managers
@@ -73,6 +75,12 @@ Route::middleware('auth')->group(function () {
         Route::post('tasks/{task}/change-status', [TaskController::class, 'changeStatus'])->name('tasks.change-status');
         Route::post('tasks/{task}/attachments', [TaskController::class, 'uploadAttachment'])->name('tasks.attachments.upload');
         Route::delete('tasks/{task}/attachments/{attachment}', [TaskController::class, 'deleteAttachment'])->name('tasks.attachments.delete');
+
+        // Task workflow routes
+        Route::post('tasks/{task}/accept', [TaskController::class, 'acceptTask'])->name('tasks.accept');
+        Route::post('tasks/{task}/submit-review', [TaskController::class, 'submitForReview'])->name('tasks.submit-review');
+        Route::post('tasks/{task}/approve', [TaskController::class, 'approveTask'])->name('tasks.approve');
+        Route::post('tasks/{task}/reject', [TaskController::class, 'rejectTask'])->name('tasks.reject');
     });
 
     // Task destroy - Manager only

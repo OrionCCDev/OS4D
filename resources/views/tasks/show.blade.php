@@ -25,7 +25,9 @@
                             $statusColors = [
                                 'pending' => 'secondary',
                                 'assigned' => 'info',
+                                'accepted' => 'primary',
                                 'in_progress' => 'warning',
+                                'submitted_for_review' => 'primary',
                                 'in_review' => 'primary',
                                 'approved' => 'success',
                                 'rejected' => 'danger',
@@ -338,15 +340,49 @@
                 </div>
                 <div class="card-body">
                     <div class="d-grid gap-2">
-                        @if($task->assigned_to === auth()->id() && in_array($task->status, ['assigned', 'in_progress', 'in_review']))
-                            <button class="btn btn-success" onclick="changeTaskStatus({{ $task->id }})">
-                                <i class="bx bx-check me-2"></i>Change Status
-                            </button>
+                        <!-- Task Workflow Actions -->
+                        @if($task->assigned_to === auth()->id())
+                            @if($task->status === 'assigned')
+                                <form action="{{ route('tasks.accept', $task) }}" method="POST" class="d-inline">
+                                    @csrf
+                                    <button type="submit" class="btn btn-success w-100">
+                                        <i class="bx bx-check me-2"></i>Accept Task
+                                    </button>
+                                </form>
+                            @elseif(in_array($task->status, ['accepted', 'in_progress']))
+                                <button class="btn btn-primary w-100" onclick="submitForReview({{ $task->id }})">
+                                    <i class="bx bx-send me-2"></i>Submit for Review
+                                </button>
+                            @elseif($task->status === 'rejected')
+                                <button class="btn btn-warning w-100" onclick="submitForReview({{ $task->id }})">
+                                    <i class="bx bx-send me-2"></i>Resubmit for Review
+                                </button>
+                            @endif
                         @endif
 
-                        @if(auth()->user()->isManager() && !$task->assigned_to)
-                            <button class="btn btn-info" onclick="assignTask({{ $task->id }})">
-                                <i class="bx bx-user-plus me-2"></i>Assign Task
+                        @if(auth()->user()->isManager())
+                            @if($task->status === 'submitted_for_review')
+                                <div class="d-grid gap-2">
+                                    <button class="btn btn-success" onclick="approveTask({{ $task->id }})">
+                                        <i class="bx bx-check-circle me-2"></i>Approve Task
+                                    </button>
+                                    <button class="btn btn-danger" onclick="rejectTask({{ $task->id }})">
+                                        <i class="bx bx-x-circle me-2"></i>Reject Task
+                                    </button>
+                                </div>
+                            @endif
+
+                            @if(!$task->assigned_to)
+                                <button class="btn btn-info" onclick="assignTask({{ $task->id }})">
+                                    <i class="bx bx-user-plus me-2"></i>Assign Task
+                                </button>
+                            @endif
+                        @endif
+
+                        <!-- Legacy status change for other statuses -->
+                        @if($task->assigned_to === auth()->id() && in_array($task->status, ['in_review', 'completed']))
+                            <button class="btn btn-outline-primary" onclick="changeTaskStatus({{ $task->id }})">
+                                <i class="bx bx-edit me-2"></i>Change Status
                             </button>
                         @endif
 
@@ -562,6 +598,24 @@ function changeTaskStatus(taskId) {
     new bootstrap.Modal(document.getElementById('changeStatusModal')).show();
 }
 
+// Submit for review
+function submitForReview(taskId) {
+    document.getElementById('submitReviewForm').action = `/tasks/${taskId}/submit-review`;
+    new bootstrap.Modal(document.getElementById('submitReviewModal')).show();
+}
+
+// Approve task
+function approveTask(taskId) {
+    document.getElementById('approveTaskForm').action = `/tasks/${taskId}/approve`;
+    new bootstrap.Modal(document.getElementById('approveTaskModal')).show();
+}
+
+// Reject task
+function rejectTask(taskId) {
+    document.getElementById('rejectTaskForm').action = `/tasks/${taskId}/reject`;
+    new bootstrap.Modal(document.getElementById('rejectTaskModal')).show();
+}
+
 // File search functionality
 document.addEventListener('DOMContentLoaded', function() {
     const searchInput = document.getElementById('fileSearch');
@@ -583,4 +637,87 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
+
+<!-- Submit for Review Modal -->
+<div class="modal fade" id="submitReviewModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Submit Task for Review</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="submitReviewForm" method="POST">
+                @csrf
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Completion Notes</label>
+                        <textarea name="completion_notes" class="form-control" rows="4" placeholder="Describe what was completed, any challenges faced, or additional information..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Submit for Review</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Approve Task Modal -->
+<div class="modal fade" id="approveTaskModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Approve Task</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="approveTaskForm" method="POST">
+                @csrf
+                <div class="modal-body">
+                    <div class="alert alert-success">
+                        <i class="bx bx-check-circle me-2"></i>
+                        Are you sure you want to approve this task? This will mark it as completed and notify all stakeholders.
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Approval Notes (Optional)</label>
+                        <textarea name="approval_notes" class="form-control" rows="3" placeholder="Any additional comments or feedback..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">Approve Task</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Reject Task Modal -->
+<div class="modal fade" id="rejectTaskModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Reject Task</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="rejectTaskForm" method="POST">
+                @csrf
+                <div class="modal-body">
+                    <div class="alert alert-warning">
+                        <i class="bx bx-error me-2"></i>
+                        Please provide feedback on why this task is being rejected. The assigned user will need to address these issues and resubmit.
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Rejection Reason <span class="text-danger">*</span></label>
+                        <textarea name="rejection_notes" class="form-control" rows="4" placeholder="Please explain why this task is being rejected and what needs to be improved..." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">Reject Task</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 @endsection

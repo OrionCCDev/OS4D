@@ -137,6 +137,13 @@
                 <div data-i18n="Email Templates">Email Templates</div>
               </a>
             </li>
+            <!-- External Stakeholders - Manager only -->
+            <li class="menu-item {{ request()->routeIs('external-stakeholders.*') ? 'active' : '' }}">
+              <a href="{{ route('external-stakeholders.index') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-group"></i>
+                <div data-i18n="External Stakeholders">External Stakeholders</div>
+              </a>
+            </li>
             @endif
 
             <!-- Tasks - Available to all users (with restrictions) -->

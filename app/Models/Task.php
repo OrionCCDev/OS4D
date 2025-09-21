@@ -5,6 +5,10 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\ExternalStakeholder;
+use App\Models\TaskNotification;
+use App\Mail\TaskNotificationMail;
+use Illuminate\Support\Facades\Mail;
 
 class Task extends Model
 {
@@ -24,6 +28,12 @@ class Task extends Model
         'started_at',
         'completed_at',
         'completion_notes',
+        'accepted_at',
+        'submitted_at',
+        'approved_at',
+        'rejected_at',
+        'approval_notes',
+        'rejection_notes',
     ];
 
     protected $casts = [
@@ -31,6 +41,10 @@ class Task extends Model
         'assigned_at' => 'datetime',
         'started_at' => 'datetime',
         'completed_at' => 'datetime',
+        'accepted_at' => 'datetime',
+        'submitted_at' => 'datetime',
+        'approved_at' => 'datetime',
+        'rejected_at' => 'datetime',
     ];
 
     public function project()
@@ -184,7 +198,9 @@ class Task extends Model
         return match($this->status) {
             'pending' => 'bg-secondary',
             'assigned' => 'bg-info',
-            'in_progress' => 'bg-primary',
+            'accepted' => 'bg-primary',
+            'in_progress' => 'bg-warning',
+            'submitted_for_review' => 'bg-primary',
             'in_review' => 'bg-warning',
             'approved' => 'bg-success',
             'rejected' => 'bg-danger',
@@ -204,6 +220,184 @@ class Task extends Model
             'critical' => 'bg-dark',
             default => 'bg-primary'
         };
+    }
+
+    // New workflow methods
+    public function acceptTask()
+    {
+        if ($this->status !== 'assigned') {
+            throw new \Exception('Only assigned tasks can be accepted');
+        }
+
+        $this->update([
+            'status' => 'accepted',
+            'accepted_at' => now()
+        ]);
+
+        // Create history record
+        $this->histories()->create([
+            'user_id' => auth()->id(),
+            'action' => 'accepted',
+            'description' => "Task accepted by {$this->assignee->name}",
+            'metadata' => ['accepted_at' => now()]
+        ]);
+
+        // Notify managers
+        $this->notifyManagers('task_accepted', 'Task Accepted', "Task '{$this->title}' has been accepted by {$this->assignee->name}");
+
+        // Notify external stakeholders
+        $this->notifyExternalStakeholders('accepted', 'Task Accepted', "Task '{$this->title}' has been accepted and work will begin soon.");
+    }
+
+    public function submitForReview($notes = null)
+    {
+        if (!in_array($this->status, ['accepted', 'in_progress'])) {
+            throw new \Exception('Only accepted or in-progress tasks can be submitted for review');
+        }
+
+        $this->update([
+            'status' => 'submitted_for_review',
+            'submitted_at' => now(),
+            'completion_notes' => $notes
+        ]);
+
+        // Create history record
+        $this->histories()->create([
+            'user_id' => auth()->id(),
+            'action' => 'submitted_for_review',
+            'description' => "Task submitted for review by {$this->assignee->name}",
+            'metadata' => ['submitted_at' => now(), 'notes' => $notes]
+        ]);
+
+        // Notify managers
+        $this->notifyManagers('task_submitted_for_review', 'Task Submitted for Review', "Task '{$this->title}' has been submitted for review by {$this->assignee->name}");
+
+        // Notify external stakeholders
+        $this->notifyExternalStakeholders('submitted_for_review', 'Task Submitted for Review', "Task '{$this->title}' has been completed and submitted for review.");
+    }
+
+    public function approveTask($notes = null)
+    {
+        if ($this->status !== 'submitted_for_review') {
+            throw new \Exception('Only tasks submitted for review can be approved');
+        }
+
+        $this->update([
+            'status' => 'approved',
+            'approved_at' => now(),
+            'completed_at' => now(),
+            'approval_notes' => $notes
+        ]);
+
+        // Create history record
+        $this->histories()->create([
+            'user_id' => auth()->id(),
+            'action' => 'approved',
+            'description' => "Task approved by " . auth()->user()->name,
+            'metadata' => ['approved_at' => now(), 'notes' => $notes]
+        ]);
+
+        // Notify assigned user
+        $this->sendNotification($this->assignee, 'task_approved', 'Task Approved', "Your task '{$this->title}' has been approved!");
+
+        // Notify external stakeholders
+        $this->notifyExternalStakeholders('approved', 'Task Approved', "Task '{$this->title}' has been approved and completed successfully.");
+    }
+
+    public function rejectTask($notes = null)
+    {
+        if ($this->status !== 'submitted_for_review') {
+            throw new \Exception('Only tasks submitted for review can be rejected');
+        }
+
+        $this->update([
+            'status' => 'rejected',
+            'rejected_at' => now(),
+            'rejection_notes' => $notes
+        ]);
+
+        // Create history record
+        $this->histories()->create([
+            'user_id' => auth()->id(),
+            'action' => 'rejected',
+            'description' => "Task rejected by " . auth()->user()->name,
+            'metadata' => ['rejected_at' => now(), 'notes' => $notes]
+        ]);
+
+        // Notify assigned user
+        $this->sendNotification($this->assignee, 'task_rejected', 'Task Rejected', "Your task '{$this->title}' has been rejected. Please review the feedback and resubmit.");
+
+        // Notify external stakeholders
+        $this->notifyExternalStakeholders('rejected', 'Task Rejected', "Task '{$this->title}' has been rejected and requires revision.");
+    }
+
+    public function notifyExternalStakeholders($type, $subject, $message)
+    {
+        $stakeholders = ExternalStakeholder::active()->get();
+
+        foreach ($stakeholders as $stakeholder) {
+            // Create notification record
+            $notification = $this->taskNotifications()->create([
+                'external_stakeholder_id' => $stakeholder->id,
+                'notification_type' => $type,
+                'email_subject' => $subject,
+                'email_content' => $this->buildEmailContent($stakeholder, $type, $message)
+            ]);
+
+            // Send email
+            try {
+                Mail::to($stakeholder->email)->send(new TaskNotificationMail($this, $stakeholder, $type, $message));
+
+                // Update notification status
+                $notification->update([
+                    'status' => 'sent',
+                    'sent_at' => now()
+                ]);
+            } catch (\Exception $e) {
+                // Update notification status as failed
+                $notification->update([
+                    'status' => 'failed'
+                ]);
+
+                // Log the error
+                \Log::error('Failed to send task notification email: ' . $e->getMessage());
+            }
+        }
+    }
+
+    private function buildEmailContent($stakeholder, $type, $message)
+    {
+        $content = "
+        <html>
+        <body>
+            <h2>Task Update Notification</h2>
+            <p>Dear {$stakeholder->name},</p>
+            <p>{$message}</p>
+
+            <h3>Task Details:</h3>
+            <ul>
+                <li><strong>Title:</strong> {$this->title}</li>
+                <li><strong>Description:</strong> {$this->description}</li>
+                <li><strong>Project:</strong> {$this->project->name}</li>
+                <li><strong>Assigned To:</strong> {$this->assignee->name}</li>
+                <li><strong>Due Date:</strong> " . ($this->due_date ? $this->due_date->format('M d, Y') : 'Not set') . "</li>
+                <li><strong>Priority:</strong> " . ucfirst($this->priority) . "</li>
+                <li><strong>Status:</strong> " . ucfirst(str_replace('_', ' ', $this->status)) . "</li>
+            </ul>
+
+            <p>You can view more details by logging into the system.</p>
+
+            <p>Best regards,<br>Task Management System</p>
+        </body>
+        </html>
+        ";
+
+        return $content;
+    }
+
+    public function taskNotifications()
+    {
+        return $this->hasMany(TaskNotification::class);
     }
 }
 

@@ -365,6 +365,79 @@ class TaskController extends Controller
         $count = Auth::user()->unreadNotifications()->count();
         return response()->json(['count' => $count]);
     }
+
+    // New workflow methods
+    public function acceptTask(Task $task)
+    {
+        // Only the assigned user can accept the task
+        if ($task->assigned_to !== Auth::id()) {
+            abort(403, 'Access denied. You can only accept tasks assigned to you.');
+        }
+
+        try {
+            $task->acceptTask();
+            return redirect()->back()->with('success', 'Task accepted successfully');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
+    }
+
+    public function submitForReview(Request $request, Task $task)
+    {
+        // Only the assigned user can submit for review
+        if ($task->assigned_to !== Auth::id()) {
+            abort(403, 'Access denied. You can only submit tasks assigned to you.');
+        }
+
+        $validated = $request->validate([
+            'completion_notes' => 'nullable|string|max:1000',
+        ]);
+
+        try {
+            $task->submitForReview($validated['completion_notes'] ?? null);
+            return redirect()->back()->with('success', 'Task submitted for review successfully');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
+    }
+
+    public function approveTask(Request $request, Task $task)
+    {
+        // Only managers can approve tasks
+        if (!Auth::user()->isManager()) {
+            abort(403, 'Access denied. Only managers can approve tasks.');
+        }
+
+        $validated = $request->validate([
+            'approval_notes' => 'nullable|string|max:1000',
+        ]);
+
+        try {
+            $task->approveTask($validated['approval_notes'] ?? null);
+            return redirect()->back()->with('success', 'Task approved successfully');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
+    }
+
+    public function rejectTask(Request $request, Task $task)
+    {
+        // Only managers can reject tasks
+        if (!Auth::user()->isManager()) {
+            abort(403, 'Access denied. Only managers can reject tasks.');
+        }
+
+        $validated = $request->validate([
+            'rejection_notes' => 'required|string|max:1000',
+        ]);
+
+        try {
+            $task->rejectTask($validated['rejection_notes']);
+            return redirect()->back()->with('success', 'Task rejected successfully');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
+    }
 }
 
 
