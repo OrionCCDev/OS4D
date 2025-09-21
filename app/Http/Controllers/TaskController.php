@@ -12,6 +12,7 @@ use App\Models\TaskAttachment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 
 class TaskController extends Controller
 {
@@ -132,14 +133,14 @@ class TaskController extends Controller
     {
         $user = Auth::user();
 
-        // Managers can edit any task, regular users can only edit tasks assigned to them
-        if (!$user->isManager() && $task->assigned_to !== $user->id) {
-            abort(403, 'Access denied. You can only edit tasks assigned to you.');
+        // Only managers can edit tasks - regular users can only upload files and change status
+        if (!$user->isManager()) {
+            abort(403, 'Access denied. Only managers can edit tasks. Regular users can upload files and change status from the task view.');
         }
 
-        // Prevent editing tasks in review status (only managers can change status back)
-        if ($task->status === 'in_review' && !$user->isManager()) {
-            abort(403, 'Access denied. Task is under review and cannot be edited until manager changes status.');
+        // Additional restriction: No editing of tasks under review
+        if (in_array($task->status, ['submitted_for_review', 'in_review', 'approved', 'completed'])) {
+            abort(403, 'Access denied. This task is under review and cannot be edited.');
         }
 
         $projects = Project::orderBy('name')->get();
@@ -151,35 +152,26 @@ class TaskController extends Controller
     {
         $user = Auth::user();
 
-        // Managers can edit any task, regular users can only edit tasks assigned to them
-        if (!$user->isManager() && $task->assigned_to !== $user->id) {
-            abort(403, 'Access denied. You can only edit tasks assigned to you.');
+        // Only managers can edit tasks - regular users can only upload files and change status
+        if (!$user->isManager()) {
+            abort(403, 'Access denied. Only managers can edit tasks. Regular users can upload files and change status from the task view.');
         }
 
-        // Prevent editing tasks in review status (only managers can change status back)
-        if ($task->status === 'in_review' && !$user->isManager()) {
-            abort(403, 'Access denied. Task is under review and cannot be edited until manager changes status.');
+        // Additional restriction: No editing of tasks under review
+        if (in_array($task->status, ['submitted_for_review', 'in_review', 'approved', 'completed'])) {
+            abort(403, 'Access denied. This task is under review and cannot be edited.');
         }
 
-        // Define validation rules based on user role
-        if ($user->isManager()) {
-            // Managers can edit all fields
-            $rules = [
-                'project_id' => 'required|exists:projects,id',
-                'folder_id' => 'nullable|exists:project_folders,id',
-                'title' => 'required|string|max:255',
-                'description' => 'nullable|string',
-                'due_date' => 'nullable|date',
-                'status' => 'nullable|in:pending,assigned,in_progress,in_review,approved,rejected,completed',
-                'priority' => 'nullable|in:low,normal,medium,high,urgent,critical',
-            ];
-        } else {
-            // Regular users can only edit description, status, and upload files
-            $rules = [
-                'description' => 'nullable|string',
-                'status' => 'nullable|in:pending,assigned,in_progress,in_review,approved,rejected,completed',
-            ];
-        }
+        // Define validation rules for managers
+        $rules = [
+            'project_id' => 'required|exists:projects,id',
+            'folder_id' => 'nullable|exists:project_folders,id',
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'due_date' => 'nullable|date',
+            'status' => 'nullable|in:pending,assigned,in_progress,in_review,approved,rejected,completed',
+            'priority' => 'nullable|in:low,normal,medium,high,urgent,critical',
+        ];
 
         // Only add file validation if files are actually uploaded
         if ($request->hasFile('attachments')) {
@@ -187,12 +179,6 @@ class TaskController extends Controller
         }
 
         $validated = $request->validate($rules);
-
-        // For non-managers, only update allowed fields
-        if (!$user->isManager()) {
-            $allowedFields = ['description', 'status'];
-            $validated = array_intersect_key($validated, array_flip($allowedFields));
-        }
 
         $task->update($validated);
 
@@ -247,6 +233,11 @@ class TaskController extends Controller
 
     public function changeStatus(Request $request, Task $task)
     {
+        // Restrict status changes for tasks under review - only managers can change status
+        if (in_array($task->status, ['submitted_for_review', 'in_review', 'approved', 'completed']) && !Auth::user()->isManager()) {
+            abort(403, 'Access denied. Status changes are disabled for tasks under review. Only managers can change the status.');
+        }
+
         $validated = $request->validate([
             'status' => 'required|in:pending,assigned,in_progress,in_review,approved,rejected,completed',
             'notes' => 'nullable|string|max:1000',
@@ -266,6 +257,11 @@ class TaskController extends Controller
     // Attachments
     public function uploadAttachment(Request $request, Task $task)
     {
+        // Restrict file uploads for tasks under review - only managers can upload
+        if (in_array($task->status, ['submitted_for_review', 'in_review', 'approved', 'completed']) && !Auth::user()->isManager()) {
+            abort(403, 'Access denied. File uploads are disabled for tasks under review. Only managers can upload files.');
+        }
+
         $request->validate([
             'file' => 'required|file|max:1024000', // 1GB
         ]);
@@ -297,6 +293,11 @@ class TaskController extends Controller
     public function deleteAttachment(Task $task, TaskAttachment $attachment)
     {
         abort_unless($attachment->task_id === $task->id, 403);
+
+        // Restrict file deletion for tasks under review - only managers can delete
+        if (in_array($task->status, ['submitted_for_review', 'in_review', 'approved', 'completed']) && !Auth::user()->isManager()) {
+            abort(403, 'Access denied. File deletion is disabled for tasks under review. Only managers can delete files.');
+        }
 
         Storage::disk($attachment->disk)->delete($attachment->path);
         $name = $attachment->original_name;

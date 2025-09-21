@@ -87,7 +87,11 @@
                         </td>
                         <td>
                             <span class="badge {{ $task->status_badge_class }}">
-                                {{ ucfirst(str_replace('_', ' ', $task->status)) }}
+                                @if($task->status === 'submitted_for_review')
+                                    For Review
+                                @else
+                                    {{ ucfirst(str_replace('_', ' ', $task->status)) }}
+                                @endif
                             </span>
                         </td>
                         <td>
@@ -124,11 +128,13 @@
                                 <a href="{{ route('tasks.show', $task) }}" class="btn btn-sm btn-outline-primary" title="View Details">
                                     <i class="bx bxs-show"></i>
                                 </a>
-                                <a href="{{ route('tasks.edit', $task) }}" class="btn btn-sm btn-outline-secondary" title="Edit">
-                                    <i class="bx bx-edit"></i>
-                                </a>
+                                @if(Auth::user()->isManager())
+                                    <a href="{{ route('tasks.edit', $task) }}" class="btn btn-sm btn-outline-secondary" title="Edit">
+                                        <i class="bx bx-edit"></i>
+                                    </a>
+                                @endif
 
-                                @if($task->assigned_to === auth()->id() && in_array($task->status, ['assigned', 'in_progress', 'in_review']))
+                                @if($task->assigned_to === auth()->id() && in_array($task->status, ['assigned', 'in_progress']) && $task->status !== 'submitted_for_review' && $task->status !== 'in_review')
                                     <button class="btn btn-sm btn-outline-success" onclick="changeTaskStatus({{ $task->id }})" title="Change Status">
                                         <i class="bx bx-check"></i>
                                     </button>

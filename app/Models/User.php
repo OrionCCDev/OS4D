@@ -26,6 +26,7 @@ class User extends Authenticatable implements HasMedia
         'password',
         'role',
         'img',
+        'notification_sound_enabled',
     ];
 
     /**
@@ -48,6 +49,7 @@ class User extends Authenticatable implements HasMedia
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'notification_sound_enabled' => 'boolean',
         ];
     }
 

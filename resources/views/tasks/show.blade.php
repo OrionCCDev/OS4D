@@ -27,6 +27,7 @@
                                 'assigned' => 'info',
                                 'accepted' => 'primary',
                                 'in_progress' => 'warning',
+                                'workingon' => 'warning',
                                 'submitted_for_review' => 'primary',
                                 'in_review' => 'primary',
                                 'approved' => 'success',
@@ -42,7 +43,11 @@
                             ];
                         @endphp
                         <span class="badge bg-{{ $statusColors[$task->status] ?? 'secondary' }} fs-6 px-3 py-2">
-                            {{ ucfirst(str_replace('_', ' ', $task->status)) }}
+                            @if($task->status === 'submitted_for_review')
+                                For Review
+                            @else
+                                {{ ucfirst(str_replace('_', ' ', $task->status)) }}
+                            @endif
                         </span>
                         <span class="badge bg-{{ $priorityColors[$task->priority ?? 5] ?? 'secondary' }} fs-6 px-3 py-2">
                             Priority {{ $task->priority ?? 5 }}
@@ -60,20 +65,38 @@
                     </div>
                 </div>
                 <div class="d-flex gap-2">
-                    <a href="{{ route('tasks.edit', $task) }}" class="btn btn-primary">
-                        <i class="bx bx-edit me-1"></i>Edit Task
-                    </a>
-                    <form action="{{ route('tasks.destroy', $task) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this task?')" class="d-inline">
-                        @csrf
-                        @method('DELETE')
-                        <button class="btn btn-outline-danger">
-                            <i class="bx bx-trash me-1"></i>Delete
-                        </button>
-                    </form>
+                    @if(Auth::user()->isManager() || ($task->status !== 'submitted_for_review' && $task->status !== 'in_review' && $task->status !== 'approved' && $task->status !== 'completed'))
+                        <a href="{{ route('tasks.edit', $task) }}" class="btn btn-primary">
+                            <i class="bx bx-edit me-1"></i>Edit Task
+                        </a>
+                        <form action="{{ route('tasks.destroy', $task) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this task?')" class="d-inline">
+                            @csrf
+                            @method('DELETE')
+                            <button class="btn btn-outline-danger">
+                                <i class="bx bx-trash me-1"></i>Delete
+                            </button>
+                        </form>
+                    @endif
                 </div>
             </div>
         </div>
     </div>
+
+    @if($task->status === 'submitted_for_review' && !Auth::user()->isManager())
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="alert alert-warning border-0 shadow-sm">
+                    <div class="d-flex align-items-center">
+                        <i class="bx bx-lock-alt me-3" style="font-size: 2rem;"></i>
+                        <div>
+                            <h6 class="mb-1"><strong>Task Under Review</strong></h6>
+                            <p class="mb-0">This task has been submitted for review. Only managers can edit, delete, upload files, or change the status until the review is complete.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
 
     <div class="row">
         <div class="col-lg-8">
@@ -209,13 +232,20 @@
                 <div class="card-header bg-transparent border-0">
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <h5 class="mb-0">Task Files</h5>
-                        <form action="{{ route('tasks.attachments.upload', $task) }}" method="POST" enctype="multipart/form-data" class="d-flex gap-2">
-                            @csrf
-                            <input type="file" name="file" class="form-control form-control-sm" required>
-                            <button class="btn btn-primary btn-sm">
-                                <i class="bx bx-upload me-1"></i>Upload
-                            </button>
-                        </form>
+                        @if(Auth::user()->isManager() || ($task->status !== 'submitted_for_review' && $task->status !== 'in_review' && $task->status !== 'approved' && $task->status !== 'completed'))
+                            <form action="{{ route('tasks.attachments.upload', $task) }}" method="POST" enctype="multipart/form-data" class="d-flex gap-2">
+                                @csrf
+                                <input type="file" name="file" class="form-control form-control-sm" required>
+                                <button class="btn btn-primary btn-sm">
+                                    <i class="bx bx-upload me-1"></i>Upload
+                                </button>
+                            </form>
+                        @else
+                            <div class="alert alert-warning alert-sm mb-0 py-2">
+                                <i class="bx bx-lock me-1"></i>
+                                <small><strong>File uploads disabled</strong> - Task is under review. Only managers can upload files.</small>
+                            </div>
+                        @endif
                     </div>
                     @if($task->attachments->count())
                         <div class="mb-3">
@@ -258,7 +288,7 @@
                                                 <a class="btn btn-sm btn-outline-success" href="{{ route('tasks.attachments.download', $att) }}">
                                                     <i class="bx bx-download me-1"></i>Download
                                                 </a>
-                                                @if(Auth::user()->isManager() || $att->uploaded_by === Auth::id())
+                                                @if(Auth::user()->isManager() || (($att->uploaded_by === Auth::id()) && $task->status !== 'submitted_for_review' && $task->status !== 'in_review' && $task->status !== 'approved' && $task->status !== 'completed'))
                                                     <form action="{{ route('tasks.attachments.delete', [$task, $att]) }}" method="POST" onsubmit="return confirm('Delete attachment?')" class="d-inline">
                                                         @csrf
                                                         @method('DELETE')
@@ -349,7 +379,7 @@
                                         <i class="bx bx-check me-2"></i>Accept Task
                                     </button>
                                 </form>
-                            @elseif(in_array($task->status, ['accepted', 'in_progress']))
+                            @elseif($task->status === 'in_progress')
                                 <button class="btn btn-primary w-100" onclick="submitForReview({{ $task->id }})">
                                     <i class="bx bx-send me-2"></i>Submit for Review
                                 </button>
@@ -357,6 +387,22 @@
                                 <button class="btn btn-warning w-100" onclick="submitForReview({{ $task->id }})">
                                     <i class="bx bx-send me-2"></i>Resubmit for Review
                                 </button>
+                            @elseif($task->status === 'submitted_for_review')
+                                <div class="alert alert-warning text-center">
+                                    <i class="bx bx-time me-2"></i>
+                                    <strong>Task submitted for review.</strong><br>
+                                    <small>Waiting for manager approval. You cannot modify files or change status.</small>
+                                </div>
+                            @elseif($task->status === 'in_review')
+                                <div class="alert alert-warning text-center">
+                                    <i class="bx bx-time me-2"></i>
+                                    Task is under review by manager.
+                                </div>
+                            @elseif($task->status === 'approved')
+                                <div class="alert alert-success text-center">
+                                    <i class="bx bx-check-circle me-2"></i>
+                                    Task has been approved and completed!
+                                </div>
                             @endif
                         @endif
 
@@ -379,8 +425,8 @@
                             @endif
                         @endif
 
-                        <!-- Legacy status change for other statuses -->
-                        @if($task->assigned_to === auth()->id() && in_array($task->status, ['in_review', 'completed']))
+                        <!-- Legacy status change for other statuses - only for non-review statuses -->
+                        @if(Auth::user()->isManager() || ($task->assigned_to === auth()->id() && in_array($task->status, ['completed']) && $task->status !== 'submitted_for_review' && $task->status !== 'in_review'))
                             <button class="btn btn-outline-primary" onclick="changeTaskStatus({{ $task->id }})">
                                 <i class="bx bx-edit me-2"></i>Change Status
                             </button>
@@ -600,9 +646,26 @@ function changeTaskStatus(taskId) {
 
 // Submit for review
 function submitForReview(taskId) {
-    document.getElementById('submitReviewForm').action = `/tasks/${taskId}/submit-review`;
-    new bootstrap.Modal(document.getElementById('submitReviewModal')).show();
+    // Set the form action
+    const form = document.getElementById('submitReviewForm');
+    if (form) {
+        form.action = `/tasks/${taskId}/submit-review`;
+    } else {
+        alert('Form not found. Please refresh the page and try again.');
+        return;
+    }
+
+    // Show the modal
+    const modal = document.getElementById('submitReviewModal');
+    if (modal) {
+        const bootstrapModal = new bootstrap.Modal(modal);
+        bootstrapModal.show();
+    } else {
+        alert('Modal not found. Please refresh the page and try again.');
+    }
 }
+
+
 
 // Approve task
 function approveTask(taskId) {
@@ -635,6 +698,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     }
+
 });
 </script>
 

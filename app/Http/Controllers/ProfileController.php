@@ -38,6 +38,22 @@ class ProfileController extends Controller
     }
 
     /**
+     * Update the user's notification preferences.
+     */
+    public function updateNotificationPreferences(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'notification_sound_enabled' => 'boolean',
+        ]);
+
+        $user = $request->user();
+        $user->notification_sound_enabled = $request->boolean('notification_sound_enabled');
+        $user->save();
+
+        return Redirect::route('profile.edit')->with('status', 'notification-preferences-updated');
+    }
+
+    /**
      * Delete the user's account.
      */
     public function destroy(Request $request): RedirectResponse

@@ -20,7 +20,6 @@ class DatabaseSeeder extends Seeder
             'email' => 'Mohab@orioncc.com',
             'password' => bcrypt('Mohab@orionManager'),
             'role' => 'admin'
-
         ]);
     }
 }

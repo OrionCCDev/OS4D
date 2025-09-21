@@ -117,12 +117,12 @@
               </a>
             </li>
             <!-- Folders - Manager only -->
-            <li class="menu-item {{ request()->routeIs('folders.*') ? 'active' : '' }}">
+            {{--  <li class="menu-item {{ request()->routeIs('folders.*') ? 'active' : '' }}">
               <a href="{{ route('folders.index') }}" class="menu-link">
                 <i class="menu-icon tf-icons bx bx-folder-open"></i>
                 <div data-i18n="Folders">Folders</div>
               </a>
-            </li>
+            </li>  --}}
             <!-- Contractors - Manager only -->
             <li class="menu-item {{ request()->routeIs('contractors.*') ? 'active' : '' }}">
               <a href="{{ route('contractors.index') }}" class="menu-link">
@@ -130,7 +130,7 @@
                 <div data-i18n="Contractors">Contractors</div>
               </a>
             </li>
-            <!-- Email Templates - Manager only -->
+            {{--  <!-- Email Templates - Manager only -->
             <li class="menu-item {{ request()->routeIs('email-templates.*') ? 'active' : '' }}">
               <a href="{{ route('email-templates.index') }}" class="menu-link">
                 <i class="menu-icon tf-icons bx bx-mail-send"></i>
@@ -143,7 +143,7 @@
                 <i class="menu-icon tf-icons bx bx-group"></i>
                 <div data-i18n="External Stakeholders">External Stakeholders</div>
               </a>
-            </li>
+            </li>  --}}
             @endif
 
             <!-- Tasks - Available to all users (with restrictions) -->
@@ -509,7 +509,12 @@
                   <ul class="dropdown-menu dropdown-menu-end p-0" style="min-width: 320px;">
                     <li class="border-bottom py-2 px-3 d-flex justify-content-between align-items-center">
                       <span class="fw-semibold">Notifications</span>
-                      <button class="btn btn-sm btn-outline-primary" type="button" id="nav-mark-all-read">Mark all read</button>
+                      <div class="d-flex gap-2">
+                        <button class="btn btn-sm btn-outline-secondary" type="button" id="nav-sound-toggle" title="Toggle notification sound">
+                          <i class="bx bx-volume-full" id="sound-icon"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-primary" type="button" id="nav-mark-all-read">Mark all read</button>
+                      </div>
                     </li>
                     <li>
                       <div style="max-height: 320px; overflow:auto;" id="nav-notification-list">
@@ -519,6 +524,11 @@
                     <li class="border-top">
                       <a class="dropdown-item text-center" href="{{ route('notifications.index') }}">View all</a>
                     </li>
+                    @if(config('app.debug'))
+                    <li class="border-top">
+                      <button class="dropdown-item text-center" type="button" id="test-notification-btn">Test Sound</button>
+                    </li>
+                    @endif
                   </ul>
                 </li>
 
@@ -595,15 +605,69 @@
                 const countEl = document.getElementById('nav-notification-count');
                 const listEl = document.getElementById('nav-notification-list');
                 const markAllBtn = document.getElementById('nav-mark-all-read');
+                const soundToggleBtn = document.getElementById('nav-sound-toggle');
+                const soundIcon = document.getElementById('sound-icon');
 
                 if(!countEl || !listEl) return;
+
+                // Store previous count to detect new notifications
+                let previousCount = 0;
+
+                // Create notification sound
+                function createNotificationSound() {
+                  try {
+                    // Create a pleasant notification sound using Web Audio API
+                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    const oscillator = audioContext.createOscillator();
+                    const gainNode = audioContext.createGain();
+
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioContext.destination);
+
+                    // Create a gentle two-tone chime
+                    oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+                    oscillator.frequency.setValueAtTime(1000, audioContext.currentTime + 0.1);
+                    oscillator.frequency.setValueAtTime(600, audioContext.currentTime + 0.2);
+
+                    // Gentle volume envelope
+                    gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+                    gainNode.gain.linearRampToValueAtTime(0.2, audioContext.currentTime + 0.05);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.4);
+
+                    oscillator.start(audioContext.currentTime);
+                    oscillator.stop(audioContext.currentTime + 0.4);
+                  } catch (e) {
+                    // Fallback: try to play a simple beep using the system
+                    console.log('Notification sound played (fallback)');
+                  }
+                }
+
+                // Play notification sound if enabled
+                function playNotificationSound() {
+                  // Check if user has enabled notification sounds (from user preference or localStorage fallback)
+                  const userSoundEnabled = {{ Auth::user()->notification_sound_enabled ?? 'true' ? 'true' : 'false' }};
+                  const localStorageEnabled = localStorage.getItem('notificationSoundEnabled') !== 'false';
+                  const soundEnabled = userSoundEnabled && localStorageEnabled;
+
+                  if (soundEnabled) {
+                    createNotificationSound();
+                  }
+                }
 
                 async function fetchCount(){
                   try {
                     const r = await fetch('{{ route('api.notifications.count') }}', { credentials: 'same-origin' });
                     const d = await r.json();
-                    countEl.textContent = d.count ?? 0;
-                    countEl.style.display = (d.count ?? 0) > 0 ? 'inline-block' : 'none';
+                    const currentCount = d.count ?? 0;
+
+                    // Play sound if count increased (new notification)
+                    if (currentCount > previousCount && previousCount > 0) {
+                      playNotificationSound();
+                    }
+
+                    countEl.textContent = currentCount;
+                    countEl.style.display = currentCount > 0 ? 'inline-block' : 'none';
+                    previousCount = currentCount;
                   } catch (e) {
                     // silent
                   }
@@ -642,9 +706,60 @@
                   fetchUnread();
                 }
 
+                // Initialize sound toggle
+                function initializeSoundToggle() {
+                  if (soundToggleBtn && soundIcon) {
+                    // Load saved preference
+                    const soundEnabled = localStorage.getItem('notificationSoundEnabled') !== 'false';
+                    updateSoundIcon(soundEnabled);
+
+                    soundToggleBtn.addEventListener('click', function() {
+                      const currentState = localStorage.getItem('notificationSoundEnabled') !== 'false';
+                      const newState = !currentState;
+                      localStorage.setItem('notificationSoundEnabled', newState.toString());
+                      updateSoundIcon(newState);
+
+                      // Play test sound if enabling
+                      if (newState) {
+                        playNotificationSound();
+                      }
+                    });
+                  }
+                }
+
+                function updateSoundIcon(enabled) {
+                  if (soundIcon) {
+                    soundIcon.className = enabled ? 'bx bx-volume-full' : 'bx bx-volume-mute';
+                    soundToggleBtn.title = enabled ? 'Disable notification sound' : 'Enable notification sound';
+                  }
+                }
+
                 // Poll every 20s
                 refresh();
                 setInterval(refresh, 20000);
+
+                // Initialize sound toggle
+                initializeSoundToggle();
+
+                // Test notification button (debug mode only)
+                const testBtn = document.getElementById('test-notification-btn');
+                if (testBtn) {
+                  testBtn.addEventListener('click', async function() {
+                    try {
+                      await fetch('{{ route('test.notification') }}', {
+                        method: 'POST',
+                        headers: {
+                          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                        },
+                        credentials: 'same-origin'
+                      });
+                      // Refresh notifications to show the new one
+                      setTimeout(refresh, 500);
+                    } catch (e) {
+                      console.error('Failed to create test notification:', e);
+                    }
+                  });
+                }
 
                 if(markAllBtn){
                   markAllBtn.addEventListener('click', async function(){

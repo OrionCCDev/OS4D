@@ -9,6 +9,7 @@ use App\Models\ExternalStakeholder;
 use App\Models\TaskNotification;
 use App\Mail\TaskNotificationMail;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
 
 class Task extends Model
 {
@@ -200,6 +201,7 @@ class Task extends Model
             'assigned' => 'bg-info',
             'accepted' => 'bg-primary',
             'in_progress' => 'bg-warning',
+            'workingon' => 'bg-warning',
             'submitted_for_review' => 'bg-primary',
             'in_review' => 'bg-warning',
             'approved' => 'bg-success',
@@ -230,29 +232,30 @@ class Task extends Model
         }
 
         $this->update([
-            'status' => 'accepted',
-            'accepted_at' => now()
+            'status' => 'in_progress',
+            'accepted_at' => now(),
+            'started_at' => now()
         ]);
 
         // Create history record
         $this->histories()->create([
             'user_id' => auth()->id(),
             'action' => 'accepted',
-            'description' => "Task accepted by {$this->assignee->name}",
-            'metadata' => ['accepted_at' => now()]
+            'description' => "Task accepted and work started by {$this->assignee->name}",
+            'metadata' => ['accepted_at' => now(), 'started_at' => now()]
         ]);
 
-        // Notify managers
-        $this->notifyManagers('task_accepted', 'Task Accepted', "Task '{$this->title}' has been accepted by {$this->assignee->name}");
+        // Notify managers that task is now in progress
+        $this->notifyManagers('task_in_progress', 'Task Started', "Task '{$this->title}' has been accepted and work has started by {$this->assignee->name}");
 
         // Notify external stakeholders
-        $this->notifyExternalStakeholders('accepted', 'Task Accepted', "Task '{$this->title}' has been accepted and work will begin soon.");
+        $this->notifyExternalStakeholders('in_progress', 'Task Started', "Task '{$this->title}' has been accepted and work is now in progress.");
     }
 
     public function submitForReview($notes = null)
     {
-        if (!in_array($this->status, ['accepted', 'in_progress'])) {
-            throw new \Exception('Only accepted or in-progress tasks can be submitted for review');
+        if ($this->status !== 'in_progress') {
+            throw new \Exception('Only tasks in progress can be submitted for review');
         }
 
         $this->update([

@@ -29,6 +29,7 @@ Route::get('/dashboard/chart-data', [DashboardController::class, 'getChartData']
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::patch('/profile/notification-preferences', [ProfileController::class, 'updateNotificationPreferences'])->name('profile.notification-preferences.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     Route::post('/media/upload', [MediaController::class, 'upload'])->name('media.upload');
@@ -99,6 +100,67 @@ Route::middleware('auth')->group(function () {
     // API routes for live notifications - Available to all authenticated users
     Route::get('api/notifications/unread', [TaskController::class, 'getUnreadNotifications'])->name('api.notifications.unread');
     Route::get('api/notifications/count', [TaskController::class, 'getNotificationCount'])->name('api.notifications.count');
+
+    // Test route for notification sound (remove in production)
+    Route::post('test-notification', function() {
+        \App\Models\CustomNotification::create([
+            'user_id' => auth()->id(),
+            'type' => 'test',
+            'title' => 'Test Notification',
+            'message' => 'This is a test notification to check the sound functionality.',
+            'data' => ['test' => true]
+        ]);
+        return response()->json(['success' => true, 'message' => 'Test notification created']);
+    })->name('test.notification');
+
+    // Test route for task workflow (remove in production)
+    Route::post('test-task-workflow', function() {
+        $user = auth()->user();
+        $task = \App\Models\Task::where('assigned_to', $user->id)->where('status', 'assigned')->first();
+
+        if (!$task) {
+            return response()->json(['error' => 'No assigned task found for testing'], 404);
+        }
+
+        try {
+            $task->acceptTask();
+            return response()->json(['success' => true, 'message' => 'Task accepted and status changed to in_progress', 'task_id' => $task->id]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    })->name('test.task.workflow');
+
+    // Test route for submit for review (remove in production)
+    Route::post('test-submit-review', function() {
+        $user = auth()->user();
+        $task = \App\Models\Task::where('assigned_to', $user->id)->where('status', 'in_progress')->first();
+
+        if (!$task) {
+            return response()->json(['error' => 'No in_progress task found for testing'], 404);
+        }
+
+        try {
+            $task->submitForReview('Test completion notes');
+            return response()->json(['success' => true, 'message' => 'Task submitted for review successfully', 'task_id' => $task->id, 'new_status' => $task->fresh()->status]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    })->name('test.submit.review');
+
+    // Test route to check if form submission works
+    Route::post('test-form-submission', function(\Illuminate\Http\Request $request) {
+        \Log::info('Test form submission received', [
+            'all_data' => $request->all(),
+            'completion_notes' => $request->input('completion_notes'),
+            'user_id' => auth()->id()
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Form submission received',
+            'data' => $request->all()
+        ]);
+    })->name('test.form.submission');
 });
 
 require __DIR__.'/auth.php';
