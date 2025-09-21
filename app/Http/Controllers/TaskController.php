@@ -421,6 +421,68 @@ class TaskController extends Controller
         }
     }
 
+    public function sendApprovalEmail(Request $request, Task $task)
+    {
+        // Only managers can send approval emails
+        if (!Auth::user()->isManager()) {
+            abort(403, 'Access denied. Only managers can send approval emails.');
+        }
+
+        // Only approved tasks can have emails sent
+        if ($task->status !== 'approved') {
+            abort(403, 'Access denied. Only approved tasks can have emails sent.');
+        }
+
+        try {
+            // Send email to the assigned user
+            $this->sendTaskApprovalEmail($task);
+            return response()->json(['success' => true, 'message' => 'Approval email sent successfully']);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Failed to send email: ' . $e->getMessage()]);
+        }
+    }
+
+    public function sendRejectionEmail(Request $request, Task $task)
+    {
+        // Only managers can send rejection emails
+        if (!Auth::user()->isManager()) {
+            abort(403, 'Access denied. Only managers can send rejection emails.');
+        }
+
+        // Only rejected tasks can have emails sent
+        if ($task->status !== 'rejected') {
+            abort(403, 'Access denied. Only rejected tasks can have emails sent.');
+        }
+
+        try {
+            // Send email to the assigned user
+            $this->sendTaskRejectionEmail($task);
+            return response()->json(['success' => true, 'message' => 'Rejection email sent successfully']);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Failed to send email: ' . $e->getMessage()]);
+        }
+    }
+
+    private function sendTaskApprovalEmail(Task $task)
+    {
+        // This would integrate with your email system
+        // For now, we'll just log it
+        \Log::info('Sending approval email for task: ' . $task->id . ' to user: ' . $task->assignee->email);
+
+        // TODO: Implement actual email sending here
+        // You can use Laravel Mail, or your preferred email service
+    }
+
+    private function sendTaskRejectionEmail(Task $task)
+    {
+        // This would integrate with your email system
+        // For now, we'll just log it
+        \Log::info('Sending rejection email for task: ' . $task->id . ' to user: ' . $task->assignee->email);
+
+        // TODO: Implement actual email sending here
+        // You can use Laravel Mail, or your preferred email service
+    }
+
     public function rejectTask(Request $request, Task $task)
     {
         // Only managers can reject tasks

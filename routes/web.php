@@ -82,6 +82,8 @@ Route::middleware('auth')->group(function () {
         Route::post('tasks/{task}/submit-review', [TaskController::class, 'submitForReview'])->name('tasks.submit-review');
         Route::post('tasks/{task}/approve', [TaskController::class, 'approveTask'])->name('tasks.approve');
         Route::post('tasks/{task}/reject', [TaskController::class, 'rejectTask'])->name('tasks.reject');
+        Route::post('tasks/{task}/send-approval-email', [TaskController::class, 'sendApprovalEmail'])->name('tasks.send-approval-email');
+        Route::post('tasks/{task}/send-rejection-email', [TaskController::class, 'sendRejectionEmail'])->name('tasks.send-rejection-email');
     });
 
     // Task destroy - Manager only

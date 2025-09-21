@@ -121,7 +121,7 @@
               <a href="{{ route('folders.index') }}" class="menu-link">
                 <i class="menu-icon tf-icons bx bx-folder-open"></i>
                 <div data-i18n="Folders">Folders</div>
-              </a>
+              </a>v5
             </li>  --}}
             <!-- Contractors - Manager only -->
             <li class="menu-item {{ request()->routeIs('contractors.*') ? 'active' : '' }}">

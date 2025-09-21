@@ -401,8 +401,18 @@
                             @elseif($task->status === 'approved')
                                 <div class="alert alert-success text-center">
                                     <i class="bx bx-check-circle me-2"></i>
-                                    Task has been approved and completed!
+                                    <strong>Task has been approved and completed!</strong><br>
+                                    <small>Congratulations! Your task has been approved by the manager.</small>
                                 </div>
+                            @elseif($task->status === 'rejected')
+                                <div class="alert alert-danger text-center">
+                                    <i class="bx bx-x-circle me-2"></i>
+                                    <strong>Task has been rejected.</strong><br>
+                                    <small>Please review the feedback and make necessary changes before resubmitting.</small>
+                                </div>
+                                <button class="btn btn-warning w-100" onclick="submitForReview({{ $task->id }})">
+                                    <i class="bx bx-send me-2"></i>Resubmit for Review
+                                </button>
                             @endif
                         @endif
 
@@ -415,6 +425,20 @@
                                     <button class="btn btn-danger" onclick="rejectTask({{ $task->id }})">
                                         <i class="bx bx-x-circle me-2"></i>Reject Task
                                     </button>
+                                </div>
+                            @elseif($task->status === 'approved')
+                                <div class="d-grid gap-2">
+                                    <button class="btn btn-primary" onclick="sendApprovalEmail({{ $task->id }})">
+                                        <i class="bx bx-envelope me-2"></i>Send Approval Email
+                                    </button>
+                                    <small class="text-muted text-center">Send notification email to the assigned user</small>
+                                </div>
+                            @elseif($task->status === 'rejected')
+                                <div class="d-grid gap-2">
+                                    <button class="btn btn-primary" onclick="sendRejectionEmail({{ $task->id }})">
+                                        <i class="bx bx-envelope me-2"></i>Send Rejection Email
+                                    </button>
+                                    <small class="text-muted text-center">Send feedback email to the assigned user</small>
                                 </div>
                             @endif
 
@@ -677,6 +701,58 @@ function approveTask(taskId) {
 function rejectTask(taskId) {
     document.getElementById('rejectTaskForm').action = `/tasks/${taskId}/reject`;
     new bootstrap.Modal(document.getElementById('rejectTaskModal')).show();
+}
+
+// Send approval email
+function sendApprovalEmail(taskId) {
+    if (confirm('Send approval email to the assigned user?')) {
+        fetch(`/tasks/${taskId}/send-approval-email`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Approval email sent successfully!');
+                location.reload();
+            } else {
+                alert('Failed to send email: ' + (data.message || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error sending email. Please try again.');
+        });
+    }
+}
+
+// Send rejection email
+function sendRejectionEmail(taskId) {
+    if (confirm('Send rejection email to the assigned user?')) {
+        fetch(`/tasks/${taskId}/send-rejection-email`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Rejection email sent successfully!');
+                location.reload();
+            } else {
+                alert('Failed to send email: ' + (data.message || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error sending email. Please try again.');
+        });
+    }
 }
 
 // File search functionality

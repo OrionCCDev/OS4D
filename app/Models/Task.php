@@ -254,8 +254,8 @@ class Task extends Model
 
     public function submitForReview($notes = null)
     {
-        if ($this->status !== 'in_progress') {
-            throw new \Exception('Only tasks in progress can be submitted for review');
+        if (!in_array($this->status, ['in_progress', 'rejected'])) {
+            throw new \Exception('Only tasks in progress or rejected tasks can be submitted for review');
         }
 
         $this->update([
