@@ -83,4 +83,9 @@ class User extends Authenticatable implements HasMedia
     {
         return in_array($this->role, ['admin', 'manager']);
     }
+
+    public function isRegularUser()
+    {
+        return $this->role === 'user';
+    }
 }

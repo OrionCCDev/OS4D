@@ -34,7 +34,10 @@
                     <label class="form-label">Start Date</label>
                     <input type="date" name="start_date" class="form-control" value="{{ old('start_date') }}">
                 </div>
-                <div class="col-md-6 mb-3"></div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">End Date</label>
+                    <input type="date" name="end_date" class="form-control" value="{{ old('end_date') }}">
+                </div>
             </div>
             <div class="d-flex gap-2">
                 <a href="{{ route('projects.index') }}" class="btn btn-secondary">Cancel</a>

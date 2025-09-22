@@ -500,36 +500,56 @@
               <!-- /Search -->
 
               <ul class="navbar-nav flex-row align-items-center ms-auto">
-                <!-- Live Notifications -->
+                <!-- Live Notifications - Chat Style -->
                 <li class="nav-item dropdown me-3">
                   <a class="nav-link dropdown-toggle hide-arrow position-relative" href="#" data-bs-toggle="dropdown" aria-expanded="false">
-                    <i class="bx bx-bell fs-4"></i>
+                    <i class="bx bx-message-dots fs-4"></i>
                     <span class="badge rounded-pill bg-danger position-absolute" style="top: 0; right: -4px;" id="nav-notification-count">0</span>
                   </a>
-                  <ul class="dropdown-menu dropdown-menu-end p-0" style="min-width: 320px;">
-                    <li class="border-bottom py-2 px-3 d-flex justify-content-between align-items-center">
-                      <span class="fw-semibold">Notifications</span>
-                      <div class="d-flex gap-2">
-                        <button class="btn btn-sm btn-outline-secondary" type="button" id="nav-sound-toggle" title="Toggle notification sound">
-                          <i class="bx bx-volume-full" id="sound-icon"></i>
+                  <div class="dropdown-menu dropdown-menu-end p-0 notification-chat-popup" style="min-width: 380px; max-width: 400px; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.12); border: 1px solid #e5e7eb;">
+                    <!-- Chat Header -->
+                    <div class="notification-header d-flex align-items-center justify-content-between p-3 border-bottom" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 12px 12px 0 0;">
+                      <div class="d-flex align-items-center">
+                        <div class="avatar avatar-sm me-2" style="width: 32px; height: 32px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                          <i class="bx bx-message-dots" style="font-size: 16px;"></i>
+                        </div>
+                        <div>
+                          <h6 class="mb-0 fw-semibold">Notifications</h6>
+                          <small class="opacity-75">Live updates</small>
+                        </div>
+                      </div>
+                      <div class="d-flex gap-1">
+                        <button class="btn btn-sm btn-outline-light" type="button" id="nav-sound-toggle" title="Toggle notification sound" style="border-radius: 6px; padding: 4px 8px;">
+                          <i class="bx bx-volume-full" id="sound-icon" style="font-size: 14px;"></i>
                         </button>
-                        <button class="btn btn-sm btn-outline-primary" type="button" id="nav-mark-all-read">Mark all read</button>
+                        <button class="btn btn-sm btn-outline-light" type="button" id="nav-mark-all-read" style="border-radius: 6px; padding: 4px 8px; font-size: 12px;">Mark all</button>
                       </div>
-                    </li>
-                    <li>
-                      <div style="max-height: 320px; overflow:auto;" id="nav-notification-list">
-                        <div class="p-3 text-muted">Loading...</div>
+                    </div>
+
+                    <!-- Chat Messages Area -->
+                    <div class="notification-messages" style="max-height: 400px; overflow-y: auto; background: #f8f9fa;" id="nav-notification-list">
+                      <div class="p-4 text-center text-muted">
+                        <div class="spinner-border spinner-border-sm me-2" role="status">
+                          <span class="visually-hidden">Loading...</span>
+                        </div>
+                        Loading notifications...
                       </div>
-                    </li>
-                    <li class="border-top">
-                      <a class="dropdown-item text-center" href="{{ route('notifications.index') }}">View all</a>
-                    </li>
-                    @if(config('app.debug'))
-                    <li class="border-top">
-                      <button class="dropdown-item text-center" type="button" id="test-notification-btn">Test Sound</button>
-                    </li>
-                    @endif
-                  </ul>
+                    </div>
+
+                    <!-- Chat Footer -->
+                    <div class="notification-footer p-3 border-top" style="background: white; border-radius: 0 0 12px 12px;">
+                      <div class="d-flex align-items-center justify-content-between">
+                        <a href="{{ route('notifications.index') }}" class="btn btn-outline-primary btn-sm" style="border-radius: 8px;">
+                          <i class="bx bx-list-ul me-1"></i>View All
+                        </a>
+                        @if(config('app.debug'))
+                        <button class="btn btn-outline-secondary btn-sm" type="button" id="test-notification-btn" style="border-radius: 8px;">
+                          <i class="bx bx-test-tube me-1"></i>Test
+                        </button>
+                        @endif
+                      </div>
+                    </div>
+                  </div>
                 </li>
 
                 <!-- User -->
@@ -597,6 +617,58 @@
           </nav>
 
           <!-- / Navbar -->
+
+          <!-- Bottom Right Chat Popup for Regular Users - Always Visible -->
+          @if(Auth::user()->isRegularUser())
+          <div id="bottom-chat-popup" class="bottom-chat-widget" style="position: fixed; bottom: 0; right: 0; z-index: 1050; width: 350px; height: 500px; background: white; border-radius: 16px 16px 0 0; box-shadow: 0 -8px 32px rgba(0,0,0,0.12); border: 1px solid #e5e7eb; border-bottom: none; overflow: hidden; transform: translateY(420px); transition: all 0.3s ease;">
+            <!-- Chat Header - Always Visible -->
+            <div class="chat-header" onclick="toggleBottomChat()" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 16px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; border-radius: 16px 16px 0 0;">
+              <div class="d-flex align-items-center">
+                <div class="chat-avatar" style="width: 40px; height: 40px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 12px;">
+                  <i class="bx bx-message-dots" style="font-size: 20px;"></i>
+                </div>
+                <div>
+                  <h6 class="mb-0 fw-semibold">Notifications</h6>
+                  <small class="opacity-75">Live updates for you</small>
+                </div>
+              </div>
+              <div class="d-flex gap-2 align-items-center">
+                <span class="chat-badge" id="bottom-chat-badge" style="background: #ff4757; color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; display: none;">0</span>
+                <button class="btn btn-sm btn-outline-light" type="button" id="bottom-sound-toggle" title="Toggle notification sound" style="border-radius: 6px; padding: 4px 8px;" onclick="event.stopPropagation();">
+                  <i class="bx bx-volume-full" id="bottom-sound-icon" style="font-size: 14px;"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-light" type="button" id="bottom-mark-all-read" style="border-radius: 6px; padding: 4px 8px; font-size: 12px;" onclick="event.stopPropagation();">Mark all</button>
+                <button class="btn btn-sm btn-outline-light" type="button" onclick="toggleBottomChat(); event.stopPropagation();" style="border-radius: 6px; padding: 4px 8px;">
+                  <i class="bx bx-chevron-up" id="bottom-chat-toggle-icon" style="font-size: 14px;"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- Chat Messages - Collapsible -->
+            <div class="chat-messages" id="bottom-chat-messages" style="height: 380px; overflow-y: auto; background: #f8f9fa; padding: 0;">
+              <div class="p-4 text-center text-muted">
+                <div class="spinner-border spinner-border-sm me-2" role="status">
+                  <span class="visually-hidden">Loading...</span>
+                </div>
+                Loading notifications...
+              </div>
+            </div>
+
+            <!-- Chat Footer -->
+            <div class="chat-footer" style="background: white; padding: 12px 16px; border-top: 1px solid #e5e7eb;">
+              <div class="d-flex align-items-center justify-content-between">
+                <a href="{{ route('notifications.index') }}" class="btn btn-outline-primary btn-sm" style="border-radius: 8px;">
+                  <i class="bx bx-list-ul me-1"></i>View All
+                </a>
+                @if(config('app.debug'))
+                <button class="btn btn-outline-secondary btn-sm" type="button" id="bottom-test-notification-btn" style="border-radius: 8px;">
+                  <i class="bx bx-test-tube me-1"></i>Test
+                </button>
+                @endif
+              </div>
+            </div>
+          </div>
+          @endif
 
           <!-- Content wrapper -->
           <div class="content-wrapper">
@@ -678,26 +750,122 @@
                     const r = await fetch('{{ route('api.notifications.unread') }}', { credentials: 'same-origin' });
                     const list = await r.json();
                     if(!Array.isArray(list) || list.length === 0){
-                      listEl.innerHTML = '<div class="p-3 text-muted">No new notifications</div>';
+                      listEl.innerHTML = `
+                        <div class="p-4 text-center text-muted">
+                          <div class="mb-3">
+                            <i class="bx bx-message-dots" style="font-size: 3rem; color: #d1d5db;"></i>
+                          </div>
+                          <h6 class="text-muted mb-2">No new notifications</h6>
+                          <small class="text-muted">You're all caught up!</small>
+                        </div>`;
                       return;
                     }
                     listEl.innerHTML = list.map(function(n){
                       const title = (n.title || 'Notification');
                       const message = (n.message || '');
-                      const taskLink = n.data && n.data.task_id ? `/<%= '' %>` : '';
+                      const timeAgo = getTimeAgo(n.created_at);
                       const viewUrl = n.data && n.data.task_id ? `{{ url('tasks') }}/${n.data.task_id}` : '';
+                      const notificationType = n.type || 'info';
+                      const typeIcon = getNotificationIcon(notificationType);
+                      const typeColor = getNotificationColor(notificationType);
+
                       return `
-                        <div class="dropdown-item py-2 px-3 d-flex align-items-start gap-2">
-                          <div class="avatar avatar-sm"><span class="avatar-initial rounded-circle bg-label-primary"><i class="bx bx-bell"></i></span></div>
-                          <div class="flex-grow-1">
-                            <div class="fw-semibold">${title}</div>
-                            <div class="small text-muted">${message}</div>
-                            ${viewUrl ? `<a class=\"small\" href=\"${viewUrl}\">View</a>` : ''}
+                        <div class="notification-message p-3 border-bottom" style="transition: all 0.2s ease; cursor: pointer;" onclick="markAsRead(${n.id})">
+                          <div class="d-flex align-items-start gap-3">
+                            <div class="notification-avatar" style="width: 40px; height: 40px; background: ${typeColor}; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                              <i class="bx ${typeIcon}" style="color: white; font-size: 18px;"></i>
+                            </div>
+                            <div class="flex-grow-1" style="min-width: 0;">
+                              <div class="d-flex align-items-center justify-content-between mb-1">
+                                <h6 class="mb-0 fw-semibold text-dark" style="font-size: 14px;">${title}</h6>
+                                <small class="text-muted" style="font-size: 11px;">${timeAgo}</small>
+                              </div>
+                              <p class="mb-2 text-muted" style="font-size: 13px; line-height: 1.4; margin: 0;">${message}</p>
+                              ${viewUrl ? `
+                                <a href="${viewUrl}" class="btn btn-sm btn-outline-primary" style="font-size: 11px; padding: 2px 8px; border-radius: 4px;" onclick="event.stopPropagation();">
+                                  <i class="bx bx-link-external me-1"></i>View Details
+                                </a>
+                              ` : ''}
+                            </div>
                           </div>
                         </div>`;
                     }).join('');
                   } catch (e) {
-                    listEl.innerHTML = '<div class="p-3 text-muted">Failed to load</div>';
+                    listEl.innerHTML = `
+                      <div class="p-4 text-center text-muted">
+                        <div class="mb-3">
+                          <i class="bx bx-error-circle" style="font-size: 3rem; color: #f56565;"></i>
+                        </div>
+                        <h6 class="text-muted mb-2">Failed to load</h6>
+                        <small class="text-muted">Please try again later</small>
+                      </div>`;
+                  }
+                }
+
+                function getTimeAgo(dateString) {
+                  const now = new Date();
+                  const date = new Date(dateString);
+                  const diffInSeconds = Math.floor((now - date) / 1000);
+
+                  if (diffInSeconds < 60) return 'Just now';
+                  if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+                  if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+                  if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
+
+                  return date.toLocaleDateString();
+                }
+
+                function getNotificationIcon(type) {
+                  const icons = {
+                    'task_assigned': 'bx-task',
+                    'task_status_changed': 'bx-refresh',
+                    'task_approved': 'bx-check-circle',
+                    'task_rejected': 'bx-x-circle',
+                    'project_created': 'bx-folder-plus',
+                    'project_updated': 'bx-edit',
+                    'project_ending_soon': 'bx-time-five',
+                    'project_overdue': 'bx-error-circle',
+                    'test': 'bx-test-tube',
+                    'info': 'bx-info-circle',
+                    'warning': 'bx-error',
+                    'success': 'bx-check',
+                    'error': 'bx-x'
+                  };
+                  return icons[type] || 'bx-bell';
+                }
+
+                function getNotificationColor(type) {
+                  const colors = {
+                    'task_assigned': 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    'task_status_changed': 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+                    'task_approved': 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+                    'task_rejected': 'linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%)',
+                    'project_created': 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)',
+                    'project_updated': 'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)',
+                    'project_ending_soon': 'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)',
+                    'project_overdue': 'linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%)',
+                    'test': 'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)',
+                    'info': 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    'warning': 'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)',
+                    'success': 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+                    'error': 'linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%)'
+                  };
+                  return colors[type] || 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+                }
+
+                async function markAsRead(notificationId) {
+                  try {
+                    await fetch(`{{ url('notifications') }}/${notificationId}/read`, {
+                      method: 'POST',
+                      headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                      },
+                      credentials: 'same-origin'
+                    });
+                    // Refresh notifications
+                    refresh();
+                  } catch (e) {
+                    console.error('Failed to mark notification as read:', e);
                   }
                 }
 
@@ -776,4 +944,430 @@
                   });
                 }
               })();
+
+              // Bottom Chat Popup for Regular Users - Always Visible
+              @if(Auth::user()->isRegularUser())
+              (function(){
+                const bottomChatPopup = document.getElementById('bottom-chat-popup');
+                const bottomChatMessages = document.getElementById('bottom-chat-messages');
+                const bottomChatBadge = document.getElementById('bottom-chat-badge');
+                const bottomSoundToggle = document.getElementById('bottom-sound-toggle');
+                const bottomSoundIcon = document.getElementById('bottom-sound-icon');
+                const bottomMarkAllBtn = document.getElementById('bottom-mark-all-read');
+                const bottomTestBtn = document.getElementById('bottom-test-notification-btn');
+                const bottomChatToggleIcon = document.getElementById('bottom-chat-toggle-icon');
+
+                let isBottomChatOpen = false;
+                let previousBottomCount = 0;
+
+                // Toggle bottom chat (slide up/down)
+                window.toggleBottomChat = function() {
+                  if (isBottomChatOpen) {
+                    closeBottomChat();
+                  } else {
+                    openBottomChat();
+                  }
+                };
+
+                function openBottomChat() {
+                  bottomChatPopup.style.transform = 'translateY(0)';
+                  bottomChatToggleIcon.className = 'bx bx-chevron-down';
+                  isBottomChatOpen = true;
+                  fetchBottomNotifications();
+                }
+
+                function closeBottomChat() {
+                  bottomChatPopup.style.transform = 'translateY(420px)';
+                  bottomChatToggleIcon.className = 'bx bx-chevron-up';
+                  isBottomChatOpen = false;
+                }
+
+                // Fetch notifications for bottom chat
+                async function fetchBottomNotifications() {
+                  try {
+                    const r = await fetch('{{ route('api.notifications.unread') }}', { credentials: 'same-origin' });
+                    const list = await r.json();
+
+                    if (!Array.isArray(list) || list.length === 0) {
+                      bottomChatMessages.innerHTML = `
+                        <div class="p-4 text-center text-muted">
+                          <div class="mb-3">
+                            <i class="bx bx-message-dots" style="font-size: 3rem; color: #d1d5db;"></i>
+                          </div>
+                          <h6 class="text-muted mb-2">No new notifications</h6>
+                          <small class="text-muted">You're all caught up!</small>
+                        </div>`;
+                      return;
+                    }
+
+                    bottomChatMessages.innerHTML = list.map(function(n) {
+                      const title = (n.title || 'Notification');
+                      const message = (n.message || '');
+                      const timeAgo = getTimeAgo(n.created_at);
+                      const viewUrl = n.data && n.data.task_id ? `{{ url('tasks') }}/${n.data.task_id}` : '';
+                      const notificationType = n.type || 'info';
+                      const typeIcon = getNotificationIcon(notificationType);
+                      const typeColor = getNotificationColor(notificationType);
+
+                      return `
+                        <div class="chat-message p-3 border-bottom" style="transition: all 0.2s ease; cursor: pointer; background: white; margin: 4px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);" onclick="markAsRead(${n.id})">
+                          <div class="d-flex align-items-start gap-3">
+                            <div class="notification-avatar" style="width: 36px; height: 36px; background: ${typeColor}; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                              <i class="bx ${typeIcon}" style="color: white; font-size: 16px;"></i>
+                            </div>
+                            <div class="flex-grow-1" style="min-width: 0;">
+                              <div class="d-flex align-items-center justify-content-between mb-1">
+                                <h6 class="mb-0 fw-semibold text-dark" style="font-size: 13px;">${title}</h6>
+                                <small class="text-muted" style="font-size: 10px;">${timeAgo}</small>
+                              </div>
+                              <p class="mb-2 text-muted" style="font-size: 12px; line-height: 1.4; margin: 0;">${message}</p>
+                              ${viewUrl ? `
+                                <a href="${viewUrl}" class="btn btn-sm btn-outline-primary" style="font-size: 10px; padding: 2px 6px; border-radius: 4px;" onclick="event.stopPropagation();">
+                                  <i class="bx bx-link-external me-1"></i>View
+                                </a>
+                              ` : ''}
+                            </div>
+                          </div>
+                        </div>`;
+                    }).join('');
+                  } catch (e) {
+                    bottomChatMessages.innerHTML = `
+                      <div class="p-4 text-center text-muted">
+                        <div class="mb-3">
+                          <i class="bx bx-error-circle" style="font-size: 3rem; color: #f56565;"></i>
+                        </div>
+                        <h6 class="text-muted mb-2">Failed to load</h6>
+                        <small class="text-muted">Please try again later</small>
+                      </div>`;
+                  }
+                }
+
+                // Fetch notification count for bottom chat
+                async function fetchBottomCount() {
+                  try {
+                    const r = await fetch('{{ route('api.notifications.count') }}', { credentials: 'same-origin' });
+                    const d = await r.json();
+                    const currentCount = d.count ?? 0;
+
+                    // Auto-open chat if new notification arrives
+                    if (currentCount > previousBottomCount && previousBottomCount >= 0) {
+                      playNotificationSound();
+                      // Auto-open chat when new notification arrives
+                      if (!isBottomChatOpen) {
+                        openBottomChat();
+                        // Auto-close after 10 seconds if user doesn't interact
+                        setTimeout(() => {
+                          if (isBottomChatOpen) {
+                            closeBottomChat();
+                          }
+                        }, 10000);
+                      }
+                    }
+
+                    if (currentCount > 0) {
+                      bottomChatBadge.textContent = currentCount;
+                      bottomChatBadge.style.display = 'flex';
+                    } else {
+                      bottomChatBadge.style.display = 'none';
+                    }
+                    previousBottomCount = currentCount;
+                  } catch (e) {
+                    // silent
+                  }
+                }
+
+                // Initialize bottom chat sound toggle
+                function initializeBottomSoundToggle() {
+                  if (bottomSoundToggle && bottomSoundIcon) {
+                    const soundEnabled = localStorage.getItem('notificationSoundEnabled') !== 'false';
+                    updateBottomSoundIcon(soundEnabled);
+
+                    bottomSoundToggle.addEventListener('click', function() {
+                      const currentState = localStorage.getItem('notificationSoundEnabled') !== 'false';
+                      const newState = !currentState;
+                      localStorage.setItem('notificationSoundEnabled', newState.toString());
+                      updateBottomSoundIcon(newState);
+
+                      if (newState) {
+                        playNotificationSound();
+                      }
+                    });
+                  }
+                }
+
+                function updateBottomSoundIcon(enabled) {
+                  if (bottomSoundIcon) {
+                    bottomSoundIcon.className = enabled ? 'bx bx-volume-full' : 'bx bx-volume-mute';
+                    bottomSoundToggle.title = enabled ? 'Disable notification sound' : 'Enable notification sound';
+                  }
+                }
+
+                // Mark all as read for bottom chat
+                if (bottomMarkAllBtn) {
+                  bottomMarkAllBtn.addEventListener('click', async function() {
+                    try {
+                      await fetch('{{ route('notifications.read-all') }}', {
+                        method: 'POST',
+                        headers: {
+                          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                        },
+                        credentials: 'same-origin'
+                      });
+                      refreshBottomChat();
+                    } catch (e) {
+                      console.error('Failed to mark all as read:', e);
+                    }
+                  });
+                }
+
+                // Test notification for bottom chat
+                if (bottomTestBtn) {
+                  bottomTestBtn.addEventListener('click', async function() {
+                    try {
+                      await fetch('{{ route('test.notification') }}', {
+                        method: 'POST',
+                        headers: {
+                          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                        },
+                        credentials: 'same-origin'
+                      });
+                      setTimeout(refreshBottomChat, 500);
+                    } catch (e) {
+                      console.error('Failed to create test notification:', e);
+                    }
+                  });
+                }
+
+                function refreshBottomChat() {
+                  fetchBottomCount();
+                  if (isBottomChatOpen) {
+                    fetchBottomNotifications();
+                  }
+                }
+
+                // Initialize bottom chat
+                fetchBottomCount();
+                initializeBottomSoundToggle();
+
+                // Poll every 20s
+                setInterval(refreshBottomChat, 20000);
+
+                // Show bottom chat popup initially (always visible)
+                setTimeout(() => {
+                  bottomChatPopup.style.display = 'block';
+                  // Auto-open if there are notifications
+                  if (previousBottomCount > 0) {
+                    openBottomChat();
+                  }
+                }, 1000);
+              })();
+              @endif
             </script>
+
+            <style>
+              /* Notification Chat Popup Styles */
+              .notification-chat-popup {
+                animation: slideInDown 0.3s ease-out;
+              }
+
+              @keyframes slideInDown {
+                from {
+                  opacity: 0;
+                  transform: translateY(-10px);
+                }
+                to {
+                  opacity: 1;
+                  transform: translateY(0);
+                }
+              }
+
+              .notification-messages::-webkit-scrollbar {
+                width: 6px;
+              }
+
+              .notification-messages::-webkit-scrollbar-track {
+                background: #f1f1f1;
+                border-radius: 3px;
+              }
+
+              .notification-messages::-webkit-scrollbar-thumb {
+                background: #c1c1c1;
+                border-radius: 3px;
+              }
+
+              .notification-messages::-webkit-scrollbar-thumb:hover {
+                background: #a8a8a8;
+              }
+
+              .notification-message {
+                transition: all 0.2s ease;
+                border-left: 3px solid transparent;
+              }
+
+              .notification-message:hover {
+                background-color: #f1f3f4 !important;
+                border-left-color: #667eea;
+              }
+
+              .notification-avatar {
+                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                border: 2px solid rgba(255,255,255,0.8);
+              }
+
+              .notification-header {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+              }
+
+              /* Custom scrollbar for notification messages */
+              .notification-messages {
+                scrollbar-width: thin;
+                scrollbar-color: #c1c1c1 #f1f1f1;
+              }
+
+              /* Animation for new notifications */
+              .notification-message.new-notification {
+                animation: pulse 0.5s ease-in-out;
+              }
+
+              @keyframes pulse {
+                0% { transform: scale(1); }
+                50% { transform: scale(1.02); }
+                100% { transform: scale(1); }
+              }
+
+              /* Badge animation */
+              #nav-notification-count {
+                animation: bounce 0.6s ease-in-out;
+              }
+
+              @keyframes bounce {
+                0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+                40% { transform: translateY(-3px); }
+                60% { transform: translateY(-2px); }
+              }
+
+              /* Bottom Chat Widget Styles - Always Visible */
+              .bottom-chat-widget {
+                font-family: 'Public Sans', sans-serif;
+                border-radius: 16px 16px 0 0 !important;
+                border-bottom: none !important;
+                box-shadow: 0 -8px 32px rgba(0,0,0,0.12) !important;
+              }
+
+              .chat-header {
+                cursor: pointer;
+                transition: all 0.2s ease;
+              }
+
+              .chat-header:hover {
+                background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%) !important;
+              }
+
+              .chat-toggle-btn {
+                animation: pulse 2s infinite;
+              }
+
+              .chat-toggle-btn:hover {
+                transform: scale(1.1);
+                box-shadow: 0 6px 25px rgba(102, 126, 234, 0.6);
+              }
+
+              .chat-window {
+                backdrop-filter: blur(10px);
+                border: 1px solid rgba(255, 255, 255, 0.2);
+              }
+
+              .chat-messages::-webkit-scrollbar {
+                width: 4px;
+              }
+
+              .chat-messages::-webkit-scrollbar-track {
+                background: #f1f1f1;
+                border-radius: 2px;
+              }
+
+              .chat-messages::-webkit-scrollbar-thumb {
+                background: #c1c1c1;
+                border-radius: 2px;
+              }
+
+              .chat-messages::-webkit-scrollbar-thumb:hover {
+                background: #a8a8a8;
+              }
+
+              .chat-message {
+                transition: all 0.2s ease;
+                border-left: 3px solid transparent;
+              }
+
+              .chat-message:hover {
+                background-color: #f8f9fa !important;
+                border-left-color: #667eea;
+                transform: translateX(2px);
+              }
+
+              .chat-badge {
+                animation: bounce 0.6s ease-in-out;
+              }
+
+              .chat-avatar {
+                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                border: 2px solid rgba(255,255,255,0.8);
+              }
+
+              .chat-header {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+              }
+
+              /* Mobile responsiveness for bottom chat - Always Visible */
+              @media (max-width: 768px) {
+                .bottom-chat-widget {
+                  width: 300px !important;
+                  height: 400px !important;
+                }
+
+                .chat-messages {
+                  height: 300px !important;
+                }
+              }
+
+              @media (max-width: 480px) {
+                .bottom-chat-widget {
+                  width: 280px !important;
+                  height: 350px !important;
+                }
+
+                .chat-messages {
+                  height: 250px !important;
+                }
+              }
+
+              @media (max-width: 360px) {
+                .bottom-chat-widget {
+                  width: 100% !important;
+                  right: 0 !important;
+                  left: 0 !important;
+                  height: 300px !important;
+                }
+
+                .chat-messages {
+                  height: 200px !important;
+                }
+              }
+
+              /* Animation for chat window */
+              @keyframes slideInUp {
+                from {
+                  opacity: 0;
+                  transform: translateY(20px);
+                }
+                to {
+                  opacity: 1;
+                  transform: translateY(0);
+                }
+              }
+
+              .chat-window.show {
+                animation: slideInUp 0.3s ease-out;
+              }
+            </style>

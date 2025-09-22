@@ -170,6 +170,17 @@
                                         </div>
                                         <span class="fw-medium">{{ $project->end_date->format('M d, Y') }}</span>
                                     </div>
+
+                                    <!-- Days Counter -->
+                                    <div class="d-flex align-items-center justify-content-between mb-2">
+                                        <div class="d-flex align-items-center">
+                                            <i class="bx {{ $project->is_overdue ? 'bx-time-five text-danger' : 'bx-timer text-success' }} me-2"></i>
+                                            <span class="text-muted">{{ $project->is_overdue ? 'Overdue:' : 'Remaining:' }}</span>
+                                        </div>
+                                        <span class="fw-medium {{ $project->is_overdue ? 'text-danger' : 'text-success' }}">
+                                            {{ $project->is_overdue ? $project->days_past . ' days' : $project->days_remaining . ' days' }}
+                                        </span>
+                                    </div>
                                     @endif
 
                                     @if(isset($project->team_members_count))
@@ -250,7 +261,13 @@
 
                             <!-- Date Column -->
                             <div class="date-column">
-                                {{ optional($project->start_date)->format('M d, Y') ?: '—' }}
+                                <div class="small">{{ optional($project->start_date)->format('M d, Y') ?: '—' }}</div>
+                                @if($project->end_date)
+                                <div class="small text-muted">{{ $project->end_date->format('M d, Y') }}</div>
+                                <div class="small {{ $project->is_overdue ? 'text-danger' : 'text-success' }}">
+                                    {{ $project->is_overdue ? $project->days_past . ' days overdue' : $project->days_remaining . ' days left' }}
+                                </div>
+                                @endif
                             </div>
 
                             <!-- Team Column -->
