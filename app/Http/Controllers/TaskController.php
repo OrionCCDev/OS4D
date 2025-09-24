@@ -465,22 +465,34 @@ class TaskController extends Controller
 
     private function sendTaskApprovalEmail(Task $task)
     {
-        // This would integrate with your email system
-        // For now, we'll just log it
-        \Log::info('Sending approval email for task: ' . $task->id . ' to user: ' . $task->assignee->email);
+        if (!$task->assignee || !$task->assignee->email) {
+            throw new \Exception('Task has no assigned user or user has no email address');
+        }
 
-        // TODO: Implement actual email sending here
-        // You can use Laravel Mail, or your preferred email service
+        try {
+            \Mail::to($task->assignee->email)->send(new \App\Mail\TaskApprovalInternalMail($task, $task->assignee, auth()->user()));
+            Log::info('Approval email sent successfully for task: ' . $task->id . ' to user: ' . $task->assignee->email);
+        } catch (\Exception $e) {
+            Log::error('Failed to send approval email for task: ' . $task->id . ' - ' . $e->getMessage());
+            throw $e;
+        }
     }
 
     private function sendTaskRejectionEmail(Task $task)
     {
-        // This would integrate with your email system
-        // For now, we'll just log it
-        \Log::info('Sending rejection email for task: ' . $task->id . ' to user: ' . $task->assignee->email);
+        if (!$task->assignee || !$task->assignee->email) {
+            throw new \Exception('Task has no assigned user or user has no email address');
+        }
 
-        // TODO: Implement actual email sending here
-        // You can use Laravel Mail, or your preferred email service
+        try {
+            // For now, we'll use the same template but with rejection context
+            // You can create a separate rejection email template if needed
+            \Mail::to($task->assignee->email)->send(new \App\Mail\TaskApprovalInternalMail($task, $task->assignee, auth()->user()));
+            Log::info('Rejection email sent successfully for task: ' . $task->id . ' to user: ' . $task->assignee->email);
+        } catch (\Exception $e) {
+            Log::error('Failed to send rejection email for task: ' . $task->id . ' - ' . $e->getMessage());
+            throw $e;
+        }
     }
 
     public function rejectTask(Request $request, Task $task)
@@ -499,6 +511,133 @@ class TaskController extends Controller
             return redirect()->back()->with('success', 'Task rejected successfully');
         } catch (\Exception $e) {
             return redirect()->back()->with('error', $e->getMessage());
+        }
+    }
+
+    public function showEmailPreparationForm(Task $task)
+    {
+        // Only the assigned user can prepare emails for their tasks
+        if ($task->assigned_to !== Auth::id()) {
+            abort(403, 'Access denied. Only the assigned user can prepare emails for this task.');
+        }
+
+        // Only tasks in ready_for_email status can have emails prepared
+        if ($task->status !== 'ready_for_email') {
+            abort(403, 'Access denied. Only tasks ready for email can have emails prepared.');
+        }
+
+        $emailPreparation = $task->emailPreparations()->where('prepared_by', Auth::id())->latest()->first();
+
+        return view('tasks.email-preparation', compact('task', 'emailPreparation'));
+    }
+
+    public function storeEmailPreparation(Request $request, Task $task)
+    {
+        // Only the assigned user can prepare emails for their tasks
+        if ($task->assigned_to !== Auth::id()) {
+            abort(403, 'Access denied. Only the assigned user can prepare emails for this task.');
+        }
+
+        // Only tasks in ready_for_email status can have emails prepared
+        if ($task->status !== 'ready_for_email') {
+            abort(403, 'Access denied. Only tasks ready for email can have emails prepared.');
+        }
+
+        $validated = $request->validate([
+            'to_emails' => 'required|string',
+            'cc_emails' => 'nullable|string',
+            'bcc_emails' => 'nullable|string',
+            'subject' => 'required|string|max:255',
+            'body' => 'required|string',
+            'attachments' => 'nullable|array',
+            'attachments.*' => 'file|max:10240', // 10MB max per file
+        ]);
+
+        try {
+            // Handle file uploads
+            $attachmentPaths = [];
+            if ($request->hasFile('attachments')) {
+                foreach ($request->file('attachments') as $file) {
+                    $path = $file->store('email-attachments');
+                    $attachmentPaths[] = $path;
+                }
+            }
+
+            // Create or update email preparation
+            $emailPreparation = $task->emailPreparations()->updateOrCreate(
+                ['prepared_by' => Auth::id()],
+                [
+                    'to_emails' => $validated['to_emails'],
+                    'cc_emails' => $validated['cc_emails'],
+                    'bcc_emails' => $validated['bcc_emails'],
+                    'subject' => $validated['subject'],
+                    'body' => $validated['body'],
+                    'attachments' => $attachmentPaths,
+                    'status' => 'draft',
+                ]
+            );
+
+            return redirect()->back()->with('success', 'Email preparation saved successfully!');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Failed to save email preparation: ' . $e->getMessage());
+        }
+    }
+
+    public function sendConfirmationEmail(Request $request, Task $task)
+    {
+        // Only the assigned user can send emails for their tasks
+        if ($task->assigned_to !== Auth::id()) {
+            abort(403, 'Access denied. Only the assigned user can send emails for this task.');
+        }
+
+        // Only tasks in ready_for_email status can have emails sent
+        if ($task->status !== 'ready_for_email') {
+            abort(403, 'Access denied. Only tasks ready for email can have emails sent.');
+        }
+
+        $emailPreparation = $task->emailPreparations()->where('prepared_by', Auth::id())->latest()->first();
+
+        if (!$emailPreparation) {
+            return response()->json(['success' => false, 'message' => 'No email preparation found. Please prepare the email first.']);
+        }
+
+        try {
+            // Parse email addresses
+            $toEmails = array_filter(array_map('trim', explode(',', $emailPreparation->to_emails)));
+            $ccEmails = $emailPreparation->cc_emails ? array_filter(array_map('trim', explode(',', $emailPreparation->cc_emails))) : [];
+            $bccEmails = $emailPreparation->bcc_emails ? array_filter(array_map('trim', explode(',', $emailPreparation->bcc_emails))) : [];
+
+            // Create the mail instance
+            $mail = new \App\Mail\TaskConfirmationMail($task, $emailPreparation, Auth::user());
+
+            // Send to primary recipients
+            \Mail::to($toEmails)->send($mail);
+
+            // Send CC if specified
+            if (!empty($ccEmails)) {
+                \Mail::cc($ccEmails)->send($mail);
+            }
+
+            // Send BCC if specified
+            if (!empty($bccEmails)) {
+                \Mail::bcc($bccEmails)->send($mail);
+            }
+
+            // Update email preparation status
+            $emailPreparation->update([
+                'status' => 'sent',
+                'sent_at' => now(),
+            ]);
+
+            // Update task status to completed
+            $task->update(['status' => 'completed']);
+
+            Log::info('Confirmation email sent successfully for task: ' . $task->id . ' by user: ' . Auth::id());
+
+            return response()->json(['success' => true, 'message' => 'Confirmation email sent successfully!']);
+        } catch (\Exception $e) {
+            Log::error('Failed to send confirmation email for task: ' . $task->id . ' - ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Failed to send email: ' . $e->getMessage()]);
         }
     }
 }

@@ -519,9 +519,6 @@
                         </div>
                       </div>
                       <div class="d-flex gap-1">
-                        <button class="btn btn-sm btn-outline-light" type="button" id="nav-sound-toggle" title="Toggle notification sound" style="border-radius: 6px; padding: 4px 8px;">
-                          <i class="bx bx-volume-full" id="sound-icon" style="font-size: 14px;"></i>
-                        </button>
                         <button class="btn btn-sm btn-outline-light" type="button" id="nav-mark-all-read" style="border-radius: 6px; padding: 4px 8px; font-size: 12px;">Mark all</button>
                       </div>
                     </div>
@@ -634,9 +631,6 @@
               </div>
               <div class="d-flex gap-2 align-items-center">
                 <span class="chat-badge" id="bottom-chat-badge" style="background: #ff4757; color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; display: none;">0</span>
-                <button class="btn btn-sm btn-outline-light" type="button" id="bottom-sound-toggle" title="Toggle notification sound" style="border-radius: 6px; padding: 4px 8px;" onclick="event.stopPropagation();">
-                  <i class="bx bx-volume-full" id="bottom-sound-icon" style="font-size: 14px;"></i>
-                </button>
                 <button class="btn btn-sm btn-outline-light" type="button" id="bottom-mark-all-read" style="border-radius: 6px; padding: 4px 8px; font-size: 12px;" onclick="event.stopPropagation();">Mark all</button>
                 <button class="btn btn-sm btn-outline-light" type="button" onclick="toggleBottomChat(); event.stopPropagation();" style="border-radius: 6px; padding: 4px 8px;">
                   <i class="bx bx-chevron-up" id="bottom-chat-toggle-icon" style="font-size: 14px;"></i>
@@ -677,54 +671,17 @@
                 const countEl = document.getElementById('nav-notification-count');
                 const listEl = document.getElementById('nav-notification-list');
                 const markAllBtn = document.getElementById('nav-mark-all-read');
-                const soundToggleBtn = document.getElementById('nav-sound-toggle');
-                const soundIcon = document.getElementById('sound-icon');
 
                 if(!countEl || !listEl) return;
 
                 // Store previous count to detect new notifications
                 let previousCount = 0;
 
-                // Create notification sound
-                function createNotificationSound() {
-                  try {
-                    // Create a pleasant notification sound using Web Audio API
-                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                    const oscillator = audioContext.createOscillator();
-                    const gainNode = audioContext.createGain();
 
-                    oscillator.connect(gainNode);
-                    gainNode.connect(audioContext.destination);
-
-                    // Create a gentle two-tone chime
-                    oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
-                    oscillator.frequency.setValueAtTime(1000, audioContext.currentTime + 0.1);
-                    oscillator.frequency.setValueAtTime(600, audioContext.currentTime + 0.2);
-
-                    // Gentle volume envelope
-                    gainNode.gain.setValueAtTime(0, audioContext.currentTime);
-                    gainNode.gain.linearRampToValueAtTime(0.2, audioContext.currentTime + 0.05);
-                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.4);
-
-                    oscillator.start(audioContext.currentTime);
-                    oscillator.stop(audioContext.currentTime + 0.4);
-                  } catch (e) {
-                    // Fallback: try to play a simple beep using the system
-                    console.log('Notification sound played (fallback)');
-                  }
-                }
-
-                // Play notification sound if enabled
-                function playNotificationSound() {
-                  // Check if user has enabled notification sounds (from user preference or localStorage fallback)
-                  const userSoundEnabled = {{ Auth::user()->notification_sound_enabled ?? 'true' ? 'true' : 'false' }};
-                  const localStorageEnabled = localStorage.getItem('notificationSoundEnabled') !== 'false';
-                  const soundEnabled = userSoundEnabled && localStorageEnabled;
-
-                  if (soundEnabled) {
-                    createNotificationSound();
-                  }
-                }
+                // Global function for playing notification sound (disabled)
+                window.playNotificationSound = function() {
+                  // Sound functionality removed
+                };
 
                 async function fetchCount(){
                   try {
@@ -735,6 +692,10 @@
                     // Play sound if count increased (new notification)
                     if (currentCount > previousCount && previousCount > 0) {
                       playNotificationSound();
+                      // Also refresh bottom chat if it exists
+                      if (typeof refreshBottomChat === 'function') {
+                        refreshBottomChat();
+                      }
                     }
 
                     countEl.textContent = currentCount;
@@ -748,7 +709,13 @@
                 async function fetchUnread(){
                   try {
                     const r = await fetch('{{ route('api.notifications.unread') }}', { credentials: 'same-origin' });
+
+                    if (!r.ok) {
+                      throw new Error(`HTTP error! status: ${r.status}`);
+                    }
+
                     const list = await r.json();
+
                     if(!Array.isArray(list) || list.length === 0){
                       listEl.innerHTML = `
                         <div class="p-4 text-center text-muted">
@@ -770,7 +737,7 @@
                       const typeColor = getNotificationColor(notificationType);
 
                       return `
-                        <div class="notification-message p-3 border-bottom" style="transition: all 0.2s ease; cursor: pointer;" onclick="markAsRead(${n.id})">
+                        <div class="notification-message p-3 border-bottom" style="transition: all 0.2s ease; cursor: pointer;" onclick="handleNotificationClick(${n.id}, '${viewUrl}')">
                           <div class="d-flex align-items-start gap-3">
                             <div class="notification-avatar" style="width: 40px; height: 40px; background: ${typeColor}; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
                               <i class="bx ${typeIcon}" style="color: white; font-size: 18px;"></i>
@@ -782,9 +749,9 @@
                               </div>
                               <p class="mb-2 text-muted" style="font-size: 13px; line-height: 1.4; margin: 0;">${message}</p>
                               ${viewUrl ? `
-                                <a href="${viewUrl}" class="btn btn-sm btn-outline-primary" style="font-size: 11px; padding: 2px 8px; border-radius: 4px;" onclick="event.stopPropagation();">
-                                  <i class="bx bx-link-external me-1"></i>View Details
-                                </a>
+                                <span class="badge bg-primary" style="font-size: 10px; padding: 2px 6px;">
+                                  <i class="bx bx-link-external me-1"></i>Click to view task
+                                </span>
                               ` : ''}
                             </div>
                           </div>
@@ -802,7 +769,8 @@
                   }
                 }
 
-                function getTimeAgo(dateString) {
+                // Global function for time formatting
+                window.getTimeAgo = function(dateString) {
                   const now = new Date();
                   const date = new Date(dateString);
                   const diffInSeconds = Math.floor((now - date) / 1000);
@@ -813,9 +781,10 @@
                   if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
 
                   return date.toLocaleDateString();
-                }
+                };
 
-                function getNotificationIcon(type) {
+                // Global function for notification icons
+                window.getNotificationIcon = function(type) {
                   const icons = {
                     'task_assigned': 'bx-task',
                     'task_status_changed': 'bx-refresh',
@@ -832,9 +801,10 @@
                     'error': 'bx-x'
                   };
                   return icons[type] || 'bx-bell';
-                }
+                };
 
-                function getNotificationColor(type) {
+                // Global function for notification colors
+                window.getNotificationColor = function(type) {
                   const colors = {
                     'task_assigned': 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                     'task_status_changed': 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
@@ -851,9 +821,10 @@
                     'error': 'linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%)'
                   };
                   return colors[type] || 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
-                }
+                };
 
-                async function markAsRead(notificationId) {
+                // Global function for marking notifications as read
+                window.markAsRead = async function(notificationId) {
                   try {
                     await fetch(`{{ url('notifications') }}/${notificationId}/read`, {
                       method: 'POST',
@@ -862,52 +833,59 @@
                       },
                       credentials: 'same-origin'
                     });
-                    // Refresh notifications
-                    refresh();
+                    // Refresh all notification areas
+                    refreshAllNotifications();
                   } catch (e) {
                     console.error('Failed to mark notification as read:', e);
                   }
-                }
+                };
 
-                function refresh(){
+                // Global function for handling notification clicks
+                window.handleNotificationClick = async function(notificationId, viewUrl) {
+                  try {
+                    // Mark notification as read first
+                    await fetch(`{{ url('notifications') }}/${notificationId}/read`, {
+                      method: 'POST',
+                      headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                      },
+                      credentials: 'same-origin'
+                    });
+
+                    // Refresh all notification areas
+                    refreshAllNotifications();
+
+                    // If there's a task URL, navigate to it
+                    if (viewUrl && viewUrl.trim() !== '') {
+                      window.location.href = viewUrl;
+                    }
+                  } catch (e) {
+                    console.error('Failed to handle notification click:', e);
+                    // Still try to navigate if there's a URL
+                    if (viewUrl && viewUrl.trim() !== '') {
+                      window.location.href = viewUrl;
+                    }
+                  }
+                };
+
+                // Global refresh function that updates both notification areas
+                window.refreshAllNotifications = function(){
                   fetchCount();
                   fetchUnread();
-                }
-
-                // Initialize sound toggle
-                function initializeSoundToggle() {
-                  if (soundToggleBtn && soundIcon) {
-                    // Load saved preference
-                    const soundEnabled = localStorage.getItem('notificationSoundEnabled') !== 'false';
-                    updateSoundIcon(soundEnabled);
-
-                    soundToggleBtn.addEventListener('click', function() {
-                      const currentState = localStorage.getItem('notificationSoundEnabled') !== 'false';
-                      const newState = !currentState;
-                      localStorage.setItem('notificationSoundEnabled', newState.toString());
-                      updateSoundIcon(newState);
-
-                      // Play test sound if enabling
-                      if (newState) {
-                        playNotificationSound();
-                      }
-                    });
+                  // Also refresh bottom chat if it exists
+                  if (typeof refreshBottomChat === 'function') {
+                    refreshBottomChat();
                   }
+                };
+
+                function refresh(){
+                  refreshAllNotifications();
                 }
 
-                function updateSoundIcon(enabled) {
-                  if (soundIcon) {
-                    soundIcon.className = enabled ? 'bx bx-volume-full' : 'bx bx-volume-mute';
-                    soundToggleBtn.title = enabled ? 'Disable notification sound' : 'Enable notification sound';
-                  }
-                }
 
-                // Poll every 20s
-                refresh();
-                setInterval(refresh, 20000);
-
-                // Initialize sound toggle
-                initializeSoundToggle();
+                // Poll every 20s - refresh both areas
+                refreshAllNotifications();
+                setInterval(refreshAllNotifications, 20000);
 
                 // Test notification button (debug mode only)
                 const testBtn = document.getElementById('test-notification-btn');
@@ -921,8 +899,8 @@
                         },
                         credentials: 'same-origin'
                       });
-                      // Refresh notifications to show the new one
-                      setTimeout(refresh, 500);
+                      // Refresh all notification areas to show the new one
+                      setTimeout(refreshAllNotifications, 500);
                     } catch (e) {
                       console.error('Failed to create test notification:', e);
                     }
@@ -939,7 +917,7 @@
                         },
                         credentials: 'same-origin'
                       });
-                      refresh();
+                      refreshAllNotifications();
                     } catch(e){ /* noop */ }
                   });
                 }
@@ -951,8 +929,6 @@
                 const bottomChatPopup = document.getElementById('bottom-chat-popup');
                 const bottomChatMessages = document.getElementById('bottom-chat-messages');
                 const bottomChatBadge = document.getElementById('bottom-chat-badge');
-                const bottomSoundToggle = document.getElementById('bottom-sound-toggle');
-                const bottomSoundIcon = document.getElementById('bottom-sound-icon');
                 const bottomMarkAllBtn = document.getElementById('bottom-mark-all-read');
                 const bottomTestBtn = document.getElementById('bottom-test-notification-btn');
                 const bottomChatToggleIcon = document.getElementById('bottom-chat-toggle-icon');
@@ -986,6 +962,11 @@
                 async function fetchBottomNotifications() {
                   try {
                     const r = await fetch('{{ route('api.notifications.unread') }}', { credentials: 'same-origin' });
+
+                    if (!r.ok) {
+                      throw new Error(`HTTP error! status: ${r.status}`);
+                    }
+
                     const list = await r.json();
 
                     if (!Array.isArray(list) || list.length === 0) {
@@ -1010,7 +991,7 @@
                       const typeColor = getNotificationColor(notificationType);
 
                       return `
-                        <div class="chat-message p-3 border-bottom" style="transition: all 0.2s ease; cursor: pointer; background: white; margin: 4px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);" onclick="markAsRead(${n.id})">
+                        <div class="chat-message p-3 border-bottom" style="transition: all 0.2s ease; cursor: pointer; background: white; margin: 4px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);" onclick="handleNotificationClick(${n.id}, '${viewUrl}')">
                           <div class="d-flex align-items-start gap-3">
                             <div class="notification-avatar" style="width: 36px; height: 36px; background: ${typeColor}; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
                               <i class="bx ${typeIcon}" style="color: white; font-size: 16px;"></i>
@@ -1022,9 +1003,9 @@
                               </div>
                               <p class="mb-2 text-muted" style="font-size: 12px; line-height: 1.4; margin: 0;">${message}</p>
                               ${viewUrl ? `
-                                <a href="${viewUrl}" class="btn btn-sm btn-outline-primary" style="font-size: 10px; padding: 2px 6px; border-radius: 4px;" onclick="event.stopPropagation();">
-                                  <i class="bx bx-link-external me-1"></i>View
-                                </a>
+                                <span class="badge bg-primary" style="font-size: 9px; padding: 1px 4px;">
+                                  <i class="bx bx-link-external me-1"></i>Click to view task
+                                </span>
                               ` : ''}
                             </div>
                           </div>
@@ -1062,6 +1043,10 @@
                           }
                         }, 10000);
                       }
+                      // Also refresh the dropdown notifications
+                      if (typeof refreshAllNotifications === 'function') {
+                        refreshAllNotifications();
+                      }
                     }
 
                     if (currentCount > 0) {
@@ -1076,31 +1061,6 @@
                   }
                 }
 
-                // Initialize bottom chat sound toggle
-                function initializeBottomSoundToggle() {
-                  if (bottomSoundToggle && bottomSoundIcon) {
-                    const soundEnabled = localStorage.getItem('notificationSoundEnabled') !== 'false';
-                    updateBottomSoundIcon(soundEnabled);
-
-                    bottomSoundToggle.addEventListener('click', function() {
-                      const currentState = localStorage.getItem('notificationSoundEnabled') !== 'false';
-                      const newState = !currentState;
-                      localStorage.setItem('notificationSoundEnabled', newState.toString());
-                      updateBottomSoundIcon(newState);
-
-                      if (newState) {
-                        playNotificationSound();
-                      }
-                    });
-                  }
-                }
-
-                function updateBottomSoundIcon(enabled) {
-                  if (bottomSoundIcon) {
-                    bottomSoundIcon.className = enabled ? 'bx bx-volume-full' : 'bx bx-volume-mute';
-                    bottomSoundToggle.title = enabled ? 'Disable notification sound' : 'Enable notification sound';
-                  }
-                }
 
                 // Mark all as read for bottom chat
                 if (bottomMarkAllBtn) {
@@ -1113,7 +1073,12 @@
                         },
                         credentials: 'same-origin'
                       });
-                      refreshBottomChat();
+                      // Refresh both notification areas
+                      if (typeof refreshAllNotifications === 'function') {
+                        refreshAllNotifications();
+                      } else {
+                        refreshBottomChat();
+                      }
                     } catch (e) {
                       console.error('Failed to mark all as read:', e);
                     }
@@ -1131,26 +1096,39 @@
                         },
                         credentials: 'same-origin'
                       });
-                      setTimeout(refreshBottomChat, 500);
+                      // Refresh both notification areas
+                      setTimeout(function() {
+                        if (typeof refreshAllNotifications === 'function') {
+                          refreshAllNotifications();
+                        } else {
+                          refreshBottomChat();
+                        }
+                      }, 500);
                     } catch (e) {
                       console.error('Failed to create test notification:', e);
                     }
                   });
                 }
 
-                function refreshBottomChat() {
+                // Global function for refreshing bottom chat
+                window.refreshBottomChat = function() {
                   fetchBottomCount();
                   if (isBottomChatOpen) {
                     fetchBottomNotifications();
                   }
-                }
+                };
 
                 // Initialize bottom chat
                 fetchBottomCount();
-                initializeBottomSoundToggle();
 
-                // Poll every 20s
-                setInterval(refreshBottomChat, 20000);
+                // Poll every 20s - refresh both areas
+                setInterval(function() {
+                  if (typeof refreshAllNotifications === 'function') {
+                    refreshAllNotifications();
+                  } else {
+                    refreshBottomChat();
+                  }
+                }, 20000);
 
                 // Show bottom chat popup initially (always visible)
                 setTimeout(() => {

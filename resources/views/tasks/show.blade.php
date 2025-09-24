@@ -398,6 +398,17 @@
                                     <i class="bx bx-time me-2"></i>
                                     Task is under review by manager.
                                 </div>
+                            @elseif($task->status === 'ready_for_email')
+                                <div class="alert alert-info text-center">
+                                    <i class="bx bx-envelope me-2"></i>
+                                    <strong>Task approved! Ready for email confirmation.</strong><br>
+                                    <small>Your task has been approved. You can now prepare and send a confirmation email.</small>
+                                </div>
+                                <div class="d-grid gap-2">
+                                    <a href="{{ route('tasks.prepare-email', $task) }}" class="btn btn-primary">
+                                        <i class="bx bx-envelope me-2"></i>Prepare Confirmation Email
+                                    </a>
+                                </div>
                             @elseif($task->status === 'approved')
                                 <div class="alert alert-success text-center">
                                     <i class="bx bx-check-circle me-2"></i>
@@ -425,6 +436,12 @@
                                     <button class="btn btn-danger" onclick="rejectTask({{ $task->id }})">
                                         <i class="bx bx-x-circle me-2"></i>Reject Task
                                     </button>
+                                </div>
+                            @elseif($task->status === 'ready_for_email')
+                                <div class="alert alert-info text-center">
+                                    <i class="bx bx-envelope me-2"></i>
+                                    <strong>Task approved and ready for email confirmation.</strong><br>
+                                    <small>The assigned user can now prepare and send a confirmation email.</small>
                                 </div>
                             @elseif($task->status === 'approved')
                                 <div class="d-grid gap-2">

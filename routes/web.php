@@ -4,6 +4,8 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\MediaController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Http\Controllers\Admin\UsersController;
@@ -14,6 +16,7 @@ use App\Http\Controllers\ContractorController;
 use App\Http\Controllers\EmailTemplateController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ExternalStakeholderController;
+use App\Http\Controllers\EmailController;
 
 // Redirect root to dashboard (requires authentication)
 Route::get('/', function () {
@@ -84,6 +87,11 @@ Route::middleware('auth')->group(function () {
         Route::post('tasks/{task}/reject', [TaskController::class, 'rejectTask'])->name('tasks.reject');
         Route::post('tasks/{task}/send-approval-email', [TaskController::class, 'sendApprovalEmail'])->name('tasks.send-approval-email');
         Route::post('tasks/{task}/send-rejection-email', [TaskController::class, 'sendRejectionEmail'])->name('tasks.send-rejection-email');
+
+        // Email preparation routes
+        Route::get('tasks/{task}/prepare-email', [TaskController::class, 'showEmailPreparationForm'])->name('tasks.prepare-email');
+        Route::post('tasks/{task}/prepare-email', [TaskController::class, 'storeEmailPreparation'])->name('tasks.store-email-preparation');
+        Route::post('tasks/{task}/send-confirmation-email', [TaskController::class, 'sendConfirmationEmail'])->name('tasks.send-confirmation-email');
     });
 
     // Task destroy - Manager only
@@ -102,6 +110,7 @@ Route::middleware('auth')->group(function () {
     // API routes for live notifications - Available to all authenticated users
     Route::get('api/notifications/unread', [TaskController::class, 'getUnreadNotifications'])->name('api.notifications.unread');
     Route::get('api/notifications/count', [TaskController::class, 'getNotificationCount'])->name('api.notifications.count');
+
 
     // Test route for notification sound (remove in production)
     Route::post('test-notification', function() {
@@ -151,7 +160,7 @@ Route::middleware('auth')->group(function () {
 
     // Test route to check if form submission works
     Route::post('test-form-submission', function(\Illuminate\Http\Request $request) {
-        \Log::info('Test form submission received', [
+        Log::info('Test form submission received', [
             'all_data' => $request->all(),
             'completion_notes' => $request->input('completion_notes'),
             'user_id' => auth()->id()
@@ -163,6 +172,17 @@ Route::middleware('auth')->group(function () {
             'data' => $request->all()
         ]);
     })->name('test.form.submission');
+});
+
+// Email webhook routes (no authentication required for webhooks)
+Route::post('/webhook/email/incoming', [EmailController::class, 'handleIncomingEmail'])->name('email.webhook.incoming');
+
+// Email management routes (authenticated)
+Route::middleware('auth')->group(function () {
+    Route::get('/emails', [EmailController::class, 'index'])->name('emails.index');
+    Route::get('/emails/{email}', [EmailController::class, 'show'])->name('emails.show');
+    Route::post('/emails/{email}/mark-read', [EmailController::class, 'markAsRead'])->name('emails.mark-read');
+    Route::post('/emails/check-new', [EmailController::class, 'checkNewEmails'])->name('emails.check-new');
 });
 
 require __DIR__.'/auth.php';

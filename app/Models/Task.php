@@ -83,6 +83,11 @@ class Task extends Model
         return $this->hasMany(CustomNotification::class, 'data->task_id');
     }
 
+    public function emailPreparations()
+    {
+        return $this->hasMany(TaskEmailPreparation::class);
+    }
+
     // Status management methods
     public function assignTo(User $user)
     {
@@ -205,6 +210,7 @@ class Task extends Model
             'submitted_for_review' => 'bg-primary',
             'in_review' => 'bg-warning',
             'approved' => 'bg-success',
+            'ready_for_email' => 'bg-info',
             'rejected' => 'bg-danger',
             'completed' => 'bg-success',
             default => 'bg-secondary'
@@ -286,7 +292,7 @@ class Task extends Model
         }
 
         $this->update([
-            'status' => 'approved',
+            'status' => 'ready_for_email',
             'approved_at' => now(),
             'completed_at' => now(),
             'approval_notes' => $notes
@@ -302,6 +308,16 @@ class Task extends Model
 
         // Notify assigned user
         $this->sendNotification($this->assignee, 'task_approved', 'Task Approved', "Your task '{$this->title}' has been approved!");
+
+        // Send email to assigned user (internal)
+        if ($this->assignee && $this->assignee->email) {
+            try {
+                \Mail::to($this->assignee->email)->send(new \App\Mail\TaskApprovalInternalMail($this, $this->assignee, auth()->user()));
+                \Log::info('Approval email sent to assigned user: ' . $this->assignee->email);
+            } catch (\Exception $e) {
+                \Log::error('Failed to send approval email to assigned user: ' . $e->getMessage());
+            }
+        }
 
         // Notify external stakeholders
         $this->notifyExternalStakeholders('approved', 'Task Approved', "Task '{$this->title}' has been approved and completed successfully.");
