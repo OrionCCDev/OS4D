@@ -289,7 +289,7 @@
                 </div>
                 <div class="card-body pt-0">
                     @if($task->attachments->count())
-                        <div class="row" id="filesContainer">
+                        <div class="files-grid" id="filesContainer">
                             @foreach($task->attachments->sortByDesc('created_at') as $att)
                                 @php
                                     $isRecent = $att->created_at->diffInHours(now()) < 24;
@@ -304,77 +304,65 @@
                                     elseif (in_array(strtolower($fileExtension), ['mp4', 'avi', 'mov'])) $fileIcon = 'bx-video';
                                     elseif (in_array(strtolower($fileExtension), ['mp3', 'wav', 'flac'])) $fileIcon = 'bx-music';
                                 @endphp
-                                <div class="col-12 col-sm-6 col-lg-4 col-xl-3 mb-4 file-item" data-filename="{{ strtolower($att->original_name) }}">
-                                    <div class="file-card position-relative overflow-hidden"
-                                         style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                                                border-radius: 16px;
-                                                box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3);
-                                                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-                                                cursor: pointer;"
-                                         onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 12px 40px rgba(102, 126, 234, 0.4)'"
-                                         onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 8px 32px rgba(102, 126, 234, 0.3)'">
-
+                                <div class="file-card-wrapper file-item" data-filename="{{ strtolower($att->original_name) }}">
+                                    <div class="file-card">
                                         <!-- Yellow accent bar -->
-                                        <div class="position-absolute top-0 start-0 w-100" style="height: 4px; background: linear-gradient(90deg, #ffd700 0%, #ffed4e 100%);"></div>
+                                        <div class="file-card-accent"></div>
 
-                                        <div class="p-4">
-                                            <!-- File icon and info -->
-                                            <div class="d-flex align-items-start mb-3">
-                                                <div class="file-icon-wrapper me-3">
-                                                    <div class="bg-white rounded-3 p-3 shadow-sm" style="width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;">
-                                                        <i class="bx {{ $fileIcon }} text-primary" style="font-size: 1.5rem;"></i>
-                                                    </div>
+                                        <!-- File icon -->
+                                        <div class="file-icon">
+                                            <i class="bx {{ $fileIcon }}"></i>
+                                        </div>
+
+                                        <!-- File info -->
+                                        <div class="file-info">
+                                            <h6 class="file-name">{{ $att->original_name }}</h6>
+                                            <p class="file-details">{{ number_format($att->size_bytes/1024,1) }} KB • {{ $att->mime_type }}</p>
+                                        </div>
+
+                                        <!-- Uploader info -->
+                                        <div class="file-meta">
+                                            <div class="uploader-info">
+                                                <i class="bx bx-user"></i>
+                                                <span>by {{ $att->uploader?->name }}</span>
+                                            </div>
+                                            @if($isRecent)
+                                                <div class="recent-badge">
+                                                    <i class="bx bx-time"></i>
+                                                    <span>Recent</span>
                                                 </div>
-                                                <div class="flex-grow-1 text-white">
-                                                    <h6 class="mb-1 fw-bold text-white" style="font-size: 0.95rem; line-height: 1.3;">{{ $att->original_name }}</h6>
-                                                    <small class="text-white-50 d-block mb-2" style="font-size: 0.8rem;">
-                                                        {{ number_format($att->size_bytes/1024,1) }} KB • {{ $att->mime_type }}
-                                                    </small>
-                                                </div>
-                                            </div>
+                                            @endif
+                                        </div>
 
-                                            <!-- Uploader and status badges -->
-                                            <div class="d-flex align-items-center gap-2 mb-3">
-                                                <span class="badge bg-white text-dark px-3 py-2 fw-bold shadow-sm" style="border-radius: 20px;">
-                                                    <i class="bx bx-user me-1"></i>by {{ $att->uploader?->name }}
-                                                </span>
-                                                @if($isRecent)
-                                                    <span class="badge bg-warning text-dark px-3 py-2 fw-bold shadow-sm" style="border-radius: 20px;">
-                                                        <i class="bx bx-time me-1"></i>Recent
-                                                    </span>
-                                                @endif
+                                        <!-- Date info -->
+                                        <div class="file-date">
+                                            <i class="bx bx-calendar"></i>
+                                            <div class="date-info">
+                                                <span class="date">{{ $att->created_at->format('M d, Y') }}</span>
+                                                <span class="time">{{ $att->created_at->format('H:i') }}</span>
                                             </div>
+                                        </div>
 
-                                            <!-- Date and time -->
-                                            <div class="bg-white rounded-3 px-3 py-2 mb-3 shadow-sm">
-                                                <small class="text-dark fw-bold d-flex align-items-center">
-                                                    <i class="bx bx-calendar me-2 text-primary"></i>
-                                                    <span>{{ $att->created_at->format('M d, Y') }}</span>
-                                                    <span class="ms-2 text-muted">{{ $att->created_at->format('H:i') }}</span>
-                                                    <span class="ms-2 text-muted">({{ $att->created_at->diffForHumans() }})</span>
-                                                </small>
-                                            </div>
-
-                                            <!-- Action buttons -->
-                                            <div class="d-flex flex-column flex-sm-row gap-2">
-                                                <a class="btn btn-sm btn-outline-light flex-fill" href="{{ Storage::url($att->path) }}" target="_blank" style="border-radius: 8px;">
-                                                    <i class="bx bxs-show me-1"></i><span class="d-none d-sm-inline">View</span>
-                                                </a>
-                                                <a class="btn btn-sm text-white flex-fill" href="{{ route('tasks.attachments.download', $att) }}"
-                                                   style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: none; border-radius: 8px; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);">
-                                                    <i class="bx bx-download me-1"></i><span class="d-none d-sm-inline">Download</span>
-                                                </a>
-                                                @if(Auth::user()->isManager() || (($att->uploaded_by === Auth::id()) && $task->status !== 'submitted_for_review' && $task->status !== 'in_review' && $task->status !== 'approved' && $task->status !== 'completed'))
-                                                    <form action="{{ route('tasks.attachments.delete', [$task, $att]) }}" method="POST" onsubmit="return confirm('Delete attachment?')" class="d-inline flex-fill">
-                                                        @csrf
-                                                        @method('DELETE')
-                                                        <button class="btn btn-sm text-white w-100"
-                                                                style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); border: none; border-radius: 8px; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);">
-                                                            <i class="bx bx-trash me-1"></i><span class="d-none d-sm-inline">Delete</span>
-                                                        </button>
-                                                    </form>
-                                                @endif
-                                            </div>
+                                        <!-- Action buttons -->
+                                        <div class="file-actions">
+                                            <a class="action-btn view-btn" href="{{ Storage::url($att->path) }}" target="_blank">
+                                                <i class="bx bxs-show"></i>
+                                                <span>View</span>
+                                            </a>
+                                            <a class="action-btn download-btn" href="{{ route('tasks.attachments.download', $att) }}">
+                                                <i class="bx bx-download"></i>
+                                                <span>Download</span>
+                                            </a>
+                                            @if(Auth::user()->isManager() || (($att->uploaded_by === Auth::id()) && $task->status !== 'submitted_for_review' && $task->status !== 'in_review' && $task->status !== 'approved' && $task->status !== 'completed'))
+                                                <form action="{{ route('tasks.attachments.delete', [$task, $att]) }}" method="POST" onsubmit="return confirm('Delete attachment?')" class="delete-form">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button class="action-btn delete-btn" type="submit">
+                                                        <i class="bx bx-trash"></i>
+                                                        <span>Delete</span>
+                                                    </button>
+                                                </form>
+                                            @endif
                                         </div>
                                     </div>
                                 </div>
