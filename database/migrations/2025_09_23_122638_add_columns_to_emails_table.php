@@ -11,8 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('emails', function (Blueprint $table) {
-            $table->id();
+        Schema::table('emails', function (Blueprint $table) {
             $table->string('from_email');
             $table->string('to_email');
             $table->string('subject');
@@ -23,7 +22,6 @@ return new class extends Migration
             $table->json('attachments')->nullable();
             $table->string('message_id')->nullable();
             $table->unsignedBigInteger('reply_to_email_id')->nullable();
-            $table->timestamps();
 
             $table->foreign('task_id')->references('id')->on('tasks')->onDelete('set null');
             $table->foreign('reply_to_email_id')->references('id')->on('emails')->onDelete('set null');
@@ -37,6 +35,23 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('emails');
+        Schema::table('emails', function (Blueprint $table) {
+            $table->dropIndex(['from_email', 'received_at']);
+            $table->dropIndex(['task_id', 'status']);
+            $table->dropForeign(['task_id']);
+            $table->dropForeign(['reply_to_email_id']);
+            $table->dropColumn([
+                'from_email',
+                'to_email', 
+                'subject',
+                'body',
+                'received_at',
+                'status',
+                'task_id',
+                'attachments',
+                'message_id',
+                'reply_to_email_id'
+            ]);
+        });
     }
 };
