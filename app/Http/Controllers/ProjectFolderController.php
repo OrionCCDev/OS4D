@@ -40,7 +40,12 @@ class ProjectFolderController extends Controller
         if (!file_exists($fullPath)) {
             mkdir($fullPath, 0755, true);
         }
-        return redirect()->route('folders.index')->with('success', 'Folder created');
+
+        // Redirect to the project folder view instead of folders index
+        return redirect()->route('projects.show', [
+            'project' => $folder->project_id,
+            'folder' => $folder->parent_id
+        ])->with('success', 'Folder created');
     }
 
     public function edit(ProjectFolder $folder)
@@ -53,16 +58,24 @@ class ProjectFolderController extends Controller
     public function update(Request $request, ProjectFolder $folder)
     {
         $validated = $request->validate([
-            'project_id' => 'required|exists:projects,id',
             'parent_id' => 'nullable|exists:project_folders,id',
             'name' => 'required|string|max:255',
         ]);
         $folder->update($validated);
-        return redirect()->route('folders.index')->with('success', 'Folder updated');
+
+        // Redirect to the project folder view instead of folders index
+        return redirect()->route('projects.show', [
+            'project' => $folder->project_id,
+            'folder' => $folder->parent_id
+        ])->with('success', 'Folder updated');
     }
 
     public function destroy(ProjectFolder $folder)
     {
+        // Store project_id and parent_id before deletion
+        $projectId = $folder->project_id;
+        $parentId = $folder->parent_id;
+
         // Remove physical directory for this folder (and its subfolders)
         try {
             $path = $this->buildFolderPath($folder);
@@ -74,7 +87,12 @@ class ProjectFolderController extends Controller
             // ignore fs errors
         }
         $folder->delete();
-        return redirect()->route('folders.index')->with('success', 'Folder deleted');
+
+        // Redirect to the project folder view instead of folders index
+        return redirect()->route('projects.show', [
+            'project' => $projectId,
+            'folder' => $parentId
+        ])->with('success', 'Folder deleted');
     }
 
     private function buildFolderPath(ProjectFolder $folder): string
