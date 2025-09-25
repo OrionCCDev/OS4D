@@ -252,20 +252,35 @@
                             <i class="bx bx-folder-open me-2 text-primary"></i>Task Files
                         </h4>
                         @if(Auth::user()->isManager() || ($task->status !== 'submitted_for_review' && $task->status !== 'in_review' && $task->status !== 'approved' && $task->status !== 'completed'))
-                            <div class="upload-section">
-                                <form action="{{ route('tasks.attachments.upload', $task) }}" method="POST" enctype="multipart/form-data">
+                            <div class="upload-section" id="uploadSection">
+                                <form action="{{ route('tasks.attachments.upload', $task) }}" method="POST" enctype="multipart/form-data" id="uploadForm">
                                     @csrf
-                                    <div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center gap-2">
-                                        <div class="file-input-wrapper d-flex flex-column flex-sm-row align-items-start align-items-sm-center gap-2">
-                                            <input type="file" name="file" id="fileInput" class="form-control form-control-sm" required style="display: none;">
-                                            <label for="fileInput" class="btn btn-outline-secondary btn-sm mb-0">
-                                                <i class="bx bx-file me-1"></i>Choose File
-                                            </label>
-                                            <span class="file-name text-muted" style="font-size: 0.875rem; word-break: break-all;">No file chosen</span>
+                                    <div class="upload-area" id="uploadArea">
+                                        <div class="upload-content">
+                                            <div class="upload-icon">
+                                                <i class="bx bx-cloud-upload"></i>
+                                            </div>
+                                            <h6 class="upload-title">Drop files here or click to browse</h6>
+                                            <p class="upload-subtitle">Supports all file types • Max 50MB per file</p>
                                         </div>
-                                        <button class="btn btn-primary btn-sm px-3" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);">
-                                            <i class="bx bx-upload me-1"></i>Upload
-                                        </button>
+                                        <input type="file" name="file" id="fileInput" class="form-control d-none" accept="*/*" required>
+                                    </div>
+                                    <div class="upload-actions mt-3" id="uploadActions" style="display: none;">
+                                        <div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center gap-2">
+                                            <div class="file-info-display d-flex align-items-center">
+                                                <i class="bx bx-file me-2"></i>
+                                                <span class="file-name text-primary fw-bold">No file chosen</span>
+                                                <small class="file-size text-muted ms-2"></small>
+                                            </div>
+                                            <div class="upload-buttons d-flex gap-2">
+                                                <button type="button" class="btn btn-outline-secondary btn-sm" id="changeFile">
+                                                    <i class="bx bx-refresh me-1"></i>Change
+                                                </button>
+                                                <button type="submit" class="btn btn-primary btn-sm px-3">
+                                                    <i class="bx bx-upload me-1"></i>Upload
+                                                </button>
+                                            </div>
+                                        </div>
                                     </div>
                                 </form>
                             </div>
@@ -278,11 +293,19 @@
                     </div>
                     @if($task->attachments->count())
                         <div class="mb-4">
-                            <div class="input-group" style="max-width: 400px;">
-                                <span class="input-group-text bg-white border-end-0" style="border: 2px solid #e2e8f0; border-radius: 8px 0 0 8px;">
-                                    <i class="bx bx-search text-muted"></i>
+                            <div class="input-group search-container" style="max-width: 450px;">
+                                <span class="input-group-text border-end-0" style="border: 2px solid #e2e8f0; border-radius: 12px 0 0 12px;">
+                                    <i class="bx bx-search"></i>
                                 </span>
-                                <input type="text" class="form-control border-start-0" id="fileSearch" placeholder="Search files..." style="border: 2px solid #e2e8f0; border-radius: 0 8px 8px 0; padding: 12px 16px;">
+                                <input type="text" class="form-control border-start-0" id="fileSearch" placeholder="Search files by name..." style="border: 2px solid #e2e8f0; border-radius: 0 12px 12px 0; padding: 14px 16px; font-size: 0.95rem;">
+                                <button class="btn btn-outline-secondary border-start-0" type="button" id="clearSearch" style="border: 2px solid #e2e8f0; border-left: none; border-radius: 0 12px 12px 0; display: none;">
+                                    <i class="bx bx-x"></i>
+                                </button>
+                            </div>
+                            <div class="search-results-info mt-2" id="searchResultsInfo" style="display: none;">
+                                <small class="text-muted">
+                                    <span id="resultsCount">0</span> files found
+                                </small>
                             </div>
                         </div>
                     @endif
@@ -294,15 +317,41 @@
                                 @php
                                     $isRecent = $att->created_at->diffInHours(now()) < 24;
                                     $isOwnFile = $att->uploaded_by === Auth::id();
-                                    $fileExtension = pathinfo($att->original_name, PATHINFO_EXTENSION);
+                                    $fileExtension = strtolower(pathinfo($att->original_name, PATHINFO_EXTENSION));
                                     $fileIcon = 'bx-file';
-                                    if (in_array(strtolower($fileExtension), ['pdf'])) $fileIcon = 'bx-file-blank';
-                                    elseif (in_array(strtolower($fileExtension), ['doc', 'docx'])) $fileIcon = 'bx-file-doc';
-                                    elseif (in_array(strtolower($fileExtension), ['xls', 'xlsx'])) $fileIcon = 'bx-file-spreadsheet';
-                                    elseif (in_array(strtolower($fileExtension), ['jpg', 'jpeg', 'png', 'gif', 'webp'])) $fileIcon = 'bx-image';
-                                    elseif (in_array(strtolower($fileExtension), ['zip', 'rar', '7z'])) $fileIcon = 'bx-archive';
-                                    elseif (in_array(strtolower($fileExtension), ['mp4', 'avi', 'mov'])) $fileIcon = 'bx-video';
-                                    elseif (in_array(strtolower($fileExtension), ['mp3', 'wav', 'flac'])) $fileIcon = 'bx-music';
+                                    $fileTypeClass = 'file';
+
+                                    if (in_array($fileExtension, ['pdf'])) {
+                                        $fileIcon = 'bx-file-blank';
+                                        $fileTypeClass = 'pdf';
+                                    } elseif (in_array($fileExtension, ['doc', 'docx'])) {
+                                        $fileIcon = 'bx-file-doc';
+                                        $fileTypeClass = 'doc';
+                                    } elseif (in_array($fileExtension, ['xls', 'xlsx'])) {
+                                        $fileIcon = 'bx-file-spreadsheet';
+                                        $fileTypeClass = 'xls';
+                                    } elseif (in_array($fileExtension, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp'])) {
+                                        $fileIcon = 'bx-image';
+                                        $fileTypeClass = 'image';
+                                    } elseif (in_array($fileExtension, ['zip', 'rar', '7z', 'tar', 'gz'])) {
+                                        $fileIcon = 'bx-archive';
+                                        $fileTypeClass = 'archive';
+                                    } elseif (in_array($fileExtension, ['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm'])) {
+                                        $fileIcon = 'bx-video';
+                                        $fileTypeClass = 'video';
+                                    } elseif (in_array($fileExtension, ['mp3', 'wav', 'flac', 'aac', 'ogg'])) {
+                                        $fileIcon = 'bx-music';
+                                        $fileTypeClass = 'music';
+                                    } elseif (in_array($fileExtension, ['txt', 'rtf'])) {
+                                        $fileIcon = 'bx-file-txt';
+                                        $fileTypeClass = 'text';
+                                    } elseif (in_array($fileExtension, ['ppt', 'pptx'])) {
+                                        $fileIcon = 'bx-file-blank';
+                                        $fileTypeClass = 'presentation';
+                                    } elseif (in_array($fileExtension, ['ai', 'eps', 'psd'])) {
+                                        $fileIcon = 'bx-paint';
+                                        $fileTypeClass = 'design';
+                                    }
                                 @endphp
                                 <div class="file-card-wrapper file-item" data-filename="{{ strtolower($att->original_name) }}">
                                     <div class="file-card">
@@ -310,7 +359,7 @@
                                         <div class="file-card-accent"></div>
 
                                         <!-- File icon -->
-                                        <div class="file-icon">
+                                        <div class="file-icon {{ $fileTypeClass }}">
                                             <i class="bx {{ $fileIcon }}"></i>
                                         </div>
 
@@ -387,40 +436,166 @@
             <!-- JavaScript for file input handling -->
             <script>
                 document.addEventListener('DOMContentLoaded', function() {
-                    // File input handling
+                    // Enhanced file input and drag-drop handling
                     const fileInput = document.getElementById('fileInput');
                     const fileNameSpan = document.querySelector('.file-name');
+                    const fileSizeSpan = document.querySelector('.file-size');
+                    const uploadArea = document.getElementById('uploadArea');
+                    const uploadActions = document.getElementById('uploadActions');
+                    const uploadSection = document.getElementById('uploadSection');
+                    const changeFileBtn = document.getElementById('changeFile');
 
-                    if (fileInput && fileNameSpan) {
+                    // Format file size
+                    function formatFileSize(bytes) {
+                        if (bytes === 0) return '0 Bytes';
+                        const k = 1024;
+                        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                        const i = Math.floor(Math.log(bytes) / Math.log(k));
+                        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+                    }
+
+                    // Update file display
+                    function updateFileDisplay(file) {
+                        if (file) {
+                            fileNameSpan.textContent = file.name;
+                            fileNameSpan.classList.remove('text-muted');
+                            fileNameSpan.classList.add('text-primary', 'fw-bold');
+                            fileSizeSpan.textContent = '(' + formatFileSize(file.size) + ')';
+                            uploadActions.style.display = 'block';
+                            uploadArea.style.display = 'none';
+                        } else {
+                            fileNameSpan.textContent = 'No file chosen';
+                            fileNameSpan.classList.remove('text-primary', 'fw-bold');
+                            fileNameSpan.classList.add('text-muted');
+                            fileSizeSpan.textContent = '';
+                            uploadActions.style.display = 'none';
+                            uploadArea.style.display = 'block';
+                        }
+                    }
+
+                    // File input handling
+                    if (fileInput) {
                         fileInput.addEventListener('change', function() {
-                            if (this.files && this.files[0]) {
-                                fileNameSpan.textContent = this.files[0].name;
-                                fileNameSpan.classList.remove('text-muted');
-                                fileNameSpan.classList.add('text-primary', 'fw-bold');
-                            } else {
-                                fileNameSpan.textContent = 'No file chosen';
-                                fileNameSpan.classList.remove('text-primary', 'fw-bold');
-                                fileNameSpan.classList.add('text-muted');
-                            }
+                            updateFileDisplay(this.files[0]);
                         });
                     }
 
-                    // File search functionality
+                    // Change file button
+                    if (changeFileBtn) {
+                        changeFileBtn.addEventListener('click', function() {
+                            fileInput.click();
+                        });
+                    }
+
+                    // Drag and drop functionality
+                    if (uploadArea) {
+                        // Prevent default drag behaviors
+                        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                            uploadArea.addEventListener(eventName, preventDefaults, false);
+                            document.body.addEventListener(eventName, preventDefaults, false);
+                        });
+
+                        // Highlight drop area when item is dragged over it
+                        ['dragenter', 'dragover'].forEach(eventName => {
+                            uploadArea.addEventListener(eventName, highlight, false);
+                        });
+
+                        ['dragleave', 'drop'].forEach(eventName => {
+                            uploadArea.addEventListener(eventName, unhighlight, false);
+                        });
+
+                        // Handle dropped files
+                        uploadArea.addEventListener('drop', handleDrop, false);
+
+                        function preventDefaults(e) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                        }
+
+                        function highlight(e) {
+                            uploadArea.classList.add('drag-over');
+                        }
+
+                        function unhighlight(e) {
+                            uploadArea.classList.remove('drag-over');
+                        }
+
+                        function handleDrop(e) {
+                            const dt = e.dataTransfer;
+                            const files = dt.files;
+
+                            if (files.length > 0) {
+                                fileInput.files = files;
+                                updateFileDisplay(files[0]);
+                            }
+                        }
+
+                        // Click to browse
+                        uploadArea.addEventListener('click', function() {
+                            fileInput.click();
+                        });
+                    }
+
+                    // Enhanced file search functionality
                     const fileSearch = document.getElementById('fileSearch');
                     const fileItems = document.querySelectorAll('.file-item');
+                    const clearSearchBtn = document.getElementById('clearSearch');
+                    const searchResultsInfo = document.getElementById('searchResultsInfo');
+                    const resultsCount = document.getElementById('resultsCount');
 
                     if (fileSearch && fileItems.length > 0) {
                         fileSearch.addEventListener('input', function() {
-                            const searchTerm = this.value.toLowerCase();
+                            const searchTerm = this.value.toLowerCase().trim();
+                            let visibleCount = 0;
+
+                            // Show/hide clear button
+                            if (searchTerm.length > 0) {
+                                clearSearchBtn.style.display = 'block';
+                                searchResultsInfo.style.display = 'block';
+                            } else {
+                                clearSearchBtn.style.display = 'none';
+                                searchResultsInfo.style.display = 'none';
+                            }
 
                             fileItems.forEach(function(item) {
                                 const filename = item.getAttribute('data-filename');
+                                const fileCard = item.querySelector('.file-card');
+
                                 if (filename.includes(searchTerm)) {
                                     item.style.display = 'block';
+                                    fileCard.style.opacity = '1';
+                                    fileCard.style.transform = 'translateY(0)';
+                                    visibleCount++;
                                 } else {
                                     item.style.display = 'none';
                                 }
                             });
+
+                            // Update results count
+                            if (searchTerm.length > 0) {
+                                resultsCount.textContent = visibleCount;
+                                if (visibleCount === 0) {
+                                    resultsCount.textContent = 'No';
+                                    searchResultsInfo.innerHTML = '<small class="text-muted text-danger"><i class="bx bx-info-circle me-1"></i>No files found matching "' + searchTerm + '"</small>';
+                                } else {
+                                    searchResultsInfo.innerHTML = '<small class="text-muted"><span id="resultsCount">' + visibleCount + '</span> files found</small>';
+                                }
+                            }
+                        });
+
+                        // Clear search functionality
+                        clearSearchBtn.addEventListener('click', function() {
+                            fileSearch.value = '';
+                            fileSearch.dispatchEvent(new Event('input'));
+                            fileSearch.focus();
+                        });
+
+                        // Search on Enter key
+                        fileSearch.addEventListener('keypress', function(e) {
+                            if (e.key === 'Enter') {
+                                e.preventDefault();
+                                this.blur();
+                            }
                         });
                     }
                 });
