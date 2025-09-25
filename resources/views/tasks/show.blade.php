@@ -245,90 +245,131 @@
 
 
             <!-- Task Files -->
-            <div class="card mb-4 border-0 shadow-sm">
-                <div class="card-header bg-transparent border-0">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h5 class="mb-0">Task Files</h5>
+            <div class="card mb-4 border-0 shadow-lg" style="background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);">
+                <div class="card-header bg-transparent border-0 pb-0">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h4 class="mb-0 fw-bold text-dark" style="font-size: 1.75rem;">
+                            <i class="bx bx-folder-open me-2 text-primary"></i>Task Files
+                        </h4>
                         @if(Auth::user()->isManager() || ($task->status !== 'submitted_for_review' && $task->status !== 'in_review' && $task->status !== 'approved' && $task->status !== 'completed'))
-                            <form action="{{ route('tasks.attachments.upload', $task) }}" method="POST" enctype="multipart/form-data" class="d-flex gap-2">
-                                @csrf
-                                <input type="file" name="file" class="form-control form-control-sm" required>
-                                <button class="btn btn-primary btn-sm">
-                                    <i class="bx bx-upload me-1"></i>Upload
-                                </button>
-                            </form>
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="upload-section">
+                                    <form action="{{ route('tasks.attachments.upload', $task) }}" method="POST" enctype="multipart/form-data" class="d-flex gap-2 align-items-center">
+                                        @csrf
+                                        <div class="file-input-wrapper">
+                                            <input type="file" name="file" id="fileInput" class="form-control form-control-sm" required style="display: none;">
+                                            <label for="fileInput" class="btn btn-outline-secondary btn-sm mb-0">
+                                                <i class="bx bx-file me-1"></i>Choose File
+                                            </label>
+                                            <span class="file-name text-muted ms-2" style="font-size: 0.875rem;">No file chosen</span>
+                                        </div>
+                                        <button class="btn btn-primary btn-sm px-3" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);">
+                                            <i class="bx bx-upload me-1"></i>Upload
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
                         @else
-                            <div class="alert alert-warning alert-sm mb-0 py-2">
+                            <div class="alert alert-warning alert-sm mb-0 py-2" style="background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%); border: 1px solid #ffc107;">
                                 <i class="bx bx-lock me-1"></i>
                                 <small><strong>File uploads disabled</strong> - Task is under review. Only managers can upload files.</small>
                             </div>
                         @endif
                     </div>
                     @if($task->attachments->count())
-                        <div class="mb-3">
-                            <div class="input-group">
-                                <span class="input-group-text">
-                                    <i class="bx bx-search"></i>
+                        <div class="mb-4">
+                            <div class="input-group" style="max-width: 400px;">
+                                <span class="input-group-text bg-white border-end-0" style="border: 2px solid #e2e8f0; border-radius: 8px 0 0 8px;">
+                                    <i class="bx bx-search text-muted"></i>
                                 </span>
-                                <input type="text" class="form-control" id="fileSearch" placeholder="Search files...">
+                                <input type="text" class="form-control border-start-0" id="fileSearch" placeholder="Search files..." style="border: 2px solid #e2e8f0; border-radius: 0 8px 8px 0; padding: 12px 16px;">
                             </div>
                         </div>
                     @endif
                 </div>
-                <div class="card-body">
+                <div class="card-body pt-0">
                     @if($task->attachments->count())
                         <div class="row" id="filesContainer">
                             @foreach($task->attachments->sortByDesc('created_at') as $att)
                                 @php
                                     $isRecent = $att->created_at->diffInHours(now()) < 24;
                                     $isOwnFile = $att->uploaded_by === Auth::id();
+                                    $fileExtension = pathinfo($att->original_name, PATHINFO_EXTENSION);
+                                    $fileIcon = 'bx-file';
+                                    if (in_array(strtolower($fileExtension), ['pdf'])) $fileIcon = 'bx-file-blank';
+                                    elseif (in_array(strtolower($fileExtension), ['doc', 'docx'])) $fileIcon = 'bx-file-doc';
+                                    elseif (in_array(strtolower($fileExtension), ['xls', 'xlsx'])) $fileIcon = 'bx-file-spreadsheet';
+                                    elseif (in_array(strtolower($fileExtension), ['jpg', 'jpeg', 'png', 'gif', 'webp'])) $fileIcon = 'bx-image';
+                                    elseif (in_array(strtolower($fileExtension), ['zip', 'rar', '7z'])) $fileIcon = 'bx-archive';
+                                    elseif (in_array(strtolower($fileExtension), ['mp4', 'avi', 'mov'])) $fileIcon = 'bx-video';
+                                    elseif (in_array(strtolower($fileExtension), ['mp3', 'wav', 'flac'])) $fileIcon = 'bx-music';
                                 @endphp
-                                <div class="col-md-6 mb-3 file-item" data-filename="{{ strtolower($att->original_name) }}">
-                                    <div class="card border-0 {{ $isRecent ? 'border-warning' : '' }} {{ $isOwnFile ? 'bg-primary bg-opacity-10' : 'bg-light' }}"
-                                         style="{{ $isRecent ? 'border-left: 4px solid #ffc107 !important;' : '' }}">
-                                        <div class="card-body p-3">
-                                            <div class="d-flex align-items-start">
-                                                <div class="avatar avatar-sm me-3">
-                                                    <span class="avatar-initial rounded-circle {{ $isOwnFile ? 'bg-primary text-white' : 'bg-label-primary' }}">
-                                                        <i class="bx bx-file"></i>
-                                                    </span>
+                                <div class="col-xl-4 col-lg-6 col-md-6 mb-4 file-item" data-filename="{{ strtolower($att->original_name) }}">
+                                    <div class="file-card position-relative overflow-hidden"
+                                         style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                                                border-radius: 16px;
+                                                box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3);
+                                                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                                                cursor: pointer;"
+                                         onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 12px 40px rgba(102, 126, 234, 0.4)'"
+                                         onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 8px 32px rgba(102, 126, 234, 0.3)'">
+
+                                        <!-- Yellow accent bar -->
+                                        <div class="position-absolute top-0 start-0 w-100" style="height: 4px; background: linear-gradient(90deg, #ffd700 0%, #ffed4e 100%);"></div>
+
+                                        <div class="p-4">
+                                            <!-- File icon and info -->
+                                            <div class="d-flex align-items-start mb-3">
+                                                <div class="file-icon-wrapper me-3">
+                                                    <div class="bg-white rounded-3 p-3 shadow-sm" style="width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;">
+                                                        <i class="bx {{ $fileIcon }} text-primary" style="font-size: 1.5rem;"></i>
+                                                    </div>
                                                 </div>
-                                                <div class="flex-grow-1">
-                                                    <h6 class="mb-1 {{ $isOwnFile ? 'text-primary fw-bold' : '' }}">{{ $att->original_name }}</h6>
-                                                    <small class="text-muted d-block mb-2">
+                                                <div class="flex-grow-1 text-white">
+                                                    <h6 class="mb-1 fw-bold text-white" style="font-size: 0.95rem; line-height: 1.3;">{{ $att->original_name }}</h6>
+                                                    <small class="text-white-50 d-block mb-2" style="font-size: 0.8rem;">
                                                         {{ number_format($att->size_bytes/1024,1) }} KB • {{ $att->mime_type }}
                                                     </small>
-                                                    <div class="d-flex align-items-center gap-2 mb-2">
-                                                        <span class="badge {{ $isOwnFile ? 'bg-primary text-white' : 'bg-info text-white' }} px-3 py-2 fw-bold shadow-sm">
-                                                            <i class="bx bx-user me-1"></i>by {{ $att->uploader?->name }}
-                                                        </span>
-                                                        @if($isRecent)
-                                                            <span class="badge bg-warning text-dark px-3 py-2 fw-bold shadow-sm">
-                                                                <i class="bx bx-time me-1"></i>Recent
-                                                            </span>
-                                                        @endif
-                                                    </div>
-                                                    <div class="bg-light rounded px-3 py-2 border-start border-3 {{ $isOwnFile ? 'border-primary' : 'border-info' }} shadow-sm">
-                                                        <small class="{{ $isOwnFile ? 'text-primary' : 'text-info' }} fw-bold d-flex align-items-center">
-                                                            <i class="bx bx-calendar me-2"></i>
-                                                            <span>{{ $att->created_at->format('M d, Y H:i') }}</span>
-                                                            <span class="ms-2 text-muted">({{ $att->created_at->diffForHumans() }})</span>
-                                                        </small>
-                                                    </div>
                                                 </div>
                                             </div>
-                                            <div class="d-flex gap-2 mt-3">
-                                                <a class="btn btn-sm btn-outline-primary" href="{{ Storage::url($att->path) }}" target="_blank">
+
+                                            <!-- Uploader and status badges -->
+                                            <div class="d-flex align-items-center gap-2 mb-3">
+                                                <span class="badge bg-white text-dark px-3 py-2 fw-bold shadow-sm" style="border-radius: 20px;">
+                                                    <i class="bx bx-user me-1"></i>by {{ $att->uploader?->name }}
+                                                </span>
+                                                @if($isRecent)
+                                                    <span class="badge bg-warning text-dark px-3 py-2 fw-bold shadow-sm" style="border-radius: 20px;">
+                                                        <i class="bx bx-time me-1"></i>Recent
+                                                    </span>
+                                                @endif
+                                            </div>
+
+                                            <!-- Date and time -->
+                                            <div class="bg-white rounded-3 px-3 py-2 mb-3 shadow-sm">
+                                                <small class="text-dark fw-bold d-flex align-items-center">
+                                                    <i class="bx bx-calendar me-2 text-primary"></i>
+                                                    <span>{{ $att->created_at->format('M d, Y') }}</span>
+                                                    <span class="ms-2 text-muted">{{ $att->created_at->format('H:i') }}</span>
+                                                    <span class="ms-2 text-muted">({{ $att->created_at->diffForHumans() }})</span>
+                                                </small>
+                                            </div>
+
+                                            <!-- Action buttons -->
+                                            <div class="d-flex gap-2">
+                                                <a class="btn btn-sm btn-outline-light flex-fill" href="{{ Storage::url($att->path) }}" target="_blank" style="border-radius: 8px;">
                                                     <i class="bx bxs-show me-1"></i>View
                                                 </a>
-                                                <a class="btn btn-sm btn-outline-success" href="{{ route('tasks.attachments.download', $att) }}">
+                                                <a class="btn btn-sm text-white flex-fill" href="{{ route('tasks.attachments.download', $att) }}"
+                                                   style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: none; border-radius: 8px; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);">
                                                     <i class="bx bx-download me-1"></i>Download
                                                 </a>
                                                 @if(Auth::user()->isManager() || (($att->uploaded_by === Auth::id()) && $task->status !== 'submitted_for_review' && $task->status !== 'in_review' && $task->status !== 'approved' && $task->status !== 'completed'))
-                                                    <form action="{{ route('tasks.attachments.delete', [$task, $att]) }}" method="POST" onsubmit="return confirm('Delete attachment?')" class="d-inline">
+                                                    <form action="{{ route('tasks.attachments.delete', [$task, $att]) }}" method="POST" onsubmit="return confirm('Delete attachment?')" class="d-inline flex-fill">
                                                         @csrf
                                                         @method('DELETE')
-                                                        <button class="btn btn-sm btn-outline-danger">
+                                                        <button class="btn btn-sm text-white w-100"
+                                                                style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); border: none; border-radius: 8px; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);">
                                                             <i class="bx bx-trash me-1"></i>Delete
                                                         </button>
                                                     </form>
@@ -340,13 +381,62 @@
                             @endforeach
                         </div>
                     @else
-                        <div class="text-center py-4">
-                            <i class="bx bx-file" style="font-size: 3rem; color: #d1d5db;"></i>
-                            <p class="text-muted mt-2">No files uploaded yet</p>
+                        <div class="text-center py-5">
+                            <div class="empty-state">
+                                <div class="mb-4">
+                                    <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 120px; height: 120px;">
+                                        <i class="bx bx-file text-muted" style="font-size: 3rem;"></i>
+                                    </div>
+                                </div>
+                                <h5 class="text-muted mb-2">No files uploaded yet</h5>
+                                <p class="text-muted mb-0">Upload your first file to get started</p>
+                            </div>
                         </div>
                     @endif
                 </div>
             </div>
+
+            <!-- JavaScript for file input handling -->
+            <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    // File input handling
+                    const fileInput = document.getElementById('fileInput');
+                    const fileNameSpan = document.querySelector('.file-name');
+
+                    if (fileInput && fileNameSpan) {
+                        fileInput.addEventListener('change', function() {
+                            if (this.files && this.files[0]) {
+                                fileNameSpan.textContent = this.files[0].name;
+                                fileNameSpan.classList.remove('text-muted');
+                                fileNameSpan.classList.add('text-primary', 'fw-bold');
+                            } else {
+                                fileNameSpan.textContent = 'No file chosen';
+                                fileNameSpan.classList.remove('text-primary', 'fw-bold');
+                                fileNameSpan.classList.add('text-muted');
+                            }
+                        });
+                    }
+
+                    // File search functionality
+                    const fileSearch = document.getElementById('fileSearch');
+                    const fileItems = document.querySelectorAll('.file-item');
+
+                    if (fileSearch && fileItems.length > 0) {
+                        fileSearch.addEventListener('input', function() {
+                            const searchTerm = this.value.toLowerCase();
+
+                            fileItems.forEach(function(item) {
+                                const filename = item.getAttribute('data-filename');
+                                if (filename.includes(searchTerm)) {
+                                    item.style.display = 'block';
+                                } else {
+                                    item.style.display = 'none';
+                                }
+                            });
+                        });
+                    }
+                });
+            </script>
 
             <!-- Task History -->
             <div class="card border-0 shadow-sm">

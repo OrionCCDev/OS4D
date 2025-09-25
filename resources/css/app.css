@@ -1,3 +1,95 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Custom styles for enhanced task files view */
+.file-card {
+    position: relative;
+    overflow: hidden;
+}
+
+.file-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
+    pointer-events: none;
+    z-index: 1;
+}
+
+.file-card .file-icon-wrapper {
+    position: relative;
+    z-index: 2;
+}
+
+.file-card .flex-grow-1 {
+    position: relative;
+    z-index: 2;
+}
+
+.file-card .badge {
+    position: relative;
+    z-index: 2;
+}
+
+.file-card .bg-white {
+    position: relative;
+    z-index: 2;
+}
+
+.file-card .d-flex.gap-2 {
+    position: relative;
+    z-index: 2;
+}
+
+/* Smooth animations for file cards */
+.file-card {
+    animation: fadeInUp 0.6s ease-out;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Enhanced button hover effects */
+.file-card .btn {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.file-card .btn:hover {
+    transform: translateY(-2px);
+}
+
+/* Custom scrollbar for file container */
+#filesContainer {
+    scrollbar-width: thin;
+    scrollbar-color: #667eea #f1f1f1;
+}
+
+#filesContainer::-webkit-scrollbar {
+    width: 8px;
+}
+
+#filesContainer::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+#filesContainer::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 4px;
+}
+
+#filesContainer::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+}
