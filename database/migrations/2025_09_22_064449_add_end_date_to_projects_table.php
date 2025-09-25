@@ -11,9 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('projects', function (Blueprint $table) {
-            $table->date('end_date')->nullable()->after('due_date');
-        });
+        // Schema::table('projects', function (Blueprint $table) {
+        //     $table->date('end_date')->nullable()->after('due_date');
+        // });
     }
 
     /**
@@ -21,8 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('projects', function (Blueprint $table) {
-            $table->dropColumn('end_date');
-        });
+        // Schema::table('projects', function (Blueprint $table) {
+        //     $table->dropColumn('end_date');
+        // });
     }
 };
