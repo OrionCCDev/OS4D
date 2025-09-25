@@ -428,17 +428,13 @@ class TaskController extends Controller
                 'new_status' => $task->fresh()->status
             ]);
 
-            // Return JSON response for AJAX requests
-            if ($request->ajax() || $request->wantsJson()) {
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Task approved successfully',
-                    'task_id' => $task->id,
-                    'new_status' => $task->fresh()->status
-                ]);
-            }
-
-            return redirect()->back()->with('success', 'Task approved successfully');
+            // Always return JSON response for approval endpoint
+            return response()->json([
+                'success' => true,
+                'message' => 'Task approved successfully',
+                'task_id' => $task->id,
+                'new_status' => $task->fresh()->status
+            ]);
         } catch (\Exception $e) {
             Log::error('Failed to approve task', [
                 'task_id' => $task->id,
@@ -446,15 +442,11 @@ class TaskController extends Controller
                 'manager_id' => Auth::id()
             ]);
 
-            // Return JSON response for AJAX requests
-            if ($request->ajax() || $request->wantsJson()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => $e->getMessage()
-                ], 400);
-            }
-
-            return redirect()->back()->with('error', $e->getMessage());
+            // Always return JSON response for approval endpoint
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 400);
         }
     }
 
@@ -558,17 +550,13 @@ class TaskController extends Controller
                 'new_status' => $task->fresh()->status
             ]);
 
-            // Return JSON response for AJAX requests
-            if ($request->ajax() || $request->wantsJson()) {
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Task rejected successfully',
-                    'task_id' => $task->id,
-                    'new_status' => $task->fresh()->status
-                ]);
-            }
-
-            return redirect()->back()->with('success', 'Task rejected successfully');
+            // Always return JSON response for rejection endpoint
+            return response()->json([
+                'success' => true,
+                'message' => 'Task rejected successfully',
+                'task_id' => $task->id,
+                'new_status' => $task->fresh()->status
+            ]);
         } catch (\Exception $e) {
             Log::error('Failed to reject task', [
                 'task_id' => $task->id,
@@ -576,15 +564,11 @@ class TaskController extends Controller
                 'manager_id' => Auth::id()
             ]);
 
-            // Return JSON response for AJAX requests
-            if ($request->ajax() || $request->wantsJson()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => $e->getMessage()
-                ], 400);
-            }
-
-            return redirect()->back()->with('error', $e->getMessage());
+            // Always return JSON response for rejection endpoint
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 400);
         }
     }
 

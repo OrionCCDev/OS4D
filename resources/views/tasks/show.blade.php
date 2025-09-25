@@ -832,14 +832,15 @@ function approveTask(taskId) {
                         }, 1000);
                     });
                 } else {
-                    return response.json().then(data => {
-                        console.error('Approval failed:', data);
-                        throw new Error(data.message || 'Approval failed');
-                    }).catch(() => {
-                        return response.text().then(text => {
-                            console.error('Approval failed:', text);
+                    // For error responses, try to get JSON first, then fallback to text
+                    return response.text().then(text => {
+                        console.error('Approval failed:', text);
+                        try {
+                            const data = JSON.parse(text);
+                            throw new Error(data.message || 'Approval failed');
+                        } catch (parseError) {
                             throw new Error(text || 'Approval failed');
-                        });
+                        }
                     });
                 }
             })
@@ -970,14 +971,15 @@ function rejectTask(taskId) {
                         }, 1000);
                     });
                 } else {
-                    return response.json().then(data => {
-                        console.error('Rejection failed:', data);
-                        throw new Error(data.message || 'Rejection failed');
-                    }).catch(() => {
-                        return response.text().then(text => {
-                            console.error('Rejection failed:', text);
+                    // For error responses, try to get JSON first, then fallback to text
+                    return response.text().then(text => {
+                        console.error('Rejection failed:', text);
+                        try {
+                            const data = JSON.parse(text);
+                            throw new Error(data.message || 'Rejection failed');
+                        } catch (parseError) {
                             throw new Error(text || 'Rejection failed');
-                        });
+                        }
                     });
                 }
             })
