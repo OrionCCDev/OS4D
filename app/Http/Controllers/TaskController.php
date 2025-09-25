@@ -263,31 +263,46 @@ class TaskController extends Controller
         }
 
         $request->validate([
-            'file' => 'required|file|max:1024000', // 1GB
+            'files' => 'required|array',
+            'files.*' => 'required|file|max:51200', // 50MB per file
         ]);
 
-        $file = $request->file('file');
-        $disk = 'public';
-        $path = $file->store("tasks/{$task->id}", $disk);
+        $files = $request->file('files');
+        $uploadedCount = 0;
+        $uploadedFiles = [];
 
-        $attachment = $task->attachments()->create([
-            'uploaded_by' => Auth::id(),
-            'original_name' => $file->getClientOriginalName(),
-            'mime_type' => $file->getClientMimeType(),
-            'size_bytes' => $file->getSize(),
-            'disk' => $disk,
-            'path' => $path,
-        ]);
+        foreach ($files as $file) {
+            if (!$file) continue;
 
-        // History record
-        $task->histories()->create([
-            'user_id' => Auth::id(),
-            'action' => 'file_uploaded',
-            'description' => "Uploaded file: {$attachment->original_name}",
-            'metadata' => ['attachment_id' => $attachment->id]
-        ]);
+            $disk = 'public';
+            $path = $file->store("tasks/{$task->id}", $disk);
 
-        return back()->with('success', 'File uploaded');
+            $attachment = $task->attachments()->create([
+                'uploaded_by' => Auth::id(),
+                'original_name' => $file->getClientOriginalName(),
+                'mime_type' => $file->getClientMimeType(),
+                'size_bytes' => $file->getSize(),
+                'disk' => $disk,
+                'path' => $path,
+            ]);
+
+            $uploadedFiles[] = $attachment->original_name;
+            $uploadedCount++;
+
+            // History record for each file
+            $task->histories()->create([
+                'user_id' => Auth::id(),
+                'action' => 'file_uploaded',
+                'description' => "Uploaded file: {$attachment->original_name}",
+                'metadata' => ['attachment_id' => $attachment->id]
+            ]);
+        }
+
+        if ($uploadedCount === 1) {
+            return back()->with('success', 'File uploaded successfully');
+        } else {
+            return back()->with('success', "{$uploadedCount} files uploaded successfully");
+        }
     }
 
     public function deleteAttachment(Task $task, TaskAttachment $attachment)
