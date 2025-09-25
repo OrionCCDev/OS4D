@@ -93,3 +93,68 @@
 #filesContainer::-webkit-scrollbar-thumb:hover {
     background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
 }
+
+/* Responsive improvements */
+@media (max-width: 576px) {
+    .file-card {
+        margin-bottom: 1rem;
+    }
+
+    .file-card .p-4 {
+        padding: 1rem !important;
+    }
+
+    .file-card .file-icon-wrapper {
+        margin-bottom: 0.75rem;
+    }
+
+    .file-card .file-icon-wrapper .bg-white {
+        width: 50px !important;
+        height: 50px !important;
+    }
+
+    .file-card .file-icon-wrapper i {
+        font-size: 1.25rem !important;
+    }
+
+    .file-card h6 {
+        font-size: 0.875rem !important;
+        line-height: 1.2 !important;
+    }
+
+    .file-card .badge {
+        font-size: 0.75rem;
+        padding: 0.5rem 0.75rem !important;
+    }
+
+    .file-card .bg-white {
+        padding: 0.75rem 1rem !important;
+    }
+
+    .file-card .btn {
+        font-size: 0.75rem;
+        padding: 0.5rem 0.75rem;
+    }
+
+    .upload-section .file-name {
+        font-size: 0.75rem !important;
+        max-width: 200px;
+    }
+}
+
+@media (max-width: 768px) {
+    .file-card .d-flex.gap-2 {
+        flex-direction: column;
+        gap: 0.5rem !important;
+    }
+
+    .file-card .btn {
+        width: 100%;
+    }
+}
+
+@media (min-width: 1200px) {
+    .file-card {
+        min-height: 280px;
+    }
+}

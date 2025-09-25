@@ -247,27 +247,27 @@
             <!-- Task Files -->
             <div class="card mb-4 border-0 shadow-lg" style="background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);">
                 <div class="card-header bg-transparent border-0 pb-0">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center mb-4 gap-3">
                         <h4 class="mb-0 fw-bold text-dark" style="font-size: 1.75rem;">
                             <i class="bx bx-folder-open me-2 text-primary"></i>Task Files
                         </h4>
                         @if(Auth::user()->isManager() || ($task->status !== 'submitted_for_review' && $task->status !== 'in_review' && $task->status !== 'approved' && $task->status !== 'completed'))
-                            <div class="d-flex align-items-center gap-3">
-                                <div class="upload-section">
-                                    <form action="{{ route('tasks.attachments.upload', $task) }}" method="POST" enctype="multipart/form-data" class="d-flex gap-2 align-items-center">
-                                        @csrf
-                                        <div class="file-input-wrapper">
+                            <div class="upload-section">
+                                <form action="{{ route('tasks.attachments.upload', $task) }}" method="POST" enctype="multipart/form-data">
+                                    @csrf
+                                    <div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center gap-2">
+                                        <div class="file-input-wrapper d-flex flex-column flex-sm-row align-items-start align-items-sm-center gap-2">
                                             <input type="file" name="file" id="fileInput" class="form-control form-control-sm" required style="display: none;">
                                             <label for="fileInput" class="btn btn-outline-secondary btn-sm mb-0">
                                                 <i class="bx bx-file me-1"></i>Choose File
                                             </label>
-                                            <span class="file-name text-muted ms-2" style="font-size: 0.875rem;">No file chosen</span>
+                                            <span class="file-name text-muted" style="font-size: 0.875rem; word-break: break-all;">No file chosen</span>
                                         </div>
                                         <button class="btn btn-primary btn-sm px-3" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);">
                                             <i class="bx bx-upload me-1"></i>Upload
                                         </button>
-                                    </form>
-                                </div>
+                                    </div>
+                                </form>
                             </div>
                         @else
                             <div class="alert alert-warning alert-sm mb-0 py-2" style="background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%); border: 1px solid #ffc107;">
@@ -304,7 +304,7 @@
                                     elseif (in_array(strtolower($fileExtension), ['mp4', 'avi', 'mov'])) $fileIcon = 'bx-video';
                                     elseif (in_array(strtolower($fileExtension), ['mp3', 'wav', 'flac'])) $fileIcon = 'bx-music';
                                 @endphp
-                                <div class="col-xl-4 col-lg-6 col-md-6 mb-4 file-item" data-filename="{{ strtolower($att->original_name) }}">
+                                <div class="col-12 col-sm-6 col-lg-4 col-xl-3 mb-4 file-item" data-filename="{{ strtolower($att->original_name) }}">
                                     <div class="file-card position-relative overflow-hidden"
                                          style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
                                                 border-radius: 16px;
@@ -356,13 +356,13 @@
                                             </div>
 
                                             <!-- Action buttons -->
-                                            <div class="d-flex gap-2">
+                                            <div class="d-flex flex-column flex-sm-row gap-2">
                                                 <a class="btn btn-sm btn-outline-light flex-fill" href="{{ Storage::url($att->path) }}" target="_blank" style="border-radius: 8px;">
-                                                    <i class="bx bxs-show me-1"></i>View
+                                                    <i class="bx bxs-show me-1"></i><span class="d-none d-sm-inline">View</span>
                                                 </a>
                                                 <a class="btn btn-sm text-white flex-fill" href="{{ route('tasks.attachments.download', $att) }}"
                                                    style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: none; border-radius: 8px; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);">
-                                                    <i class="bx bx-download me-1"></i>Download
+                                                    <i class="bx bx-download me-1"></i><span class="d-none d-sm-inline">Download</span>
                                                 </a>
                                                 @if(Auth::user()->isManager() || (($att->uploaded_by === Auth::id()) && $task->status !== 'submitted_for_review' && $task->status !== 'in_review' && $task->status !== 'approved' && $task->status !== 'completed'))
                                                     <form action="{{ route('tasks.attachments.delete', [$task, $att]) }}" method="POST" onsubmit="return confirm('Delete attachment?')" class="d-inline flex-fill">
@@ -370,7 +370,7 @@
                                                         @method('DELETE')
                                                         <button class="btn btn-sm text-white w-100"
                                                                 style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); border: none; border-radius: 8px; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);">
-                                                            <i class="bx bx-trash me-1"></i>Delete
+                                                            <i class="bx bx-trash me-1"></i><span class="d-none d-sm-inline">Delete</span>
                                                         </button>
                                                     </form>
                                                 @endif
