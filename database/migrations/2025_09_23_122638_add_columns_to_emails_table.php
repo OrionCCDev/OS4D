@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('to_email');
             $table->string('subject');
             $table->text('body');
-            $table->timestamp('received_at');
+            $table->timestamp('received_at')->nullable();
             $table->enum('status', ['received', 'read', 'replied', 'archived'])->default('received');
             $table->unsignedBigInteger('task_id')->nullable();
             $table->json('attachments')->nullable();
@@ -42,7 +42,7 @@ return new class extends Migration
             $table->dropForeign(['reply_to_email_id']);
             $table->dropColumn([
                 'from_email',
-                'to_email', 
+                'to_email',
                 'subject',
                 'body',
                 'received_at',
