@@ -82,6 +82,23 @@
         </div>
     </div>
 
+    <!-- Success/Error Messages -->
+    @if(session('success'))
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bx bx-check-circle me-2"></i>
+            {{ session('success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
+
+    @if(session('error'))
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bx bx-error me-2"></i>
+            {{ session('error') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
+
     @if($task->status === 'submitted_for_review' && !Auth::user()->isManager())
         <div class="row mb-4">
             <div class="col-12">
@@ -262,23 +279,42 @@
                     @if($task->attachments->count())
                         <div class="row" id="filesContainer">
                             @foreach($task->attachments->sortByDesc('created_at') as $att)
+                                @php
+                                    $isRecent = $att->created_at->diffInHours(now()) < 24;
+                                    $isOwnFile = $att->uploaded_by === Auth::id();
+                                @endphp
                                 <div class="col-md-6 mb-3 file-item" data-filename="{{ strtolower($att->original_name) }}">
-                                    <div class="card border-0 bg-light">
+                                    <div class="card border-0 {{ $isRecent ? 'border-warning' : '' }} {{ $isOwnFile ? 'bg-primary bg-opacity-10' : 'bg-light' }}"
+                                         style="{{ $isRecent ? 'border-left: 4px solid #ffc107 !important;' : '' }}">
                                         <div class="card-body p-3">
                                             <div class="d-flex align-items-start">
                                                 <div class="avatar avatar-sm me-3">
-                                                    <span class="avatar-initial rounded-circle bg-label-primary">
+                                                    <span class="avatar-initial rounded-circle {{ $isOwnFile ? 'bg-primary text-white' : 'bg-label-primary' }}">
                                                         <i class="bx bx-file"></i>
                                                     </span>
                                                 </div>
                                                 <div class="flex-grow-1">
-                                                    <h6 class="mb-1">{{ $att->original_name }}</h6>
+                                                    <h6 class="mb-1 {{ $isOwnFile ? 'text-primary fw-bold' : '' }}">{{ $att->original_name }}</h6>
                                                     <small class="text-muted d-block mb-2">
                                                         {{ number_format($att->size_bytes/1024,1) }} KB • {{ $att->mime_type }}
                                                     </small>
-                                                    <small class="text-muted">
-                                                        by {{ $att->uploader?->name }} • {{ $att->created_at->diffForHumans() }}
-                                                    </small>
+                                                    <div class="d-flex align-items-center gap-2 mb-2">
+                                                        <span class="badge {{ $isOwnFile ? 'bg-primary text-white' : 'bg-info text-white' }} px-3 py-2 fw-bold shadow-sm">
+                                                            <i class="bx bx-user me-1"></i>by {{ $att->uploader?->name }}
+                                                        </span>
+                                                        @if($isRecent)
+                                                            <span class="badge bg-warning text-dark px-3 py-2 fw-bold shadow-sm">
+                                                                <i class="bx bx-time me-1"></i>Recent
+                                                            </span>
+                                                        @endif
+                                                    </div>
+                                                    <div class="bg-light rounded px-3 py-2 border-start border-3 {{ $isOwnFile ? 'border-primary' : 'border-info' }} shadow-sm">
+                                                        <small class="{{ $isOwnFile ? 'text-primary' : 'text-info' }} fw-bold d-flex align-items-center">
+                                                            <i class="bx bx-calendar me-2"></i>
+                                                            <span>{{ $att->created_at->format('M d, Y H:i') }}</span>
+                                                            <span class="ms-2 text-muted">({{ $att->created_at->diffForHumans() }})</span>
+                                                        </small>
+                                                    </div>
                                                 </div>
                                             </div>
                                             <div class="d-flex gap-2 mt-3">
@@ -315,49 +351,57 @@
             <!-- Task History -->
             <div class="card border-0 shadow-sm">
                 <div class="card-header bg-transparent border-0">
-                    <h5 class="mb-0">Task History</h5>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Task History</h5>
+                        <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#taskHistoryCollapse" aria-expanded="true" aria-controls="taskHistoryCollapse">
+                            <i class="bx bx-chevron-down" id="historyToggleIcon"></i>
+                            <span id="historyToggleText">Minimize</span>
+                        </button>
+                    </div>
                 </div>
-                <div class="card-body">
-                    @if($task->histories->count() > 0)
-                        <div class="timeline">
-                            @foreach($task->histories->sortByDesc('created_at') as $history)
-                                <div class="timeline-item">
-                                    <div class="timeline-marker"></div>
-                                    <div class="timeline-content">
-                                        <div class="d-flex justify-content-between align-items-start mb-2">
-                                            <div class="flex-grow-1">
-                                                <h6 class="mb-1">{{ $history->description }}</h6>
-                                                <div class="d-flex align-items-center gap-3 text-muted">
-                                                    <small>
-                                                        <i class="bx bx-user me-1"></i>{{ $history->user->name }}
-                                                    </small>
-                                                    <small>
-                                                        <i class="bx bx-time me-1"></i>{{ $history->created_at->format('M d, Y H:i') }}
-                                                    </small>
+                <div class="collapse show" id="taskHistoryCollapse">
+                    <div class="card-body">
+                        @if($task->histories->count() > 0)
+                            <div class="timeline">
+                                @foreach($task->histories->sortByDesc('created_at') as $history)
+                                    <div class="timeline-item">
+                                        <div class="timeline-marker"></div>
+                                        <div class="timeline-content">
+                                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                                <div class="flex-grow-1">
+                                                    <h6 class="mb-1">{{ $history->description }}</h6>
+                                                    <div class="d-flex align-items-center gap-3 text-muted">
+                                                        <small>
+                                                            <i class="bx bx-user me-1"></i>{{ $history->user->name }}
+                                                        </small>
+                                                        <small>
+                                                            <i class="bx bx-time me-1"></i>{{ $history->created_at->format('M d, Y H:i') }}
+                                                        </small>
+                                                    </div>
                                                 </div>
+                                                <span class="badge bg-label-secondary">{{ ucfirst(str_replace('_', ' ', $history->action)) }}</span>
                                             </div>
-                                            <span class="badge bg-label-secondary">{{ ucfirst(str_replace('_', ' ', $history->action)) }}</span>
+                                            @if($history->old_value || $history->new_value)
+                                                <div class="mt-2">
+                                                    @if($history->old_value)
+                                                        <span class="badge bg-label-danger me-1">From: {{ $history->old_value }}</span>
+                                                    @endif
+                                                    @if($history->new_value)
+                                                        <span class="badge bg-label-success">To: {{ $history->new_value }}</span>
+                                                    @endif
+                                                </div>
+                                            @endif
                                         </div>
-                                        @if($history->old_value || $history->new_value)
-                                            <div class="mt-2">
-                                                @if($history->old_value)
-                                                    <span class="badge bg-label-danger me-1">From: {{ $history->old_value }}</span>
-                                                @endif
-                                                @if($history->new_value)
-                                                    <span class="badge bg-label-success">To: {{ $history->new_value }}</span>
-                                                @endif
-                                            </div>
-                                        @endif
                                     </div>
-                                </div>
-                            @endforeach
-                        </div>
-                    @else
-                        <div class="text-center py-4">
-                            <i class="bx bx-history" style="font-size: 3rem; color: #d1d5db;"></i>
-                            <p class="text-muted mt-2">No history available for this task</p>
-                        </div>
-                    @endif
+                                @endforeach
+                            </div>
+                        @else
+                            <div class="text-center py-4">
+                                <i class="bx bx-history" style="font-size: 3rem; color: #d1d5db;"></i>
+                                <p class="text-muted mt-2">No history available for this task</p>
+                            </div>
+                        @endif
+                    </div>
                 </div>
             </div>
         </div>
@@ -710,14 +754,247 @@ function submitForReview(taskId) {
 
 // Approve task
 function approveTask(taskId) {
-    document.getElementById('approveTaskForm').action = `/tasks/${taskId}/approve`;
-    new bootstrap.Modal(document.getElementById('approveTaskModal')).show();
+    try {
+        const form = document.getElementById('approveTaskForm');
+        const modal = document.getElementById('approveTaskModal');
+
+        if (!form) {
+            console.error('Approve form not found');
+            alert('Error: Approval form not found. Please refresh the page.');
+            return;
+        }
+
+        if (!modal) {
+            console.error('Approve modal not found');
+            alert('Error: Approval modal not found. Please refresh the page.');
+            return;
+        }
+
+        // Set the form action
+        form.action = `/tasks/${taskId}/approve`;
+
+        // Ensure CSRF token is present
+        const csrfToken = document.querySelector('meta[name="csrf-token"]');
+        if (csrfToken) {
+            const csrfInput = form.querySelector('input[name="_token"]');
+            if (csrfInput) {
+                csrfInput.value = csrfToken.getAttribute('content');
+            }
+        }
+
+        // Show the modal
+        const bootstrapModal = new bootstrap.Modal(modal);
+        bootstrapModal.show();
+
+        console.log('Approval modal opened for task:', taskId);
+        console.log('Form action set to:', form.action);
+        console.log('CSRF token:', csrfToken ? csrfToken.getAttribute('content') : 'Not found');
+
+        // Add form submission handler with AJAX
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            console.log('Form submission started for task:', taskId);
+
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
+
+            // Show loading state
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Approving...';
+
+            // Prepare form data
+            const formData = new FormData(form);
+            console.log('Form data:', Object.fromEntries(formData));
+
+            // Submit via AJAX
+            fetch(form.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken.getAttribute('content'),
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => {
+                console.log('Response status:', response.status);
+
+                if (response.ok) {
+                    return response.json().then(data => {
+                        console.log('Approval successful!', data);
+                        // Close modal
+                        bootstrapModal.hide();
+                        // Show success message
+                        showMessage(data.message || 'Task approved successfully!', 'success');
+                        // Reload page after a short delay
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1000);
+                    });
+                } else {
+                    return response.json().then(data => {
+                        console.error('Approval failed:', data);
+                        throw new Error(data.message || 'Approval failed');
+                    }).catch(() => {
+                        return response.text().then(text => {
+                            console.error('Approval failed:', text);
+                            throw new Error(text || 'Approval failed');
+                        });
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Approval error:', error);
+                showMessage('Failed to approve task: ' + error.message, 'error');
+
+                // Reset button
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
+            });
+        });
+
+    } catch (error) {
+        console.error('Error opening approval modal:', error);
+        alert('Error opening approval dialog. Please refresh the page and try again.');
+    }
+}
+
+// Function to show messages
+function showMessage(message, type = 'info') {
+    // Remove any existing messages
+    const existingMessages = document.querySelectorAll('.alert-message');
+    existingMessages.forEach(msg => msg.remove());
+
+    // Create new message
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type === 'error' ? 'danger' : type} alert-dismissible fade show alert-message`;
+    alertDiv.style.position = 'fixed';
+    alertDiv.style.top = '20px';
+    alertDiv.style.right = '20px';
+    alertDiv.style.zIndex = '9999';
+    alertDiv.style.minWidth = '300px';
+
+    alertDiv.innerHTML = `
+        <i class="bx bx-${type === 'success' ? 'check-circle' : type === 'error' ? 'error' : 'info-circle'} me-2"></i>
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    `;
+
+    document.body.appendChild(alertDiv);
+
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+        if (alertDiv.parentNode) {
+            alertDiv.remove();
+        }
+    }, 5000);
 }
 
 // Reject task
 function rejectTask(taskId) {
-    document.getElementById('rejectTaskForm').action = `/tasks/${taskId}/reject`;
-    new bootstrap.Modal(document.getElementById('rejectTaskModal')).show();
+    try {
+        const form = document.getElementById('rejectTaskForm');
+        const modal = document.getElementById('rejectTaskModal');
+
+        if (!form) {
+            console.error('Reject form not found');
+            alert('Error: Rejection form not found. Please refresh the page.');
+            return;
+        }
+
+        if (!modal) {
+            console.error('Reject modal not found');
+            alert('Error: Rejection modal not found. Please refresh the page.');
+            return;
+        }
+
+        // Set the form action
+        form.action = `/tasks/${taskId}/reject`;
+
+        // Ensure CSRF token is present
+        const csrfToken = document.querySelector('meta[name="csrf-token"]');
+        if (csrfToken) {
+            const csrfInput = form.querySelector('input[name="_token"]');
+            if (csrfInput) {
+                csrfInput.value = csrfToken.getAttribute('content');
+            }
+        }
+
+        // Show the modal
+        const bootstrapModal = new bootstrap.Modal(modal);
+        bootstrapModal.show();
+
+        console.log('Rejection modal opened for task:', taskId);
+        console.log('Form action set to:', form.action);
+        console.log('CSRF token:', csrfToken ? csrfToken.getAttribute('content') : 'Not found');
+
+        // Add form submission handler with AJAX
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            console.log('Rejection form submission started for task:', taskId);
+
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
+
+            // Show loading state
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Rejecting...';
+
+            // Prepare form data
+            const formData = new FormData(form);
+            console.log('Form data:', Object.fromEntries(formData));
+
+            // Submit via AJAX
+            fetch(form.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken.getAttribute('content'),
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => {
+                console.log('Response status:', response.status);
+
+                if (response.ok) {
+                    return response.json().then(data => {
+                        console.log('Rejection successful!', data);
+                        // Close modal
+                        bootstrapModal.hide();
+                        // Show success message
+                        showMessage(data.message || 'Task rejected successfully!', 'success');
+                        // Reload page after a short delay
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1000);
+                    });
+                } else {
+                    return response.json().then(data => {
+                        console.error('Rejection failed:', data);
+                        throw new Error(data.message || 'Rejection failed');
+                    }).catch(() => {
+                        return response.text().then(text => {
+                            console.error('Rejection failed:', text);
+                            throw new Error(text || 'Rejection failed');
+                        });
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Rejection error:', error);
+                showMessage('Failed to reject task: ' + error.message, 'error');
+
+                // Reset button
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
+            });
+        });
+
+    } catch (error) {
+        console.error('Error opening rejection modal:', error);
+        alert('Error opening rejection dialog. Please refresh the page and try again.');
+    }
 }
 
 // Send approval email
@@ -789,6 +1066,23 @@ document.addEventListener('DOMContentLoaded', function() {
                     item.style.display = 'none';
                 }
             });
+        });
+    }
+
+    // Task History Accordion Toggle
+    const historyCollapse = document.getElementById('taskHistoryCollapse');
+    const historyToggleIcon = document.getElementById('historyToggleIcon');
+    const historyToggleText = document.getElementById('historyToggleText');
+
+    if (historyCollapse && historyToggleIcon && historyToggleText) {
+        historyCollapse.addEventListener('show.bs.collapse', function() {
+            historyToggleIcon.className = 'bx bx-chevron-down';
+            historyToggleText.textContent = 'Minimize';
+        });
+
+        historyCollapse.addEventListener('hide.bs.collapse', function() {
+            historyToggleIcon.className = 'bx bx-chevron-right';
+            historyToggleText.textContent = 'Maximize';
         });
     }
 
