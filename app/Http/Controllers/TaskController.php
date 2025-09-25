@@ -579,8 +579,8 @@ class TaskController extends Controller
             abort(403, 'Access denied. Only the assigned user can prepare emails for this task.');
         }
 
-        // Only tasks in ready_for_email status can have emails prepared
-        if ($task->status !== 'ready_for_email') {
+        // Only tasks in ready_for_email or approved status can have emails prepared
+        if (!in_array($task->status, ['ready_for_email', 'approved'])) {
             abort(403, 'Access denied. Only tasks ready for email can have emails prepared.');
         }
 
@@ -596,8 +596,8 @@ class TaskController extends Controller
             abort(403, 'Access denied. Only the assigned user can prepare emails for this task.');
         }
 
-        // Only tasks in ready_for_email status can have emails prepared
-        if ($task->status !== 'ready_for_email') {
+        // Only tasks in ready_for_email or approved status can have emails prepared
+        if (!in_array($task->status, ['ready_for_email', 'approved'])) {
             abort(403, 'Access denied. Only tasks ready for email can have emails prepared.');
         }
 
@@ -648,8 +648,8 @@ class TaskController extends Controller
             abort(403, 'Access denied. Only the assigned user can send emails for this task.');
         }
 
-        // Only tasks in ready_for_email status can have emails sent
-        if ($task->status !== 'ready_for_email') {
+        // Only tasks in ready_for_email or approved status can have emails sent
+        if (!in_array($task->status, ['ready_for_email', 'approved'])) {
             abort(403, 'Access denied. Only tasks ready for email can have emails sent.');
         }
 

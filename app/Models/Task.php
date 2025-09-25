@@ -292,7 +292,7 @@ class Task extends Model
         }
 
         $this->update([
-            'status' => 'ready_for_email',
+            'status' => 'approved', // Changed from 'ready_for_email' to 'approved' for production compatibility
             'approved_at' => now(),
             'completed_at' => now(),
             'approval_notes' => $notes

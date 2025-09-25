@@ -442,7 +442,7 @@
                                     <i class="bx bx-time me-2"></i>
                                     Task is under review by manager.
                                 </div>
-                            @elseif($task->status === 'ready_for_email')
+                            @elseif($task->status === 'ready_for_email' || $task->status === 'approved')
                                 <div class="alert alert-info text-center">
                                     <i class="bx bx-envelope me-2"></i>
                                     <strong>Task approved! Ready for email confirmation.</strong><br>
@@ -481,7 +481,7 @@
                                         <i class="bx bx-x-circle me-2"></i>Reject Task
                                     </button>
                                 </div>
-                            @elseif($task->status === 'ready_for_email')
+                            @elseif($task->status === 'ready_for_email' || $task->status === 'approved')
                                 <div class="alert alert-info text-center">
                                     <i class="bx bx-envelope me-2"></i>
                                     <strong>Task approved and ready for email confirmation.</strong><br>
