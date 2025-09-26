@@ -34,15 +34,6 @@
         </div>
       </div>
     </div>
-
-    <div class="col-12">
-      <div class="card">
-        <div class="card-header"><h5 class="card-title mb-0 text-danger">{{ __('Delete Account') }}</h5></div>
-        <div class="card-body">
-          @include('profile.partials.delete-user-form')
-        </div>
-      </div>
-    </div>
   </div>
 </div>
 <!-- / Content -->

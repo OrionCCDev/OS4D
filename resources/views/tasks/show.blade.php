@@ -863,7 +863,7 @@
                         <label class="form-label">Assign to User</label>
                         <select name="assigned_to" class="form-select" required>
                             <option value="">Select user</option>
-                            @foreach(\App\Models\User::where('id', '!=', auth()->id())->orderBy('name')->get() as $user)
+                            @foreach(\App\Models\User::where('id', '!=', auth()->id())->where('role', 'user')->orderBy('name')->get() as $user)
                                 <option value="{{ $user->id }}">{{ $user->name }}</option>
                             @endforeach
                         </select>

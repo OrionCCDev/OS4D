@@ -46,7 +46,10 @@ class TaskController extends Controller
         $folders = $selectedProjectId
             ? ProjectFolder::where('project_id', $selectedProjectId)->orderBy('name')->get()
             : ProjectFolder::orderBy('name')->get();
-        $users = User::where('id', '!=', Auth::id())->orderBy('name')->get();
+        $users = User::where('id', '!=', Auth::id())
+            ->where('role', 'user')
+            ->orderBy('name')
+            ->get();
 
         // Preselect context if provided in query
         $selectedFolderId = request()->query('folder_id');
