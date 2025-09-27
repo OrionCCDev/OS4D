@@ -34,6 +34,15 @@
         </div>
       </div>
     </div>
+
+    <div class="col-12 col-lg-6">
+      <div class="card h-100">
+        <div class="card-header"><h5 class="card-title mb-0">{{ __('Gmail Integration') }}</h5></div>
+        <div class="card-body">
+          @include('profile.partials.gmail-integration')
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 <!-- / Content -->

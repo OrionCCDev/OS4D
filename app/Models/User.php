@@ -27,6 +27,10 @@ class User extends Authenticatable implements HasMedia
         'role',
         'img',
         'notification_sound_enabled',
+        'gmail_token',
+        'gmail_refresh_token',
+        'gmail_connected',
+        'gmail_connected_at',
     ];
 
     /**
@@ -50,6 +54,8 @@ class User extends Authenticatable implements HasMedia
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'notification_sound_enabled' => 'boolean',
+            'gmail_connected' => 'boolean',
+            'gmail_connected_at' => 'datetime',
         ];
     }
 
@@ -87,5 +93,25 @@ class User extends Authenticatable implements HasMedia
     public function isRegularUser()
     {
         return $this->role === 'user';
+    }
+
+    /**
+     * Check if user has Gmail connected
+     */
+    public function hasGmailConnected(): bool
+    {
+        return $this->gmail_connected && !empty($this->gmail_token);
+    }
+
+    /**
+     * Get Gmail service instance for this user
+     */
+    public function getGmailService()
+    {
+        if (!$this->hasGmailConnected()) {
+            return null;
+        }
+
+        return app(\App\Services\GmailOAuthService::class)->getGmailService($this);
     }
 }

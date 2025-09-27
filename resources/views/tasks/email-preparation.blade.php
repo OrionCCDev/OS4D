@@ -551,6 +551,38 @@
                                 @enderror
                             </div>
 
+                            <!-- Gmail Integration Section -->
+                            @if(auth()->user()->hasGmailConnected())
+                                <div class="form-group-enhanced">
+                                    <div class="alert alert-info d-flex align-items-center">
+                                        <i class="bx bx-check-circle me-2"></i>
+                                        <div>
+                                            <strong>Gmail Connected!</strong><br>
+                                            <small>You can send this email from your Gmail account ({{ auth()->user()->email }})</small>
+                                        </div>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="use_gmail" name="use_gmail" value="1" checked>
+                                        <label class="form-check-label" for="use_gmail">
+                                            <strong>Send via Gmail</strong> - Send this email from your Gmail account instead of the system SMTP
+                                        </label>
+                                    </div>
+                                </div>
+                            @else
+                                <div class="form-group-enhanced">
+                                    <div class="alert alert-warning d-flex align-items-center">
+                                        <i class="bx bx-info-circle me-2"></i>
+                                        <div>
+                                            <strong>Gmail Not Connected</strong><br>
+                                            <small>Connect your Gmail account to send emails from your own Gmail address</small>
+                                        </div>
+                                    </div>
+                                    <a href="{{ route('profile.edit') }}" class="btn btn-outline-primary btn-sm">
+                                        <i class="bx bx-envelope me-1"></i>Connect Gmail Account
+                                    </a>
+                                </div>
+                            @endif
+
                             <!-- Action Buttons -->
                             <div class="d-flex flex-wrap gap-3 justify-content-center mt-4">
                                 <button type="submit" class="btn btn-enhanced btn-primary-enhanced">
@@ -842,7 +874,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Send email functionality
     sendEmailBtn.addEventListener('click', function() {
-        if (confirm('Are you sure you want to send this email? This action cannot be undone.')) {
+        const useGmail = document.getElementById('use_gmail') && document.getElementById('use_gmail').checked;
+        const confirmMessage = useGmail ?
+            'Are you sure you want to send this email via Gmail? This action cannot be undone.' :
+            'Are you sure you want to send this email? This action cannot be undone.';
+
+        if (confirm(confirmMessage)) {
             // Create a form for sending the email
             const sendForm = document.createElement('form');
             sendForm.method = 'POST';
@@ -854,6 +891,15 @@ document.addEventListener('DOMContentLoaded', function() {
             csrfToken.name = '_token';
             csrfToken.value = '{{ csrf_token() }}';
             sendForm.appendChild(csrfToken);
+
+            // Add Gmail option if checked
+            if (useGmail) {
+                const gmailInput = document.createElement('input');
+                gmailInput.type = 'hidden';
+                gmailInput.name = 'use_gmail';
+                gmailInput.value = '1';
+                sendForm.appendChild(gmailInput);
+            }
 
             document.body.appendChild(sendForm);
             sendForm.submit();

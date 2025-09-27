@@ -17,6 +17,7 @@ use App\Http\Controllers\EmailTemplateController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ExternalStakeholderController;
 use App\Http\Controllers\EmailController;
+use App\Http\Controllers\GmailOAuthController;
 
 // Redirect root to dashboard (requires authentication)
 Route::get('/', function () {
@@ -34,6 +35,12 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::patch('/profile/notification-preferences', [ProfileController::class, 'updateNotificationPreferences'])->name('profile.notification-preferences.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    // Gmail OAuth routes
+    Route::get('/auth/gmail', [GmailOAuthController::class, 'redirect'])->name('gmail.redirect');
+    Route::get('/auth/gmail/callback', [GmailOAuthController::class, 'callback'])->name('gmail.callback');
+    Route::post('/auth/gmail/disconnect', [GmailOAuthController::class, 'disconnect'])->name('gmail.disconnect');
+    Route::get('/auth/gmail/status', [GmailOAuthController::class, 'status'])->name('gmail.status');
 
     Route::post('/media/upload', [MediaController::class, 'upload'])->name('media.upload');
     Route::get('/media/list', [MediaController::class, 'list'])->name('media.list');

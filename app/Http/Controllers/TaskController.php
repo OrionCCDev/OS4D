@@ -678,25 +678,77 @@ class TaskController extends Controller
         }
 
         try {
+            $user = Auth::user();
+            $useGmail = $request->get('use_gmail', false) && $user->hasGmailConnected();
+
             // Parse email addresses
             $toEmails = array_filter(array_map('trim', explode(',', $emailPreparation->to_emails)));
             $ccEmails = $emailPreparation->cc_emails ? array_filter(array_map('trim', explode(',', $emailPreparation->cc_emails))) : [];
             $bccEmails = $emailPreparation->bcc_emails ? array_filter(array_map('trim', explode(',', $emailPreparation->bcc_emails))) : [];
 
             // Create the mail instance
-            $mail = new \App\Mail\TaskConfirmationMail($task, $emailPreparation, Auth::user());
+            $mail = new \App\Mail\TaskConfirmationMail($task, $emailPreparation, $user);
 
-            // Send to primary recipients
-            \Mail::to($toEmails)->send($mail);
+            if ($useGmail) {
+                // Use Gmail OAuth for sending
+                $gmailOAuthService = app(\App\Services\GmailOAuthService::class);
 
-            // Send CC if specified
-            if (!empty($ccEmails)) {
-                \Mail::cc($ccEmails)->send($mail);
-            }
+                // Prepare email data for Gmail API
+                $emailData = [
+                    'from' => $user->email,
+                    'to' => $toEmails,
+                    'subject' => $mail->envelope()->subject,
+                    'body' => view('emails.task-confirmation', [
+                        'task' => $task,
+                        'emailPreparation' => $emailPreparation,
+                        'sender' => $user,
+                    ])->render(),
+                ];
 
-            // Send BCC if specified
-            if (!empty($bccEmails)) {
-                \Mail::bcc($bccEmails)->send($mail);
+                if (!empty($ccEmails)) {
+                    $emailData['cc'] = $ccEmails;
+                }
+
+                if (!empty($bccEmails)) {
+                    $emailData['bcc'] = $bccEmails;
+                }
+
+                // Handle attachments
+                if ($emailPreparation->attachments) {
+                    $attachments = [];
+                    foreach ($emailPreparation->attachments as $attachmentPath) {
+                        if (file_exists(storage_path('app/' . $attachmentPath))) {
+                            $attachments[] = [
+                                'filename' => basename($attachmentPath),
+                                'content' => file_get_contents(storage_path('app/' . $attachmentPath)),
+                                'mime_type' => mime_content_type(storage_path('app/' . $attachmentPath)),
+                            ];
+                        }
+                    }
+                    if (!empty($attachments)) {
+                        $emailData['attachments'] = $attachments;
+                    }
+                }
+
+                $success = $gmailOAuthService->sendEmail($user, $emailData);
+
+                if (!$success) {
+                    throw new \Exception('Failed to send email via Gmail API');
+                }
+            } else {
+                // Use regular SMTP for sending
+                // Send to primary recipients
+                \Mail::to($toEmails)->send($mail);
+
+                // Send CC if specified
+                if (!empty($ccEmails)) {
+                    \Mail::cc($ccEmails)->send($mail);
+                }
+
+                // Send BCC if specified
+                if (!empty($bccEmails)) {
+                    \Mail::bcc($bccEmails)->send($mail);
+                }
             }
 
             // Update email preparation status
@@ -708,9 +760,10 @@ class TaskController extends Controller
             // Update task status to completed
             $task->update(['status' => 'completed']);
 
-            Log::info('Confirmation email sent successfully for task: ' . $task->id . ' by user: ' . Auth::id());
+            $message = $useGmail ? 'Confirmation email sent successfully via Gmail!' : 'Confirmation email sent successfully!';
+            Log::info('Confirmation email sent successfully for task: ' . $task->id . ' by user: ' . Auth::id() . ($useGmail ? ' via Gmail' : ''));
 
-            return response()->json(['success' => true, 'message' => 'Confirmation email sent successfully!']);
+            return response()->json(['success' => true, 'message' => $message]);
         } catch (\Exception $e) {
             Log::error('Failed to send confirmation email for task: ' . $task->id . ' - ' . $e->getMessage());
             return response()->json(['success' => false, 'message' => 'Failed to send email: ' . $e->getMessage()]);
