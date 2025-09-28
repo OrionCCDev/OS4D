@@ -13,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 class TaskController extends Controller
 {
@@ -517,7 +518,7 @@ class TaskController extends Controller
         }
 
         try {
-            \Mail::to($task->assignee->email)->send(new \App\Mail\TaskApprovalInternalMail($task, $task->assignee, auth()->user()));
+            Mail::to($task->assignee->email)->send(new \App\Mail\TaskApprovalInternalMail($task, $task->assignee, Auth::user()));
             Log::info('Approval email sent successfully for task: ' . $task->id . ' to user: ' . $task->assignee->email);
         } catch (\Exception $e) {
             Log::error('Failed to send approval email for task: ' . $task->id . ' - ' . $e->getMessage());
@@ -534,7 +535,7 @@ class TaskController extends Controller
         try {
             // For now, we'll use the same template but with rejection context
             // You can create a separate rejection email template if needed
-            \Mail::to($task->assignee->email)->send(new \App\Mail\TaskApprovalInternalMail($task, $task->assignee, auth()->user()));
+            Mail::to($task->assignee->email)->send(new \App\Mail\TaskApprovalInternalMail($task, $task->assignee, Auth::user()));
             Log::info('Rejection email sent successfully for task: ' . $task->id . ' to user: ' . $task->assignee->email);
         } catch (\Exception $e) {
             Log::error('Failed to send rejection email for task: ' . $task->id . ' - ' . $e->getMessage());
@@ -592,9 +593,9 @@ class TaskController extends Controller
 
     public function showEmailPreparationForm(Task $task)
     {
-        // Only the assigned user can prepare emails for their tasks
-        if ($task->assigned_to !== Auth::id()) {
-            abort(403, 'Access denied. Only the assigned user can prepare emails for this task.');
+        // Allow assigned user or managers to prepare emails
+        if ($task->assigned_to !== Auth::id() && !Auth::user()->isManager()) {
+            abort(403, 'Access denied. Only the assigned user or managers can prepare emails for this task.');
         }
 
         // Only tasks in ready_for_email or approved status can have emails prepared
@@ -602,16 +603,22 @@ class TaskController extends Controller
             abort(403, 'Access denied. Only tasks ready for email can have emails prepared.');
         }
 
+        // Look for any email preparation for this task, prioritizing current user's preparation
         $emailPreparation = $task->emailPreparations()->where('prepared_by', Auth::id())->latest()->first();
+
+        // If no preparation by current user, get the latest one for the task
+        if (!$emailPreparation) {
+            $emailPreparation = $task->emailPreparations()->latest()->first();
+        }
 
         return view('tasks.email-preparation', compact('task', 'emailPreparation'));
     }
 
     public function storeEmailPreparation(Request $request, Task $task)
     {
-        // Only the assigned user can prepare emails for their tasks
-        if ($task->assigned_to !== Auth::id()) {
-            abort(403, 'Access denied. Only the assigned user can prepare emails for this task.');
+        // Allow assigned user or managers to prepare emails
+        if ($task->assigned_to !== Auth::id() && !Auth::user()->isManager()) {
+            abort(403, 'Access denied. Only the assigned user or managers can prepare emails for this task.');
         }
 
         // Only tasks in ready_for_email or approved status can have emails prepared
@@ -661,9 +668,9 @@ class TaskController extends Controller
 
     public function sendConfirmationEmail(Request $request, Task $task)
     {
-        // Only the assigned user can send emails for their tasks
-        if ($task->assigned_to !== Auth::id()) {
-            abort(403, 'Access denied. Only the assigned user can send emails for this task.');
+        // Allow assigned user or managers to send emails
+        if ($task->assigned_to !== Auth::id() && !Auth::user()->isManager()) {
+            abort(403, 'Access denied. Only the assigned user or managers can send emails for this task.');
         }
 
         // Only tasks in ready_for_email or approved status can have emails sent
@@ -671,7 +678,8 @@ class TaskController extends Controller
             abort(403, 'Access denied. Only tasks ready for email can have emails sent.');
         }
 
-        $emailPreparation = $task->emailPreparations()->where('prepared_by', Auth::id())->latest()->first();
+        // Look for any email preparation for this task, not just by current user
+        $emailPreparation = $task->emailPreparations()->latest()->first();
 
         if (!$emailPreparation) {
             return response()->json(['success' => false, 'message' => 'No email preparation found. Please prepare the email first.']);
@@ -738,16 +746,16 @@ class TaskController extends Controller
             } else {
                 // Use regular SMTP for sending
                 // Send to primary recipients
-                \Mail::to($toEmails)->send($mail);
+                Mail::to($toEmails)->send($mail);
 
                 // Send CC if specified
                 if (!empty($ccEmails)) {
-                    \Mail::cc($ccEmails)->send($mail);
+                    Mail::cc($ccEmails)->send($mail);
                 }
 
                 // Send BCC if specified
                 if (!empty($bccEmails)) {
-                    \Mail::bcc($bccEmails)->send($mail);
+                    Mail::bcc($bccEmails)->send($mail);
                 }
             }
 

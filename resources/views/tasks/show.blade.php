@@ -685,7 +685,7 @@
                 <div class="card-body">
                     <div class="d-grid gap-2">
                         <!-- Task Workflow Actions -->
-                        @if($task->assigned_to === auth()->id())
+                        @if($task->assigned_to === auth()->id() || auth()->user()->isManager())
                             @if($task->status === 'assigned')
                                 <form action="{{ route('tasks.accept', $task) }}" method="POST" class="d-inline">
                                     @csrf
