@@ -99,6 +99,19 @@ Route::middleware('auth')->group(function () {
         Route::get('tasks/{task}/prepare-email', [TaskController::class, 'showEmailPreparationForm'])->name('tasks.prepare-email');
         Route::post('tasks/{task}/prepare-email', [TaskController::class, 'storeEmailPreparation'])->name('tasks.store-email-preparation');
         Route::post('tasks/{task}/send-confirmation-email', [TaskController::class, 'sendConfirmationEmail'])->name('tasks.send-confirmation-email');
+
+        // Test Gmail connection
+        Route::get('test-gmail', function() {
+            $user = auth()->user();
+            if (!$user) {
+                return response()->json(['error' => 'Not authenticated']);
+            }
+
+            $gmailService = app(\App\Services\GmailOAuthService::class);
+            $result = $gmailService->testGmailConnection($user);
+
+            return response()->json($result);
+        })->name('test-gmail');
     });
 
     // Task destroy - Manager only

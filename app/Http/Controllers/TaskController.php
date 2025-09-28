@@ -742,9 +742,13 @@ class TaskController extends Controller
                 $success = $gmailOAuthService->sendEmail($user, $emailData);
 
                 if (!$success) {
-                    throw new \Exception('Failed to send email via Gmail API');
+                    Log::warning('Gmail OAuth failed, falling back to SMTP for user: ' . $user->id);
+                    // Fallback to SMTP if Gmail OAuth fails
+                    $useGmail = false;
                 }
-            } else {
+            }
+
+            if (!$useGmail) {
                 // Use regular SMTP for sending
                 // Send to primary recipients
                 Mail::to($toEmails)->send($mail);
@@ -769,8 +773,8 @@ class TaskController extends Controller
             // Update task status to completed
             $task->update(['status' => 'completed']);
 
-            $message = $useGmail ? 'Confirmation email sent successfully via Gmail!' : 'Confirmation email sent successfully!';
-            Log::info('Confirmation email sent successfully for task: ' . $task->id . ' by user: ' . Auth::id() . ($useGmail ? ' via Gmail' : ''));
+            $message = $useGmail ? 'Confirmation email sent successfully via Gmail!' : 'Confirmation email sent successfully via SMTP!';
+            Log::info('Confirmation email sent successfully for task: ' . $task->id . ' by user: ' . Auth::id() . ($useGmail ? ' via Gmail' : ' via SMTP'));
 
             return response()->json(['success' => true, 'message' => $message]);
         } catch (\Exception $e) {

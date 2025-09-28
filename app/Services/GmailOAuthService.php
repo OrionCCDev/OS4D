@@ -72,16 +72,26 @@ class GmailOAuthService
      */
     public function getGmailService(User $user): ?Gmail
     {
+        Log::info('Getting Gmail service for user: ' . $user->id . ' - Connected: ' . ($user->gmail_connected ? 'Yes' : 'No') . ' - Has Token: ' . (!empty($user->gmail_token) ? 'Yes' : 'No'));
+
         if (!$user->gmail_connected || !$user->gmail_token) {
+            Log::warning('User ' . $user->id . ' does not have Gmail connected or token missing');
             return null;
         }
 
         try {
             $token = json_decode($user->gmail_token, true);
+            if (!$token) {
+                Log::error('Invalid Gmail token JSON for user: ' . $user->id);
+                return null;
+            }
+
             $this->client->setAccessToken($token);
+            Log::info('Gmail token set for user: ' . $user->id);
 
             // Refresh token if needed
             if ($this->client->isAccessTokenExpired()) {
+                Log::info('Gmail access token expired for user: ' . $user->id . ', attempting refresh');
                 if ($user->gmail_refresh_token) {
                     $this->client->refreshToken($user->gmail_refresh_token);
                     $newToken = $this->client->getAccessToken();
@@ -90,16 +100,21 @@ class GmailOAuthService
                     $user->update([
                         'gmail_token' => json_encode($newToken),
                     ]);
+                    Log::info('Gmail token refreshed successfully for user: ' . $user->id);
                 } else {
                     // No refresh token available, user needs to re-authenticate
+                    Log::error('No refresh token available for user: ' . $user->id . ', disconnecting Gmail');
                     $this->disconnectGmail($user);
                     return null;
                 }
             }
 
-            return new Gmail($this->client);
+            $gmailService = new Gmail($this->client);
+            Log::info('Gmail service created successfully for user: ' . $user->id);
+            return $gmailService;
         } catch (\Exception $e) {
             Log::error('Gmail service error for user ' . $user->id . ': ' . $e->getMessage());
+            Log::error('Gmail service error details: ' . $e->getTraceAsString());
             return null;
         }
     }
@@ -109,19 +124,24 @@ class GmailOAuthService
      */
     public function sendEmail(User $user, array $emailData): bool
     {
+        Log::info('Attempting to send Gmail email for user: ' . $user->id . ' to: ' . (is_array($emailData['to']) ? implode(', ', $emailData['to']) : $emailData['to']));
+
         $gmailService = $this->getGmailService($user);
         if (!$gmailService) {
+            Log::error('Gmail service not available for user: ' . $user->id);
             return false;
         }
 
         try {
             $message = $this->createMessage($emailData);
-            $gmailService->users_messages->send('me', $message);
+            Log::info('Gmail message created successfully for user: ' . $user->id);
 
-            Log::info('Gmail email sent successfully for user: ' . $user->id);
+            $result = $gmailService->users_messages->send('me', $message);
+            Log::info('Gmail email sent successfully for user: ' . $user->id . ' - Message ID: ' . $result->getId());
             return true;
         } catch (\Exception $e) {
             Log::error('Gmail send email error for user ' . $user->id . ': ' . $e->getMessage());
+            Log::error('Gmail send email error details: ' . $e->getTraceAsString());
             return false;
         }
     }
@@ -134,8 +154,14 @@ class GmailOAuthService
         $boundary = uniqid(rand(), true);
         $rawMessage = $this->buildRawMessage($emailData, $boundary);
 
+        Log::info('Raw message created, length: ' . strlen($rawMessage));
+        Log::debug('Raw message content: ' . substr($rawMessage, 0, 500) . '...');
+
         $message = new Message();
-        $message->setRaw(base64url_encode($rawMessage));
+        $encodedMessage = base64url_encode($rawMessage);
+        $message->setRaw($encodedMessage);
+
+        Log::info('Gmail message encoded successfully, encoded length: ' . strlen($encodedMessage));
 
         return $message;
     }
@@ -216,6 +242,61 @@ class GmailOAuthService
     public function isConnected(User $user): bool
     {
         return $user->gmail_connected && !empty($user->gmail_token);
+    }
+
+    /**
+     * Test Gmail connection and send a simple test email
+     */
+    public function testGmailConnection(User $user): array
+    {
+        $result = [
+            'success' => false,
+            'message' => '',
+            'details' => []
+        ];
+
+        try {
+            // Check if user has Gmail connected
+            if (!$this->isConnected($user)) {
+                $result['message'] = 'User does not have Gmail connected';
+                return $result;
+            }
+
+            // Get Gmail service
+            $gmailService = $this->getGmailService($user);
+            if (!$gmailService) {
+                $result['message'] = 'Failed to get Gmail service';
+                return $result;
+            }
+
+            // Create a simple test email
+            $testEmailData = [
+                'from' => $user->email,
+                'to' => [$user->email], // Send to self for testing
+                'subject' => 'Gmail OAuth Test Email',
+                'body' => '<html><body><h1>Test Email</h1><p>This is a test email to verify Gmail OAuth is working correctly.</p></body></html>',
+            ];
+
+            // Send test email
+            $success = $this->sendEmail($user, $testEmailData);
+
+            if ($success) {
+                $result['success'] = true;
+                $result['message'] = 'Test email sent successfully';
+            } else {
+                $result['message'] = 'Failed to send test email';
+            }
+
+        } catch (\Exception $e) {
+            $result['message'] = 'Error: ' . $e->getMessage();
+            $result['details'] = [
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ];
+        }
+
+        return $result;
     }
 }
 
