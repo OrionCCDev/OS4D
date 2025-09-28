@@ -682,7 +682,8 @@ class TaskController extends Controller
         $emailPreparation = $task->emailPreparations()->latest()->first();
 
         if (!$emailPreparation) {
-            return response()->json(['success' => false, 'message' => 'No email preparation found. Please prepare the email first.']);
+            // Auto-create a default email preparation if none exists
+            $emailPreparation = $this->createDefaultEmailPreparation($task);
         }
 
         try {
@@ -776,6 +777,41 @@ class TaskController extends Controller
             Log::error('Failed to send confirmation email for task: ' . $task->id . ' - ' . $e->getMessage());
             return response()->json(['success' => false, 'message' => 'Failed to send email: ' . $e->getMessage()]);
         }
+    }
+
+    /**
+     * Create a default email preparation for a task
+     */
+    private function createDefaultEmailPreparation(Task $task)
+    {
+        // Get the assigned user's email as the default recipient
+        $defaultToEmail = $task->assignee ? $task->assignee->email : '';
+
+        // Create default email content
+        $defaultSubject = "Task Completion Confirmation - {$task->title}";
+        $defaultBody = "Dear {$task->assignee->name},\n\n" .
+                      "This is to confirm that the task '{$task->title}' has been completed successfully.\n\n" .
+                      "Task Details:\n" .
+                      "- Project: {$task->project->name}\n" .
+                      "- Priority: " . ucfirst($task->priority) . "\n" .
+                      "- Due Date: " . ($task->due_date ? $task->due_date->format('M d, Y') : 'Not set') . "\n\n" .
+                      "Thank you for your hard work!\n\n" .
+                      "Best regards,\n" .
+                      Auth::user()->name;
+
+        // Create the email preparation
+        $emailPreparation = $task->emailPreparations()->create([
+            'prepared_by' => Auth::id(),
+            'to_emails' => $defaultToEmail,
+            'cc_emails' => '',
+            'bcc_emails' => '',
+            'subject' => $defaultSubject,
+            'body' => $defaultBody,
+            'attachments' => [],
+            'status' => 'draft',
+        ]);
+
+        return $emailPreparation;
     }
 }
 

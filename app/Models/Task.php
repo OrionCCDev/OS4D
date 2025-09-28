@@ -321,6 +321,9 @@ class Task extends Model
 
         // Notify external stakeholders
         $this->notifyExternalStakeholders('approved', 'Task Approved', "Task '{$this->title}' has been approved and completed successfully.");
+
+        // Auto-create email preparation for confirmation emails
+        $this->createDefaultEmailPreparation();
     }
 
     public function rejectTask($notes = null)
@@ -417,6 +420,44 @@ class Task extends Model
     public function taskNotifications()
     {
         return $this->hasMany(TaskNotification::class);
+    }
+
+    /**
+     * Create a default email preparation for this task
+     */
+    public function createDefaultEmailPreparation()
+    {
+        // Check if email preparation already exists
+        if ($this->emailPreparations()->exists()) {
+            return;
+        }
+
+        // Get the assigned user's email as the default recipient
+        $defaultToEmail = $this->assignee ? $this->assignee->email : '';
+
+        // Create default email content
+        $defaultSubject = "Task Completion Confirmation - {$this->title}";
+        $defaultBody = "Dear {$this->assignee->name},\n\n" .
+                      "This is to confirm that the task '{$this->title}' has been completed successfully.\n\n" .
+                      "Task Details:\n" .
+                      "- Project: {$this->project->name}\n" .
+                      "- Priority: " . ucfirst($this->priority) . "\n" .
+                      "- Due Date: " . ($this->due_date ? $this->due_date->format('M d, Y') : 'Not set') . "\n\n" .
+                      "Thank you for your hard work!\n\n" .
+                      "Best regards,\n" .
+                      "Task Management System";
+
+        // Create the email preparation
+        $this->emailPreparations()->create([
+            'prepared_by' => auth()->id() ?? 1, // Fallback for system operations
+            'to_emails' => $defaultToEmail,
+            'cc_emails' => '',
+            'bcc_emails' => '',
+            'subject' => $defaultSubject,
+            'body' => $defaultBody,
+            'attachments' => [],
+            'status' => 'draft',
+        ]);
     }
 }
 
