@@ -697,6 +697,16 @@ class TaskController extends Controller
 
         try {
             $user = Auth::user();
+
+            // If current user doesn't have Gmail connected, try to find a Gmail-connected user
+            if (!$user->hasGmailConnected()) {
+                $gmailUser = \App\Models\User::where('gmail_connected', true)->first();
+                if ($gmailUser) {
+                    $user = $gmailUser;
+                    Log::info('Using Gmail-connected user for sending: ' . $user->email . ' (ID: ' . $user->id . ')');
+                }
+            }
+
             $useGmail = $user->hasGmailConnected();
 
             Log::info('Email sending attempt - User: ' . $user->id . ', Use Gmail: ' . ($useGmail ? 'Yes' : 'No') . ', Gmail Connected: ' . ($user->hasGmailConnected() ? 'Yes' : 'No'));
