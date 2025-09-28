@@ -29,6 +29,13 @@ class GmailOAuthService
         $this->client->setAccessType('offline');
         $this->client->setApprovalPrompt('force');
 
+        // Fix SSL certificate issue for development
+        if (config('app.env') === 'local' || config('app.debug')) {
+            $this->client->setHttpClient(new \GuzzleHttp\Client([
+                'verify' => false, // Only for development
+            ]));
+        }
+
         // Log Gmail configuration for debugging
         Log::info('Gmail OAuth Service initialized with Client ID: ' . substr(config('services.gmail.client_id'), 0, 10) . '...');
 

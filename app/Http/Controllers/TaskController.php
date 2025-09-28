@@ -518,8 +518,17 @@ class TaskController extends Controller
         }
 
         try {
-            Mail::to($task->assignee->email)->send(new \App\Mail\TaskApprovalInternalMail($task, $task->assignee, Auth::user()));
-            Log::info('Approval email sent successfully for task: ' . $task->id . ' to user: ' . $task->assignee->email);
+            $approver = Auth::user();
+
+            // Try to send via Gmail OAuth if approver has Gmail connected
+            if ($approver && $approver->hasGmailConnected()) {
+                $this->sendApprovalEmailViaGmail($task, $approver);
+            } else {
+                // Fallback to SMTP
+                Mail::to($task->assignee->email)->send(new \App\Mail\TaskApprovalInternalMail($task, $task->assignee, $approver));
+            }
+
+            Log::info('Approval email sent successfully for task: ' . $task->id . ' to user: ' . $task->assignee->email . ' via ' . ($approver && $approver->hasGmailConnected() ? 'Gmail OAuth' : 'SMTP'));
         } catch (\Exception $e) {
             Log::error('Failed to send approval email for task: ' . $task->id . ' - ' . $e->getMessage());
             throw $e;
@@ -853,6 +862,41 @@ class TaskController extends Controller
         }
 
         return response()->json($status);
+    }
+
+    /**
+     * Send approval email via Gmail OAuth
+     */
+    private function sendApprovalEmailViaGmail(Task $task, User $approver)
+    {
+        try {
+            $gmailOAuthService = app(\App\Services\GmailOAuthService::class);
+
+            // Prepare email data for Gmail API
+            $emailData = [
+                'from' => $approver->email,
+                'to' => [$task->assignee->email],
+                'subject' => 'Task Approved: ' . $task->title,
+                'body' => view('emails.task-approval-internal', [
+                    'task' => $task,
+                    'user' => $task->assignee,
+                    'approver' => $approver,
+                ])->render(),
+            ];
+
+            $success = $gmailOAuthService->sendEmail($approver, $emailData);
+
+            if (!$success) {
+                // Fallback to SMTP if Gmail fails
+                Mail::to($task->assignee->email)->send(new \App\Mail\TaskApprovalInternalMail($task, $task->assignee, $approver));
+                Log::warning('Gmail OAuth failed for approval email, fell back to SMTP');
+            }
+
+        } catch (\Exception $e) {
+            // Fallback to SMTP if Gmail fails
+            Mail::to($task->assignee->email)->send(new \App\Mail\TaskApprovalInternalMail($task, $task->assignee, $approver));
+            Log::error('Gmail OAuth error for approval email, fell back to SMTP: ' . $e->getMessage());
+        }
     }
 }
 
