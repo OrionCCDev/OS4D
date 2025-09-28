@@ -688,7 +688,7 @@ class TaskController extends Controller
         }
 
         // Look for any email preparation for this task, not just by current user
-        $emailPreparation = $task->emailPreparations()->latest()->first();
+        $emailPreparation = $task->emailPreparations()->where('status', 'draft')->orderBy('id', 'desc')->first();
 
         if (!$emailPreparation) {
             // Auto-create a default email preparation if none exists
