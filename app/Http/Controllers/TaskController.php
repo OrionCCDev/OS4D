@@ -690,6 +690,11 @@ class TaskController extends Controller
             $user = Auth::user();
             $useGmail = $request->get('use_gmail', false) && $user->hasGmailConnected();
 
+            Log::info('Email sending attempt - User: ' . $user->id . ', Use Gmail: ' . ($useGmail ? 'Yes' : 'No') . ', Gmail Connected: ' . ($user->hasGmailConnected() ? 'Yes' : 'No'));
+
+            // Log email preparation details
+            Log::info('Email preparation - To: ' . $emailPreparation->to_emails . ', Subject: ' . $emailPreparation->subject);
+
             // Parse email addresses
             $toEmails = array_filter(array_map('trim', explode(',', $emailPreparation->to_emails)));
             $ccEmails = $emailPreparation->cc_emails ? array_filter(array_map('trim', explode(',', $emailPreparation->cc_emails))) : [];
@@ -699,8 +704,16 @@ class TaskController extends Controller
             $mail = new \App\Mail\TaskConfirmationMail($task, $emailPreparation, $user);
 
             if ($useGmail) {
+                Log::info('Using Gmail OAuth for sending email');
                 // Use Gmail OAuth for sending
                 $gmailOAuthService = app(\App\Services\GmailOAuthService::class);
+
+                // Check Gmail configuration
+                $configCheck = $gmailOAuthService->checkConfiguration();
+                if (!$configCheck['configured']) {
+                    Log::warning('Gmail API not properly configured, falling back to SMTP. Issues: ' . implode(', ', $configCheck['issues']));
+                    $useGmail = false;
+                }
 
                 // Prepare email data for Gmail API
                 $emailData = [
@@ -749,6 +762,7 @@ class TaskController extends Controller
             }
 
             if (!$useGmail) {
+                Log::info('Using SMTP for sending email');
                 // Use regular SMTP for sending
                 // Send to primary recipients
                 Mail::to($toEmails)->send($mail);
@@ -816,6 +830,29 @@ class TaskController extends Controller
         ]);
 
         return $emailPreparation;
+    }
+
+    /**
+     * Get Gmail connection status for current user
+     */
+    public function getGmailStatus()
+    {
+        $user = Auth::user();
+        $gmailService = app(\App\Services\GmailOAuthService::class);
+
+        $status = [
+            'connected' => $user->hasGmailConnected(),
+            'connected_at' => $user->gmail_connected_at,
+            'email' => $user->email,
+        ];
+
+        if ($user->hasGmailConnected()) {
+            $configCheck = $gmailService->checkConfiguration();
+            $status['config_valid'] = $configCheck['configured'];
+            $status['config_issues'] = $configCheck['issues'];
+        }
+
+        return response()->json($status);
     }
 }
 

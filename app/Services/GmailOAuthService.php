@@ -28,6 +28,17 @@ class GmailOAuthService
         ]);
         $this->client->setAccessType('offline');
         $this->client->setApprovalPrompt('force');
+
+        // Log Gmail configuration for debugging
+        Log::info('Gmail OAuth Service initialized with Client ID: ' . substr(config('services.gmail.client_id'), 0, 10) . '...');
+
+        // Validate configuration
+        if (empty(config('services.gmail.client_id')) || config('services.gmail.client_id') === 'your_google_client_id_here') {
+            Log::error('Gmail Client ID is not properly configured');
+        }
+        if (empty(config('services.gmail.client_secret')) || config('services.gmail.client_secret') === 'your_google_client_secret_here') {
+            Log::error('Gmail Client Secret is not properly configured');
+        }
     }
 
     /**
@@ -133,12 +144,24 @@ class GmailOAuthService
         }
 
         try {
+            // Validate email data
+            if (empty($emailData['to']) || empty($emailData['from']) || empty($emailData['subject'])) {
+                Log::error('Invalid email data for user ' . $user->id . ': Missing required fields');
+                return false;
+            }
+
             $message = $this->createMessage($emailData);
             Log::info('Gmail message created successfully for user: ' . $user->id);
 
             $result = $gmailService->users_messages->send('me', $message);
-            Log::info('Gmail email sent successfully for user: ' . $user->id . ' - Message ID: ' . $result->getId());
-            return true;
+
+            if ($result && $result->getId()) {
+                Log::info('Gmail email sent successfully for user: ' . $user->id . ' - Message ID: ' . $result->getId());
+                return true;
+            } else {
+                Log::error('Gmail API returned success but no message ID for user: ' . $user->id);
+                return false;
+            }
         } catch (\Exception $e) {
             Log::error('Gmail send email error for user ' . $user->id . ': ' . $e->getMessage());
             Log::error('Gmail send email error details: ' . $e->getTraceAsString());
@@ -297,6 +320,72 @@ class GmailOAuthService
         }
 
         return $result;
+    }
+
+    /**
+     * Check Gmail API configuration
+     */
+    public function checkConfiguration(): array
+    {
+        $config = [
+            'client_id' => config('services.gmail.client_id'),
+            'client_secret' => config('services.gmail.client_secret'),
+            'redirect_uri' => config('services.gmail.redirect_uri'),
+        ];
+
+        $issues = [];
+
+        if (empty($config['client_id']) || $config['client_id'] === 'your_google_client_id_here') {
+            $issues[] = 'Gmail Client ID is not configured or is using placeholder value';
+        }
+
+        if (empty($config['client_secret']) || $config['client_secret'] === 'your_google_client_secret_here') {
+            $issues[] = 'Gmail Client Secret is not configured or is using placeholder value';
+        }
+
+        if (empty($config['redirect_uri'])) {
+            $issues[] = 'Gmail Redirect URI is not configured';
+        }
+
+        return [
+            'configured' => empty($issues),
+            'issues' => $issues,
+            'config' => [
+                'client_id' => substr($config['client_id'], 0, 10) . '...',
+                'client_secret' => substr($config['client_secret'], 0, 10) . '...',
+                'redirect_uri' => $config['redirect_uri'],
+            ]
+        ];
+    }
+
+    /**
+     * Test Gmail API connection (without user authentication)
+     */
+    public function testApiConnection(): array
+    {
+        try {
+            // Test if we can create a Gmail service instance
+            $testClient = new Client();
+            $testClient->setClientId(config('services.gmail.client_id'));
+            $testClient->setClientSecret(config('services.gmail.client_secret'));
+            $testClient->setRedirectUri(config('services.gmail.redirect_uri'));
+            $testClient->setScopes([Gmail::GMAIL_SEND]);
+
+            // Try to create Gmail service
+            $gmailService = new Gmail($testClient);
+
+            return [
+                'success' => true,
+                'message' => 'Gmail API connection test successful',
+                'service_created' => true
+            ];
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Gmail API connection test failed: ' . $e->getMessage(),
+                'error' => $e->getTraceAsString()
+            ];
+        }
     }
 }
 

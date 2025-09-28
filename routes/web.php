@@ -99,6 +99,7 @@ Route::middleware('auth')->group(function () {
         Route::get('tasks/{task}/prepare-email', [TaskController::class, 'showEmailPreparationForm'])->name('tasks.prepare-email');
         Route::post('tasks/{task}/prepare-email', [TaskController::class, 'storeEmailPreparation'])->name('tasks.store-email-preparation');
         Route::post('tasks/{task}/send-confirmation-email', [TaskController::class, 'sendConfirmationEmail'])->name('tasks.send-confirmation-email');
+        Route::get('gmail-status', [TaskController::class, 'getGmailStatus'])->name('gmail.status');
 
         // Test Gmail connection
         Route::get('test-gmail', function() {
@@ -108,7 +109,25 @@ Route::middleware('auth')->group(function () {
             }
 
             $gmailService = app(\App\Services\GmailOAuthService::class);
+
+            // Check configuration first
+            $configCheck = $gmailService->checkConfiguration();
+
+            if (!$configCheck['configured']) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Gmail API not properly configured',
+                    'issues' => $configCheck['issues'],
+                    'config' => $configCheck['config']
+                ]);
+            }
+
+            // Test API connection
+            $apiTest = $gmailService->testApiConnection();
+
             $result = $gmailService->testGmailConnection($user);
+            $result['config_check'] = $configCheck;
+            $result['api_test'] = $apiTest;
 
             return response()->json($result);
         })->name('test-gmail');
