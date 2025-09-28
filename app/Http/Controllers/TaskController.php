@@ -697,7 +697,7 @@ class TaskController extends Controller
 
         try {
             $user = Auth::user();
-            $useGmail = $request->get('use_gmail', false) && $user->hasGmailConnected();
+            $useGmail = $user->hasGmailConnected();
 
             Log::info('Email sending attempt - User: ' . $user->id . ', Use Gmail: ' . ($useGmail ? 'Yes' : 'No') . ', Gmail Connected: ' . ($user->hasGmailConnected() ? 'Yes' : 'No'));
 
