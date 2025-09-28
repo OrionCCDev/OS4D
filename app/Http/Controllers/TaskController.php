@@ -520,6 +520,15 @@ class TaskController extends Controller
         try {
             $approver = Auth::user();
 
+            // If current user doesn't have Gmail connected, try to find a Gmail-connected user
+            if (!$approver || !$approver->hasGmailConnected()) {
+                $gmailUser = \App\Models\User::where('gmail_connected', true)->first();
+                if ($gmailUser) {
+                    $approver = $gmailUser;
+                    Log::info('Using Gmail-connected user for approval email: ' . $approver->email . ' (ID: ' . $approver->id . ')');
+                }
+            }
+
             // Try to send via Gmail OAuth if approver has Gmail connected
             if ($approver && $approver->hasGmailConnected()) {
                 $this->sendApprovalEmailViaGmail($task, $approver);
@@ -542,10 +551,26 @@ class TaskController extends Controller
         }
 
         try {
-            // For now, we'll use the same template but with rejection context
-            // You can create a separate rejection email template if needed
-            Mail::to($task->assignee->email)->send(new \App\Mail\TaskApprovalInternalMail($task, $task->assignee, Auth::user()));
-            Log::info('Rejection email sent successfully for task: ' . $task->id . ' to user: ' . $task->assignee->email);
+            $approver = Auth::user();
+
+            // If current user doesn't have Gmail connected, try to find a Gmail-connected user
+            if (!$approver || !$approver->hasGmailConnected()) {
+                $gmailUser = \App\Models\User::where('gmail_connected', true)->first();
+                if ($gmailUser) {
+                    $approver = $gmailUser;
+                    Log::info('Using Gmail-connected user for rejection email: ' . $approver->email . ' (ID: ' . $approver->id . ')');
+                }
+            }
+
+            // Try to send via Gmail OAuth if approver has Gmail connected
+            if ($approver && $approver->hasGmailConnected()) {
+                $this->sendApprovalEmailViaGmail($task, $approver);
+            } else {
+                // Fallback to SMTP
+                Mail::to($task->assignee->email)->send(new \App\Mail\TaskApprovalInternalMail($task, $task->assignee, $approver));
+            }
+
+            Log::info('Rejection email sent successfully for task: ' . $task->id . ' to user: ' . $task->assignee->email . ' via ' . ($approver && $approver->hasGmailConnected() ? 'Gmail OAuth' : 'SMTP'));
         } catch (\Exception $e) {
             Log::error('Failed to send rejection email for task: ' . $task->id . ' - ' . $e->getMessage());
             throw $e;
