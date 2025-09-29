@@ -78,8 +78,11 @@ class GmailOAuthService
 
             Log::info('Gmail OAuth callback - User ID: ' . $user->id . ', Current Email: ' . $user->email . ', Gmail Email: ' . $gmailEmail);
 
-            // Check if the Gmail email is already taken by another user
-            $existingUser = \App\Models\User::where('email', $gmailEmail)->where('id', '!=', $user->id)->first();
+            // Check if the Gmail email is already taken by another user (but allow reconnection to same account)
+            $existingUser = \App\Models\User::where('email', $gmailEmail)
+                ->where('id', '!=', $user->id)
+                ->where('gmail_connected', true)
+                ->first();
             if ($existingUser) {
                 Log::error('Gmail email ' . $gmailEmail . ' is already connected by user ' . $existingUser->id . '. Cannot connect same Gmail account to multiple users.');
                 return false;
@@ -289,6 +292,9 @@ class GmailOAuthService
     public function disconnectGmail(User $user): bool
     {
         try {
+            // Store the original email before disconnecting
+            $originalEmail = $user->email;
+
             $user->update([
                 'gmail_token' => null,
                 'gmail_refresh_token' => null,
@@ -297,12 +303,36 @@ class GmailOAuthService
                 'gmail_connected_at' => null,
             ]);
 
-            Log::info('Gmail disconnected for user: ' . $user->id);
+            Log::info('Gmail disconnected for user: ' . $user->id . ' - Email remains: ' . $originalEmail);
             return true;
         } catch (\Exception $e) {
             Log::error('Gmail disconnect error for user ' . $user->id . ': ' . $e->getMessage());
             return false;
         }
+    }
+
+    /**
+     * Check if a Gmail email can be connected by a user
+     */
+    public function canConnectGmailEmail(string $gmailEmail, User $user): array
+    {
+        $existingUser = \App\Models\User::where('email', $gmailEmail)
+            ->where('id', '!=', $user->id)
+            ->where('gmail_connected', true)
+            ->first();
+
+        if ($existingUser) {
+            return [
+                'can_connect' => false,
+                'reason' => 'This Gmail account is already connected by another user.',
+                'existing_user_id' => $existingUser->id
+            ];
+        }
+
+        return [
+            'can_connect' => true,
+            'reason' => 'Gmail account is available for connection.'
+        ];
     }
 
     /**
