@@ -21,22 +21,9 @@ use App\Http\Controllers\GmailOAuthController;
 use App\Http\Controllers\EmailNotificationController;
 use App\Services\EmailTrackingService;
 
-// Email tracking pixel route (no auth required)
-Route::get('/email/track/{messageId}.png', function ($messageId) {
-    $emailTrackingService = app(EmailTrackingService::class);
-    $emailTrackingService->handleTrackingPixel($messageId);
-
-    // Return a 1x1 transparent pixel
-    $pixel = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==');
-
-    return response($pixel, 200, [
-        'Content-Type' => 'image/png',
-        'Content-Length' => strlen($pixel),
-        'Cache-Control' => 'no-cache, no-store, must-revalidate',
-        'Pragma' => 'no-cache',
-        'Expires' => '0',
-    ]);
-})->name('email.track');
+// Simple email tracking routes
+Route::post('/email/webhook/incoming', [App\Http\Controllers\SimpleEmailController::class, 'handleIncomingEmail'])->name('email.webhook.incoming');
+Route::get('/email/check-replies', [App\Http\Controllers\SimpleEmailController::class, 'checkReplies'])->name('email.check-replies');
 
 // Redirect root to dashboard (requires authentication)
 Route::get('/', function () {
@@ -65,8 +52,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/email-notifications/{id}/mark-read', [EmailNotificationController::class, 'markAsRead'])->name('email-notifications.mark-read');
     Route::post('/email-notifications/mark-all-read', [EmailNotificationController::class, 'markAllAsRead'])->name('email-notifications.mark-all-read');
     Route::get('/email-notifications/unread-count', [EmailNotificationController::class, 'getUnreadCount'])->name('email-notifications.unread-count');
-    Route::get('/email-notifications/stats', [EmailNotificationController::class, 'getEmailStats'])->name('email-notifications.stats');
-    Route::get('/emails/{id}/show', [EmailNotificationController::class, 'showEmail'])->name('emails.show');
+    Route::get('/email-notifications/stats', [App\Http\Controllers\SimpleEmailController::class, 'getStats'])->name('email-notifications.stats');
+    Route::get('/emails/sent', [App\Http\Controllers\SimpleEmailController::class, 'listSentEmails'])->name('emails.sent');
+    Route::get('/emails/{id}/show', [App\Http\Controllers\SimpleEmailController::class, 'showEmail'])->name('emails.show');
 
     Route::post('/media/upload', [MediaController::class, 'upload'])->name('media.upload');
     Route::get('/media/list', [MediaController::class, 'list'])->name('media.list');

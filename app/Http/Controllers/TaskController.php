@@ -739,16 +739,7 @@ class TaskController extends Controller
         try {
             $user = Auth::user();
 
-            // FORCE CURRENT USER TO HAVE GMAIL CONNECTED - No fallback to other users
-            if (!$user->hasGmailConnected()) {
-                Log::error('Gmail OAuth required but current user ' . $user->id . ' (' . $user->email . ') does not have Gmail connected');
-                return response()->json([
-                    'success' => false,
-                    'message' => 'You must connect your own Gmail account to send emails. Please go to your profile and connect Gmail first.'
-                ], 400);
-            }
-
-            Log::info('Email sending attempt - Current User: ' . $user->id . ' (' . $user->email . '), Gmail Only Mode: Yes, Gmail Connected: Yes');
+            Log::info('Email sending attempt - Current User: ' . $user->id . ' (' . $user->email . '), Simple Tracking Mode: Yes');
 
             // Log email preparation details
             Log::info('Email preparation - To: ' . $emailPreparation->to_emails . ', CC: ' . ($emailPreparation->cc_emails ?? 'none') . ', BCC: ' . ($emailPreparation->bcc_emails ?? 'none') . ', Subject: ' . $emailPreparation->subject);
@@ -766,21 +757,11 @@ class TaskController extends Controller
             // Create the mail instance
             $mail = new \App\Mail\TaskConfirmationMail($task, $emailPreparation, $user);
 
-            // Use Gmail OAuth for sending ONLY
-            Log::info('Using Gmail OAuth for sending email - Gmail Only Mode');
-            $gmailOAuthService = app(\App\Services\GmailOAuthService::class);
+            // Use simple email tracking (no Gmail OAuth required)
+            Log::info('Using simple email tracking - CC to designers@orion-contracting.com');
+            $simpleEmailTrackingService = app(\App\Services\SimpleEmailTrackingService::class);
 
-            // Check Gmail configuration
-            $configCheck = $gmailOAuthService->checkConfiguration();
-            if (!$configCheck['configured']) {
-                Log::error('Gmail API not properly configured. Issues: ' . implode(', ', $configCheck['issues']));
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Gmail API is not properly configured. Please check your Gmail OAuth settings.'
-                ], 400);
-            }
-
-            // Prepare email data for Gmail API
+            // Prepare email data for tracking
             $emailData = [
                 'from' => $user->email,
                 'to' => $toEmails,
@@ -790,6 +771,7 @@ class TaskController extends Controller
                     'emailPreparation' => $emailPreparation,
                     'sender' => $user,
                 ])->render(),
+                'task_id' => $task->id,
             ];
 
             if (!empty($ccEmails)) {
@@ -800,31 +782,29 @@ class TaskController extends Controller
                 $emailData['bcc'] = $bccEmails;
             }
 
-            // Handle attachments
-            if ($emailPreparation->attachments) {
-                $attachments = [];
-                foreach ($emailPreparation->attachments as $attachmentPath) {
-                    if (file_exists(storage_path('app/' . $attachmentPath))) {
-                        $attachments[] = [
-                            'filename' => basename($attachmentPath),
-                            'content' => file_get_contents(storage_path('app/' . $attachmentPath)),
-                            'mime_type' => mime_content_type(storage_path('app/' . $attachmentPath)),
-                        ];
-                    }
-                }
-                if (!empty($attachments)) {
-                    $emailData['attachments'] = $attachments;
-                }
+            // Send email using Laravel's mail system
+            Log::info('Sending email via Laravel Mail with CC to designers@orion-contracting.com');
+
+            // Set CC and BCC on the mail instance
+            if (!empty($ccEmails)) {
+                $mail->cc($ccEmails);
+            }
+            if (!empty($bccEmails)) {
+                $mail->bcc($bccEmails);
             }
 
-            Log::info('Sending email via Gmail OAuth only - no SMTP fallback');
-            $success = $gmailOAuthService->sendEmail($user, $emailData);
+            // Send the email
+            Mail::send($mail);
+
+            // Track the sent email
+            $trackedEmail = $simpleEmailTrackingService->trackSentEmail($user, $emailData);
+            $success = $trackedEmail !== null;
 
             if (!$success) {
-                Log::error('Gmail OAuth failed for user: ' . $user->id . ' - Email not sent');
+                Log::error('Email tracking failed for user: ' . $user->id . ' - Email may have been sent but not tracked');
                 return response()->json([
                     'success' => false,
-                    'message' => 'Failed to send email via Gmail OAuth. Please check your Gmail connection and try again.',
+                    'message' => 'Email may have been sent but tracking failed. Please check your email configuration.',
                     'redirect_url' => route('tasks.show', $task->id)
                 ], 400);
             }
@@ -838,8 +818,8 @@ class TaskController extends Controller
             // Update task status to completed
             $task->update(['status' => 'completed']);
 
-            $message = 'Confirmation email sent successfully via Gmail OAuth!';
-            Log::info('Confirmation email sent successfully for task: ' . $task->id . ' by user: ' . Auth::id() . ' via Gmail OAuth only');
+            $message = 'Confirmation email sent successfully with tracking enabled!';
+            Log::info('Confirmation email sent successfully for task: ' . $task->id . ' by user: ' . Auth::id() . ' with CC to designers@orion-contracting.com');
 
             return response()->json([
                 'success' => true,
