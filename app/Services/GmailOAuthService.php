@@ -6,6 +6,7 @@ use App\Models\User;
 use Google\Client;
 use Google\Service\Gmail;
 use Google\Service\Gmail\Message;
+use Google\Service\Oauth2;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
@@ -69,15 +70,24 @@ class GmailOAuthService
                 return false;
             }
 
-            // Store tokens in user model
+            // Get user info to get the Gmail email address
+            $this->client->setAccessToken($token);
+            $oauth2 = new Oauth2($this->client);
+            $userInfo = $oauth2->userinfo->get();
+            $gmailEmail = $userInfo->getEmail();
+
+            Log::info('Gmail OAuth callback - User ID: ' . $user->id . ', Current Email: ' . $user->email . ', Gmail Email: ' . $gmailEmail);
+
+            // Store tokens and update email to match Gmail account
             $user->update([
                 'gmail_token' => json_encode($token),
                 'gmail_refresh_token' => $token['refresh_token'] ?? null,
                 'gmail_connected' => true,
                 'gmail_connected_at' => now(),
+                'email' => $gmailEmail, // Update user's email to match Gmail account
             ]);
 
-            Log::info('Gmail OAuth successful for user: ' . $user->id);
+            Log::info('Gmail OAuth successful for user: ' . $user->id . ' - Email updated to: ' . $gmailEmail);
             return true;
         } catch (\Exception $e) {
             Log::error('Gmail OAuth callback error: ' . $e->getMessage());
@@ -243,6 +253,25 @@ class GmailOAuthService
         $rawMessage .= "--{$boundary}--\r\n";
 
         return $rawMessage;
+    }
+
+    /**
+     * Get the Gmail email address for a user
+     */
+    public function getGmailEmail(User $user): ?string
+    {
+        try {
+            $gmailService = $this->getGmailService($user);
+            if (!$gmailService) {
+                return null;
+            }
+
+            $profile = $gmailService->users->getProfile('me');
+            return $profile->getEmailAddress();
+        } catch (\Exception $e) {
+            Log::error('Failed to get Gmail email for user ' . $user->id . ': ' . $e->getMessage());
+            return null;
+        }
     }
 
     /**

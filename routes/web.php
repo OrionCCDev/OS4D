@@ -128,6 +128,11 @@ Route::middleware('auth')->group(function () {
             $result['config_check'] = $configCheck;
             $result['api_test'] = $apiTest;
 
+            // Add email comparison
+            $result['user_email'] = $user->email;
+            $result['gmail_email'] = $gmailService->getGmailEmail($user);
+            $result['emails_match'] = $user->email === $result['gmail_email'];
+
             return response()->json($result);
         })->name('test-gmail');
 
