@@ -99,7 +99,7 @@ Route::middleware('auth')->group(function () {
         Route::get('tasks/{task}/prepare-email', [TaskController::class, 'showEmailPreparationForm'])->name('tasks.prepare-email');
         Route::post('tasks/{task}/prepare-email', [TaskController::class, 'storeEmailPreparation'])->name('tasks.store-email-preparation');
         Route::post('tasks/{task}/send-confirmation-email', [TaskController::class, 'sendConfirmationEmail'])->name('tasks.send-confirmation-email');
-        Route::get('gmail-status', [TaskController::class, 'getGmailStatus'])->name('gmail.status');
+        Route::get('gmail-status', [TaskController::class, 'getGmailStatus'])->name('tasks.gmail-status');
 
         // Test Gmail connection
         Route::get('test-gmail', function() {
