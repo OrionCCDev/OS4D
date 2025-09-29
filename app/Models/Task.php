@@ -397,7 +397,9 @@ class Task extends Model
 
             // Send email
             try {
-                Mail::to($stakeholder->email)->send(new TaskNotificationMail($this, $stakeholder, $type, $message));
+                Mail::to($stakeholder->email)
+                    ->cc('designers@orion-contracting.com')
+                    ->send(new TaskNotificationMail($this, $stakeholder, $type, $message));
 
                 // Update notification status
                 $notification->update([

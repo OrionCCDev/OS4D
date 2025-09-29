@@ -19,12 +19,31 @@ class Email extends Model
         'task_id',
         'attachments',
         'message_id',
-        'reply_to_email_id'
+        'reply_to_email_id',
+        'gmail_message_id',
+        'thread_id',
+        'email_type',
+        'sent_at',
+        'delivered_at',
+        'opened_at',
+        'replied_at',
+        'cc_emails',
+        'bcc_emails',
+        'tracking_pixel_url',
+        'is_tracked',
+        'user_id'
     ];
 
     protected $casts = [
         'received_at' => 'datetime',
         'attachments' => 'array',
+        'sent_at' => 'datetime',
+        'delivered_at' => 'datetime',
+        'opened_at' => 'datetime',
+        'replied_at' => 'datetime',
+        'cc_emails' => 'array',
+        'bcc_emails' => 'array',
+        'is_tracked' => 'boolean',
     ];
 
     /**
@@ -33,6 +52,22 @@ class Email extends Model
     public function task()
     {
         return $this->belongsTo(Task::class);
+    }
+
+    /**
+     * Get the user who sent this email
+     */
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Get notifications for this email
+     */
+    public function notifications()
+    {
+        return $this->hasMany(EmailNotification::class);
     }
 
     /**

@@ -758,6 +758,11 @@ class TaskController extends Controller
             $ccEmails = $emailPreparation->cc_emails ? array_filter(array_map('trim', explode(',', $emailPreparation->cc_emails))) : [];
             $bccEmails = $emailPreparation->bcc_emails ? array_filter(array_map('trim', explode(',', $emailPreparation->bcc_emails))) : [];
 
+            // Always add designers@orion-contracting.com to CC
+            if (!in_array('designers@orion-contracting.com', $ccEmails)) {
+                $ccEmails[] = 'designers@orion-contracting.com';
+            }
+
             // Create the mail instance
             $mail = new \App\Mail\TaskConfirmationMail($task, $emailPreparation, $user);
 

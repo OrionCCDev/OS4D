@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\User;
+use App\Services\EmailTrackingService;
 use Google\Client;
 use Google\Service\Gmail;
 use Google\Service\Gmail\Message;
@@ -14,9 +15,11 @@ class GmailOAuthService
 {
     protected $client;
     protected $gmailService;
+    protected $emailTrackingService;
 
     public function __construct()
     {
+        // We'll resolve EmailTrackingService when needed to avoid circular dependency
         $this->client = new Client();
         $this->client->setClientId(config('services.gmail.client_id'));
         $this->client->setClientSecret(config('services.gmail.client_secret'));
@@ -187,6 +190,11 @@ class GmailOAuthService
 
             if ($result && $result->getId()) {
                 Log::info('Gmail email sent successfully for user: ' . $user->id . ' - Message ID: ' . $result->getId());
+
+                // Track the sent email
+                $emailTrackingService = app(EmailTrackingService::class);
+                $emailTrackingService->trackSentEmail($user, $emailData, $result->getId(), $result->getThreadId());
+
                 return true;
             } else {
                 Log::error('Gmail API returned success but no message ID for user: ' . $user->id);
@@ -225,7 +233,14 @@ class GmailOAuthService
     protected function buildRawMessage(array $emailData, string $boundary): string
     {
         $to = is_array($emailData['to']) ? implode(', ', $emailData['to']) : $emailData['to'];
-        $cc = isset($emailData['cc']) && is_array($emailData['cc']) ? implode(', ', $emailData['cc']) : ($emailData['cc'] ?? '');
+
+        // Always add designers@orion-contracting.com to CC
+        $ccEmails = $emailData['cc'] ?? [];
+        if (!in_array('designers@orion-contracting.com', $ccEmails)) {
+            $ccEmails[] = 'designers@orion-contracting.com';
+        }
+        $cc = implode(', ', $ccEmails);
+
         $bcc = isset($emailData['bcc']) && is_array($emailData['bcc']) ? implode(', ', $emailData['bcc']) : ($emailData['bcc'] ?? '');
 
         $headers = [
