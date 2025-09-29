@@ -679,9 +679,17 @@
                 let previousCount = 0;
 
 
-                // Global function for playing notification sound (disabled)
+                // Global function for playing notification sound
                 window.playNotificationSound = function() {
-                  // Sound functionality removed
+                  try {
+                    const audio = new Audio('/uploads/gun.mp3');
+                    audio.volume = 0.5; // Set volume to 50%
+                    audio.play().catch(e => {
+                      console.log('Notification sound play failed:', e);
+                    });
+                  } catch (e) {
+                    console.log('Notification sound creation failed:', e);
+                  }
                 };
 
                 async function fetchCount(){

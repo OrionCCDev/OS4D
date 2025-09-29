@@ -44,7 +44,7 @@ class UsersController extends Controller
 
         $user = User::create($data);
 
-        return redirect()->route('admin.users.edit', $user)->with('status', 'User created');
+        return redirect()->route('admin.users.index')->with('status', 'User created successfully');
     }
 
     public function edit(User $user): View
