@@ -130,6 +130,20 @@ Route::middleware('auth')->group(function () {
 
             return response()->json($result);
         })->name('test-gmail');
+
+        // Test task status
+        Route::get('test-task-status/{task}', function(\App\Models\Task $task) {
+            return response()->json([
+                'task_id' => $task->id,
+                'current_status' => $task->status,
+                'status_type' => gettype($task->status),
+                'status_length' => strlen($task->status ?? ''),
+                'status_trimmed' => trim($task->status ?? ''),
+                'status_equals' => $task->status === 'submitted_for_review',
+                'status_in_array' => in_array($task->status, ['submitted_for_review']),
+                'all_statuses' => \DB::select("SHOW COLUMNS FROM tasks LIKE 'status'")[0]->Type ?? 'unknown',
+            ]);
+        })->name('test-task-status');
     });
 
     // Task destroy - Manager only

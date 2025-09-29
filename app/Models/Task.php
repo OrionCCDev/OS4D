@@ -287,7 +287,27 @@ class Task extends Model
 
     public function approveTask($notes = null)
     {
+        // Refresh the model to get the latest status from database
+        $this->refresh();
+
+        // Debug: Log the current status before validation
+        \Log::info('Task approval attempt', [
+            'task_id' => $this->id,
+            'current_status' => $this->status,
+            'status_type' => gettype($this->status),
+            'status_length' => strlen($this->status ?? ''),
+            'status_trimmed' => trim($this->status ?? ''),
+            'status_equals' => $this->status === 'submitted_for_review',
+            'status_in_array' => in_array($this->status, ['submitted_for_review']),
+        ]);
+
         if ($this->status !== 'submitted_for_review') {
+            \Log::error('Task approval failed - status validation', [
+                'task_id' => $this->id,
+                'current_status' => $this->status,
+                'expected_status' => 'submitted_for_review',
+                'status_match' => $this->status === 'submitted_for_review',
+            ]);
             throw new \Exception('Only tasks submitted for review can be approved');
         }
 

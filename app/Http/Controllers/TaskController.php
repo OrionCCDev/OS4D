@@ -520,19 +520,10 @@ class TaskController extends Controller
         try {
             $approver = Auth::user();
 
-            // If current user doesn't have Gmail connected, try to find a Gmail-connected user
+            // FORCE CURRENT USER TO HAVE GMAIL CONNECTED - No fallback to other users
             if (!$approver || !$approver->hasGmailConnected()) {
-                $gmailUser = \App\Models\User::where('gmail_connected', true)->first();
-                if ($gmailUser) {
-                    $approver = $gmailUser;
-                    Log::info('Using Gmail-connected user for approval email: ' . $approver->email . ' (ID: ' . $approver->id . ')');
-                }
-            }
-
-            // FORCE GMAIL ONLY - No SMTP fallback
-            if (!$approver || !$approver->hasGmailConnected()) {
-                Log::error('Gmail OAuth required for approval email but approver does not have Gmail connected');
-                throw new \Exception('Gmail OAuth is required for sending approval emails. Please connect your Gmail account first.');
+                Log::error('Gmail OAuth required for approval email but current approver ' . $approver->id . ' (' . $approver->email . ') does not have Gmail connected');
+                throw new \Exception('You must connect your own Gmail account to send approval emails. Please go to your profile and connect Gmail first.');
             }
 
             $this->sendApprovalEmailViaGmail($task, $approver);
@@ -552,19 +543,10 @@ class TaskController extends Controller
         try {
             $approver = Auth::user();
 
-            // If current user doesn't have Gmail connected, try to find a Gmail-connected user
+            // FORCE CURRENT USER TO HAVE GMAIL CONNECTED - No fallback to other users
             if (!$approver || !$approver->hasGmailConnected()) {
-                $gmailUser = \App\Models\User::where('gmail_connected', true)->first();
-                if ($gmailUser) {
-                    $approver = $gmailUser;
-                    Log::info('Using Gmail-connected user for rejection email: ' . $approver->email . ' (ID: ' . $approver->id . ')');
-                }
-            }
-
-            // FORCE GMAIL ONLY - No SMTP fallback
-            if (!$approver || !$approver->hasGmailConnected()) {
-                Log::error('Gmail OAuth required for rejection email but approver does not have Gmail connected');
-                throw new \Exception('Gmail OAuth is required for sending rejection emails. Please connect your Gmail account first.');
+                Log::error('Gmail OAuth required for rejection email but current approver ' . $approver->id . ' (' . $approver->email . ') does not have Gmail connected');
+                throw new \Exception('You must connect your own Gmail account to send rejection emails. Please go to your profile and connect Gmail first.');
             }
 
             $this->sendApprovalEmailViaGmail($task, $approver);
@@ -757,25 +739,16 @@ class TaskController extends Controller
         try {
             $user = Auth::user();
 
-            // If current user doesn't have Gmail connected, try to find a Gmail-connected user
+            // FORCE CURRENT USER TO HAVE GMAIL CONNECTED - No fallback to other users
             if (!$user->hasGmailConnected()) {
-                $gmailUser = \App\Models\User::where('gmail_connected', true)->first();
-                if ($gmailUser) {
-                    $user = $gmailUser;
-                    Log::info('Using Gmail-connected user for sending: ' . $user->email . ' (ID: ' . $user->id . ')');
-                }
-            }
-
-            // FORCE GMAIL ONLY - No SMTP fallback
-            if (!$user->hasGmailConnected()) {
-                Log::error('Gmail OAuth required but user ' . $user->id . ' does not have Gmail connected');
+                Log::error('Gmail OAuth required but current user ' . $user->id . ' (' . $user->email . ') does not have Gmail connected');
                 return response()->json([
                     'success' => false,
-                    'message' => 'Gmail OAuth is required but not connected. Please connect your Gmail account first.'
+                    'message' => 'You must connect your own Gmail account to send emails. Please go to your profile and connect Gmail first.'
                 ], 400);
             }
 
-            Log::info('Email sending attempt - User: ' . $user->id . ', Gmail Only Mode: Yes, Gmail Connected: ' . ($user->hasGmailConnected() ? 'Yes' : 'No'));
+            Log::info('Email sending attempt - Current User: ' . $user->id . ' (' . $user->email . '), Gmail Only Mode: Yes, Gmail Connected: Yes');
 
             // Log email preparation details
             Log::info('Email preparation - To: ' . $emailPreparation->to_emails . ', CC: ' . ($emailPreparation->cc_emails ?? 'none') . ', BCC: ' . ($emailPreparation->bcc_emails ?? 'none') . ', Subject: ' . $emailPreparation->subject);
