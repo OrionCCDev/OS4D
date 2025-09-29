@@ -21,8 +21,10 @@ use App\Http\Controllers\GmailOAuthController;
 use App\Http\Controllers\EmailNotificationController;
 use App\Services\EmailTrackingService;
 
-// Simple email tracking routes
-Route::post('/email/webhook/incoming', [App\Http\Controllers\SimpleEmailController::class, 'handleIncomingEmail'])->name('email.webhook.incoming');
+// Simple email tracking routes (no auth required for webhooks)
+Route::post('/email/webhook/incoming', [App\Http\Controllers\SimpleEmailController::class, 'handleIncomingEmail'])
+    ->name('email.webhook.incoming')
+    ->withoutMiddleware(['web']); // Exclude CSRF protection for webhooks
 Route::get('/email/check-replies', [App\Http\Controllers\SimpleEmailController::class, 'checkReplies'])->name('email.check-replies');
 
 // Redirect root to dashboard (requires authentication)

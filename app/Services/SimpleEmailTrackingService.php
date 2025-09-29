@@ -163,13 +163,18 @@ class SimpleEmailTrackingService
     public function handleIncomingReply(array $emailData): bool
     {
         try {
+            Log::info('Processing incoming reply: ' . $emailData['subject']);
+
             // Extract original email reference from subject or body
             $originalEmail = $this->findOriginalEmail($emailData);
 
             if (!$originalEmail) {
                 Log::warning('Could not find original email for reply: ' . $emailData['subject']);
+                Log::info('Available emails in database: ' . Email::where('email_type', 'sent')->count());
                 return false;
             }
+
+            Log::info('Found original email ID: ' . $originalEmail->id);
 
             // Process the reply
             $replyEmail = $this->processReply($emailData, $originalEmail);
@@ -177,6 +182,7 @@ class SimpleEmailTrackingService
             return $replyEmail !== null;
         } catch (\Exception $e) {
             Log::error('Error handling incoming reply: ' . $e->getMessage());
+            Log::error('Stack trace: ' . $e->getTraceAsString());
             return false;
         }
     }

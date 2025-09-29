@@ -12,14 +12,13 @@
         </div>
     </div>
 
+
     <div class="card">
         <div class="table-responsive">
             <table class="table table-hover">
                 <thead class="table-light">
                     <tr>
                         <th>Title</th>
-                        {{--  <th>Project</th>  --}}
-                        {{--  <th>Folder</th>  --}}
                         <th>Assigned To</th>
                         <th>Status</th>
                         <th>Priority</th>
@@ -62,12 +61,6 @@
                                 </div>
                             </div>
                         </td>
-                        {{--  <td>
-                            <span class="badge bg-label-primary">{{ $task->project?->name }}</span>
-                        </td>
-                        <td>
-                            <span class="badge bg-label-info">{{ $task->folder?->name ?? 'No Folder' }}</span>
-                        </td>  --}}
                         <td>
                             @if($task->assignee)
                                 <div class="d-flex align-items-center">

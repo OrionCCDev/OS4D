@@ -25,13 +25,19 @@ class SimpleEmailController extends Controller
     public function handleIncomingEmail(Request $request)
     {
         try {
-            Log::info('Incoming email webhook received', $request->all());
+            Log::info('=== WEBHOOK RECEIVED ===');
+            Log::info('Request method: ' . $request->method());
+            Log::info('Request headers: ', $request->headers->all());
+            Log::info('Request body: ', $request->all());
+            Log::info('Raw content: ' . $request->getContent());
 
             // Parse email data from webhook
             $emailData = $this->parseEmailData($request);
+            Log::info('Parsed email data: ', $emailData);
 
             // Process the reply
             $success = $this->emailTrackingService->handleIncomingReply($emailData);
+            Log::info('Reply processing result: ' . ($success ? 'success' : 'failed'));
 
             if ($success) {
                 return response()->json(['status' => 'success', 'message' => 'Reply processed successfully']);
@@ -41,6 +47,7 @@ class SimpleEmailController extends Controller
 
         } catch (\Exception $e) {
             Log::error('Error handling incoming email: ' . $e->getMessage());
+            Log::error('Stack trace: ' . $e->getTraceAsString());
             return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
         }
     }
