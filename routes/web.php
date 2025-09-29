@@ -101,7 +101,28 @@ Route::middleware('auth')->group(function () {
         Route::get('gmail-status', [TaskController::class, 'getGmailStatus'])->name('gmail.status');
 
         // Test Gmail connection
-        Route::get('test-gmail', function() {
+        Route::get('test-gmail-connection', function() {
+    $user = auth()->user();
+    if (!$user) {
+        return response()->json(['error' => 'Not authenticated']);
+    }
+
+    $gmailService = app(\App\Services\GmailOAuthService::class);
+
+    return response()->json([
+        'user_id' => $user->id,
+        'user_email' => $user->email,
+        'gmail_connected' => $user->gmail_connected,
+        'gmail_connected_at' => $user->gmail_connected_at,
+        'has_gmail_token' => !empty($user->gmail_token),
+        'has_refresh_token' => !empty($user->gmail_refresh_token),
+        'has_access_token' => !empty($user->gmail_access_token),
+        'gmail_email' => $gmailService->getGmailEmail($user),
+        'can_send_emails' => $gmailService->isConnected($user)
+    ]);
+})->name('test-gmail-connection');
+
+Route::get('test-gmail', function() {
             $user = auth()->user();
             if (!$user) {
                 return response()->json(['error' => 'Not authenticated']);
