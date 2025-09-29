@@ -40,7 +40,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/auth/gmail', [GmailOAuthController::class, 'redirect'])->name('gmail.redirect');
     Route::get('/auth/gmail/callback', [GmailOAuthController::class, 'callback'])->name('gmail.callback');
     Route::post('/auth/gmail/disconnect', [GmailOAuthController::class, 'disconnect'])->name('gmail.disconnect');
-    Route::get('/auth/gmail/status', [GmailOAuthController::class, 'status'])->name('gmail.status');
 
     Route::post('/media/upload', [MediaController::class, 'upload'])->name('media.upload');
     Route::get('/media/list', [MediaController::class, 'list'])->name('media.list');
@@ -99,7 +98,7 @@ Route::middleware('auth')->group(function () {
         Route::get('tasks/{task}/prepare-email', [TaskController::class, 'showEmailPreparationForm'])->name('tasks.prepare-email');
         Route::post('tasks/{task}/prepare-email', [TaskController::class, 'storeEmailPreparation'])->name('tasks.store-email-preparation');
         Route::post('tasks/{task}/send-confirmation-email', [TaskController::class, 'sendConfirmationEmail'])->name('tasks.send-confirmation-email');
-        Route::get('gmail-status', [TaskController::class, 'getGmailStatus'])->name('tasks.gmail-status');
+        Route::get('gmail-status', [TaskController::class, 'getGmailStatus'])->name('gmail.status');
 
         // Test Gmail connection
         Route::get('test-gmail', function() {
