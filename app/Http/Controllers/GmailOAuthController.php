@@ -52,7 +52,7 @@ class GmailOAuthController extends Controller
             $success = $this->gmailOAuthService->handleCallback($code, $user);
 
             if ($success) {
-                return redirect()->route('profile.edit')->with('success', 'Gmail account connected successfully! Your email address has been updated to match your Gmail account, and you can now send emails from your Gmail account.');
+                return redirect()->route('profile.edit')->with('success', 'Gmail account connected successfully! You can now send emails from your Gmail account.');
             } else {
                 return redirect()->route('profile.edit')->with('error', 'Failed to connect Gmail account. Please try again.');
             }

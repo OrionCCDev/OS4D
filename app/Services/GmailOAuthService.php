@@ -78,16 +78,31 @@ class GmailOAuthService
 
             Log::info('Gmail OAuth callback - User ID: ' . $user->id . ', Current Email: ' . $user->email . ', Gmail Email: ' . $gmailEmail);
 
-            // Store tokens and update email to match Gmail account
-            $user->update([
-                'gmail_token' => json_encode($token),
-                'gmail_refresh_token' => $token['refresh_token'] ?? null,
-                'gmail_connected' => true,
-                'gmail_connected_at' => now(),
-                'email' => $gmailEmail, // Update user's email to match Gmail account
-            ]);
+            // Check if the Gmail email is already taken by another user
+            $existingUser = \App\Models\User::where('email', $gmailEmail)->where('id', '!=', $user->id)->first();
+            if ($existingUser) {
+                Log::warning('Gmail email ' . $gmailEmail . ' is already taken by user ' . $existingUser->id . '. Not updating email for user ' . $user->id);
+                // Don't update the email, just store the tokens
+                $user->update([
+                    'gmail_token' => json_encode($token),
+                    'gmail_refresh_token' => $token['refresh_token'] ?? null,
+                    'gmail_access_token' => $token['access_token'] ?? null,
+                    'gmail_connected' => true,
+                    'gmail_connected_at' => now(),
+                ]);
+            } else {
+                // Store tokens and update email to match Gmail account
+                $user->update([
+                    'gmail_token' => json_encode($token),
+                    'gmail_refresh_token' => $token['refresh_token'] ?? null,
+                    'gmail_access_token' => $token['access_token'] ?? null,
+                    'gmail_connected' => true,
+                    'gmail_connected_at' => now(),
+                    'email' => $gmailEmail, // Update user's email to match Gmail account
+                ]);
+            }
 
-            Log::info('Gmail OAuth successful for user: ' . $user->id . ' - Email updated to: ' . $gmailEmail);
+            Log::info('Gmail OAuth successful for user: ' . $user->id . ($existingUser ? ' - Email not updated (already taken by another user)' : ' - Email updated to: ' . $gmailEmail));
             return true;
         } catch (\Exception $e) {
             Log::error('Gmail OAuth callback error: ' . $e->getMessage());
@@ -127,6 +142,7 @@ class GmailOAuthService
                     // Update stored token
                     $user->update([
                         'gmail_token' => json_encode($newToken),
+                        'gmail_access_token' => $newToken['access_token'] ?? null,
                     ]);
                     Log::info('Gmail token refreshed successfully for user: ' . $user->id);
                 } else {
@@ -283,6 +299,7 @@ class GmailOAuthService
             $user->update([
                 'gmail_token' => null,
                 'gmail_refresh_token' => null,
+                'gmail_access_token' => null,
                 'gmail_connected' => false,
                 'gmail_connected_at' => null,
             ]);
