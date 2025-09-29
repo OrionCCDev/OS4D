@@ -712,12 +712,48 @@ class TaskController extends Controller
             abort(403, 'Access denied. Only tasks ready for email can have emails sent.');
         }
 
-        // Look for any email preparation for this task, not just by current user
-        $emailPreparation = $task->emailPreparations()->where('status', 'draft')->orderBy('id', 'desc')->first();
+        // If form data is provided, save it first
+        if ($request->has('to_emails')) {
+            $validated = $request->validate([
+                'to_emails' => 'required|string',
+                'cc_emails' => 'nullable|string',
+                'bcc_emails' => 'nullable|string',
+                'subject' => 'required|string|max:255',
+                'body' => 'required|string',
+                'attachments' => 'nullable|array',
+                'attachments.*' => 'file|max:10240',
+            ]);
 
-        if (!$emailPreparation) {
-            // Auto-create a default email preparation if none exists
-            $emailPreparation = $this->createDefaultEmailPreparation($task);
+            // Handle file uploads
+            $attachmentPaths = [];
+            if ($request->hasFile('attachments')) {
+                foreach ($request->file('attachments') as $file) {
+                    $path = $file->store('email-attachments');
+                    $attachmentPaths[] = $path;
+                }
+            }
+
+            // Create or update email preparation with form data
+            $emailPreparation = $task->emailPreparations()->updateOrCreate(
+                ['prepared_by' => Auth::id()],
+                [
+                    'to_emails' => $validated['to_emails'],
+                    'cc_emails' => $validated['cc_emails'],
+                    'bcc_emails' => $validated['bcc_emails'],
+                    'subject' => $validated['subject'],
+                    'body' => $validated['body'],
+                    'attachments' => $attachmentPaths,
+                    'status' => 'draft',
+                ]
+            );
+        } else {
+            // Look for existing email preparation
+            $emailPreparation = $task->emailPreparations()->where('status', 'draft')->orderBy('id', 'desc')->first();
+
+            if (!$emailPreparation) {
+                // Auto-create a default email preparation if none exists
+                $emailPreparation = $this->createDefaultEmailPreparation($task);
+            }
         }
 
         try {
@@ -737,7 +773,7 @@ class TaskController extends Controller
             Log::info('Email sending attempt - User: ' . $user->id . ', Use Gmail: ' . ($useGmail ? 'Yes' : 'No') . ', Gmail Connected: ' . ($user->hasGmailConnected() ? 'Yes' : 'No'));
 
             // Log email preparation details
-            Log::info('Email preparation - To: ' . $emailPreparation->to_emails . ', Subject: ' . $emailPreparation->subject);
+            Log::info('Email preparation - To: ' . $emailPreparation->to_emails . ', CC: ' . ($emailPreparation->cc_emails ?? 'none') . ', BCC: ' . ($emailPreparation->bcc_emails ?? 'none') . ', Subject: ' . $emailPreparation->subject);
 
             // Parse email addresses
             $toEmails = array_filter(array_map('trim', explode(',', $emailPreparation->to_emails)));

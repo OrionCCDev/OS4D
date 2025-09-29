@@ -880,29 +880,18 @@ document.addEventListener('DOMContentLoaded', function() {
             'Are you sure you want to send this email? This action cannot be undone.';
 
         if (confirm(confirmMessage)) {
-            // Create a form for sending the email
-            const sendForm = document.createElement('form');
-            sendForm.method = 'POST';
-            sendForm.action = '{{ route("tasks.send-confirmation-email", $task) }}';
-
-            // Add CSRF token
-            const csrfToken = document.createElement('input');
-            csrfToken.type = 'hidden';
-            csrfToken.name = '_token';
-            csrfToken.value = '{{ csrf_token() }}';
-            sendForm.appendChild(csrfToken);
+            // First save the form data, then send the email
+            const emailForm = document.getElementById('emailForm');
+            const formData = new FormData(emailForm);
 
             // Add Gmail option if checked
             if (useGmail) {
-                const gmailInput = document.createElement('input');
-                gmailInput.type = 'hidden';
-                gmailInput.name = 'use_gmail';
-                gmailInput.value = '1';
-                sendForm.appendChild(gmailInput);
+                formData.append('use_gmail', '1');
             }
 
-            document.body.appendChild(sendForm);
-            sendForm.submit();
+            // Submit the form to send email
+            emailForm.action = '{{ route("tasks.send-confirmation-email", $task) }}';
+            emailForm.submit();
         }
     });
 
