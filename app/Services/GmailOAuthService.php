@@ -79,19 +79,25 @@ class GmailOAuthService
 
             Log::info('Gmail OAuth callback - User ID: ' . $user->id . ', Current Email: ' . $user->email . ', Gmail Email: ' . $gmailEmail);
 
-            // For now, allow all connections - each user should connect to their own Gmail account
-            // The system will send emails from the Gmail account they connect to
-            Log::info('Allowing Gmail connection for user: ' . $user->id . ' to Gmail account: ' . $gmailEmail);
+        // Check if this Gmail email is already taken by another user
+        $existingUser = User::where('email', $gmailEmail)->where('id', '!=', $user->id)->first();
 
-            // Store tokens and update email to match Gmail account
-            $user->update([
-                'gmail_token' => json_encode($token),
-                'gmail_refresh_token' => $token['refresh_token'] ?? null,
-                'gmail_access_token' => $token['access_token'] ?? null,
-                'gmail_connected' => true,
-                'gmail_connected_at' => now(),
-                'email' => $gmailEmail, // Update user's email to match Gmail account
-            ]);
+        if ($existingUser) {
+            Log::error('Gmail email ' . $gmailEmail . ' is already taken by user ' . $existingUser->id . '. Cannot connect same Gmail account to multiple users.');
+            return false;
+        }
+
+        Log::info('Allowing Gmail connection for user: ' . $user->id . ' to Gmail account: ' . $gmailEmail);
+
+        // Store tokens and update email to match Gmail account
+        $user->update([
+            'gmail_token' => json_encode($token),
+            'gmail_refresh_token' => $token['refresh_token'] ?? null,
+            'gmail_access_token' => $token['access_token'] ?? null,
+            'gmail_connected' => true,
+            'gmail_connected_at' => now(),
+            'email' => $gmailEmail, // Update user's email to match Gmail account
+        ]);
 
             Log::info('Gmail OAuth successful for user: ' . $user->id . ' - Email updated to: ' . $gmailEmail);
             return true;
