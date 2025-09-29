@@ -29,6 +29,7 @@ class User extends Authenticatable implements HasMedia
         'notification_sound_enabled',
         'gmail_token',
         'gmail_refresh_token',
+        'gmail_access_token',
         'gmail_connected',
         'gmail_connected_at',
     ];
