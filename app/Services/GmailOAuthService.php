@@ -39,6 +39,7 @@ class GmailOAuthService
 
         // Log Gmail configuration for debugging
         Log::info('Gmail OAuth Service initialized with Client ID: ' . substr(config('services.gmail.client_id'), 0, 10) . '...');
+        Log::info('Gmail Redirect URI: ' . config('services.gmail.redirect_uri'));
 
         // Validate configuration
         if (empty(config('services.gmail.client_id')) || config('services.gmail.client_id') === 'your_google_client_id_here') {

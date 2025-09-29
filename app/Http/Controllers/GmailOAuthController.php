@@ -22,7 +22,12 @@ class GmailOAuthController extends Controller
     public function redirect()
     {
         try {
+            $user = Auth::user();
+            Log::info('Gmail OAuth redirect called by user: ' . $user->id . ' with email: ' . $user->email);
+
             $authUrl = $this->gmailOAuthService->getAuthUrl();
+            Log::info('Gmail OAuth URL generated: ' . $authUrl);
+
             return redirect($authUrl);
         } catch (\Exception $e) {
             Log::error('Gmail OAuth redirect error: ' . $e->getMessage());
@@ -36,6 +41,10 @@ class GmailOAuthController extends Controller
     public function callback(Request $request)
     {
         try {
+            $user = Auth::user();
+            Log::info('Gmail OAuth callback method called by user: ' . $user->id . ' with email: ' . $user->email);
+            Log::info('Callback request data: ' . json_encode($request->all()));
+
             $code = $request->get('code');
             $error = $request->get('error');
 
@@ -45,19 +54,23 @@ class GmailOAuthController extends Controller
             }
 
             if (!$code) {
+                Log::error('No authorization code received from Gmail');
                 return redirect()->route('profile.edit')->with('error', 'No authorization code received from Gmail.');
             }
 
-            $user = Auth::user();
+            Log::info('Processing callback for user: ' . $user->id);
             $success = $this->gmailOAuthService->handleCallback($code, $user);
 
             if ($success) {
+                Log::info('Gmail connection successful for user: ' . $user->id);
                 return redirect()->route('profile.edit')->with('success', 'Gmail account connected successfully! You can now send emails from your Gmail account.');
             } else {
+                Log::error('Gmail connection failed for user: ' . $user->id);
                 return redirect()->route('profile.edit')->with('error', 'Failed to connect Gmail account. Please try again.');
             }
         } catch (\Exception $e) {
             Log::error('Gmail OAuth callback error: ' . $e->getMessage());
+            Log::error('Gmail OAuth callback stack trace: ' . $e->getTraceAsString());
             return redirect()->route('profile.edit')->with('error', 'An error occurred while connecting Gmail. Please try again.');
         }
     }
