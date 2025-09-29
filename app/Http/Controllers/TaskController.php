@@ -851,14 +851,16 @@ class TaskController extends Controller
         $defaultToEmail = $task->assignee ? $task->assignee->email : '';
 
         // Create default email content
-        $defaultSubject = "Task Completion Confirmation - {$task->title}";
+        $defaultSubject = "Project Update: Task Completed - {$task->title}";
         $defaultBody = "Dear {$task->assignee->name},\n\n" .
-                      "This is to confirm that the task '{$task->title}' has been completed successfully.\n\n" .
-                      "Task Details:\n" .
+                      "I hope this email finds you well. I am writing to inform you that the assigned task '{$task->title}' has been completed and submitted for review.\n\n" .
+                      "Project Information:\n" .
                       "- Project: {$task->project->name}\n" .
-                      "- Priority: " . ucfirst($task->priority) . "\n" .
-                      "- Due Date: " . ($task->due_date ? $task->due_date->format('M d, Y') : 'Not set') . "\n\n" .
-                      "Thank you for your hard work!\n\n" .
+                      "- Priority Level: " . ucfirst($task->priority) . "\n" .
+                      "- Original Due Date: " . ($task->due_date ? $task->due_date->format('M d, Y') : 'Not specified') . "\n" .
+                      "- Completion Date: " . now()->format('M d, Y') . "\n\n" .
+                      "The task has been completed according to the specifications and is ready for your review. Please let me know if you need any additional information or modifications.\n\n" .
+                      "Thank you for your time and consideration.\n\n" .
                       "Best regards,\n" .
                       Auth::user()->name;
 

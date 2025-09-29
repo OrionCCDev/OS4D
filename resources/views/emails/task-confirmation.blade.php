@@ -99,14 +99,14 @@
 </head>
 <body>
     <div class="header">
-        <h1>✅ Task Completed Successfully!</h1>
-        <p>Task Completion Confirmation</p>
+        <h1>Task Completion Notification</h1>
+        <p>Orion Designers - Project Management System</p>
     </div>
 
     <div class="content">
-        <h2>Hello,</h2>
+        <h2>Dear {{ $task->assignee ? $task->assignee->name : 'Team Member' }},</h2>
 
-        <p>I'm pleased to inform you that the task <strong>"{{ $task->title }}"</strong> has been completed successfully.</p>
+        <p>This is to formally confirm that the assigned task <strong>"{{ $task->title }}"</strong> has been completed and submitted for review.</p>
 
         @if($emailPreparation->body)
         <div class="custom-body">
@@ -179,12 +179,21 @@
         <p>Thank you for your attention to this matter. If you have any questions or need further information, please don't hesitate to contact me.</p>
 
         <p>Best regards,<br>
-        <strong>{{ $sender->name }}</strong></p>
+        <strong>{{ $sender->name }}</strong><br>
+        <em>{{ $sender->email }}</em></p>
     </div>
 
-    <div class="footer">
-        <p>This email was sent from the Task Management System.</p>
-        <p>Please do not reply to this email.</p>
+    <div class="footer" style="background: #f8f9fa; padding: 20px; text-align: center; border-top: 1px solid #dee2e6; margin-top: 30px;">
+        <p style="margin: 5px 0; color: #6c757d; font-size: 14px;">
+            <strong>Orion Designers</strong> - Professional Design Services
+        </p>
+        <p style="margin: 5px 0; color: #6c757d; font-size: 12px;">
+            This email was sent from our project management system.
+            If you have any questions, please contact us directly.
+        </p>
+        <p style="margin: 5px 0; color: #6c757d; font-size: 12px;">
+            © {{ date('Y') }} Orion Designers. All rights reserved.
+        </p>
     </div>
 </body>
 </html>

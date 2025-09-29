@@ -36,7 +36,7 @@ class TaskConfirmationMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: $this->emailPreparation->subject ?: 'Task Completion Confirmation - ' . $this->task->title,
+            subject: $this->emailPreparation->subject ?: 'Project Update: Task Completed - ' . $this->task->title,
         );
     }
 
