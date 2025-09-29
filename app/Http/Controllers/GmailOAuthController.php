@@ -54,7 +54,7 @@ class GmailOAuthController extends Controller
             if ($success) {
                 return redirect()->route('profile.edit')->with('success', 'Gmail account connected successfully! You can now send emails from your Gmail account.');
             } else {
-                return redirect()->route('profile.edit')->with('error', 'Failed to connect Gmail account. Please try again.');
+                return redirect()->route('profile.edit')->with('error', 'Failed to connect Gmail account. This Gmail account may already be connected by another user.');
             }
         } catch (\Exception $e) {
             Log::error('Gmail OAuth callback error: ' . $e->getMessage());
