@@ -529,15 +529,14 @@ class TaskController extends Controller
                 }
             }
 
-            // Try to send via Gmail OAuth if approver has Gmail connected
-            if ($approver && $approver->hasGmailConnected()) {
-                $this->sendApprovalEmailViaGmail($task, $approver);
-            } else {
-                // Fallback to SMTP
-                Mail::to($task->assignee->email)->send(new \App\Mail\TaskApprovalInternalMail($task, $task->assignee, $approver));
+            // FORCE GMAIL ONLY - No SMTP fallback
+            if (!$approver || !$approver->hasGmailConnected()) {
+                Log::error('Gmail OAuth required for approval email but approver does not have Gmail connected');
+                throw new \Exception('Gmail OAuth is required for sending approval emails. Please connect your Gmail account first.');
             }
 
-            Log::info('Approval email sent successfully for task: ' . $task->id . ' to user: ' . $task->assignee->email . ' via ' . ($approver && $approver->hasGmailConnected() ? 'Gmail OAuth' : 'SMTP'));
+            $this->sendApprovalEmailViaGmail($task, $approver);
+            Log::info('Approval email sent successfully for task: ' . $task->id . ' to user: ' . $task->assignee->email . ' via Gmail OAuth only');
         } catch (\Exception $e) {
             Log::error('Failed to send approval email for task: ' . $task->id . ' - ' . $e->getMessage());
             throw $e;
@@ -562,15 +561,14 @@ class TaskController extends Controller
                 }
             }
 
-            // Try to send via Gmail OAuth if approver has Gmail connected
-            if ($approver && $approver->hasGmailConnected()) {
-                $this->sendApprovalEmailViaGmail($task, $approver);
-            } else {
-                // Fallback to SMTP
-                Mail::to($task->assignee->email)->send(new \App\Mail\TaskApprovalInternalMail($task, $task->assignee, $approver));
+            // FORCE GMAIL ONLY - No SMTP fallback
+            if (!$approver || !$approver->hasGmailConnected()) {
+                Log::error('Gmail OAuth required for rejection email but approver does not have Gmail connected');
+                throw new \Exception('Gmail OAuth is required for sending rejection emails. Please connect your Gmail account first.');
             }
 
-            Log::info('Rejection email sent successfully for task: ' . $task->id . ' to user: ' . $task->assignee->email . ' via ' . ($approver && $approver->hasGmailConnected() ? 'Gmail OAuth' : 'SMTP'));
+            $this->sendApprovalEmailViaGmail($task, $approver);
+            Log::info('Rejection email sent successfully for task: ' . $task->id . ' to user: ' . $task->assignee->email . ' via Gmail OAuth only');
         } catch (\Exception $e) {
             Log::error('Failed to send rejection email for task: ' . $task->id . ' - ' . $e->getMessage());
             throw $e;
@@ -768,9 +766,16 @@ class TaskController extends Controller
                 }
             }
 
-            $useGmail = $user->hasGmailConnected();
+            // FORCE GMAIL ONLY - No SMTP fallback
+            if (!$user->hasGmailConnected()) {
+                Log::error('Gmail OAuth required but user ' . $user->id . ' does not have Gmail connected');
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Gmail OAuth is required but not connected. Please connect your Gmail account first.'
+                ], 400);
+            }
 
-            Log::info('Email sending attempt - User: ' . $user->id . ', Use Gmail: ' . ($useGmail ? 'Yes' : 'No') . ', Gmail Connected: ' . ($user->hasGmailConnected() ? 'Yes' : 'No'));
+            Log::info('Email sending attempt - User: ' . $user->id . ', Gmail Only Mode: Yes, Gmail Connected: ' . ($user->hasGmailConnected() ? 'Yes' : 'No'));
 
             // Log email preparation details
             Log::info('Email preparation - To: ' . $emailPreparation->to_emails . ', CC: ' . ($emailPreparation->cc_emails ?? 'none') . ', BCC: ' . ($emailPreparation->bcc_emails ?? 'none') . ', Subject: ' . $emailPreparation->subject);
@@ -783,79 +788,66 @@ class TaskController extends Controller
             // Create the mail instance
             $mail = new \App\Mail\TaskConfirmationMail($task, $emailPreparation, $user);
 
-            if ($useGmail) {
-                Log::info('Using Gmail OAuth for sending email');
-                // Use Gmail OAuth for sending
-                $gmailOAuthService = app(\App\Services\GmailOAuthService::class);
+            // Use Gmail OAuth for sending ONLY
+            Log::info('Using Gmail OAuth for sending email - Gmail Only Mode');
+            $gmailOAuthService = app(\App\Services\GmailOAuthService::class);
 
-                // Check Gmail configuration
-                $configCheck = $gmailOAuthService->checkConfiguration();
-                if (!$configCheck['configured']) {
-                    Log::warning('Gmail API not properly configured, falling back to SMTP. Issues: ' . implode(', ', $configCheck['issues']));
-                    $useGmail = false;
-                }
+            // Check Gmail configuration
+            $configCheck = $gmailOAuthService->checkConfiguration();
+            if (!$configCheck['configured']) {
+                Log::error('Gmail API not properly configured. Issues: ' . implode(', ', $configCheck['issues']));
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Gmail API is not properly configured. Please check your Gmail OAuth settings.'
+                ], 400);
+            }
 
-                // Prepare email data for Gmail API
-                $emailData = [
-                    'from' => $user->email,
-                    'to' => $toEmails,
-                    'subject' => $mail->envelope()->subject,
-                    'body' => view('emails.task-confirmation', [
-                        'task' => $task,
-                        'emailPreparation' => $emailPreparation,
-                        'sender' => $user,
-                    ])->render(),
-                ];
+            // Prepare email data for Gmail API
+            $emailData = [
+                'from' => $user->email,
+                'to' => $toEmails,
+                'subject' => $mail->envelope()->subject,
+                'body' => view('emails.task-confirmation', [
+                    'task' => $task,
+                    'emailPreparation' => $emailPreparation,
+                    'sender' => $user,
+                ])->render(),
+            ];
 
-                if (!empty($ccEmails)) {
-                    $emailData['cc'] = $ccEmails;
-                }
+            if (!empty($ccEmails)) {
+                $emailData['cc'] = $ccEmails;
+            }
 
-                if (!empty($bccEmails)) {
-                    $emailData['bcc'] = $bccEmails;
-                }
+            if (!empty($bccEmails)) {
+                $emailData['bcc'] = $bccEmails;
+            }
 
-                // Handle attachments
-                if ($emailPreparation->attachments) {
-                    $attachments = [];
-                    foreach ($emailPreparation->attachments as $attachmentPath) {
-                        if (file_exists(storage_path('app/' . $attachmentPath))) {
-                            $attachments[] = [
-                                'filename' => basename($attachmentPath),
-                                'content' => file_get_contents(storage_path('app/' . $attachmentPath)),
-                                'mime_type' => mime_content_type(storage_path('app/' . $attachmentPath)),
-                            ];
-                        }
-                    }
-                    if (!empty($attachments)) {
-                        $emailData['attachments'] = $attachments;
+            // Handle attachments
+            if ($emailPreparation->attachments) {
+                $attachments = [];
+                foreach ($emailPreparation->attachments as $attachmentPath) {
+                    if (file_exists(storage_path('app/' . $attachmentPath))) {
+                        $attachments[] = [
+                            'filename' => basename($attachmentPath),
+                            'content' => file_get_contents(storage_path('app/' . $attachmentPath)),
+                            'mime_type' => mime_content_type(storage_path('app/' . $attachmentPath)),
+                        ];
                     }
                 }
-
-                $success = $gmailOAuthService->sendEmail($user, $emailData);
-
-                if (!$success) {
-                    Log::warning('Gmail OAuth failed, falling back to SMTP for user: ' . $user->id);
-                    // Fallback to SMTP if Gmail OAuth fails
-                    $useGmail = false;
+                if (!empty($attachments)) {
+                    $emailData['attachments'] = $attachments;
                 }
             }
 
-            if (!$useGmail) {
-                Log::info('Using SMTP for sending email');
-                // Use regular SMTP for sending
-                // Send to primary recipients
-                Mail::to($toEmails)->send($mail);
+            Log::info('Sending email via Gmail OAuth only - no SMTP fallback');
+            $success = $gmailOAuthService->sendEmail($user, $emailData);
 
-                // Send CC if specified
-                if (!empty($ccEmails)) {
-                    Mail::cc($ccEmails)->send($mail);
-                }
-
-                // Send BCC if specified
-                if (!empty($bccEmails)) {
-                    Mail::bcc($bccEmails)->send($mail);
-                }
+            if (!$success) {
+                Log::error('Gmail OAuth failed for user: ' . $user->id . ' - Email not sent');
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to send email via Gmail OAuth. Please check your Gmail connection and try again.'
+                ], 400);
             }
 
             // Update email preparation status
@@ -867,8 +859,8 @@ class TaskController extends Controller
             // Update task status to completed
             $task->update(['status' => 'completed']);
 
-            $message = $useGmail ? 'Confirmation email sent successfully via Gmail!' : 'Confirmation email sent successfully via SMTP!';
-            Log::info('Confirmation email sent successfully for task: ' . $task->id . ' by user: ' . Auth::id() . ($useGmail ? ' via Gmail' : ' via SMTP'));
+            $message = 'Confirmation email sent successfully via Gmail OAuth!';
+            Log::info('Confirmation email sent successfully for task: ' . $task->id . ' by user: ' . Auth::id() . ' via Gmail OAuth only');
 
             return response()->json(['success' => true, 'message' => $message]);
         } catch (\Exception $e) {
@@ -958,15 +950,13 @@ class TaskController extends Controller
             $success = $gmailOAuthService->sendEmail($approver, $emailData);
 
             if (!$success) {
-                // Fallback to SMTP if Gmail fails
-                Mail::to($task->assignee->email)->send(new \App\Mail\TaskApprovalInternalMail($task, $task->assignee, $approver));
-                Log::warning('Gmail OAuth failed for approval email, fell back to SMTP');
+                Log::error('Gmail OAuth failed for approval email - Email not sent');
+                throw new \Exception('Failed to send approval email via Gmail OAuth. Please check your Gmail connection.');
             }
 
         } catch (\Exception $e) {
-            // Fallback to SMTP if Gmail fails
-            Mail::to($task->assignee->email)->send(new \App\Mail\TaskApprovalInternalMail($task, $task->assignee, $approver));
-            Log::error('Gmail OAuth error for approval email, fell back to SMTP: ' . $e->getMessage());
+            Log::error('Gmail OAuth error for approval email: ' . $e->getMessage());
+            throw $e;
         }
     }
 }
