@@ -824,7 +824,8 @@ class TaskController extends Controller
                 Log::error('Gmail OAuth failed for user: ' . $user->id . ' - Email not sent');
                 return response()->json([
                     'success' => false,
-                    'message' => 'Failed to send email via Gmail OAuth. Please check your Gmail connection and try again.'
+                    'message' => 'Failed to send email via Gmail OAuth. Please check your Gmail connection and try again.',
+                    'redirect_url' => route('tasks.show', $task->id)
                 ], 400);
             }
 
@@ -840,10 +841,18 @@ class TaskController extends Controller
             $message = 'Confirmation email sent successfully via Gmail OAuth!';
             Log::info('Confirmation email sent successfully for task: ' . $task->id . ' by user: ' . Auth::id() . ' via Gmail OAuth only');
 
-            return response()->json(['success' => true, 'message' => $message]);
+            return response()->json([
+                'success' => true,
+                'message' => $message,
+                'redirect_url' => route('tasks.show', $task->id)
+            ]);
         } catch (\Exception $e) {
             Log::error('Failed to send confirmation email for task: ' . $task->id . ' - ' . $e->getMessage());
-            return response()->json(['success' => false, 'message' => 'Failed to send email: ' . $e->getMessage()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to send email: ' . $e->getMessage(),
+                'redirect_url' => route('tasks.show', $task->id)
+            ]);
         }
     }
 

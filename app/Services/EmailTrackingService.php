@@ -21,39 +21,45 @@ class EmailTrackingService
     /**
      * Track sent email and store in database
      */
-    public function trackSentEmail(User $user, array $emailData, string $gmailMessageId, string $threadId = null): Email
+    public function trackSentEmail(User $user, array $emailData, string $gmailMessageId, string $threadId = null): ?Email
     {
-        // Always add designers@orion-contracting.com to CC
-        $ccEmails = $emailData['cc'] ?? [];
-        if (!in_array('designers@orion-contracting.com', $ccEmails)) {
-            $ccEmails[] = 'designers@orion-contracting.com';
+        try {
+            // Always add designers@orion-contracting.com to CC
+            $ccEmails = $emailData['cc'] ?? [];
+            if (!in_array('designers@orion-contracting.com', $ccEmails)) {
+                $ccEmails[] = 'designers@orion-contracting.com';
+            }
+
+            // Generate tracking pixel URL
+            $trackingPixelUrl = $this->generateTrackingPixelUrl($gmailMessageId);
+
+            // Create email record
+            $email = Email::create([
+                'from_email' => $emailData['from'],
+                'to_email' => is_array($emailData['to']) ? implode(', ', $emailData['to']) : $emailData['to'],
+                'subject' => $emailData['subject'],
+                'body' => $emailData['body'],
+                'email_type' => 'sent',
+                'status' => 'sent',
+                'sent_at' => now(),
+                'gmail_message_id' => $gmailMessageId,
+                'thread_id' => $threadId,
+                'cc_emails' => $ccEmails,
+                'bcc_emails' => $emailData['bcc'] ?? [],
+                'tracking_pixel_url' => $trackingPixelUrl,
+                'is_tracked' => true,
+                'user_id' => $user->id,
+                'task_id' => $emailData['task_id'] ?? null,
+            ]);
+
+            Log::info('Email tracked successfully - ID: ' . $email->id . ', Gmail Message ID: ' . $gmailMessageId);
+
+            return $email;
+        } catch (\Exception $e) {
+            Log::error('Failed to track email: ' . $e->getMessage());
+            // Return null instead of throwing exception to not break email sending
+            return null;
         }
-
-        // Generate tracking pixel URL
-        $trackingPixelUrl = $this->generateTrackingPixelUrl($gmailMessageId);
-
-        // Create email record
-        $email = Email::create([
-            'from_email' => $emailData['from'],
-            'to_email' => is_array($emailData['to']) ? implode(', ', $emailData['to']) : $emailData['to'],
-            'subject' => $emailData['subject'],
-            'body' => $emailData['body'],
-            'email_type' => 'sent',
-            'status' => 'sent',
-            'sent_at' => now(),
-            'gmail_message_id' => $gmailMessageId,
-            'thread_id' => $threadId,
-            'cc_emails' => $ccEmails,
-            'bcc_emails' => $emailData['bcc'] ?? [],
-            'tracking_pixel_url' => $trackingPixelUrl,
-            'is_tracked' => true,
-            'user_id' => $user->id,
-            'task_id' => $emailData['task_id'] ?? null,
-        ]);
-
-        Log::info('Email tracked successfully - ID: ' . $email->id . ', Gmail Message ID: ' . $gmailMessageId);
-
-        return $email;
     }
 
     /**
@@ -205,21 +211,26 @@ class EmailTrackingService
      */
     public function handleTrackingPixel(string $messageId): void
     {
-        $email = Email::where('gmail_message_id', $messageId)->first();
+        try {
+            $email = Email::where('gmail_message_id', $messageId)->first();
 
-        if ($email && !$email->opened_at) {
-            $email->update(['opened_at' => now()]);
+            if ($email && !$email->opened_at) {
+                $email->update(['opened_at' => now()]);
 
-            // Create notification
-            EmailNotification::create([
-                'user_id' => $email->user_id,
-                'email_id' => $email->id,
-                'notification_type' => 'email_opened',
-                'message' => "Your email '{$email->subject}' was opened",
-                'is_read' => false,
-            ]);
+                // Create notification
+                EmailNotification::create([
+                    'user_id' => $email->user_id,
+                    'email_id' => $email->id,
+                    'notification_type' => 'email_opened',
+                    'message' => "Your email '{$email->subject}' was opened",
+                    'is_read' => false,
+                ]);
 
-            Log::info('Email opened - ID: ' . $email->id . ', Message ID: ' . $messageId);
+                Log::info('Email opened - ID: ' . $email->id . ', Message ID: ' . $messageId);
+            }
+        } catch (\Exception $e) {
+            Log::error('Failed to handle tracking pixel: ' . $e->getMessage());
+            // Don't throw exception to avoid breaking the tracking pixel response
         }
     }
 
@@ -264,26 +275,37 @@ class EmailTrackingService
      */
     public function getEmailStats(User $user): array
     {
-        $sentEmails = Email::where('user_id', $user->id)
-            ->where('email_type', 'sent')
-            ->count();
+        try {
+            $sentEmails = Email::where('user_id', $user->id)
+                ->where('email_type', 'sent')
+                ->count();
 
-        $openedEmails = Email::where('user_id', $user->id)
-            ->where('email_type', 'sent')
-            ->whereNotNull('opened_at')
-            ->count();
+            $openedEmails = Email::where('user_id', $user->id)
+                ->where('email_type', 'sent')
+                ->whereNotNull('opened_at')
+                ->count();
 
-        $repliedEmails = Email::where('user_id', $user->id)
-            ->where('email_type', 'sent')
-            ->whereNotNull('replied_at')
-            ->count();
+            $repliedEmails = Email::where('user_id', $user->id)
+                ->where('email_type', 'sent')
+                ->whereNotNull('replied_at')
+                ->count();
 
-        return [
-            'sent' => $sentEmails,
-            'opened' => $openedEmails,
-            'replied' => $repliedEmails,
-            'open_rate' => $sentEmails > 0 ? round(($openedEmails / $sentEmails) * 100, 2) : 0,
-            'reply_rate' => $sentEmails > 0 ? round(($repliedEmails / $sentEmails) * 100, 2) : 0,
-        ];
+            return [
+                'sent' => $sentEmails,
+                'opened' => $openedEmails,
+                'replied' => $repliedEmails,
+                'open_rate' => $sentEmails > 0 ? round(($openedEmails / $sentEmails) * 100, 2) : 0,
+                'reply_rate' => $sentEmails > 0 ? round(($repliedEmails / $sentEmails) * 100, 2) : 0,
+            ];
+        } catch (\Exception $e) {
+            Log::error('Failed to get email stats: ' . $e->getMessage());
+            return [
+                'sent' => 0,
+                'opened' => 0,
+                'replied' => 0,
+                'open_rate' => 0,
+                'reply_rate' => 0,
+            ];
+        }
     }
 }

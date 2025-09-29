@@ -191,9 +191,15 @@ class GmailOAuthService
             if ($result && $result->getId()) {
                 Log::info('Gmail email sent successfully for user: ' . $user->id . ' - Message ID: ' . $result->getId());
 
-                // Track the sent email
-                $emailTrackingService = app(EmailTrackingService::class);
-                $emailTrackingService->trackSentEmail($user, $emailData, $result->getId(), $result->getThreadId());
+                // Track the sent email (don't fail if tracking fails)
+                try {
+                    $emailTrackingService = app(EmailTrackingService::class);
+                    $emailTrackingService->trackSentEmail($user, $emailData, $result->getId(), $result->getThreadId());
+                    Log::info('Email tracking successful for user: ' . $user->id);
+                } catch (\Exception $trackingError) {
+                    Log::error('Email tracking failed for user: ' . $user->id . ' - ' . $trackingError->getMessage());
+                    // Don't fail the email send if tracking fails
+                }
 
                 return true;
             } else {

@@ -880,7 +880,11 @@ document.addEventListener('DOMContentLoaded', function() {
             'Are you sure you want to send this email? This action cannot be undone.';
 
         if (confirm(confirmMessage)) {
-            // First save the form data, then send the email
+            // Disable button and show loading
+            sendEmailBtn.disabled = true;
+            sendEmailBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+
+            // Prepare form data
             const emailForm = document.getElementById('emailForm');
             const formData = new FormData(emailForm);
 
@@ -889,9 +893,51 @@ document.addEventListener('DOMContentLoaded', function() {
                 formData.append('use_gmail', '1');
             }
 
-            // Submit the form to send email
-            emailForm.action = '{{ route("tasks.send-confirmation-email", $task) }}';
-            emailForm.submit();
+            // Send email via AJAX
+            fetch('{{ route("tasks.send-confirmation-email", $task) }}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Show success message
+                    alert(data.message || 'Email sent successfully!');
+
+                    // Redirect to task page
+                    if (data.redirect_url) {
+                        window.location.href = data.redirect_url;
+                    } else {
+                        window.location.href = '{{ route("tasks.show", $task) }}';
+                    }
+                } else {
+                    // Show error message
+                    alert(data.message || 'Failed to send email');
+
+                    // Redirect to task page even on error
+                    if (data.redirect_url) {
+                        window.location.href = data.redirect_url;
+                    } else {
+                        window.location.href = '{{ route("tasks.show", $task) }}';
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error sending email. Please try again.');
+
+                // Redirect to task page on error
+                window.location.href = '{{ route("tasks.show", $task) }}';
+            })
+            .finally(() => {
+                // Re-enable button
+                sendEmailBtn.disabled = false;
+                sendEmailBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Email';
+            });
         }
     });
 

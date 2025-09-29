@@ -5,12 +5,7 @@
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h4 class="mb-0">Tasks</h4>
         <div class="d-flex gap-2">
-            {{--  <a href="{{ route('notifications.index') }}" class="btn btn-outline-primary position-relative">
-                <i class="bx bx-bell me-1"></i>Notifications
-                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="notification-count">
-                    0
-                </span>
-            </a>  --}}
+            {{--  fm1.1  --}}
             <a href="{{ route('tasks.create') }}" class="btn btn-primary">
                 <i class="bx bx-plus me-1"></i>New Task
             </a>
