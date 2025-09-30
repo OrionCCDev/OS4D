@@ -37,6 +37,8 @@ class TaskConfirmationMail extends Mailable
     {
         return new Envelope(
             subject: $this->emailPreparation->subject ?: 'Project Update: Task Completed - ' . $this->task->title,
+            from: $this->sender->email,
+            replyTo: $this->sender->email,
         );
     }
 

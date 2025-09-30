@@ -12,7 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->text('gmail_access_token')->nullable()->after('gmail_refresh_token');
+            if (!Schema::hasColumn('users', 'gmail_access_token')) {
+                $table->text('gmail_access_token')->nullable()->after('gmail_refresh_token');
+            }
         });
     }
 

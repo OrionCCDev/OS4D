@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('subject');
             $table->text('body');
             $table->timestamp('received_at')->nullable();
-            $table->enum('status', ['received', 'read', 'replied', 'archived'])->default('received');
+            $table->enum('status', ['received', 'read', 'replied', 'archived', 'sent'])->default('received');
             $table->unsignedBigInteger('task_id')->nullable();
             $table->json('attachments')->nullable();
             $table->string('message_id')->nullable();

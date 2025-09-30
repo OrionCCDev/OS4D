@@ -249,9 +249,13 @@ class GmailOAuthService
 
         $bcc = isset($emailData['bcc']) && is_array($emailData['bcc']) ? implode(', ', $emailData['bcc']) : ($emailData['bcc'] ?? '');
 
+        // Extract name from email if available
+        $fromEmail = $emailData['from'];
+        $fromName = $emailData['from_name'] ?? explode('@', $fromEmail)[0];
+
         $headers = [
             'To: ' . $to,
-            'From: ' . $emailData['from'],
+            'From: ' . $fromName . ' <' . $fromEmail . '>',
             'Subject: ' . $emailData['subject'],
         ];
 
