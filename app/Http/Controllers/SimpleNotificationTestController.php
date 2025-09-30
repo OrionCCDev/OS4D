@@ -29,7 +29,7 @@ class SimpleNotificationTestController extends Controller
                 ]);
             }
 
-            // Create notification
+            // Create notification for original sender
             $notification = EmailNotification::create([
                 'user_id' => $email->user_id ?? 1,
                 'email_id' => $email->id,
@@ -37,6 +37,18 @@ class SimpleNotificationTestController extends Controller
                 'message' => "You received a reply from designers@orion-contracting.com regarding: {$email->subject}",
                 'is_read' => false,
             ]);
+
+            // ALSO create notification for manager (User ID 1)
+            $manager = User::find(1);
+            if ($manager && $manager->id !== ($email->user_id ?? 1)) {
+                $managerNotification = EmailNotification::create([
+                    'user_id' => $manager->id,
+                    'email_id' => $email->id,
+                    'notification_type' => 'reply_received',
+                    'message' => "Reply received from designers@orion-contracting.com for email: {$email->subject}",
+                    'is_read' => false,
+                ]);
+            }
 
             return response()->json([
                 'success' => true,

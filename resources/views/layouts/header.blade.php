@@ -518,6 +518,58 @@
               <!-- /Search -->
 
               <ul class="navbar-nav flex-row align-items-center ms-auto">
+                <!-- Email Notifications - Separate Icon -->
+                <li class="nav-item dropdown me-3">
+                  <a class="nav-link dropdown-toggle hide-arrow position-relative" href="#" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bx bx-envelope fs-4"></i>
+                    <span class="badge rounded-pill bg-warning position-absolute" style="top: 0; right: -4px;" id="nav-email-notification-count">0</span>
+                  </a>
+                  <div class="dropdown-menu dropdown-menu-end p-0 email-notification-popup" style="min-width: 380px; max-width: 400px; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.12); border: 1px solid #e5e7eb;">
+                    <!-- Email Header -->
+                    <div class="notification-header d-flex align-items-center justify-content-between p-3 border-bottom" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; border-radius: 12px 12px 0 0;">
+                      <div class="d-flex align-items-center">
+                        <div class="avatar avatar-sm me-2" style="width: 32px; height: 32px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                          <i class="bx bx-envelope" style="font-size: 16px;"></i>
+                        </div>
+                        <div>
+                          <h6 class="mb-0 fw-semibold">Email Notifications</h6>
+                          <small class="opacity-75">Email replies & updates</small>
+                        </div>
+                      </div>
+                      <div class="d-flex gap-1">
+                        <button class="btn btn-sm btn-outline-light" type="button" id="nav-mark-all-email-read" style="border-radius: 6px; padding: 4px 8px; font-size: 12px;">Mark all</button>
+                      </div>
+                    </div>
+
+                    <!-- Email Messages Area -->
+                    <div class="notification-messages" style="max-height: 400px; overflow-y: auto; background: #f8f9fa;" id="nav-email-notification-list">
+                      <div class="p-4 text-center text-muted">
+                        <div class="spinner-border spinner-border-sm me-2" role="status">
+                          <span class="visually-hidden">Loading...</span>
+                        </div>
+                        Loading email notifications...
+                      </div>
+                    </div>
+
+                    <!-- Email Footer -->
+                    <div class="notification-footer p-3 border-top" style="background: white; border-radius: 0 0 12px 12px;">
+                      <div class="d-flex align-items-center justify-content-between">
+                        <a href="{{ route('email-notifications.index') }}" class="btn btn-outline-primary btn-sm" style="border-radius: 8px;">
+                          <i class="bx bx-list-ul me-1"></i>View All
+                        </a>
+                        <a href="{{ route('email-monitoring.index') }}" class="btn btn-outline-info btn-sm" style="border-radius: 8px;">
+                          <i class="bx bx-envelope me-1"></i>Monitor
+                        </a>
+                        @if(config('app.debug'))
+                        <button class="btn btn-outline-secondary btn-sm" type="button" id="test-email-notification-btn" style="border-radius: 8px;">
+                          <i class="bx bx-test-tube me-1"></i>Test
+                        </button>
+                        @endif
+                      </div>
+                    </div>
+                  </div>
+                </li>
+
                 <!-- Live Notifications - Chat Style -->
                 <li class="nav-item dropdown me-3">
                   <a class="nav-link dropdown-toggle hide-arrow position-relative" href="#" data-bs-toggle="dropdown" aria-expanded="false">
@@ -916,9 +968,132 @@
                 window.refreshAllNotifications = function(){
                   fetchCount();
                   fetchUnread();
+                  fetchEmailNotifications();
                   // Also refresh bottom chat if it exists
                   if (typeof refreshBottomChat === 'function') {
                     refreshBottomChat();
+                  }
+                };
+
+                // Email Notification Functions
+                async function fetchEmailNotifications() {
+                  try {
+                    const countEl = document.getElementById('nav-email-notification-count');
+                    const listEl = document.getElementById('nav-email-notification-list');
+
+                    if (!countEl || !listEl) return;
+
+                    // Store previous count to detect new notifications
+                    const previousCount = parseInt(countEl.textContent) || 0;
+
+                    // Fetch email notifications
+                    const r = await fetch('{{ route('email-monitoring.notifications') }}?type=email', { credentials: 'same-origin' });
+                    const data = await r.json();
+
+                    const currentCount = data.count || 0;
+                    countEl.textContent = currentCount;
+                    countEl.style.display = currentCount > 0 ? 'inline' : 'none';
+
+                    // Play sound if count increased (new notification)
+                    if (currentCount > previousCount && previousCount >= 0) {
+                      playNotificationSound();
+                    }
+
+                    // Update email notification list
+                    if (data.data && data.data.length > 0) {
+                      listEl.innerHTML = data.data.map(n => {
+                        const viewUrl = n.email && n.email.task_id ? `/tasks/${n.email.task_id}` :
+                                       n.email ? `/emails/${n.email.id}` : '#';
+
+                        const title = (n.message || 'Email Notification');
+                        const timeAgo = formatTimeAgo(n.created_at);
+                        const notificationType = n.notification_type || 'email_received';
+                        const typeIcon = getEmailNotificationIcon(notificationType);
+                        const typeColor = getEmailNotificationColor(notificationType);
+
+                        return `
+                          <div class="notification-message p-3 border-bottom" style="transition: all 0.2s ease; cursor: pointer;" onclick="handleEmailNotificationClick(${n.id}, '${viewUrl}')">
+                            <div class="d-flex align-items-start">
+                              <div class="notification-avatar" style="width: 40px; height: 40px; background: ${typeColor}; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                <i class="${typeIcon}" style="color: white; font-size: 18px;"></i>
+                              </div>
+                              <div class="flex-grow-1 ms-3">
+                                <div class="d-flex justify-content-between align-items-start">
+                                  <div>
+                                    <h6 class="mb-1 fw-semibold" style="font-size: 14px; line-height: 1.3;">${title}</h6>
+                                    <p class="mb-1 text-muted small">${timeAgo}</p>
+                                    ${n.email ? `<p class="mb-0 small text-info"><i class="bx bx-envelope me-1"></i>${n.email.subject || 'Email notification'}</p>` : ''}
+                                  </div>
+                                  ${!n.is_read ? '<div class="unread-indicator" style="width: 8px; height: 8px; background: #ffc107; border-radius: 50%; flex-shrink: 0;"></div>' : ''}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        `;
+                      }).join('');
+                    } else {
+                      listEl.innerHTML = `
+                        <div class="p-4 text-center text-muted">
+                          <i class="bx bx-envelope-open fs-1 mb-3" style="color: #dee2e6;"></i>
+                          <h6 class="text-muted mb-2">No email notifications</h6>
+                          <p class="small mb-0">You'll see email replies and updates here</p>
+                        </div>
+                      `;
+                    }
+                  } catch (e) {
+                    console.error('Failed to fetch email notifications:', e);
+                  }
+                }
+
+                // Email notification icon function
+                function getEmailNotificationIcon(type) {
+                  const icons = {
+                    'reply_received': 'bx-reply',
+                    'email_received': 'bx-envelope',
+                    'email_opened': 'bx-show',
+                    'email_sent': 'bx-send',
+                    'default': 'bx-envelope'
+                  };
+                  return icons[type] || icons.default;
+                }
+
+                // Email notification color function
+                function getEmailNotificationColor(type) {
+                  const colors = {
+                    'reply_received': '#28a745',
+                    'email_received': '#007bff',
+                    'email_opened': '#17a2b8',
+                    'email_sent': '#6c757d',
+                    'default': '#6c757d'
+                  };
+                  return colors[type] || colors.default;
+                }
+
+                // Handle email notification click
+                window.handleEmailNotificationClick = async function(notificationId, viewUrl) {
+                  try {
+                    // Mark email notification as read
+                    await fetch(`{{ route('email-monitoring.notifications.mark-read', ':id') }}`.replace(':id', notificationId), {
+                      method: 'POST',
+                      headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                      },
+                      credentials: 'same-origin'
+                    });
+
+                    // Refresh all notification areas
+                    refreshAllNotifications();
+
+                    // Navigate to the URL if provided
+                    if (viewUrl && viewUrl.trim() !== '' && viewUrl !== '#') {
+                      window.location.href = viewUrl;
+                    }
+                  } catch (e) {
+                    console.error('Failed to handle email notification click:', e);
+                    // Still try to navigate if there's a URL
+                    if (viewUrl && viewUrl.trim() !== '' && viewUrl !== '#') {
+                      window.location.href = viewUrl;
+                    }
                   }
                 };
 
@@ -951,6 +1126,23 @@
                   });
                 }
 
+                // Test email notification button (debug mode only)
+                const testEmailBtn = document.getElementById('test-email-notification-btn');
+                if (testEmailBtn) {
+                  testEmailBtn.addEventListener('click', async function() {
+                    try {
+                      await fetch('{{ route('create-notification') }}', {
+                        method: 'GET',
+                        credentials: 'same-origin'
+                      });
+                      // Refresh all notification areas to show the new one
+                      setTimeout(refreshAllNotifications, 500);
+                    } catch (e) {
+                      console.error('Failed to create test email notification:', e);
+                    }
+                  });
+                }
+
                 if(markAllBtn){
                   markAllBtn.addEventListener('click', async function(){
                     try{
@@ -963,6 +1155,25 @@
                       });
                       refreshAllNotifications();
                     } catch(e){ /* noop */ }
+                  });
+                }
+
+                // Mark all email notifications as read
+                const markAllEmailBtn = document.getElementById('nav-mark-all-email-read');
+                if(markAllEmailBtn){
+                  markAllEmailBtn.addEventListener('click', async function(){
+                    try{
+                      await fetch('{{ route('email-monitoring.notifications.mark-all-read') }}', {
+                        method: 'POST',
+                        headers: {
+                          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                        },
+                        credentials: 'same-origin'
+                      });
+                      refreshAllNotifications();
+                    } catch(e){
+                      console.error('Failed to mark all email notifications as read:', e);
+                    }
                   });
                 }
               })();

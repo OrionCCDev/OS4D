@@ -162,24 +162,52 @@ class SimpleEmailTrackingService
      */
     protected function createReplyNotification(Email $originalEmail, array $replyData): void
     {
-        // Create database notification record
-        EmailNotification::create([
-            'user_id' => $originalEmail->user_id,
-            'email_id' => $originalEmail->id,
-            'notification_type' => 'reply_received',
-            'message' => "You received a reply from {$replyData['from']} regarding: {$originalEmail->subject}",
-            'is_read' => false,
-        ]);
+        try {
+            $user = User::find($originalEmail->user_id);
+            if (!$user) {
+                Log::warning('User not found for email ID: ' . $originalEmail->id);
+                return;
+            }
 
-        // Send Laravel notification (email + database)
-        $user = User::find($originalEmail->user_id);
-        $task = $originalEmail->task_id ? Task::find($originalEmail->task_id) : null;
+            // Create notification for original sender
+            $notification = EmailNotification::create([
+                'user_id' => $user->id,
+                'email_id' => $originalEmail->id,
+                'notification_type' => 'reply_received',
+                'message' => "You received a reply from {$replyData['from']} regarding: {$originalEmail->subject}",
+                'is_read' => false,
+            ]);
 
-        if ($user && isset($replyData['reply_email'])) {
-            $user->notify(new EmailReplyNotification($originalEmail, $replyData['reply_email'], $task));
+            // Send Laravel notification to original sender
+            $task = $originalEmail->task_id ? Task::find($originalEmail->task_id) : null;
+            if (isset($replyData['reply_email'])) {
+                $user->notify(new EmailReplyNotification($originalEmail, $replyData['reply_email'], $task));
+            }
+
+            Log::info('Reply notification created for original sender: ' . $user->id);
+
+            // ALSO create notification for manager (User ID 1)
+            $manager = User::find(1);
+            if ($manager && $manager->id !== $user->id) {
+                $managerNotification = EmailNotification::create([
+                    'user_id' => $manager->id,
+                    'email_id' => $originalEmail->id,
+                    'notification_type' => 'reply_received',
+                    'message' => "Reply received from {$replyData['from']} for email: {$originalEmail->subject} (sent by {$user->name})",
+                    'is_read' => false,
+                ]);
+
+                // Send Laravel notification to manager
+                if (isset($replyData['reply_email'])) {
+                    $manager->notify(new EmailReplyNotification($originalEmail, $replyData['reply_email'], $task));
+                }
+
+                Log::info('Reply notification created for manager: ' . $manager->id);
+            }
+
+        } catch (\Exception $e) {
+            Log::error('Error creating reply notification: ' . $e->getMessage());
         }
-
-        Log::info('Reply notification created for email ID: ' . $originalEmail->id);
     }
 
     /**
