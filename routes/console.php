@@ -25,3 +25,9 @@ Schedule::command('email:check-simple-replies')
     ->everyTenMinutes()
     ->withoutOverlapping()
     ->runInBackground();
+
+// Schedule designers inbox monitoring every 5 minutes
+Schedule::command('email:monitor-designers-inbox')
+    ->everyFiveMinutes()
+    ->withoutOverlapping()
+    ->runInBackground();

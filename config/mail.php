@@ -115,4 +115,23 @@ return [
         'name' => env('MAIL_FROM_NAME', 'Example'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | IMAP Configuration for Email Monitoring
+    |--------------------------------------------------------------------------
+    |
+    | Configuration for monitoring designers@orion-contracting.com inbox
+    | via IMAP connection
+    |
+    */
+
+    'imap' => [
+        'host' => env('IMAP_HOST', 'mail.orion-contracting.com'),
+        'port' => env('IMAP_PORT', 993),
+        'username' => env('IMAP_USERNAME', 'designers@orion-contracting.com'),
+        'password' => env('IMAP_PASSWORD', ''),
+        'folder' => env('IMAP_FOLDER', 'INBOX'),
+        'ssl' => env('IMAP_SSL', true),
+    ],
+
 ];

@@ -84,21 +84,34 @@ class SimpleEmailTrackingService
 
     /**
      * Check designers@orion-contracting.com inbox for replies to specific email
-     * This is a simplified version - in production you'd integrate with email service
+     * This method can be called manually or via webhook when a reply is detected
      */
     protected function checkDesignersInboxForReply(Email $email): ?array
     {
         try {
-            // This is where you'd integrate with your email service provider
-            // For now, we'll create a simple webhook-based approach
-
-            // You can implement this using:
+            // For now, we'll implement a simple approach that can be triggered manually
+            // In production, this would be called by:
             // 1. Email service webhooks (SendGrid, Mailgun, etc.)
             // 2. IMAP connection to designers@orion-contracting.com
             // 3. Email forwarding rules
+            // 4. Manual webhook calls
 
-            // For demonstration, we'll create a method that can be called manually
-            // or via webhook when a reply is detected
+            // Check if there are any recent replies in the database that match this email
+            $recentReplies = Email::where('email_type', 'received')
+                ->where('reply_to_email_id', $email->id)
+                ->where('received_at', '>=', now()->subHours(24))
+                ->first();
+
+            if ($recentReplies) {
+                Log::info('Found recent reply for email ID: ' . $email->id);
+                return [
+                    'reply_email' => $recentReplies,
+                    'original_email' => $email,
+                    'from' => $recentReplies->from_email,
+                    'subject' => $recentReplies->subject,
+                    'body' => $recentReplies->body,
+                ];
+            }
 
             return null; // No reply found
         } catch (\Exception $e) {
@@ -161,7 +174,7 @@ class SimpleEmailTrackingService
         // Send Laravel notification (email + database)
         $user = User::find($originalEmail->user_id);
         $task = $originalEmail->task_id ? Task::find($originalEmail->task_id) : null;
-        
+
         if ($user && isset($replyData['reply_email'])) {
             $user->notify(new EmailReplyNotification($originalEmail, $replyData['reply_email'], $task));
         }

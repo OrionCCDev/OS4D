@@ -312,6 +312,18 @@ Route::post('/webhook/email/reply', [App\Http\Controllers\EmailReplyWebhookContr
 Route::post('/webhook/email/test-reply', [App\Http\Controllers\EmailReplyWebhookController::class, 'testReply'])->name('email.webhook.test-reply');
 Route::get('/webhook/email/recent-emails', [App\Http\Controllers\EmailReplyWebhookController::class, 'getRecentEmails'])->name('email.webhook.recent-emails');
 
+// Email reply testing routes (for debugging)
+Route::post('/test/email/simulate-reply', [App\Http\Controllers\EmailReplyTestController::class, 'simulateReply'])->name('test.email.simulate-reply');
+Route::get('/test/email/recent-emails', [App\Http\Controllers\EmailReplyTestController::class, 'getRecentEmails'])->name('test.email.recent-emails');
+Route::post('/test/email/check-replies', [App\Http\Controllers\EmailReplyTestController::class, 'checkAllReplies'])->name('test.email.check-replies');
+Route::get('/test/email/notification-stats', [App\Http\Controllers\EmailReplyTestController::class, 'getNotificationStats'])->name('test.email.notification-stats');
+Route::get('/test/email/debug', [App\Http\Controllers\EmailDebugController::class, 'debug'])->name('test.email.debug');
+
+// Designers inbox monitoring routes
+Route::post('/webhook/designers-inbox', [App\Http\Controllers\DesignersInboxWebhookController::class, 'handleIncomingEmail'])->name('webhook.designers-inbox');
+Route::post('/webhook/designers-inbox/test', [App\Http\Controllers\DesignersInboxWebhookController::class, 'testWebhook'])->name('webhook.designers-inbox.test');
+Route::get('/test/designers-inbox/imap', [App\Http\Controllers\DesignersInboxWebhookController::class, 'testImapConnection'])->name('test.designers-inbox.imap');
+
 // Email management routes (authenticated)
 Route::middleware('auth')->group(function () {
     Route::get('/emails', [EmailController::class, 'index'])->name('emails.index');
