@@ -5,8 +5,11 @@ namespace App\Services;
 use App\Models\Email;
 use App\Models\EmailNotification;
 use App\Models\User;
+use App\Models\Task;
+use App\Notifications\EmailReplyNotification;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Notification;
 
 class SimpleEmailTrackingService
 {
@@ -128,7 +131,8 @@ class SimpleEmailTrackingService
             // Update original email
             $originalEmail->update(['replied_at' => now()]);
 
-            // Create notification
+            // Create notification with reply email included
+            $replyData['reply_email'] = $replyEmail;
             $this->createReplyNotification($originalEmail, $replyData);
 
             Log::info('Reply processed successfully for email ID: ' . $originalEmail->id);
@@ -145,6 +149,7 @@ class SimpleEmailTrackingService
      */
     protected function createReplyNotification(Email $originalEmail, array $replyData): void
     {
+        // Create database notification record
         EmailNotification::create([
             'user_id' => $originalEmail->user_id,
             'email_id' => $originalEmail->id,
@@ -152,6 +157,14 @@ class SimpleEmailTrackingService
             'message' => "You received a reply from {$replyData['from']} regarding: {$originalEmail->subject}",
             'is_read' => false,
         ]);
+
+        // Send Laravel notification (email + database)
+        $user = User::find($originalEmail->user_id);
+        $task = $originalEmail->task_id ? Task::find($originalEmail->task_id) : null;
+        
+        if ($user && isset($replyData['reply_email'])) {
+            $user->notify(new EmailReplyNotification($originalEmail, $replyData['reply_email'], $task));
+        }
 
         Log::info('Reply notification created for email ID: ' . $originalEmail->id);
     }

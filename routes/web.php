@@ -58,6 +58,16 @@ Route::middleware('auth')->group(function () {
     Route::get('/emails/sent', [App\Http\Controllers\SimpleEmailController::class, 'listSentEmails'])->name('emails.sent');
     Route::get('/emails/{id}/show', [App\Http\Controllers\SimpleEmailController::class, 'showEmail'])->name('emails.show');
 
+    // Email monitoring routes
+    Route::get('/email-monitoring', [App\Http\Controllers\EmailMonitoringController::class, 'index'])->name('email-monitoring.index');
+    Route::get('/email-monitoring/stats', [App\Http\Controllers\EmailMonitoringController::class, 'getStats'])->name('email-monitoring.stats');
+    Route::post('/email-monitoring/trigger', [App\Http\Controllers\EmailMonitoringController::class, 'triggerMonitoring'])->name('email-monitoring.trigger');
+    Route::get('/email-monitoring/provider-setup', [App\Http\Controllers\EmailMonitoringController::class, 'getProviderSetup'])->name('email-monitoring.provider-setup');
+    Route::get('/email-monitoring/notifications', [App\Http\Controllers\EmailMonitoringController::class, 'getNotifications'])->name('email-monitoring.notifications');
+    Route::post('/email-monitoring/notifications/{id}/mark-read', [App\Http\Controllers\EmailMonitoringController::class, 'markNotificationAsRead'])->name('email-monitoring.notifications.mark-read');
+    Route::post('/email-monitoring/notifications/mark-all-read', [App\Http\Controllers\EmailMonitoringController::class, 'markAllNotificationsAsRead'])->name('email-monitoring.notifications.mark-all-read');
+    Route::get('/email-monitoring/unread-count', [App\Http\Controllers\EmailMonitoringController::class, 'getUnreadCount'])->name('email-monitoring.unread-count');
+
     Route::post('/media/upload', [MediaController::class, 'upload'])->name('media.upload');
     Route::get('/media/list', [MediaController::class, 'list'])->name('media.list');
     Route::post('/media/folder', [MediaController::class, 'makeFolder'])->name('media.folder');
@@ -290,6 +300,7 @@ Route::get('test-gmail', function() {
 
 // Email webhook routes (no authentication required for webhooks)
 Route::post('/webhook/email/incoming', [EmailController::class, 'handleIncomingEmail'])->name('email.webhook.incoming');
+Route::post('/webhook/email/test', [App\Http\Controllers\EmailMonitoringController::class, 'testWebhook'])->name('email.webhook.test');
 
 // Email management routes (authenticated)
 Route::middleware('auth')->group(function () {

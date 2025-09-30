@@ -13,3 +13,15 @@ Schedule::command('email:check-replies')
     ->everyFiveMinutes()
     ->withoutOverlapping()
     ->runInBackground();
+
+// Schedule comprehensive email monitoring every 5 minutes
+Schedule::command('email:monitor-replies')
+    ->everyFiveMinutes()
+    ->withoutOverlapping()
+    ->runInBackground();
+
+// Schedule simple email reply checking every 10 minutes
+Schedule::command('email:check-simple-replies')
+    ->everyTenMinutes()
+    ->withoutOverlapping()
+    ->runInBackground();
