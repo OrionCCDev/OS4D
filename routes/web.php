@@ -73,6 +73,11 @@ Route::middleware('auth')->group(function () {
         return view('emails.test-reply');
     })->name('email.test-reply');
 
+    // Live email testing page
+    Route::get('/live-email-test', function() {
+        return view('emails.live-test');
+    })->name('live.email-test');
+
     Route::post('/media/upload', [MediaController::class, 'upload'])->name('media.upload');
     Route::get('/media/list', [MediaController::class, 'list'])->name('media.list');
     Route::post('/media/folder', [MediaController::class, 'makeFolder'])->name('media.folder');
@@ -323,6 +328,14 @@ Route::get('/test/email/debug', [App\Http\Controllers\EmailDebugController::clas
 Route::post('/webhook/designers-inbox', [App\Http\Controllers\DesignersInboxWebhookController::class, 'handleIncomingEmail'])->name('webhook.designers-inbox');
 Route::post('/webhook/designers-inbox/test', [App\Http\Controllers\DesignersInboxWebhookController::class, 'testWebhook'])->name('webhook.designers-inbox.test');
 Route::get('/test/designers-inbox/imap', [App\Http\Controllers\DesignersInboxWebhookController::class, 'testImapConnection'])->name('test.designers-inbox.imap');
+
+// Live email testing routes (for immediate testing)
+Route::post('/live/test-reply', [App\Http\Controllers\LiveEmailTestController::class, 'createTestReply'])->name('live.test-reply');
+Route::get('/live/notification-status', [App\Http\Controllers\LiveEmailTestController::class, 'getNotificationStatus'])->name('live.notification-status');
+Route::post('/live/simulate-designers-reply', [App\Http\Controllers\LiveEmailTestController::class, 'simulateDesignersReply'])->name('live.simulate-designers-reply');
+
+// Quick test route
+Route::get('/quick-test', [App\Http\Controllers\QuickTestController::class, 'quickTest'])->name('quick-test');
 
 // Email management routes (authenticated)
 Route::middleware('auth')->group(function () {
