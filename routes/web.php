@@ -337,6 +337,10 @@ Route::post('/live/simulate-designers-reply', [App\Http\Controllers\LiveEmailTes
 // Quick test route
 Route::get('/quick-test', [App\Http\Controllers\QuickTestController::class, 'quickTest'])->name('quick-test');
 
+// Simple notification test routes
+Route::get('/create-notification', [App\Http\Controllers\SimpleNotificationTestController::class, 'createNotification'])->name('create-notification');
+Route::get('/check-notifications', [App\Http\Controllers\SimpleNotificationTestController::class, 'checkNotifications'])->name('check-notifications');
+
 // Email management routes (authenticated)
 Route::middleware('auth')->group(function () {
     Route::get('/emails', [EmailController::class, 'index'])->name('emails.index');
