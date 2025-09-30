@@ -68,6 +68,11 @@ Route::middleware('auth')->group(function () {
     Route::post('/email-monitoring/notifications/mark-all-read', [App\Http\Controllers\EmailMonitoringController::class, 'markAllNotificationsAsRead'])->name('email-monitoring.notifications.mark-all-read');
     Route::get('/email-monitoring/unread-count', [App\Http\Controllers\EmailMonitoringController::class, 'getUnreadCount'])->name('email-monitoring.unread-count');
 
+    // Email reply testing page
+    Route::get('/email-test-reply', function() {
+        return view('emails.test-reply');
+    })->name('email.test-reply');
+
     Route::post('/media/upload', [MediaController::class, 'upload'])->name('media.upload');
     Route::get('/media/list', [MediaController::class, 'list'])->name('media.list');
     Route::post('/media/folder', [MediaController::class, 'makeFolder'])->name('media.folder');
@@ -301,6 +306,11 @@ Route::get('test-gmail', function() {
 // Email webhook routes (no authentication required for webhooks)
 Route::post('/webhook/email/incoming', [EmailController::class, 'handleIncomingEmail'])->name('email.webhook.incoming');
 Route::post('/webhook/email/test', [App\Http\Controllers\EmailMonitoringController::class, 'testWebhook'])->name('email.webhook.test');
+
+// Email reply webhook routes
+Route::post('/webhook/email/reply', [App\Http\Controllers\EmailReplyWebhookController::class, 'handleReply'])->name('email.webhook.reply');
+Route::post('/webhook/email/test-reply', [App\Http\Controllers\EmailReplyWebhookController::class, 'testReply'])->name('email.webhook.test-reply');
+Route::get('/webhook/email/recent-emails', [App\Http\Controllers\EmailReplyWebhookController::class, 'getRecentEmails'])->name('email.webhook.recent-emails');
 
 // Email management routes (authenticated)
 Route::middleware('auth')->group(function () {
