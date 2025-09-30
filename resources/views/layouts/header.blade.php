@@ -173,6 +173,15 @@
               </a>
             </li>
 
+            <!-- Email Tracker - Available to all users -->
+            <li class="menu-item {{ request()->routeIs('email-tracker.*') ? 'active' : '' }}">
+              <a href="{{ route('email-tracker.index') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-envelope-open"></i>
+                <div data-i18n="Email Tracker">Email Tracker</div>
+                <span class="badge rounded-pill bg-info ms-auto">designers@orion-contracting.com</span>
+              </a>
+            </li>
+
             <!-- Email Monitoring - Available to all users -->
             <li class="menu-item {{ request()->routeIs('email-monitoring.*') ? 'active' : '' }}">
               <a href="{{ route('email-monitoring.index') }}" class="menu-link">

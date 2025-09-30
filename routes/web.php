@@ -54,7 +54,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/email-notifications/{id}/mark-read', [EmailNotificationController::class, 'markAsRead'])->name('email-notifications.mark-read');
     Route::post('/email-notifications/mark-all-read', [EmailNotificationController::class, 'markAllAsRead'])->name('email-notifications.mark-all-read');
     Route::get('/email-notifications/unread-count', [EmailNotificationController::class, 'getUnreadCount'])->name('email-notifications.unread-count');
-    Route::get('/email-notifications/stats', [App\Http\Controllers\SimpleEmailController::class, 'getStats'])->name('email-notifications.stats');
+    Route::get('/email-notifications/stats', [EmailNotificationController::class, 'getEmailStats'])->name('email-notifications.stats');
     Route::get('/emails/sent', [App\Http\Controllers\SimpleEmailController::class, 'listSentEmails'])->name('emails.sent');
     Route::get('/emails/{id}/show', [App\Http\Controllers\SimpleEmailController::class, 'showEmail'])->name('emails.show');
 
@@ -112,6 +112,14 @@ Route::middleware('auth')->group(function () {
     Route::post('/live-monitoring/test', [App\Http\Controllers\LiveEmailMonitoringController::class, 'createTestNotifications'])->name('live-monitoring.test');
     Route::get('/live-monitoring/all-emails', [App\Http\Controllers\LiveEmailMonitoringController::class, 'getAllEmails'])->name('live-monitoring.all-emails');
     Route::get('/live-monitoring/email/{id}', [App\Http\Controllers\LiveEmailMonitoringController::class, 'getEmailDetails'])->name('live-monitoring.email-details');
+
+    // Email Tracker Routes
+    Route::get('/email-tracker', [App\Http\Controllers\EmailTrackerController::class, 'index'])->name('email-tracker.index');
+    Route::get('/email-tracker/stats', [App\Http\Controllers\EmailTrackerController::class, 'getStats'])->name('email-tracker.stats');
+    Route::get('/email-tracker/search', [App\Http\Controllers\EmailTrackerController::class, 'search'])->name('email-tracker.search');
+    Route::post('/email-tracker/{id}/mark-read', [App\Http\Controllers\EmailTrackerController::class, 'markAsRead'])->name('email-tracker.mark-read');
+    Route::get('/email-tracker/export', [App\Http\Controllers\EmailTrackerController::class, 'export'])->name('email-tracker.export');
+    Route::get('/emails/{id}', [App\Http\Controllers\EmailTrackerController::class, 'show'])->name('emails.show');
 
     // Admin: Users CRUD
     Route::middleware('admin')->prefix('admin')->name('admin.')->group(function () {

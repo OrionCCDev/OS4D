@@ -37,3 +37,9 @@ Schedule::command('email:live-monitor')
     ->everyTwoMinutes()
     ->withoutOverlapping()
     ->runInBackground();
+
+// Schedule sent email detection every 2 minutes (more frequent for better automation)
+Schedule::command('email:detect-sent')
+    ->everyTwoMinutes()
+    ->withoutOverlapping()
+    ->runInBackground();
