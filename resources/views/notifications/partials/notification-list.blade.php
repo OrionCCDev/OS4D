@@ -1,4 +1,4 @@
-@if($notifications->count() > 0)
+@if(isset($notifications) && $notifications->count() > 0)
     <div class="notification-list">
         @foreach($notifications as $notification)
             <div class="notification-item {{ $notification->is_read ? '' : 'unread' }}" data-id="{{ $notification->id }}">

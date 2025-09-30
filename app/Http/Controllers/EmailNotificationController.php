@@ -19,7 +19,11 @@ class EmailNotificationController extends Controller
             ->orderBy('created_at', 'desc')
             ->paginate(20);
 
-        return view('notifications.email-notifications', compact('notifications'));
+        $unreadCount = EmailNotification::where('user_id', Auth::id())
+            ->where('is_read', false)
+            ->count();
+
+        return view('notifications.email-notifications', compact('notifications', 'unreadCount'));
     }
 
     /**

@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.header')
 
 @section('content')
 <div class="container-fluid">
@@ -8,7 +8,7 @@
                 <div class="card-header">
                     <h3 class="card-title">
                         <i class="fas fa-bell"></i> Email Notifications
-                        <span class="badge badge-primary ml-2" id="unread-count">{{ $unreadCount }}</span>
+                        <span class="badge badge-primary ml-2" id="unread-count">{{ $unreadCount ?? 0 }}</span>
                     </h3>
                     <div class="card-tools">
                         <button class="btn btn-primary btn-sm" onclick="markAllAsRead()">
@@ -31,7 +31,7 @@
                         <li class="nav-item">
                             <a class="nav-link" id="unread-tab" data-toggle="tab" href="#unread" role="tab">
                                 Unread
-                                <span class="badge badge-danger ml-1" id="unread-badge">{{ $unreadCount }}</span>
+                                <span class="badge badge-danger ml-1" id="unread-badge">{{ $unreadCount ?? 0 }}</span>
                             </a>
                         </li>
                         <li class="nav-item">
@@ -96,7 +96,7 @@
 <script>
 // Global variables
 let currentNotifications = @json($notifications->items());
-let unreadCount = {{ $unreadCount }};
+let unreadCount = {{ $unreadCount ?? 0 }};
 
 // Initialize page
 document.addEventListener('DOMContentLoaded', function() {
