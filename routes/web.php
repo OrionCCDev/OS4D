@@ -341,6 +341,12 @@ Route::get('/quick-test', [App\Http\Controllers\QuickTestController::class, 'qui
 Route::get('/create-notification', [App\Http\Controllers\SimpleNotificationTestController::class, 'createNotification'])->name('create-notification');
 Route::get('/check-notifications', [App\Http\Controllers\SimpleNotificationTestController::class, 'checkNotifications'])->name('check-notifications');
 
+// Debug notification routes
+Route::get('/debug-notifications', function() {
+    return view('emails.debug-notifications');
+})->name('debug-notifications');
+Route::post('/create-notification-for-user', [App\Http\Controllers\DebugNotificationController::class, 'createNotificationForUser'])->name('create-notification-for-user');
+
 // Email management routes (authenticated)
 Route::middleware('auth')->group(function () {
     Route::get('/emails', [EmailController::class, 'index'])->name('emails.index');
