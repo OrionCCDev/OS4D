@@ -154,6 +154,23 @@
                 <div data-i18n="Tasks">My Tasks</div>
               </a>
             </li>
+
+            <!-- Email Notifications - Available to all users -->
+            <li class="menu-item {{ request()->routeIs('email-notifications.*') ? 'active' : '' }}">
+              <a href="{{ route('email-notifications.index') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-bell"></i>
+                <div data-i18n="Email Notifications">Email Notifications</div>
+                <span class="badge rounded-pill bg-danger ms-auto nav-bell-count" id="nav-bell-count" style="display: none;">0</span>
+              </a>
+            </li>
+
+            <!-- Email Monitoring - Available to all users -->
+            <li class="menu-item {{ request()->routeIs('email-monitoring.*') ? 'active' : '' }}">
+              <a href="{{ route('email-monitoring.index') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-envelope"></i>
+                <div data-i18n="Email Monitoring">Email Monitoring</div>
+              </a>
+            </li>
 {{--
             <!-- Layouts -->
             <li class="menu-item">
@@ -537,8 +554,11 @@
                     <!-- Chat Footer -->
                     <div class="notification-footer p-3 border-top" style="background: white; border-radius: 0 0 12px 12px;">
                       <div class="d-flex align-items-center justify-content-between">
-                        <a href="{{ route('notifications.index') }}" class="btn btn-outline-primary btn-sm" style="border-radius: 8px;">
+                        <a href="{{ route('email-notifications.index') }}" class="btn btn-outline-primary btn-sm" style="border-radius: 8px;">
                           <i class="bx bx-list-ul me-1"></i>View All
+                        </a>
+                        <a href="{{ route('email-monitoring.index') }}" class="btn btn-outline-info btn-sm" style="border-radius: 8px;">
+                          <i class="bx bx-envelope me-1"></i>Monitor
                         </a>
                         @if(config('app.debug'))
                         <button class="btn btn-outline-secondary btn-sm" type="button" id="test-notification-btn" style="border-radius: 8px;">
@@ -694,7 +714,7 @@
 
                 async function fetchCount(){
                   try {
-                    const r = await fetch('{{ route('api.notifications.count') }}', { credentials: 'same-origin' });
+                    const r = await fetch('{{ route('email-monitoring.unread-count') }}', { credentials: 'same-origin' });
                     const d = await r.json();
                     const currentCount = d.count ?? 0;
 
@@ -709,6 +729,14 @@
 
                     countEl.textContent = currentCount;
                     countEl.style.display = currentCount > 0 ? 'inline-block' : 'none';
+
+                    // Update sidebar bell count
+                    const navBellCount = document.getElementById('nav-bell-count');
+                    if (navBellCount) {
+                      navBellCount.textContent = currentCount;
+                      navBellCount.style.display = currentCount > 0 ? 'inline' : 'none';
+                    }
+
                     previousCount = currentCount;
                   } catch (e) {
                     // silent
@@ -717,13 +745,14 @@
 
                 async function fetchUnread(){
                   try {
-                    const r = await fetch('{{ route('api.notifications.unread') }}', { credentials: 'same-origin' });
+                    const r = await fetch('{{ route('email-monitoring.notifications') }}', { credentials: 'same-origin' });
 
                     if (!r.ok) {
                       throw new Error(`HTTP error! status: ${r.status}`);
                     }
 
-                    const list = await r.json();
+                    const data = await r.json();
+                    const list = data.data || [];
 
                     if(!Array.isArray(list) || list.length === 0){
                       listEl.innerHTML = `
@@ -737,11 +766,11 @@
                       return;
                     }
                     listEl.innerHTML = list.map(function(n){
-                      const title = (n.title || 'Notification');
-                      const message = (n.message || '');
+                      const title = (n.message || 'Email Notification');
+                      const message = n.email ? `Email: ${n.email.subject}` : '';
                       const timeAgo = getTimeAgo(n.created_at);
-                      const viewUrl = n.data && n.data.task_id ? `{{ url('tasks') }}/${n.data.task_id}` : '';
-                      const notificationType = n.type || 'info';
+                      const viewUrl = n.email && n.email.task_id ? `{{ url('tasks') }}/${n.email.task_id}` : (n.email ? `{{ url('emails') }}/${n.email.id}/show` : '');
+                      const notificationType = n.notification_type || 'info';
                       const typeIcon = getNotificationIcon(notificationType);
                       const typeColor = getNotificationColor(notificationType);
 
@@ -759,7 +788,7 @@
                               <p class="mb-2 text-muted" style="font-size: 13px; line-height: 1.4; margin: 0;">${message}</p>
                               ${viewUrl ? `
                                 <span class="badge bg-primary" style="font-size: 10px; padding: 2px 6px;">
-                                  <i class="bx bx-link-external me-1"></i>Click to view task
+                                  <i class="bx bx-link-external me-1"></i>Click to view
                                 </span>
                               ` : ''}
                             </div>
@@ -795,6 +824,9 @@
                 // Global function for notification icons
                 window.getNotificationIcon = function(type) {
                   const icons = {
+                    'reply_received': 'bx-reply',
+                    'email_received': 'bx-envelope',
+                    'email_opened': 'bx-show',
                     'task_assigned': 'bx-task',
                     'task_status_changed': 'bx-refresh',
                     'task_approved': 'bx-check-circle',
@@ -815,6 +847,9 @@
                 // Global function for notification colors
                 window.getNotificationColor = function(type) {
                   const colors = {
+                    'reply_received': '#10b981',
+                    'email_received': '#3b82f6',
+                    'email_opened': '#06b6d4',
                     'task_assigned': 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                     'task_status_changed': 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
                     'task_approved': 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
@@ -835,12 +870,12 @@
                 // Global function for marking notifications as read
                 window.markAsRead = async function(notificationId) {
                   try {
-                    await fetch(`{{ url('notifications') }}/${notificationId}/read`, {
+                    await fetch(`{{ route('email-monitoring.notifications.mark-read', ':id') }}`.replace(':id', notificationId), {
                       method: 'POST',
                       headers: {
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                      },
-                      credentials: 'same-origin'
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                        'Content-Type': 'application/json',
+                      }
                     });
                     // Refresh all notification areas
                     refreshAllNotifications();
