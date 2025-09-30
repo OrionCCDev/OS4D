@@ -101,6 +101,18 @@ Route::middleware('auth')->group(function () {
         return $pdf->download('report.pdf');
     })->name('reports.pdf');
 
+    // Live Email Monitoring Routes
+    Route::get('/live-email-monitoring', [App\Http\Controllers\LiveEmailMonitoringController::class, 'index'])->name('live-monitoring.index');
+    Route::get('/live-monitoring/stats', [App\Http\Controllers\LiveEmailMonitoringController::class, 'getStats'])->name('live-monitoring.stats');
+    Route::post('/live-monitoring/trigger', [App\Http\Controllers\LiveEmailMonitoringController::class, 'triggerMonitoring'])->name('live-monitoring.trigger');
+    Route::get('/live-monitoring/notifications', [App\Http\Controllers\LiveEmailMonitoringController::class, 'getLiveNotifications'])->name('live-monitoring.notifications');
+    Route::post('/live-monitoring/notifications/{id}/mark-read', [App\Http\Controllers\LiveEmailMonitoringController::class, 'markAsRead'])->name('live-monitoring.mark-read');
+    Route::post('/live-monitoring/notifications/mark-all-read', [App\Http\Controllers\LiveEmailMonitoringController::class, 'markAllAsRead'])->name('live-monitoring.mark-all-read');
+    Route::get('/live-monitoring/unread-count', [App\Http\Controllers\LiveEmailMonitoringController::class, 'getUnreadCount'])->name('live-monitoring.unread-count');
+    Route::post('/live-monitoring/test', [App\Http\Controllers\LiveEmailMonitoringController::class, 'createTestNotifications'])->name('live-monitoring.test');
+    Route::get('/live-monitoring/all-emails', [App\Http\Controllers\LiveEmailMonitoringController::class, 'getAllEmails'])->name('live-monitoring.all-emails');
+    Route::get('/live-monitoring/email/{id}', [App\Http\Controllers\LiveEmailMonitoringController::class, 'getEmailDetails'])->name('live-monitoring.email-details');
+
     // Admin: Users CRUD
     Route::middleware('admin')->prefix('admin')->name('admin.')->group(function () {
         Route::resource('users', UsersController::class)->except(['show']);

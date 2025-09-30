@@ -31,3 +31,9 @@ Schedule::command('email:monitor-designers-inbox')
     ->everyFiveMinutes()
     ->withoutOverlapping()
     ->runInBackground();
+
+// Schedule live email monitoring every 2 minutes
+Schedule::command('email:live-monitor')
+    ->everyTwoMinutes()
+    ->withoutOverlapping()
+    ->runInBackground();

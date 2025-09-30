@@ -164,6 +164,15 @@
               </a>
             </li>
 
+            <!-- Live Email Monitoring - Available to all users -->
+            <li class="menu-item {{ request()->routeIs('live-monitoring.*') ? 'active' : '' }}">
+              <a href="{{ route('live-monitoring.index') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-radar"></i>
+                <div data-i18n="Live Email Monitoring">Live Email Monitoring</div>
+                <span class="badge rounded-pill bg-success ms-auto" id="live-monitoring-badge" style="display: none;">LIVE</span>
+              </a>
+            </li>
+
             <!-- Email Monitoring - Available to all users -->
             <li class="menu-item {{ request()->routeIs('email-monitoring.*') ? 'active' : '' }}">
               <a href="{{ route('email-monitoring.index') }}" class="menu-link">
