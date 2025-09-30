@@ -783,14 +783,25 @@ class TaskController extends Controller
             $trackedEmail = null;
 
             if ($useGmailOAuth) {
-                // Use Gmail OAuth for sending email
+                // Use Gmail OAuth for sending email to main recipients
                 Log::info('Using Gmail OAuth for sending email - Gmail Only Mode');
                 $gmailOAuthService = app(\App\Services\GmailOAuthService::class);
 
-                $success = $gmailOAuthService->sendEmail($user, $emailData);
+                // Remove designers@orion-contracting.com from CC for Gmail OAuth
+                $gmailEmailData = $emailData;
+                if (isset($gmailEmailData['cc'])) {
+                    $gmailEmailData['cc'] = array_filter($gmailEmailData['cc'], function($email) {
+                        return $email !== 'designers@orion-contracting.com';
+                    });
+                }
+
+                $success = $gmailOAuthService->sendEmail($user, $gmailEmailData);
 
                 if ($success) {
-                    Log::info('Confirmation email sent successfully for task: ' . $task->id . ' by user: ' . Auth::id() . ' via Gmail OAuth only');
+                    Log::info('Confirmation email sent successfully for task: ' . $task->id . ' by user: ' . Auth::id() . ' via Gmail OAuth');
+
+                    // Send separate email to designers@orion-contracting.com via SMTP
+                    $this->sendDesignersNotification($task, $emailPreparation, $user);
                 } else {
                     Log::error('Gmail OAuth failed for user: ' . $user->id . ' - Email not sent');
                     return response()->json([
@@ -923,9 +934,45 @@ class TaskController extends Controller
     }
 
     /**
+     * Send notification email to designers@orion-contracting.com via SMTP
+     */
+    private function sendDesignersNotification(Task $task, $emailPreparation, User $sender)
+    {
+        try {
+            Log::info('Sending designers notification for task: ' . $task->id);
+
+            // Create a copy of the email preparation for designers
+            $designersEmailData = [
+                'from' => 'designers@orion-contracting.com',
+                'from_name' => 'Orion Designers System',
+                'to' => ['designers@orion-contracting.com'],
+                'subject' => '[NOTIFICATION] ' . $emailPreparation->subject,
+                'body' => view('emails.task-confirmation', [
+                    'task' => $task,
+                    'emailPreparation' => $emailPreparation,
+                    'sender' => $sender,
+                ])->render(),
+                'task_id' => $task->id,
+            ];
+
+            // Send via Laravel Mail (SMTP)
+            $mail = new \App\Mail\TaskConfirmationMail($task, $emailPreparation, $sender);
+            $mail->from('designers@orion-contracting.com', 'Orion Designers System');
+
+            Mail::send($mail);
+
+            Log::info('Designers notification sent successfully for task: ' . $task->id);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to send designers notification for task: ' . $task->id . ' - ' . $e->getMessage());
+            // Don't fail the main email if designers notification fails
+        }
+    }
+
+    /**
      * Send approval email via Gmail OAuth
      */
-    private function sendApprovalEmailViaGmail(Task $task, User $approver)
+private function sendApprovalEmailViaGmail(Task $task, User $approver)
     {
         try {
             $gmailOAuthService = app(\App\Services\GmailOAuthService::class);
