@@ -26,26 +26,28 @@ Schedule::command('email:check-simple-replies')
     ->withoutOverlapping()
     ->runInBackground();
 
-// Schedule designers inbox monitoring every 5 minutes
-Schedule::command('email:monitor-designers-inbox')
+// Schedule automatic email fetching from designers inbox every 5 minutes
+// This is the PRIMARY command for fetching emails from designers@orion-contracting.com
+Schedule::command('emails:fetch-designers-inbox')
     ->everyFiveMinutes()
     ->withoutOverlapping()
     ->runInBackground();
 
+// DISABLED: These commands were causing conflicts with the main email fetching
+// Schedule designers inbox monitoring every 5 minutes
+// Schedule::command('email:monitor-designers-inbox')
+//     ->everyFiveMinutes()
+//     ->withoutOverlapping()
+//     ->runInBackground();
+
 // Schedule live email monitoring every 2 minutes
-Schedule::command('email:live-monitor')
-    ->everyTwoMinutes()
-    ->withoutOverlapping()
-    ->runInBackground();
+// Schedule::command('email:live-monitor')
+//     ->everyTwoMinutes()
+//     ->withoutOverlapping()
+//     ->runInBackground();
 
 // Schedule sent email detection every 2 minutes (more frequent for better automation)
 Schedule::command('email:detect-sent')
     ->everyTwoMinutes()
-    ->withoutOverlapping()
-    ->runInBackground();
-
-// Schedule automatic email fetching from designers inbox every 5 minutes
-Schedule::command('emails:fetch-designers-inbox')
-    ->everyFiveMinutes()
     ->withoutOverlapping()
     ->runInBackground();

@@ -6,6 +6,7 @@ use Illuminate\Console\Command;
 use App\Services\DesignersInboxEmailService;
 use App\Models\User;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
 
 class FetchDesignersInboxEmails extends Command
 {
@@ -14,7 +15,7 @@ class FetchDesignersInboxEmails extends Command
      *
      * @var string
      */
-    protected $signature = 'emails:fetch-designers-inbox {--max-results=100 : Maximum number of emails to fetch}';
+    protected $signature = 'emails:fetch-designers-inbox {--max-results=100 : Maximum number of emails to fetch} {--force : Force fetch even if recently fetched}';
 
     /**
      * The console command description.
@@ -52,6 +53,32 @@ class FetchDesignersInboxEmails extends Command
 
         try {
             $maxResults = (int) $this->option('max-results');
+            $force = $this->option('force');
+
+            // Check if another instance is already running (lock mechanism)
+            $lockKey = 'emails:fetch-designers-inbox:running';
+            if (Cache::has($lockKey)) {
+                $this->info('Another email fetch process is already running. Skipping...');
+                Log::info('FetchDesignersInboxEmails: Skipped - another instance is running');
+                return 0;
+            }
+
+            // Set lock for 10 minutes
+            Cache::put($lockKey, true, 600);
+
+            try {
+                // Check if we recently fetched emails (conflict prevention)
+                if (!$force) {
+                    $lastFetch = \App\Models\EmailFetchLog::getLatestForSource('designers_inbox');
+                    if ($lastFetch && $lastFetch->last_fetch_at) {
+                        $minutesSinceLastFetch = $lastFetch->last_fetch_at->diffInMinutes(now());
+                        if ($minutesSinceLastFetch < 3) { // Less than 3 minutes ago
+                            $this->info("Skipping fetch - last fetch was {$minutesSinceLastFetch} minutes ago (too recent)");
+                            Log::info("FetchDesignersInboxEmails: Skipped due to recent fetch ({$minutesSinceLastFetch} minutes ago)");
+                            return 0;
+                        }
+                    }
+                }
 
             // Get the first manager user to associate emails with
             $manager = User::whereIn('role', ['admin', 'manager'])->first();
@@ -94,17 +121,22 @@ class FetchDesignersInboxEmails extends Command
                 Log::warning('FetchDesignersInboxEmails: Errors while storing emails', $storeResult['errors']);
             }
 
-            // Log the fetch operation for tracking
-            $this->emailService->logFetchOperation($fetchResult, $storeResult, $fetchResult['total_fetched']);
+                // Log the fetch operation for tracking
+                $this->emailService->logFetchOperation($fetchResult, $storeResult, $fetchResult['total_fetched']);
 
-            $this->info('Email fetch completed successfully!');
-            Log::info('FetchDesignersInboxEmails: Successfully completed', [
-                'fetched' => $fetchResult['total_fetched'],
-                'stored' => $storeResult['stored'],
-                'skipped' => $storeResult['skipped']
-            ]);
+                $this->info('Email fetch completed successfully!');
+                Log::info('FetchDesignersInboxEmails: Successfully completed', [
+                    'fetched' => $fetchResult['total_fetched'],
+                    'stored' => $storeResult['stored'],
+                    'skipped' => $storeResult['skipped']
+                ]);
 
-            return 0;
+                return 0;
+
+            } finally {
+                // Always release the lock
+                Cache::forget($lockKey);
+            }
 
         } catch (\Exception $e) {
             $this->error('An error occurred: ' . $e->getMessage());
@@ -112,6 +144,9 @@ class FetchDesignersInboxEmails extends Command
                 'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
+
+            // Release lock on error
+            Cache::forget($lockKey);
             return 1;
         }
     }
