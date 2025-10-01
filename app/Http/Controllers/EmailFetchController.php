@@ -710,4 +710,5 @@ class EmailFetchController extends Controller
             ], 500);
         }
     }
+
 }

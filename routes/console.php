@@ -43,3 +43,9 @@ Schedule::command('email:detect-sent')
     ->everyTwoMinutes()
     ->withoutOverlapping()
     ->runInBackground();
+
+// Schedule automatic email fetching from designers inbox every 5 minutes
+Schedule::command('emails:fetch-designers-inbox')
+    ->everyFiveMinutes()
+    ->withoutOverlapping()
+    ->runInBackground();
