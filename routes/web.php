@@ -68,12 +68,12 @@ Route::middleware('auth')->group(function () {
     Route::get('/email-monitoring/unread-count', [App\Http\Controllers\EmailMonitoringController::class, 'getUnreadCount'])->name('email-monitoring.unread-count');
 
     // Email reply testing page
-    Route::get('/email-test-reply', function() {
+    Route::get('/email-test-reply', function () {
         return view('emails.test-reply');
     })->name('email.test-reply');
 
     // Live email testing page
-    Route::get('/live-email-test', function() {
+    Route::get('/live-email-test', function () {
         return view('emails.live-test');
     })->name('live.email-test');
 
@@ -90,7 +90,10 @@ Route::middleware('auth')->group(function () {
 
         return Excel::download(new class($data) implements \Maatwebsite\Excel\Concerns\FromArray {
             public function __construct(private array $data) {}
-            public function array(): array { return $this->data; }
+            public function array(): array
+            {
+                return $this->data;
+            }
         }, 'report.xlsx');
     })->name('reports.excel');
 
@@ -156,47 +159,47 @@ Route::middleware('auth')->group(function () {
         Route::get('gmail-status', [TaskController::class, 'getGmailStatus'])->name('gmail.status');
 
         // Test Gmail connection
-        Route::get('test-gmail-config', function() {
-    $user = auth()->user();
-    if (!$user) {
-        return response()->json(['error' => 'Not authenticated']);
-    }
+        Route::get('test-gmail-config', function () {
+            $user = auth()->user();
+            if (!$user) {
+                return response()->json(['error' => 'Not authenticated']);
+            }
 
-    $gmailService = app(\App\Services\GmailOAuthService::class);
+            $gmailService = app(\App\Services\GmailOAuthService::class);
 
-    return response()->json([
-        'user_id' => $user->id,
-        'user_email' => $user->email,
-        'gmail_client_id' => substr(config('services.gmail.client_id'), 0, 20) . '...',
-        'gmail_redirect_uri' => config('services.gmail.redirect_uri'),
-        'gmail_auth_url' => $gmailService->getAuthUrl(),
-        'app_env' => config('app.env'),
-        'app_debug' => config('app.debug')
-    ]);
-})->name('test-gmail-config');
+            return response()->json([
+                'user_id' => $user->id,
+                'user_email' => $user->email,
+                'gmail_client_id' => substr(config('services.gmail.client_id'), 0, 20) . '...',
+                'gmail_redirect_uri' => config('services.gmail.redirect_uri'),
+                'gmail_auth_url' => $gmailService->getAuthUrl(),
+                'app_env' => config('app.env'),
+                'app_debug' => config('app.debug')
+            ]);
+        })->name('test-gmail-config');
 
-Route::get('test-gmail-connection', function() {
-    $user = auth()->user();
-    if (!$user) {
-        return response()->json(['error' => 'Not authenticated']);
-    }
+        Route::get('test-gmail-connection', function () {
+            $user = auth()->user();
+            if (!$user) {
+                return response()->json(['error' => 'Not authenticated']);
+            }
 
-    $gmailService = app(\App\Services\GmailOAuthService::class);
+            $gmailService = app(\App\Services\GmailOAuthService::class);
 
-    return response()->json([
-        'user_id' => $user->id,
-        'user_email' => $user->email,
-        'gmail_connected' => $user->gmail_connected,
-        'gmail_connected_at' => $user->gmail_connected_at,
-        'has_gmail_token' => !empty($user->gmail_token),
-        'has_refresh_token' => !empty($user->gmail_refresh_token),
-        'has_access_token' => !empty($user->gmail_access_token),
-        'gmail_email' => $gmailService->getGmailEmail($user),
-        'can_send_emails' => $gmailService->isConnected($user)
-    ]);
-})->name('test-gmail-connection');
+            return response()->json([
+                'user_id' => $user->id,
+                'user_email' => $user->email,
+                'gmail_connected' => $user->gmail_connected,
+                'gmail_connected_at' => $user->gmail_connected_at,
+                'has_gmail_token' => !empty($user->gmail_token),
+                'has_refresh_token' => !empty($user->gmail_refresh_token),
+                'has_access_token' => !empty($user->gmail_access_token),
+                'gmail_email' => $gmailService->getGmailEmail($user),
+                'can_send_emails' => $gmailService->isConnected($user)
+            ]);
+        })->name('test-gmail-connection');
 
-Route::get('test-gmail', function() {
+        Route::get('test-gmail', function () {
             $user = auth()->user();
             if (!$user) {
                 return response()->json(['error' => 'Not authenticated']);
@@ -232,7 +235,7 @@ Route::get('test-gmail', function() {
         })->name('test-gmail');
 
         // Test task status
-        Route::get('test-task-status/{task}', function(\App\Models\Task $task) {
+        Route::get('test-task-status/{task}', function (\App\Models\Task $task) {
             return response()->json([
                 'task_id' => $task->id,
                 'current_status' => $task->status,
@@ -265,7 +268,7 @@ Route::get('test-gmail', function() {
 
 
     // Test route for notification sound (remove in production)
-    Route::post('test-notification', function() {
+    Route::post('test-notification', function () {
         \App\Models\CustomNotification::create([
             'user_id' => auth()->id(),
             'type' => 'test',
@@ -277,7 +280,7 @@ Route::get('test-gmail', function() {
     })->name('test.notification');
 
     // Test route for task workflow (remove in production)
-    Route::post('test-task-workflow', function() {
+    Route::post('test-task-workflow', function () {
         $user = auth()->user();
         $task = \App\Models\Task::where('assigned_to', $user->id)->where('status', 'assigned')->first();
 
@@ -294,7 +297,7 @@ Route::get('test-gmail', function() {
     })->name('test.task.workflow');
 
     // Test route for submit for review (remove in production)
-    Route::post('test-submit-review', function() {
+    Route::post('test-submit-review', function () {
         $user = auth()->user();
         $task = \App\Models\Task::where('assigned_to', $user->id)->where('status', 'in_progress')->first();
 
@@ -311,7 +314,7 @@ Route::get('test-gmail', function() {
     })->name('test.submit.review');
 
     // Test route to check if form submission works
-    Route::post('test-form-submission', function(\Illuminate\Http\Request $request) {
+    Route::post('test-form-submission', function (\Illuminate\Http\Request $request) {
         Log::info('Test form submission received', [
             'all_data' => $request->all(),
             'completion_notes' => $request->input('completion_notes'),
@@ -360,30 +363,30 @@ Route::get('/create-notification', [App\Http\Controllers\SimpleNotificationTestC
 Route::get('/check-notifications', [App\Http\Controllers\SimpleNotificationTestController::class, 'checkNotifications'])->name('check-notifications');
 
 // Debug notification routes
-Route::get('/debug-notifications', function() {
+Route::get('/debug-notifications', function () {
     return view('emails.debug-notifications');
 })->name('debug-notifications');
 Route::post('/create-notification-for-user', [App\Http\Controllers\DebugNotificationController::class, 'createNotificationForUser'])->name('create-notification-for-user');
 
-    // Email management routes (authenticated)
-    Route::middleware('auth')->group(function () {
-        Route::get('/emails', [EmailController::class, 'index'])->name('emails.index');
-        Route::post('/emails/check-new', [EmailController::class, 'checkNewEmails'])->name('emails.check-new');
+// Email management routes (authenticated)
+Route::middleware('auth')->group(function () {
+    Route::get('/emails', [EmailController::class, 'index'])->name('emails.index');
+    Route::post('/emails/check-new', [EmailController::class, 'checkNewEmails'])->name('emails.check-new');
 
-        // Email fetching routes
-        Route::get('/emails-all', [App\Http\Controllers\EmailFetchController::class, 'index'])->name('emails.all');
-        Route::post('/emails/fetch-store', [App\Http\Controllers\EmailFetchController::class, 'fetchAndStore'])->name('emails.fetch-store');
-        Route::post('/emails/search', [App\Http\Controllers\EmailFetchController::class, 'search'])->name('emails.search');
-        Route::get('/emails/stats', [App\Http\Controllers\EmailFetchController::class, 'getStats'])->name('emails.stats');
-        Route::get('/emails/export', [App\Http\Controllers\EmailFetchController::class, 'export'])->name('emails.export');
-        Route::get('/emails/{id}', [App\Http\Controllers\EmailFetchController::class, 'show'])->name('emails.show');
-        Route::post('/emails/{id}/mark-read', [App\Http\Controllers\EmailFetchController::class, 'markAsRead'])->name('emails.mark-read');
-        Route::post('/emails/{id}/mark-unread', [App\Http\Controllers\EmailFetchController::class, 'markAsUnread'])->name('emails.mark-unread');
-        Route::delete('/emails/{id}', [App\Http\Controllers\EmailFetchController::class, 'destroy'])->name('emails.destroy');
-        Route::post('/emails/bulk-action', [App\Http\Controllers\EmailFetchController::class, 'bulkAction'])->name('emails.bulk-action');
+    // Email fetching routes
+    Route::get('/emails-all', [App\Http\Controllers\EmailFetchController::class, 'index'])->name('emails.all');
+    Route::post('/emails/fetch-store', [App\Http\Controllers\EmailFetchController::class, 'fetchAndStore'])->name('emails.fetch-store');
+    Route::post('/emails/search', [App\Http\Controllers\EmailFetchController::class, 'search'])->name('emails.search');
+    Route::get('/emails/stats', [App\Http\Controllers\EmailFetchController::class, 'getStats'])->name('emails.stats');
+    Route::get('/emails/export', [App\Http\Controllers\EmailFetchController::class, 'export'])->name('emails.export');
+    Route::get('/emails/{id}', [App\Http\Controllers\EmailFetchController::class, 'show'])->name('emails.show');
+    Route::post('/emails/{id}/mark-read', [App\Http\Controllers\EmailFetchController::class, 'markAsRead'])->name('emails.mark-read');
+    Route::post('/emails/{id}/mark-unread', [App\Http\Controllers\EmailFetchController::class, 'markAsUnread'])->name('emails.mark-unread');
+    Route::delete('/emails/{id}', [App\Http\Controllers\EmailFetchController::class, 'destroy'])->name('emails.destroy');
+    Route::post('/emails/bulk-action', [App\Http\Controllers\EmailFetchController::class, 'bulkAction'])->name('emails.bulk-action');
 
-        // Debug route for email parsing
-        Route::get('/emails/{id}/debug', [App\Http\Controllers\EmailFetchController::class, 'debugEmail'])->name('emails.debug');
-    });
+    // Debug route for email parsing
+    Route::get('/emails/{id}/debug', [App\Http\Controllers\EmailFetchController::class, 'debugEmail'])->name('emails.debug');
+});
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';

@@ -22,7 +22,6 @@
             </div>
         </div>
     </div>
-
     <div class="row">
         <div class="col-12">
             <div class="card">
@@ -198,8 +197,8 @@
                                             </div>
                                             <span class="badge bg-info">Reply</span>
                                         </div>
-                                        <div class="email-content-container">
-                                            {!! parseEmailBody($reply->body) !!}
+                                        <div class="email-content-container custom-email-style">
+                                            {!! $parsedReplies[$reply->id] ?? $reply->body !!}
                                         </div>
                                     </div>
                                 </div>
@@ -215,60 +214,9 @@
 </div>
 
 <script>
-function markAsRead(emailId) {
-    fetch(`/emails/${emailId}/mark-read`, {
-        method: 'POST',
-        headers: {
-            'X-CSRF-TOKEN': '{{ csrf_token() }}',
-            'Content-Type': 'application/json',
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showAlert('success', 'Email marked as read');
-            setTimeout(() => {
-                window.location.reload();
-            }, 1000);
-        } else {
-            showAlert('error', data.message || 'Error marking email as read');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showAlert('error', 'An error occurred');
-    });
-}
-
-function markAsUnread(emailId) {
-    fetch(`/emails/${emailId}/mark-unread`, {
-        method: 'POST',
-        headers: {
-            'X-CSRF-TOKEN': '{{ csrf_token() }}',
-            'Content-Type': 'application/json',
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showAlert('success', 'Email marked as unread');
-            setTimeout(() => {
-                window.location.reload();
-            }, 1000);
-        } else {
-            showAlert('error', data.message || 'Error marking email as unread');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showAlert('error', 'An error occurred');
-    });
-}
-
-function deleteEmail(emailId) {
-    if (confirm('Are you sure you want to delete this email?')) {
-        fetch(`/emails/${emailId}`, {
-            method: 'DELETE',
+    function markAsRead(emailId) {
+        fetch(`/emails/${emailId}/mark-read`, {
+            method: 'POST',
             headers: {
                 'X-CSRF-TOKEN': '{{ csrf_token() }}',
                 'Content-Type': 'application/json',
@@ -277,12 +225,12 @@ function deleteEmail(emailId) {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                showAlert('success', 'Email deleted successfully');
+                showAlert('success', 'Email marked as read');
                 setTimeout(() => {
-                    window.location.href = '{{ route("emails.all") }}';
+                    window.location.reload();
                 }, 1000);
             } else {
-                showAlert('error', data.message || 'Error deleting email');
+                showAlert('error', data.message || 'Error marking email as read');
             }
         })
         .catch(error => {
@@ -290,30 +238,81 @@ function deleteEmail(emailId) {
             showAlert('error', 'An error occurred');
         });
     }
-}
 
-function showAlert(type, message) {
-    const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
-    const alertHtml = `
-        <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
-            <i class="bx bx-${type === 'success' ? 'check-circle' : 'error-circle'} me-2"></i>
-            ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    `;
+    function markAsUnread(emailId) {
+        fetch(`/emails/${emailId}/mark-unread`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('success', 'Email marked as unread');
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            } else {
+                showAlert('error', data.message || 'Error marking email as unread');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('error', 'An error occurred');
+        });
+    }
 
-    // Insert at top of card body
-    const cardBody = document.querySelector('.card-body');
-    cardBody.insertAdjacentHTML('afterbegin', alertHtml);
-
-    // Auto-dismiss after 5 seconds
-    setTimeout(() => {
-        const alert = cardBody.querySelector('.alert');
-        if (alert) {
-            alert.remove();
+    function deleteEmail(emailId) {
+        if (confirm('Are you sure you want to delete this email?')) {
+            fetch(`/emails/${emailId}`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert('success', 'Email deleted successfully');
+                    setTimeout(() => {
+                        window.location.href = '{{ route("emails.all") }}';
+                    }, 1000);
+                } else {
+                    showAlert('error', data.message || 'Error deleting email');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('error', 'An error occurred');
+            });
         }
-    }, 5000);
-}
+    }
+
+    function showAlert(type, message) {
+        const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+        const alertHtml = `
+            <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+                <i class="bx bx-${type === 'success' ? 'check-circle' : 'error-circle'} me-2"></i>
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+
+        // Insert at top of card body
+        const cardBody = document.querySelector('.card-body');
+        cardBody.insertAdjacentHTML('afterbegin', alertHtml);
+
+        // Auto-dismiss after 5 seconds
+        setTimeout(() => {
+            const alert = cardBody.querySelector('.alert');
+            if (alert) {
+                alert.remove();
+            }
+        }, 5000);
+    }
 </script>
 
 <style>

@@ -44,7 +44,7 @@ class EmailFetchController extends Controller
         ];
 
         // Remove empty criteria
-        $searchCriteria = array_filter($searchCriteria, function($value) {
+        $searchCriteria = array_filter($searchCriteria, function ($value) {
             return !empty($value);
         });
 
@@ -110,7 +110,6 @@ class EmailFetchController extends Controller
                     'errors' => $storeResult['errors']
                 ]
             ]);
-
         } catch (\Exception $e) {
             Log::error('Error fetching and storing emails: ' . $e->getMessage());
             return response()->json([
@@ -138,8 +137,14 @@ class EmailFetchController extends Controller
 
         try {
             $criteria = $request->only([
-                'from', 'to', 'subject', 'domain', 'has_attachment',
-                'after', 'before', 'maxResults'
+                'from',
+                'to',
+                'subject',
+                'domain',
+                'has_attachment',
+                'after',
+                'before',
+                'maxResults'
             ]);
 
             $searchResult = $this->designersInboxService->searchEmails($criteria);
@@ -150,7 +155,6 @@ class EmailFetchController extends Controller
                 'total_found' => $searchResult['total_found'],
                 'errors' => $searchResult['errors']
             ]);
-
         } catch (\Exception $e) {
             Log::error('Error searching emails: ' . $e->getMessage());
             return response()->json([
@@ -168,7 +172,6 @@ class EmailFetchController extends Controller
     {
         $user = Auth::user();
 
-        // Check if user is a manager
         if (!$user->isManager()) {
             return redirect()->route('dashboard')
                 ->with('error', 'Access denied. Only managers can view designers inbox emails.');
@@ -178,18 +181,24 @@ class EmailFetchController extends Controller
             ->where('email_source', 'designers_inbox')
             ->firstOrFail();
 
-        // Mark as read if not already
         if ($email->status === 'received') {
             $email->update(['status' => 'read']);
         }
 
-        // Parse the email body to extract HTML content
+        // Parse the main email body
         $parsedBody = $this->parseEmailBody($email->body);
-
-        // Ensure UTF-8 encoding for the view
         $parsedBody = mb_convert_encoding($parsedBody, 'UTF-8', 'UTF-8');
 
-        return view('emails.designers-inbox-show', compact('email', 'parsedBody'));
+        // Parse all reply bodies
+        $parsedReplies = [];
+        if ($email->replies && $email->replies->count() > 0) {
+            foreach ($email->replies as $reply) {
+                $parsedReplies[$reply->id] = $this->parseEmailBody($reply->body);
+                $parsedReplies[$reply->id] = mb_convert_encoding($parsedReplies[$reply->id], 'UTF-8', 'UTF-8');
+            }
+        }
+
+        return view('emails.designers-inbox-show', compact('email', 'parsedBody', 'parsedReplies'));
     }
 
     /**
@@ -262,7 +271,7 @@ class EmailFetchController extends Controller
         $parsedBody = $this->parseEmailBody($email->body);
 
         // Sanitize data to prevent UTF-8 encoding issues
-        $sanitizeString = function($str) {
+        $sanitizeString = function ($str) {
             if (empty($str)) return '';
             // Remove or replace invalid UTF-8 characters
             $str = mb_convert_encoding($str, 'UTF-8', 'UTF-8');
@@ -562,7 +571,6 @@ class EmailFetchController extends Controller
                 'inbox_stats' => $inboxStats,
                 'database_stats' => $dbStats
             ]);
-
         } catch (\Exception $e) {
             Log::error('Error getting email stats: ' . $e->getMessage());
             return response()->json([
@@ -597,13 +605,20 @@ class EmailFetchController extends Controller
             'Content-Disposition' => 'attachment; filename="' . $filename . '"',
         ];
 
-        $callback = function() use ($emails) {
+        $callback = function () use ($emails) {
             $file = fopen('php://output', 'w');
 
             // CSV headers
             fputcsv($file, [
-                'ID', 'From', 'To', 'Subject', 'Received At', 'Status',
-                'Has Attachments', 'Gmail Message ID', 'Thread ID'
+                'ID',
+                'From',
+                'To',
+                'Subject',
+                'Received At',
+                'Status',
+                'Has Attachments',
+                'Gmail Message ID',
+                'Thread ID'
             ]);
 
             // CSV data
@@ -626,7 +641,6 @@ class EmailFetchController extends Controller
 
         return response()->stream($callback, 200, $headers);
     }
-
 
     /**
      * Delete email from database
@@ -687,7 +701,6 @@ class EmailFetchController extends Controller
                 'message' => "Successfully processed {$count} emails",
                 'processed_count' => $count
             ]);
-
         } catch (\Exception $e) {
             Log::error('Error in bulk action: ' . $e->getMessage());
             return response()->json([
