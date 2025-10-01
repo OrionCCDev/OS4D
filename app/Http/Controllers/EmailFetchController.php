@@ -186,6 +186,9 @@ class EmailFetchController extends Controller
         // Parse the email body to extract HTML content
         $parsedBody = $this->parseEmailBody($email->body);
 
+        // Ensure UTF-8 encoding for the view
+        $parsedBody = mb_convert_encoding($parsedBody, 'UTF-8', 'UTF-8');
+
         return view('emails.designers-inbox-show', compact('email', 'parsedBody'));
     }
 
@@ -258,15 +261,27 @@ class EmailFetchController extends Controller
 
         $parsedBody = $this->parseEmailBody($email->body);
 
+        // Sanitize data to prevent UTF-8 encoding issues
+        $sanitizeString = function($str) {
+            if (empty($str)) return '';
+            // Remove or replace invalid UTF-8 characters
+            $str = mb_convert_encoding($str, 'UTF-8', 'UTF-8');
+            // Remove any remaining invalid characters
+            $str = filter_var($str, FILTER_SANITIZE_STRING, FILTER_FLAG_STRIP_HIGH);
+            return $str;
+        };
+
         return response()->json([
             'email_id' => $email->id,
             'original_body_length' => strlen($email->body),
             'parsed_body_length' => strlen($parsedBody),
-            'original_body_preview' => substr($email->body, 0, 500),
-            'parsed_body_preview' => substr($parsedBody, 0, 500),
+            'original_body_preview' => $sanitizeString(substr($email->body, 0, 500)),
+            'parsed_body_preview' => $sanitizeString(substr($parsedBody, 0, 500)),
             'has_html_content' => strpos($email->body, 'Content-Type: text/html') !== false,
-            'has_boundary' => strpos($email->body, '--0000000000009d3e4c064011fe0b') !== false,
-            'parsed_body' => $parsedBody
+            'has_boundary' => preg_match('/--([a-f0-9]+)/', $email->body) ? true : false,
+            'parsed_body' => $sanitizeString($parsedBody),
+            'subject' => $sanitizeString($email->subject),
+            'from_email' => $sanitizeString($email->from_email)
         ]);
     }
 
@@ -285,6 +300,9 @@ class EmailFetchController extends Controller
         if (strpos($body, 'Content-Transfer-Encoding: quoted-printable') !== false) {
             $body = quoted_printable_decode($body);
         }
+
+        // Ensure proper UTF-8 encoding
+        $body = mb_convert_encoding($body, 'UTF-8', 'UTF-8');
 
         // Handle multipart emails with any boundary
         if (preg_match('/--([a-f0-9]+)/', $body, $matches)) {

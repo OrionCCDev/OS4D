@@ -15,6 +15,9 @@ if (!function_exists('parseEmailBody')) {
             $body = quoted_printable_decode($body);
         }
 
+        // Ensure proper UTF-8 encoding
+        $body = mb_convert_encoding($body, 'UTF-8', 'UTF-8');
+
         // Handle multipart emails with any boundary
         if (preg_match('/--([a-f0-9]+)/', $body, $matches)) {
             $boundary = '--' . $matches[1];
