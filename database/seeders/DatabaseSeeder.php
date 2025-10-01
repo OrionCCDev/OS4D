@@ -21,5 +21,8 @@ class DatabaseSeeder extends Seeder
             'password' => bcrypt('Mohab@orionManager'),
             'role' => 'admin'
         ]);
+
+        // Call the UserSeeder to create additional users
+        $this->call(UserSeeder::class);
     }
 }
