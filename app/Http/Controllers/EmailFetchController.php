@@ -299,6 +299,7 @@ class EmailFetchController extends Controller
         // Handle quoted-printable encoding first
         if (strpos($body, 'Content-Transfer-Encoding: quoted-printable') !== false) {
             $body = quoted_printable_decode($body);
+            \Log::info('[parseEmailBody] Applied quoted-printable decoding, new length: ' . strlen($body));
         }
 
         // Ensure proper UTF-8 encoding
@@ -361,6 +362,31 @@ class EmailFetchController extends Controller
                     // Clean up the HTML content more carefully
                     $htmlContent = trim($htmlContent);
 
+                    // If we still have MIME artifacts, try a different approach
+                    if (strpos($htmlContent, 'Content-Type:') !== false || strpos($htmlContent, 'Content-Transfer-Encoding:') !== false) {
+                        \Log::info('[parseEmailBody] Found MIME artifacts in HTML content, trying alternative extraction');
+
+                        // Try to find HTML content after the last MIME header
+                        $lines = explode("\n", $htmlContent);
+                        $cleanContent = '';
+                        $foundHtmlStart = false;
+
+                        foreach ($lines as $line) {
+                            if (!$foundHtmlStart && (strpos($line, '<html') !== false || strpos($line, '<div') !== false || strpos($line, '<p') !== false)) {
+                                $foundHtmlStart = true;
+                            }
+
+                            if ($foundHtmlStart) {
+                                $cleanContent .= $line . "\n";
+                            }
+                        }
+
+                        if (!empty($cleanContent)) {
+                            $htmlContent = $cleanContent;
+                            \Log::info('[parseEmailBody] Alternative extraction successful, new length: ' . strlen($htmlContent));
+                        }
+                    }
+
                     // Remove any remaining MIME artifacts but preserve HTML content
                     $htmlContent = preg_replace('/^Content-Transfer-Encoding:.*$/m', '', $htmlContent);
                     $htmlContent = preg_replace('/^Content-Type:.*$/m', '', $htmlContent);
@@ -374,12 +400,13 @@ class EmailFetchController extends Controller
                     \Log::info('[parseEmailBody] HTML content after cleaning, length: ' . strlen($htmlContent));
                     \Log::info('[parseEmailBody] HTML content preview: ' . substr($htmlContent, 0, 300));
 
-                    // Validate content length before returning
-                    if (strlen($htmlContent) > 50) {
+                    // Check if we have actual HTML content
+                    if (strlen($htmlContent) > 50 && (strpos($htmlContent, '<html') !== false || strpos($htmlContent, '<div') !== false || strpos($htmlContent, '<p') !== false)) {
                         \Log::info('[parseEmailBody] Returning HTML content from part ' . $index . ', length: ' . strlen($htmlContent));
                         return $htmlContent;
                     } else {
-                        \Log::warning('[parseEmailBody] HTML content from part ' . $index . ' too short or empty after cleaning. Length: ' . strlen($htmlContent));
+                        \Log::warning('[parseEmailBody] HTML content from part ' . $index . ' too short or no HTML tags found. Length: ' . strlen($htmlContent));
+                        \Log::warning('[parseEmailBody] Raw HTML content: ' . substr($htmlContent, 0, 500));
                     }
                 }
 
@@ -445,6 +472,20 @@ class EmailFetchController extends Controller
                     } else {
                         \Log::warning('[parseEmailBody] Plain text content from part ' . $index . ' too short or empty after cleaning. Length: ' . strlen($textContent));
                     }
+                }
+            }
+
+            // Try regex-based extraction as fallback
+            \Log::info('[parseEmailBody] Trying regex-based HTML extraction as fallback');
+
+            // Look for HTML content between boundaries using regex
+            if (preg_match('/Content-Type: text\/html[^>]*>(.*?)(?=--[a-f0-9]+|$)/s', $body, $matches)) {
+                $htmlContent = trim($matches[1]);
+                \Log::info('[parseEmailBody] Regex extraction found HTML content, length: ' . strlen($htmlContent));
+
+                if (strlen($htmlContent) > 50 && (strpos($htmlContent, '<html') !== false || strpos($htmlContent, '<div') !== false)) {
+                    \Log::info('[parseEmailBody] Returning regex-extracted HTML content');
+                    return $htmlContent;
                 }
             }
 
