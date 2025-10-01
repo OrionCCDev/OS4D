@@ -189,6 +189,14 @@
                 <div data-i18n="Email Monitoring">Email Monitoring</div>
               </a>
             </li>
+
+            <!-- All Emails - Available to all users -->
+            <li class="menu-item {{ request()->routeIs('emails.all') ? 'active' : '' }}">
+              <a href="{{ route('emails.all') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-envelope-open"></i>
+                <div data-i18n="All Emails">All Emails</div>
+              </a>
+            </li>
 {{--
             <!-- Layouts -->
             <li class="menu-item">
