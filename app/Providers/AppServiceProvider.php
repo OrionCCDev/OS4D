@@ -19,6 +19,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // Register Blade helper function for cleaning email body
+        \Blade::directive('cleanEmailBody', function ($expression) {
+            return "<?php echo cleanEmailBody($expression); ?>";
+        });
     }
 }

@@ -123,6 +123,9 @@
                                 <i class="bx bx-cog me-1"></i>Bulk Actions
                             </button>
                             <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="#" onclick="bulkAction('mark_read')">Mark Selected as Read</a></li>
+                                <li><a class="dropdown-item" href="#" onclick="bulkAction('mark_unread')">Mark Selected as Unread</a></li>
+                                <li><hr class="dropdown-divider"></li>
                                 <li><a class="dropdown-item" href="#" onclick="bulkAction('delete')">Delete Selected</a></li>
                             </ul>
                         </div>
@@ -219,7 +222,7 @@
                                 </thead>
                                 <tbody>
                                     @foreach($storedEmails as $email)
-                                        <tr class="{{ $email->status === 'received' ? 'table-warning' : '' }}">
+                                        <tr class="{{ $email->status === 'received' ? 'table-warning' : 'table-light' }}">
                                             <td>
                                                 <input type="checkbox" class="form-check-input email-checkbox" value="{{ $email->id }}">
                                             </td>
@@ -402,7 +405,13 @@ function bulkAction(action) {
         return;
     }
 
-    if (action === 'delete' && confirm(`Are you sure you want to delete ${emailIds.length} email(s)?`)) {
+    const actionText = {
+        'mark_read': 'mark as read',
+        'mark_unread': 'mark as unread',
+        'delete': 'delete'
+    };
+
+    if (confirm(`Are you sure you want to ${actionText[action]} ${emailIds.length} email(s)?`)) {
         fetch('{{ route("emails.bulk-action") }}', {
             method: 'POST',
             headers: {

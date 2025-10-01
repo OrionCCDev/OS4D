@@ -167,13 +167,13 @@ class EmailFetchController extends Controller
     public function show($id)
     {
         $user = Auth::user();
-
+        
         // Check if user is a manager
         if (!$user->isManager()) {
             return redirect()->route('dashboard')
                 ->with('error', 'Access denied. Only managers can view designers inbox emails.');
         }
-
+        
         $email = Email::where('id', $id)
             ->where('email_source', 'designers_inbox')
             ->firstOrFail();
@@ -183,7 +183,55 @@ class EmailFetchController extends Controller
             $email->update(['status' => 'read']);
         }
 
-        return view('emails.show', compact('email'));
+        return view('emails.designers-inbox-show', compact('email'));
+    }
+
+    /**
+     * Mark email as read
+     */
+    public function markAsRead($id)
+    {
+        $user = Auth::user();
+        
+        // Check if user is a manager
+        if (!$user->isManager()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Access denied. Only managers can access designers inbox.'
+            ], 403);
+        }
+        
+        $email = Email::where('id', $id)
+            ->where('email_source', 'designers_inbox')
+            ->firstOrFail();
+
+        $email->update(['status' => 'read']);
+
+        return response()->json(['success' => true]);
+    }
+
+    /**
+     * Mark email as unread
+     */
+    public function markAsUnread($id)
+    {
+        $user = Auth::user();
+        
+        // Check if user is a manager
+        if (!$user->isManager()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Access denied. Only managers can access designers inbox.'
+            ], 403);
+        }
+        
+        $email = Email::where('id', $id)
+            ->where('email_source', 'designers_inbox')
+            ->firstOrFail();
+
+        $email->update(['status' => 'received']);
+
+        return response()->json(['success' => true]);
     }
 
     /**
@@ -321,6 +369,14 @@ class EmailFetchController extends Controller
             $count = 0;
             foreach ($emails as $email) {
                 switch ($action) {
+                    case 'mark_read':
+                        $email->update(['status' => 'read']);
+                        $count++;
+                        break;
+                    case 'mark_unread':
+                        $email->update(['status' => 'received']);
+                        $count++;
+                        break;
                     case 'delete':
                         $email->delete();
                         $count++;
