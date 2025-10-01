@@ -1,143 +1,158 @@
 @extends('layouts.app')
 
+@section('title', 'Notifications')
+
 @section('content')
-<div class="container-xxl flex-grow-1 container-p-y">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h4 class="mb-0">Notifications</h4>
-        <div class="d-flex gap-2">
-            <button class="btn btn-outline-primary" onclick="markAllAsRead()">
-                <i class="bx bx-check-all me-1"></i>Mark All as Read
-            </button>
-            <a href="{{ route('tasks.index') }}" class="btn btn-outline-secondary">
-                <i class="bx bx-arrow-back me-1"></i>Back to Tasks
-            </a>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+                <h4 class="mb-sm-0">Notifications</h4>
+                <div class="page-title-right">
+                    <ol class="breadcrumb m-0">
+                        <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li>
+                        <li class="breadcrumb-item active">Notifications</li>
+                    </ol>
+                </div>
+            </div>
         </div>
     </div>
 
-    <div class="row">
-        <div class="col-lg-8">
+    <!-- Notification Stats -->
+    <div class="row mb-4">
+        <div class="col-md-3">
             <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">All Notifications</h5>
-                </div>
-                <div class="card-body p-0">
-                    @if($notifications->count() > 0)
-                        <div class="list-group list-group-flush">
-                            @foreach($notifications as $notification)
-                                <div class="list-group-item {{ $notification->read ? '' : 'bg-light' }}" id="notification-{{ $notification->id }}">
-                                    <div class="d-flex align-items-start">
-                                        <div class="me-3">
-                                            @php
-                                                $iconMap = [
-                                                    'task_assigned' => 'bx-user-plus',
-                                                    'task_status_changed' => 'bx-edit',
-                                                    'task_completed' => 'bx-check-circle',
-                                                    'task_rejected' => 'bx-x-circle',
-                                                ];
-                                                $colorMap = [
-                                                    'task_assigned' => 'text-info',
-                                                    'task_status_changed' => 'text-warning',
-                                                    'task_completed' => 'text-success',
-                                                    'task_rejected' => 'text-danger',
-                                                ];
-                                            @endphp
-                                            <div class="avatar avatar-sm">
-                                                <span class="avatar-initial rounded-circle {{ $colorMap[$notification->type] ?? 'bg-label-primary' }}">
-                                                    <i class="bx {{ $iconMap[$notification->type] ?? 'bx-bell' }}"></i>
-                                                </span>
-                                            </div>
-                                        </div>
-                                        <div class="flex-grow-1">
-                                            <div class="d-flex justify-content-between align-items-start">
-                                                <div>
-                                                    <h6 class="mb-1 {{ $notification->read ? 'text-muted' : 'fw-semibold' }}">
-                                                        {{ $notification->title }}
-                                                    </h6>
-                                                    <p class="mb-1 {{ $notification->read ? 'text-muted' : '' }}">
-                                                        {{ $notification->message }}
-                                                    </p>
-                                                    <small class="text-muted">
-                                                        <i class="bx bx-time me-1"></i>{{ $notification->created_at->diffForHumans() }}
-                                                    </small>
-                                                </div>
-                                                <div class="d-flex gap-1">
-                                                    @if(!$notification->read)
-                                                        <button class="btn btn-sm btn-outline-primary" onclick="markAsRead({{ $notification->id }})" title="Mark as Read">
-                                                            <i class="bx bx-check"></i>
-                                                        </button>
-                                                    @endif
-                                                    @if($notification->data && isset($notification->data['task_id']))
-                                                        <a href="{{ route('tasks.show', $notification->data['task_id']) }}" class="btn btn-sm btn-outline-secondary" title="View Task">
-                                                            <i class="bx bxs-show"></i>
-                                                        </a>
-                                                    @endif
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
-                    @else
-                        <div class="text-center py-5">
-                            <div class="mb-4">
-                                <i class="bx bx-bell-off" style="font-size: 4rem; color: #d1d5db;"></i>
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="avatar-sm bg-primary rounded-circle d-flex align-items-center justify-content-center">
+                                <i class="bx bx-bell text-white"></i>
                             </div>
-                            <h5 class="text-muted mb-2">No notifications</h5>
-                            <p class="text-muted">You're all caught up! No new notifications at the moment.</p>
                         </div>
-                    @endif
-                </div>
-                @if($notifications->hasPages())
-                    <div class="card-footer">
-                        {{ $notifications->links() }}
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="mb-1">Total Unread</h6>
+                            <h4 class="mb-0" id="total-unread-count">{{ $stats['unread'] ?? 0 }}</h4>
+                        </div>
                     </div>
-                @endif
+                </div>
             </div>
         </div>
-
-        <div class="col-lg-4">
-            <!-- Notification Stats -->
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="mb-0">Notification Stats</h5>
-                </div>
+        <div class="col-md-3">
+            <div class="card">
                 <div class="card-body">
-                    <div class="row text-center">
-                        <div class="col-6 mb-3">
-                            <div class="border rounded p-3">
-                                <h4 class="mb-1 text-primary">{{ $notifications->where('read', false)->count() }}</h4>
-                                <small class="text-muted">Unread</small>
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="avatar-sm bg-success rounded-circle d-flex align-items-center justify-content-center">
+                                <i class="bx bx-task text-white"></i>
                             </div>
                         </div>
-                        <div class="col-6 mb-3">
-                            <div class="border rounded p-3">
-                                <h4 class="mb-1 text-success">{{ $notifications->where('read', true)->count() }}</h4>
-                                <small class="text-muted">Read</small>
-                            </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="mb-1">Task Notifications</h6>
+                            <h4 class="mb-0" id="task-unread-count">{{ $stats['task_unread'] ?? 0 }}</h4>
                         </div>
                     </div>
                 </div>
             </div>
-
-            <!-- Quick Actions -->
+        </div>
+        <div class="col-md-3">
             <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">Quick Actions</h5>
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="avatar-sm bg-info rounded-circle d-flex align-items-center justify-content-center">
+                                <i class="bx bx-envelope text-white"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="mb-1">Email Notifications</h6>
+                            <h4 class="mb-0" id="email-unread-count">{{ $stats['email_unread'] ?? 0 }}</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="avatar-sm bg-warning rounded-circle d-flex align-items-center justify-content-center">
+                                <i class="bx bx-check-circle text-white"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="mb-1">Read</h6>
+                            <h4 class="mb-0" id="read-count">{{ $stats['read'] ?? 0 }}</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex flex-wrap gap-2">
+                        <button class="btn btn-primary" onclick="markAllAsRead()">
+                            <i class="bx bx-check me-1"></i>Mark All as Read
+                        </button>
+                        <button class="btn btn-success" onclick="markAllAsRead('task')">
+                            <i class="bx bx-task me-1"></i>Mark Task Notifications as Read
+                        </button>
+                        <button class="btn btn-info" onclick="markAllAsRead('email')">
+                            <i class="bx bx-envelope me-1"></i>Mark Email Notifications as Read
+                        </button>
+                        <div class="dropdown">
+                            <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                <i class="bx bx-filter me-1"></i>Filter
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="#" onclick="filterNotifications('all')">All Notifications</a></li>
+                                <li><a class="dropdown-item" href="#" onclick="filterNotifications('task')">Task Notifications</a></li>
+                                <li><a class="dropdown-item" href="#" onclick="filterNotifications('email')">Email Notifications</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="#" onclick="filterNotifications('unread')">Unread Only</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notifications List -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="bx bx-bell me-2"></i>All Notifications
+                    </h5>
+                    <div class="d-flex align-items-center">
+                        <span class="badge bg-primary me-2" id="current-filter-badge">All</span>
+                        <button class="btn btn-sm btn-outline-primary" onclick="refreshNotifications()">
+                            <i class="bx bx-refresh"></i>
+                        </button>
+                    </div>
                 </div>
                 <div class="card-body">
-                    <div class="d-grid gap-2">
-                        <button class="btn btn-outline-primary" onclick="markAllAsRead()">
-                            <i class="bx bx-check-all me-1"></i>Mark All as Read
-                        </button>
-                        <a href="{{ route('tasks.index') }}" class="btn btn-outline-secondary">
-                            <i class="bx bx-task me-1"></i>View All Tasks
-                        </a>
-                        @if(Auth::user()->isManager())
-                        <a href="{{ route('tasks.create') }}" class="btn btn-outline-success">
-                            <i class="bx bx-plus me-1"></i>Create New Task
-                        </a>
-                        @endif
+                    <div id="notifications-container">
+                        <!-- Notifications will be loaded here -->
+                    </div>
+
+                    <div class="text-center" id="loading-spinner" style="display: none;">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+
+                    <div class="text-center" id="no-notifications" style="display: none;">
+                        <i class="bx bx-bell-off display-1 text-muted"></i>
+                        <h5 class="mt-3">No notifications found</h5>
+                        <p class="text-muted">You're all caught up!</p>
                     </div>
                 </div>
             </div>
@@ -146,58 +161,246 @@
 </div>
 
 <script>
-function markAsRead(notificationId) {
-    fetch(`/notifications/${notificationId}/read`, {
-        method: 'POST',
-        headers: {
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-            'Content-Type': 'application/json',
-        },
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            const notification = document.getElementById(`notification-${notificationId}`);
-            notification.classList.remove('bg-light');
-            notification.querySelector('.fw-semibold').classList.remove('fw-semibold');
-            notification.querySelector('.fw-semibold').classList.add('text-muted');
-            notification.querySelector('.mb-1').classList.add('text-muted');
+let currentFilter = 'all';
+let notifications = [];
 
-            // Remove the mark as read button
-            const markButton = notification.querySelector('button[onclick*="markAsRead"]');
-            if (markButton) {
-                markButton.remove();
+// Load notifications on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadNotifications();
+    // Refresh notifications every 30 seconds
+    setInterval(refreshNotifications, 30000);
+});
+
+function loadNotifications(filter = 'all') {
+    currentFilter = filter;
+    document.getElementById('loading-spinner').style.display = 'block';
+    document.getElementById('notifications-container').innerHTML = '';
+    document.getElementById('no-notifications').style.display = 'none';
+
+    let url = '/notifications';
+    if (filter !== 'all') {
+        url += `?category=${filter}`;
+    }
+
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                notifications = data.notifications;
+                displayNotifications(data.notifications);
+                updateStats(data.stats);
+                updateFilterBadge(filter);
+            } else {
+                showAlert('error', 'Failed to load notifications');
             }
-
-            // Update stats
-            updateStats();
-        }
-    })
-    .catch(error => console.error('Error:', error));
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('error', 'An error occurred while loading notifications');
+        })
+        .finally(() => {
+            document.getElementById('loading-spinner').style.display = 'none';
+        });
 }
 
-function markAllAsRead() {
-    fetch('/notifications/read-all', {
+function displayNotifications(notifications) {
+    const container = document.getElementById('notifications-container');
+
+    if (notifications.length === 0) {
+        document.getElementById('no-notifications').style.display = 'block';
+        return;
+    }
+
+    container.innerHTML = notifications.map(notification => `
+        <div class="notification-item border-bottom py-3 ${notification.is_read ? '' : 'bg-light'}">
+            <div class="d-flex align-items-start">
+                <div class="flex-shrink-0 me-3">
+                    <div class="avatar-sm bg-${notification.color} rounded-circle d-flex align-items-center justify-content-center">
+                        <i class="bx ${notification.icon} text-white"></i>
+                    </div>
+                </div>
+                <div class="flex-grow-1">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="mb-1">
+                                <span class="badge bg-${notification.badge_color} me-2">${notification.category}</span>
+                                ${notification.title}
+                            </h6>
+                            <p class="mb-1 text-muted">${notification.message}</p>
+                            <small class="text-muted">${notification.time_ago}</small>
+                        </div>
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                <i class="bx bx-dots-vertical-rounded"></i>
+                            </button>
+                            <ul class="dropdown-menu">
+                                ${!notification.is_read ? `
+                                    <li><a class="dropdown-item" href="#" onclick="markAsRead(${notification.id})">
+                                        <i class="bx bx-check me-2"></i>Mark as Read
+                                    </a></li>
+                                ` : ''}
+                                <li><a class="dropdown-item" href="#" onclick="archiveNotification(${notification.id})">
+                                    <i class="bx bx-archive me-2"></i>Archive
+                                </a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item text-danger" href="#" onclick="deleteNotification(${notification.id})">
+                                    <i class="bx bx-trash me-2"></i>Delete
+                                </a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function updateStats(stats) {
+    document.getElementById('total-unread-count').textContent = stats.unread || 0;
+    document.getElementById('task-unread-count').textContent = stats.task_unread || 0;
+    document.getElementById('email-unread-count').textContent = stats.email_unread || 0;
+    document.getElementById('read-count').textContent = stats.read || 0;
+}
+
+function updateFilterBadge(filter) {
+    const badge = document.getElementById('current-filter-badge');
+    const badgeText = {
+        'all': 'All',
+        'task': 'Tasks',
+        'email': 'Emails',
+        'unread': 'Unread'
+    };
+    badge.textContent = badgeText[filter] || 'All';
+}
+
+function filterNotifications(filter) {
+    loadNotifications(filter);
+}
+
+function markAsRead(notificationId) {
+    fetch(`/notifications/${notificationId}/mark-read`, {
         method: 'POST',
         headers: {
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
             'Content-Type': 'application/json',
-        },
+        }
     })
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            // Reload the page to show updated notifications
-            location.reload();
+            showAlert('success', 'Notification marked as read');
+            refreshNotifications();
+        } else {
+            showAlert('error', data.message || 'Failed to mark notification as read');
         }
     })
-    .catch(error => console.error('Error:', error));
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('error', 'An error occurred');
+    });
 }
 
-function updateStats() {
-    // This would typically make an API call to get updated stats
-    // For now, we'll just reload the page
-    location.reload();
+function markAllAsRead(category = null) {
+    const url = category ? `/notifications/mark-all-read?category=${category}` : '/notifications/mark-all-read';
+
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('success', data.message);
+            refreshNotifications();
+        } else {
+            showAlert('error', data.message || 'Failed to mark notifications as read');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('error', 'An error occurred');
+    });
+}
+
+function deleteNotification(notificationId) {
+    if (confirm('Are you sure you want to delete this notification?')) {
+        fetch(`/notifications/${notificationId}`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('success', 'Notification deleted');
+                refreshNotifications();
+            } else {
+                showAlert('error', data.message || 'Failed to delete notification');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('error', 'An error occurred');
+        });
+    }
+}
+
+function archiveNotification(notificationId) {
+    fetch(`/notifications/${notificationId}/archive`, {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('success', 'Notification archived');
+            refreshNotifications();
+        } else {
+            showAlert('error', data.message || 'Failed to archive notification');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('error', 'An error occurred');
+    });
+}
+
+function refreshNotifications() {
+    loadNotifications(currentFilter);
+}
+
+function showAlert(type, message) {
+    const alertClass = type === 'success' ? 'alert-success' :
+                      type === 'error' ? 'alert-danger' :
+                      type === 'warning' ? 'alert-warning' : 'alert-info';
+
+    const alertHtml = `
+        <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+            <i class="bx bx-${type === 'success' ? 'check-circle' : type === 'error' ? 'error-circle' : type === 'warning' ? 'error' : 'info-circle'} me-2"></i>
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+
+    // Insert alert at the top of the page
+    const container = document.querySelector('.container-fluid');
+    container.insertAdjacentHTML('afterbegin', alertHtml);
+
+    // Auto-dismiss after 5 seconds
+    setTimeout(() => {
+        const alert = container.querySelector('.alert');
+        if (alert) {
+            alert.remove();
+        }
+    }, 5000);
 }
 </script>
 @endsection

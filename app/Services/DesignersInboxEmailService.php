@@ -537,21 +537,13 @@ class DesignersInboxEmailService
         try {
             // Create notification for the user who sent the original email
             if ($originalEmail->user_id) {
-                $notification = \App\Models\CustomNotification::create([
-                    'user_id' => $originalEmail->user_id,
-                    'title' => 'Email Reply Received',
-                    'message' => "You received a reply to your email: {$originalEmail->subject}",
-                    'type' => 'email_reply',
-                    'data' => [
-                        'original_email_id' => $originalEmail->id,
-                        'reply_email_id' => $replyEmail->id,
-                        'from' => $replyEmail->from_email,
-                        'subject' => $replyEmail->subject
-                    ],
-                    'is_read' => false
-                ]);
+                $notificationService = app(\App\Services\NotificationService::class);
+                $user = \App\Models\User::find($originalEmail->user_id);
 
-                Log::info("Reply notification created for user {$originalEmail->user_id}");
+                if ($user) {
+                    $notificationService->notifyEmailReply($originalEmail, $replyEmail, $user);
+                    Log::info("Reply notification created for user {$originalEmail->user_id}");
+                }
             }
 
         } catch (\Exception $e) {

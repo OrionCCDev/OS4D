@@ -389,4 +389,17 @@ Route::middleware('auth')->group(function () {
     Route::get('/emails/{id}/debug', [App\Http\Controllers\EmailFetchController::class, 'debugEmail'])->name('emails.debug');
 });
 
+// Notification routes
+Route::middleware(['auth'])->group(function () {
+    Route::get('/notifications', [App\Http\Controllers\NotificationController::class, 'index'])->name('notifications.index');
+    Route::get('/notifications/tasks', [App\Http\Controllers\NotificationController::class, 'taskNotifications'])->name('notifications.tasks');
+    Route::get('/notifications/emails', [App\Http\Controllers\NotificationController::class, 'emailNotifications'])->name('notifications.emails');
+    Route::get('/notifications/stats', [App\Http\Controllers\NotificationController::class, 'stats'])->name('notifications.stats');
+    Route::get('/notifications/unread-count', [App\Http\Controllers\NotificationController::class, 'unreadCount'])->name('notifications.unread-count');
+    Route::post('/notifications/{id}/mark-read', [App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('notifications.mark-read');
+    Route::post('/notifications/mark-all-read', [App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
+    Route::post('/notifications/{id}/archive', [App\Http\Controllers\NotificationController::class, 'archive'])->name('notifications.archive');
+    Route::delete('/notifications/{id}', [App\Http\Controllers\NotificationController::class, 'destroy'])->name('notifications.destroy');
+});
+
 require __DIR__ . '/auth.php';
