@@ -56,7 +56,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/email-notifications/unread-count', [EmailNotificationController::class, 'getUnreadCount'])->name('email-notifications.unread-count');
     Route::get('/email-notifications/stats', [EmailNotificationController::class, 'getEmailStats'])->name('email-notifications.stats');
     Route::get('/emails/sent', [App\Http\Controllers\SimpleEmailController::class, 'listSentEmails'])->name('emails.sent');
-    Route::get('/emails/{id}/show', [App\Http\Controllers\SimpleEmailController::class, 'showEmail'])->name('emails.show');
 
     // Email monitoring routes
     Route::get('/email-monitoring', [App\Http\Controllers\EmailMonitoringController::class, 'index'])->name('email-monitoring.index');
@@ -119,7 +118,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/email-tracker/search', [App\Http\Controllers\EmailTrackerController::class, 'search'])->name('email-tracker.search');
     Route::post('/email-tracker/{id}/mark-read', [App\Http\Controllers\EmailTrackerController::class, 'markAsRead'])->name('email-tracker.mark-read');
     Route::get('/email-tracker/export', [App\Http\Controllers\EmailTrackerController::class, 'export'])->name('email-tracker.export');
-    Route::get('/emails/{id}', [App\Http\Controllers\EmailTrackerController::class, 'show'])->name('emails.show');
 
     // Admin: Users CRUD
     Route::middleware('admin')->prefix('admin')->name('admin.')->group(function () {

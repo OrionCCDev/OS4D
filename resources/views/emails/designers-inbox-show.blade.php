@@ -115,9 +115,9 @@
                             </h6>
                         </div>
                         <div class="card-body">
-                            @if($email->body)
+                            @if($parsedBody)
                                 <div class="email-content">
-                                    {!! $email->body !!}
+                                    {!! $parsedBody !!}
                                 </div>
                             @else
                                 <div class="text-muted text-center py-4">
@@ -187,7 +187,7 @@
                                             <span class="badge bg-info">Reply</span>
                                         </div>
                                         <div class="reply-content">
-                                            {!! $reply->body !!}
+                                            {!! parseEmailBody($reply->body) !!}
                                         </div>
                                     </div>
                                 </div>
