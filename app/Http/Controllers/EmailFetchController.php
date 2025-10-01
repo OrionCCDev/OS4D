@@ -281,35 +281,6 @@ class EmailFetchController extends Controller
         return response()->stream($callback, 200, $headers);
     }
 
-    /**
-     * Mark email as read
-     */
-    public function markAsRead($id)
-    {
-        $user = Auth::user();
-        $email = Email::where('id', $id)
-            ->where('user_id', $user->id)
-            ->firstOrFail();
-
-        $email->update(['status' => 'read']);
-
-        return response()->json(['success' => true]);
-    }
-
-    /**
-     * Mark email as unread
-     */
-    public function markAsUnread($id)
-    {
-        $user = Auth::user();
-        $email = Email::where('id', $id)
-            ->where('user_id', $user->id)
-            ->firstOrFail();
-
-        $email->update(['status' => 'received']);
-
-        return response()->json(['success' => true]);
-    }
 
     /**
      * Delete email from database
@@ -350,14 +321,6 @@ class EmailFetchController extends Controller
             $count = 0;
             foreach ($emails as $email) {
                 switch ($action) {
-                    case 'mark_read':
-                        $email->update(['status' => 'read']);
-                        $count++;
-                        break;
-                    case 'mark_unread':
-                        $email->update(['status' => 'received']);
-                        $count++;
-                        break;
                     case 'delete':
                         $email->delete();
                         $count++;

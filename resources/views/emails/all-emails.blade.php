@@ -123,8 +123,6 @@
                                 <i class="bx bx-cog me-1"></i>Bulk Actions
                             </button>
                             <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="#" onclick="bulkAction('mark_read')">Mark Selected as Read</a></li>
-                                <li><a class="dropdown-item" href="#" onclick="bulkAction('mark_unread')">Mark Selected as Unread</a></li>
                                 <li><a class="dropdown-item" href="#" onclick="bulkAction('delete')">Delete Selected</a></li>
                             </ul>
                         </div>
@@ -214,11 +212,8 @@
                                             <input type="checkbox" id="selectAllHeader" class="form-check-input" onchange="toggleSelectAll()">
                                         </th>
                                         <th>From</th>
-                                        <th>To</th>
                                         <th>Subject</th>
                                         <th>Received</th>
-                                        <th>Status</th>
-                                        <th>Attachments</th>
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
@@ -230,70 +225,30 @@
                                             </td>
                                             <td>
                                                 <div class="d-flex align-items-center">
-                                                    <div class="avatar-sm bg-primary rounded-circle d-flex align-items-center justify-content-center me-2">
-                                                        <span class="text-white fw-bold">{{ substr($email->sender_name, 0, 1) }}</span>
+                                                    <div class="avatar-sm bg-primary rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px;">
+                                                        <span class="text-white fw-bold" style="font-size: 12px;">{{ substr($email->sender_name, 0, 1) }}</span>
                                                     </div>
                                                     <div>
-                                                        <div class="fw-semibold">{{ $email->sender_name }}</div>
-                                                        <small class="text-muted">{{ $email->from_email }}</small>
+                                                        <div class="fw-semibold" style="font-size: 14px;">{{ $email->sender_name }}</div>
+                                                        <small class="text-muted" style="font-size: 11px;">{{ $email->from_email }}</small>
                                                     </div>
                                                 </div>
                                             </td>
                                             <td>
-                                                <div class="fw-semibold">{{ $email->to_email }}</div>
-                                                @if(!empty($email->cc_emails))
-                                                    <small class="text-muted">CC: {{ implode(', ', $email->cc_emails) }}</small>
-                                                @endif
+                                                <div class="fw-semibold" style="font-size: 14px;">{{ $email->subject }}</div>
+                                                <small class="text-muted" style="font-size: 11px;">{{ $email->preview }}</small>
                                             </td>
                                             <td>
-                                                <div class="fw-semibold">{{ $email->subject }}</div>
-                                                <small class="text-muted">{{ $email->preview }}</small>
-                                            </td>
-                                            <td>
-                                                <div>{{ $email->formatted_received_date }}</div>
-                                                <small class="text-muted">{{ $email->received_at->diffForHumans() }}</small>
-                                            </td>
-                                            <td>
-                                                @switch($email->status)
-                                                    @case('received')
-                                                        <span class="badge bg-warning">Unread</span>
-                                                        @break
-                                                    @case('read')
-                                                        <span class="badge bg-success">Read</span>
-                                                        @break
-                                                    @case('replied')
-                                                        <span class="badge bg-info">Replied</span>
-                                                        @break
-                                                    @case('archived')
-                                                        <span class="badge bg-secondary">Archived</span>
-                                                        @break
-                                                @endswitch
-                                            </td>
-                                            <td>
-                                                @if(!empty($email->attachments))
-                                                    <span class="badge bg-info">
-                                                        <i class="bx bx-paperclip me-1"></i>{{ count($email->attachments) }}
-                                                    </span>
-                                                @else
-                                                    <span class="text-muted">-</span>
-                                                @endif
+                                                <div style="font-size: 12px;">{{ $email->received_at->format('M d, H:i') }}</div>
+                                                <small class="text-muted" style="font-size: 10px;">{{ $email->received_at->diffForHumans() }}</small>
                                             </td>
                                             <td>
                                                 <div class="btn-group" role="group">
-                                                    <a href="{{ route('emails.show', $email) }}" class="btn btn-sm btn-outline-primary" title="View">
-                                                        <i class="bx bx-show"></i>
+                                                    <a href="{{ route('emails.show', $email) }}" class="btn btn-sm btn-outline-primary" title="View Email" style="padding: 4px 8px;">
+                                                        <i class="bx bx-show" style="font-size: 12px;"></i>
                                                     </a>
-                                                    @if($email->status === 'received')
-                                                        <button class="btn btn-sm btn-outline-success" onclick="markAsRead({{ $email->id }})" title="Mark as Read">
-                                                            <i class="bx bx-check"></i>
-                                                        </button>
-                                                    @else
-                                                        <button class="btn btn-sm btn-outline-warning" onclick="markAsUnread({{ $email->id }})" title="Mark as Unread">
-                                                            <i class="bx bx-envelope"></i>
-                                                        </button>
-                                                    @endif
-                                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteEmail({{ $email->id }})" title="Delete">
-                                                        <i class="bx bx-trash"></i>
+                                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteEmail({{ $email->id }})" title="Delete Email" style="padding: 4px 8px;">
+                                                        <i class="bx bx-trash" style="font-size: 12px;"></i>
                                                     </button>
                                                 </div>
                                             </td>
@@ -396,55 +351,6 @@ function refreshStats() {
     });
 }
 
-function markAsRead(emailId) {
-    fetch(`/emails/${emailId}/mark-read`, {
-        method: 'POST',
-        headers: {
-            'X-CSRF-TOKEN': '{{ csrf_token() }}',
-            'Content-Type': 'application/json',
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showAlert('success', 'Email marked as read.');
-            setTimeout(() => {
-                window.location.reload();
-            }, 1000);
-        } else {
-            showAlert('error', 'Error marking email as read.');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showAlert('error', 'An error occurred.');
-    });
-}
-
-function markAsUnread(emailId) {
-    fetch(`/emails/${emailId}/mark-unread`, {
-        method: 'POST',
-        headers: {
-            'X-CSRF-TOKEN': '{{ csrf_token() }}',
-            'Content-Type': 'application/json',
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showAlert('success', 'Email marked as unread.');
-            setTimeout(() => {
-                window.location.reload();
-            }, 1000);
-        } else {
-            showAlert('error', 'Error marking email as unread.');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showAlert('error', 'An error occurred.');
-    });
-}
 
 function deleteEmail(emailId) {
     if (confirm('Are you sure you want to delete this email?')) {
@@ -496,13 +402,7 @@ function bulkAction(action) {
         return;
     }
 
-    const actionText = {
-        'mark_read': 'mark as read',
-        'mark_unread': 'mark as unread',
-        'delete': 'delete'
-    };
-
-    if (confirm(`Are you sure you want to ${actionText[action]} ${emailIds.length} email(s)?`)) {
+    if (action === 'delete' && confirm(`Are you sure you want to delete ${emailIds.length} email(s)?`)) {
         fetch('{{ route("emails.bulk-action") }}', {
             method: 'POST',
             headers: {

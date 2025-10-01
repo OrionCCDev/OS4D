@@ -380,8 +380,6 @@ Route::post('/create-notification-for-user', [App\Http\Controllers\DebugNotifica
         Route::post('/emails/search', [App\Http\Controllers\EmailFetchController::class, 'search'])->name('emails.search');
         Route::get('/emails/stats', [App\Http\Controllers\EmailFetchController::class, 'getStats'])->name('emails.stats');
         Route::get('/emails/export', [App\Http\Controllers\EmailFetchController::class, 'export'])->name('emails.export');
-        Route::post('/emails/{id}/mark-read', [App\Http\Controllers\EmailFetchController::class, 'markAsRead'])->name('emails.mark-read-new');
-        Route::post('/emails/{id}/mark-unread', [App\Http\Controllers\EmailFetchController::class, 'markAsUnread'])->name('emails.mark-unread');
         Route::delete('/emails/{id}', [App\Http\Controllers\EmailFetchController::class, 'destroy'])->name('emails.destroy');
         Route::post('/emails/bulk-action', [App\Http\Controllers\EmailFetchController::class, 'bulkAction'])->name('emails.bulk-action');
     });
