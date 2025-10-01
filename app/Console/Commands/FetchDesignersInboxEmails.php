@@ -63,10 +63,10 @@ class FetchDesignersInboxEmails extends Command
             }
 
             $this->info("Using manager: {$manager->name} (ID: {$manager->id})");
-            $this->info("Fetching up to {$maxResults} emails...");
+            $this->info("Fetching new emails (up to {$maxResults})...");
 
-            // Fetch emails from designers inbox
-            $fetchResult = $this->emailService->fetchAllEmails($maxResults);
+            // Fetch new emails from designers inbox (incremental)
+            $fetchResult = $this->emailService->fetchNewEmails($maxResults);
 
             if (!$fetchResult['success']) {
                 $this->error('Failed to fetch emails from designers inbox');
@@ -75,7 +75,7 @@ class FetchDesignersInboxEmails extends Command
                 return 1;
             }
 
-            $this->info("Successfully fetched {$fetchResult['total_fetched']} emails from inbox");
+            $this->info("Successfully fetched {$fetchResult['total_fetched']} new emails from inbox");
 
             // Store emails in database
             $storeResult = $this->emailService->storeEmailsInDatabase($fetchResult['emails'], $manager);
@@ -83,7 +83,7 @@ class FetchDesignersInboxEmails extends Command
             $this->info("Stored {$storeResult['stored']} new emails in database");
 
             if ($storeResult['skipped'] > 0) {
-                $this->info("Skipped {$storeResult['skipped']} emails (already exist)");
+                $this->info("Skipped {$storeResult['skipped']} emails (duplicates prevented)");
             }
 
             if (!empty($storeResult['errors'])) {
@@ -93,6 +93,9 @@ class FetchDesignersInboxEmails extends Command
                 }
                 Log::warning('FetchDesignersInboxEmails: Errors while storing emails', $storeResult['errors']);
             }
+
+            // Log the fetch operation for tracking
+            $this->emailService->logFetchOperation($fetchResult, $storeResult, $fetchResult['total_fetched']);
 
             $this->info('Email fetch completed successfully!');
             Log::info('FetchDesignersInboxEmails: Successfully completed', [

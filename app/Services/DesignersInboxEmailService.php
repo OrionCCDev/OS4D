@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Email;
 use App\Models\User;
+use App\Models\EmailFetchLog;
 use App\Services\DesignersInboxNotificationService;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
@@ -28,7 +29,74 @@ class DesignersInboxEmailService
     }
 
     /**
-     * Fetch all emails from designers inbox
+     * Fetch new emails from designers inbox (incremental)
+     */
+    public function fetchNewEmails(int $maxResults = 100): array
+    {
+        $result = [
+            'success' => false,
+            'emails' => [],
+            'total_fetched' => 0,
+            'errors' => []
+        ];
+
+        try {
+            $connection = $this->connectToImap();
+            if (!$connection) {
+                $result['errors'][] = 'Failed to connect to IMAP server';
+                return $result;
+            }
+
+            // Get the latest fetch log
+            $lastFetchLog = EmailFetchLog::getLatestForSource('designers_inbox');
+            $lastMessageCount = $lastFetchLog ? $lastFetchLog->last_message_count : 0;
+
+            // Get current message count
+            $currentMessageCount = imap_num_msg($connection);
+            Log::info("Current message count: {$currentMessageCount}, Last fetch count: {$lastMessageCount}");
+
+            // Only fetch new messages
+            if ($currentMessageCount <= $lastMessageCount) {
+                Log::info('No new messages since last fetch');
+                imap_close($connection);
+                $result['success'] = true;
+                $result['total_fetched'] = 0;
+                return $result;
+            }
+
+            // Calculate range of new messages
+            $newMessageCount = $currentMessageCount - $lastMessageCount;
+            $messagesToFetch = min($newMessageCount, $maxResults);
+            $start = $currentMessageCount - $messagesToFetch + 1;
+
+            Log::info("Fetching {$messagesToFetch} new messages from position {$start} to {$currentMessageCount}");
+
+            $emails = [];
+            for ($i = $start; $i <= $currentMessageCount; $i++) {
+                $emailData = $this->parseEmailMessage($connection, $i);
+                if ($emailData) {
+                    $emails[] = $emailData;
+                }
+            }
+
+            imap_close($connection);
+
+            $result['success'] = true;
+            $result['emails'] = $emails;
+            $result['total_fetched'] = count($emails);
+
+            Log::info('Successfully fetched ' . count($emails) . ' new emails from designers inbox');
+
+        } catch (\Exception $e) {
+            Log::error('Error fetching new emails from designers inbox: ' . $e->getMessage());
+            $result['errors'][] = $e->getMessage();
+        }
+
+        return $result;
+    }
+
+    /**
+     * Fetch all emails from designers inbox (legacy method for manual fetching)
      */
     public function fetchAllEmails(int $maxResults = 100): array
     {
@@ -238,7 +306,7 @@ class DesignersInboxEmailService
     }
 
     /**
-     * Store fetched emails in database
+     * Store fetched emails in database with enhanced duplication prevention
      */
     public function storeEmailsInDatabase(array $emails, User $user): array
     {
@@ -250,10 +318,11 @@ class DesignersInboxEmailService
 
         foreach ($emails as $emailData) {
             try {
-                // Check if email already exists
-                $existingEmail = Email::where('message_id', $emailData['message_id'])->first();
+                // Enhanced duplication check - check multiple fields
+                $existingEmail = $this->checkForDuplicateEmail($emailData);
 
                 if ($existingEmail) {
+                    Log::info("Skipping duplicate email: {$emailData['subject']} from {$emailData['from_email']}");
                     $result['skipped']++;
                     continue;
                 }
@@ -278,6 +347,7 @@ class DesignersInboxEmailService
                 // Create notifications for managers
                 $this->notificationService->processEmailNotifications($email);
 
+                Log::info("Stored new email: {$emailData['subject']} from {$emailData['from_email']}");
                 $result['stored']++;
 
             } catch (\Exception $e) {
@@ -290,12 +360,91 @@ class DesignersInboxEmailService
     }
 
     /**
+     * Enhanced duplication check using multiple criteria
+     */
+    protected function checkForDuplicateEmail(array $emailData): ?Email
+    {
+        // Check by message_id (primary check)
+        if (!empty($emailData['message_id'])) {
+            $existing = Email::where('message_id', $emailData['message_id'])
+                ->where('email_source', 'designers_inbox')
+                ->first();
+            if ($existing) {
+                return $existing;
+            }
+        }
+
+        // Check by subject + from_email + received_at (secondary check)
+        if (!empty($emailData['subject']) && !empty($emailData['from_email']) && !empty($emailData['date'])) {
+            $existing = Email::where('subject', $emailData['subject'])
+                ->where('from_email', $emailData['from_email'])
+                ->where('email_source', 'designers_inbox')
+                ->whereBetween('received_at', [
+                    Carbon::parse($emailData['date'])->subMinutes(5),
+                    Carbon::parse($emailData['date'])->addMinutes(5)
+                ])
+                ->first();
+            if ($existing) {
+                return $existing;
+            }
+        }
+
+        // Check by subject + from_email + body hash (tertiary check)
+        if (!empty($emailData['subject']) && !empty($emailData['from_email']) && !empty($emailData['body'])) {
+            $bodyHash = md5(substr($emailData['body'], 0, 1000)); // Hash first 1000 chars
+            $existing = Email::where('subject', $emailData['subject'])
+                ->where('from_email', $emailData['from_email'])
+                ->where('email_source', 'designers_inbox')
+                ->whereRaw('MD5(SUBSTRING(body, 1, 1000)) = ?', [$bodyHash])
+                ->first();
+            if ($existing) {
+                return $existing;
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Find email that this is a reply to
      */
     protected function findReplyToEmail(string $inReplyTo): ?int
     {
         $email = Email::where('message_id', $inReplyTo)->first();
         return $email ? $email->id : null;
+    }
+
+    /**
+     * Log fetch operation results
+     */
+    public function logFetchOperation(array $fetchResult, array $storeResult, int $currentMessageCount): void
+    {
+        try {
+            $lastMessageId = null;
+            if (!empty($fetchResult['emails'])) {
+                $lastMessageId = end($fetchResult['emails'])['message_id'] ?? null;
+            }
+
+            EmailFetchLog::updateFetchLog('designers_inbox', [
+                'last_fetch_at' => now(),
+                'last_message_id' => $lastMessageId,
+                'last_message_count' => $currentMessageCount,
+                'total_fetched' => $fetchResult['total_fetched'],
+                'total_stored' => $storeResult['stored'],
+                'total_skipped' => $storeResult['skipped'],
+                'last_errors' => array_merge($fetchResult['errors'] ?? [], $storeResult['errors'] ?? [])
+            ]);
+
+            Log::info('Email fetch operation logged', [
+                'fetched' => $fetchResult['total_fetched'],
+                'stored' => $storeResult['stored'],
+                'skipped' => $storeResult['skipped'],
+                'current_message_count' => $currentMessageCount
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error logging fetch operation: ' . $e->getMessage());
+        }
     }
 
     /**

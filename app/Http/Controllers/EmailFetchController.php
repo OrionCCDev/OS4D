@@ -86,8 +86,8 @@ class EmailFetchController extends Controller
         try {
             $maxResults = $request->get('maxResults', 100);
 
-            // Fetch emails from designers inbox
-            $fetchResult = $this->designersInboxService->fetchAllEmails($maxResults);
+            // Fetch new emails from designers inbox (incremental)
+            $fetchResult = $this->designersInboxService->fetchNewEmails($maxResults);
 
             if (!$fetchResult['success']) {
                 return response()->json([
@@ -100,9 +100,12 @@ class EmailFetchController extends Controller
             // Store emails in database
             $storeResult = $this->designersInboxService->storeEmailsInDatabase($fetchResult['emails'], $user);
 
+            // Log the fetch operation for tracking
+            $this->designersInboxService->logFetchOperation($fetchResult, $storeResult, $fetchResult['total_fetched']);
+
             return response()->json([
                 'success' => true,
-                'message' => 'Emails fetched and stored successfully',
+                'message' => 'New emails fetched and stored successfully',
                 'data' => [
                     'fetched' => $fetchResult['total_fetched'],
                     'stored' => $storeResult['stored'],
