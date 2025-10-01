@@ -324,21 +324,41 @@ class EmailFetchController extends Controller
                 if (strpos($part, 'Content-Type: text/html') !== false) {
                     \Log::info('Found HTML part');
 
-                    // Extract HTML content after headers
+                    // Find the start of HTML content (after headers)
                     $lines = explode("\n", $part);
                     $htmlStart = false;
                     $htmlContent = '';
+                    $headerEnded = false;
 
                     foreach ($lines as $line) {
-                        if ($htmlStart) {
-                            $htmlContent .= $line . "\n";
-                        } elseif (strpos($line, 'Content-Type: text/html') !== false) {
+                        // Skip until we find the HTML content type
+                        if (!$htmlStart && strpos($line, 'Content-Type: text/html') !== false) {
                             $htmlStart = true;
+                            continue;
+                        }
+
+                        // After finding HTML content type, look for empty line to mark end of headers
+                        if ($htmlStart && !$headerEnded) {
+                            if (trim($line) === '') {
+                                $headerEnded = true;
+                                continue;
+                            }
+                            // Skip header lines
+                            if (strpos($line, 'Content-') === 0 || strpos($line, 'charset=') !== false) {
+                                continue;
+                            }
+                        }
+
+                        // Collect HTML content after headers
+                        if ($htmlStart && $headerEnded) {
+                            $htmlContent .= $line . "\n";
                         }
                     }
 
                     // Clean up the HTML content
                     $htmlContent = trim($htmlContent);
+
+                    // Remove any remaining MIME artifacts
                     $htmlContent = preg_replace('/^Content-Transfer-Encoding:.*$/m', '', $htmlContent);
                     $htmlContent = preg_replace('/^Content-Type:.*$/m', '', $htmlContent);
                     $htmlContent = preg_replace('/^charset=.*$/m', '', $htmlContent);
@@ -348,6 +368,7 @@ class EmailFetchController extends Controller
 
                     if (!empty($htmlContent) && strlen($htmlContent) > 50) {
                         \Log::info('Extracted HTML content length: ' . strlen($htmlContent));
+                        \Log::info('HTML content preview: ' . substr($htmlContent, 0, 200));
                         return $htmlContent;
                     }
                 }

@@ -124,7 +124,7 @@ Route::middleware('auth')->group(function () {
         Route::resource('users', UsersController::class)->except(['show']);
     });
 
-    // Project workflow resources - Manager only
+    // Project workflow resources - Manager onlyst
     Route::middleware('manager')->group(function () {
         Route::resource('projects', ProjectController::class);
         Route::resource('folders', ProjectFolderController::class)->parameters(['folders' => 'folder'])->except(['show']);
