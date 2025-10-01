@@ -381,6 +381,9 @@ Route::post('/create-notification-for-user', [App\Http\Controllers\DebugNotifica
         Route::post('/emails/{id}/mark-unread', [App\Http\Controllers\EmailFetchController::class, 'markAsUnread'])->name('emails.mark-unread');
         Route::delete('/emails/{id}', [App\Http\Controllers\EmailFetchController::class, 'destroy'])->name('emails.destroy');
         Route::post('/emails/bulk-action', [App\Http\Controllers\EmailFetchController::class, 'bulkAction'])->name('emails.bulk-action');
+
+        // Debug route for email parsing
+        Route::get('/emails/{id}/debug', [App\Http\Controllers\EmailFetchController::class, 'debugEmail'])->name('emails.debug');
     });
 
 require __DIR__.'/auth.php';

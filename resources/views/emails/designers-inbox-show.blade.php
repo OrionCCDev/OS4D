@@ -115,9 +115,17 @@
                             </h6>
                         </div>
                         <div class="card-body">
-                            @if($parsedBody)
+                            @if($parsedBody && strlen($parsedBody) > 10)
                                 <div class="email-content">
                                     {!! $parsedBody !!}
+                                </div>
+                            @elseif($email->body && strlen($email->body) > 10)
+                                <div class="email-content">
+                                    <div class="alert alert-warning mb-3">
+                                        <i class="bx bx-info-circle me-2"></i>
+                                        <strong>Raw Email Content:</strong> Unable to parse email body properly.
+                                    </div>
+                                    <pre style="white-space: pre-wrap; word-wrap: break-word; max-height: 400px; overflow-y: auto; background: #f8f9fa; padding: 1rem; border-radius: 8px;">{{ $email->body }}</pre>
                                 </div>
                             @else
                                 <div class="text-muted text-center py-4">

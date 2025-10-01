@@ -10,14 +10,15 @@ if (!function_exists('parseEmailBody')) {
             return '';
         }
 
-        // If it's a multipart email, extract the HTML part
-        if (strpos($body, 'Content-Type: text/html') !== false) {
-            // Split by boundary
-            $parts = preg_split('/--[a-zA-Z0-9]+/', $body);
+        // Handle multipart emails with boundaries
+        if (strpos($body, '--0000000000009d3e4c064011fe0b') !== false) {
+            // Split by the specific boundary
+            $parts = explode('--0000000000009d3e4c064011fe0b', $body);
 
             foreach ($parts as $part) {
+                // Look for HTML part
                 if (strpos($part, 'Content-Type: text/html') !== false) {
-                    // Extract HTML content after the headers
+                    // Extract HTML content after headers
                     $lines = explode("\n", $part);
                     $htmlStart = false;
                     $htmlContent = '';
@@ -38,7 +39,33 @@ if (!function_exists('parseEmailBody')) {
 
                     return trim($htmlContent);
                 }
+
+                // Look for plain text part if no HTML found
+                if (strpos($part, 'Content-Type: text/plain') !== false) {
+                    $lines = explode("\n", $part);
+                    $textStart = false;
+                    $textContent = '';
+
+                    foreach ($lines as $line) {
+                        if ($textStart) {
+                            $textContent .= $line . "\n";
+                        } elseif (strpos($line, 'Content-Type: text/plain') !== false) {
+                            $textStart = true;
+                        }
+                    }
+
+                    // Convert plain text to HTML
+                    $textContent = htmlspecialchars(trim($textContent));
+                    $textContent = nl2br($textContent);
+
+                    return $textContent;
+                }
             }
+        }
+
+        // If it's already HTML, return as is
+        if (strpos($body, '<html') !== false || strpos($body, '<div') !== false) {
+            return $body;
         }
 
         // If it's plain text, convert to HTML
@@ -62,7 +89,7 @@ if (!function_exists('parseEmailBody')) {
             return $textContent;
         }
 
-        // If it's already HTML or plain text, return as is
+        // Fallback: return the body as is
         return $body;
     }
 }

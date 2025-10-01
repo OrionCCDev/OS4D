@@ -238,6 +238,39 @@ class EmailFetchController extends Controller
     }
 
     /**
+     * Debug email parsing
+     */
+    public function debugEmail($id)
+    {
+        $user = Auth::user();
+
+        // Check if user is a manager
+        if (!$user->isManager()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Access denied. Only managers can access designers inbox.'
+            ], 403);
+        }
+
+        $email = Email::where('id', $id)
+            ->where('email_source', 'designers_inbox')
+            ->firstOrFail();
+
+        $parsedBody = $this->parseEmailBody($email->body);
+
+        return response()->json([
+            'email_id' => $email->id,
+            'original_body_length' => strlen($email->body),
+            'parsed_body_length' => strlen($parsedBody),
+            'original_body_preview' => substr($email->body, 0, 500),
+            'parsed_body_preview' => substr($parsedBody, 0, 500),
+            'has_html_content' => strpos($email->body, 'Content-Type: text/html') !== false,
+            'has_boundary' => strpos($email->body, '--0000000000009d3e4c064011fe0b') !== false,
+            'parsed_body' => $parsedBody
+        ]);
+    }
+
+    /**
      * Parse email body to extract HTML content
      */
     private function parseEmailBody($body)
@@ -246,14 +279,23 @@ class EmailFetchController extends Controller
             return '';
         }
 
-        // If it's a multipart email, extract the HTML part
-        if (strpos($body, 'Content-Type: text/html') !== false) {
-            // Split by boundary
-            $parts = preg_split('/--[a-zA-Z0-9]+/', $body);
+        \Log::info('Parsing email body, length: ' . strlen($body));
 
-            foreach ($parts as $part) {
+        // Handle multipart emails with boundaries
+        if (strpos($body, '--0000000000009d3e4c064011fe0b') !== false) {
+            \Log::info('Found multipart email with boundary');
+
+            // Split by the specific boundary
+            $parts = explode('--0000000000009d3e4c064011fe0b', $body);
+
+            foreach ($parts as $index => $part) {
+                \Log::info("Processing part $index, length: " . strlen($part));
+
+                // Look for HTML part
                 if (strpos($part, 'Content-Type: text/html') !== false) {
-                    // Extract HTML content after the headers
+                    \Log::info('Found HTML part');
+
+                    // Extract HTML content after headers
                     $lines = explode("\n", $part);
                     $htmlStart = false;
                     $htmlContent = '';
@@ -272,13 +314,46 @@ class EmailFetchController extends Controller
                     $htmlContent = preg_replace('/^Content-Type:.*$/m', '', $htmlContent);
                     $htmlContent = preg_replace('/^\s*$/m', '', $htmlContent);
 
+                    \Log::info('Extracted HTML content length: ' . strlen($htmlContent));
                     return trim($htmlContent);
+                }
+
+                // Look for plain text part if no HTML found
+                if (strpos($part, 'Content-Type: text/plain') !== false) {
+                    \Log::info('Found plain text part');
+
+                    $lines = explode("\n", $part);
+                    $textStart = false;
+                    $textContent = '';
+
+                    foreach ($lines as $line) {
+                        if ($textStart) {
+                            $textContent .= $line . "\n";
+                        } elseif (strpos($line, 'Content-Type: text/plain') !== false) {
+                            $textStart = true;
+                        }
+                    }
+
+                    // Convert plain text to HTML
+                    $textContent = htmlspecialchars(trim($textContent));
+                    $textContent = nl2br($textContent);
+
+                    \Log::info('Converted plain text to HTML, length: ' . strlen($textContent));
+                    return $textContent;
                 }
             }
         }
 
+        // If it's already HTML, return as is
+        if (strpos($body, '<html') !== false || strpos($body, '<div') !== false) {
+            \Log::info('Body appears to be HTML already');
+            return $body;
+        }
+
         // If it's plain text, convert to HTML
         if (strpos($body, 'Content-Type: text/plain') !== false) {
+            \Log::info('Found plain text content type');
+
             $lines = explode("\n", $body);
             $textStart = false;
             $textContent = '';
@@ -298,7 +373,8 @@ class EmailFetchController extends Controller
             return $textContent;
         }
 
-        // If it's already HTML or plain text, return as is
+        // Fallback: return the body as is
+        \Log::info('Using fallback - returning body as is');
         return $body;
     }
 
