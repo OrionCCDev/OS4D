@@ -840,9 +840,10 @@
 
                 async function fetchCount(){
                   try {
-                    const r = await fetch('{{ route('email-monitoring.unread-count') }}', { credentials: 'same-origin' });
+                    // Use new unified notification system
+                    const r = await fetch('{{ route('notifications.unread-count') }}', { credentials: 'same-origin' });
                     const d = await r.json();
-                    const currentCount = d.count ?? 0;
+                    const currentCount = d.success ? d.counts.total : 0;
 
                     // Play sound if count increased (new notification)
                     if (currentCount > previousCount && previousCount > 0) {
@@ -871,14 +872,15 @@
 
                 async function fetchUnread(){
                   try {
-                    const r = await fetch('{{ route('email-monitoring.notifications') }}', { credentials: 'same-origin' });
+                    // Use new unified notification system
+                    const r = await fetch('{{ route('notifications.index') }}', { credentials: 'same-origin' });
 
                     if (!r.ok) {
                       throw new Error(`HTTP error! status: ${r.status}`);
                     }
 
                     const data = await r.json();
-                    const list = data.data || [];
+                    const list = data.success ? data.notifications : [];
 
                     if(!Array.isArray(list) || list.length === 0){
                       listEl.innerHTML = `
@@ -892,29 +894,35 @@
                       return;
                     }
                     listEl.innerHTML = list.map(function(n){
-                      const title = (n.message || 'Email Notification');
-                      const message = n.email ? `Email: ${n.email.subject}` : '';
+                      const title = n.title || 'Notification';
+                      const message = n.message || '';
                       const timeAgo = getTimeAgo(n.created_at);
-                      const viewUrl = n.email && n.email.task_id ? `{{ url('tasks') }}/${n.email.task_id}` : (n.email ? `{{ url('emails') }}/${n.email.id}/show` : '');
-                      const notificationType = n.notification_type || 'info';
-                      const typeIcon = getNotificationIcon(notificationType);
-                      const typeColor = getNotificationColor(notificationType);
+                      const viewUrl = n.category === 'task' && n.task_id ? `{{ url('tasks') }}/${n.task_id}` :
+                                     n.category === 'email' && n.email_id ? `{{ url('emails') }}/${n.email_id}` : '';
+                      const typeIcon = n.icon || 'bx-bell';
+                      const typeColor = n.color === 'danger' ? '#dc3545' :
+                                       n.color === 'warning' ? '#ffc107' :
+                                       n.color === 'success' ? '#198754' :
+                                       n.color === 'info' ? '#0dcaf0' : '#6c757d';
 
                       return `
-                        <div class="notification-message p-3 border-bottom" style="transition: all 0.2s ease; cursor: pointer;" onclick="handleNotificationClick(${n.id}, '${viewUrl}')">
+                        <div class="notification-message p-3 border-bottom" style="transition: all 0.2s ease; cursor: pointer; background: ${n.is_read ? '#ffffff' : '#f8f9ff'};" onclick="handleNotificationClick(${n.id}, '${viewUrl}')">
                           <div class="d-flex align-items-start gap-3">
                             <div class="notification-avatar" style="width: 40px; height: 40px; background: ${typeColor}; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
                               <i class="bx ${typeIcon}" style="color: white; font-size: 18px;"></i>
                             </div>
                             <div class="flex-grow-1" style="min-width: 0;">
                               <div class="d-flex align-items-center justify-content-between mb-1">
-                                <h6 class="mb-0 fw-semibold text-dark" style="font-size: 14px;">${title}</h6>
+                                <h6 class="mb-0 fw-semibold text-dark" style="font-size: 14px;">
+                                  <span class="badge bg-${n.badge_color} me-2" style="font-size: 10px;">${n.category}</span>
+                                  ${title}
+                                </h6>
                                 <small class="text-muted" style="font-size: 11px;">${timeAgo}</small>
                               </div>
                               <p class="mb-2 text-muted" style="font-size: 13px; line-height: 1.4; margin: 0;">${message}</p>
                               ${viewUrl ? `
                                 <span class="badge bg-primary" style="font-size: 10px; padding: 2px 6px;">
-                                  <i class="bx bx-link-external me-1"></i>Click to view
+                                  <i class="bx bx-link-external me-1"></i>Click to view ${n.category}
                                 </span>
                               ` : ''}
                             </div>
@@ -1290,13 +1298,15 @@
                 // Fetch notifications for bottom chat
                 async function fetchBottomNotifications() {
                   try {
-                    const r = await fetch('{{ route('api.notifications.unread') }}', { credentials: 'same-origin' });
+                    // Use new unified notification system
+                    const r = await fetch('{{ route('notifications.index') }}', { credentials: 'same-origin' });
 
                     if (!r.ok) {
                       throw new Error(`HTTP error! status: ${r.status}`);
                     }
 
-                    const list = await r.json();
+                    const data = await r.json();
+                    const list = data.success ? data.notifications : [];
 
                     if (!Array.isArray(list) || list.length === 0) {
                       bottomChatMessages.innerHTML = `
@@ -1311,13 +1321,16 @@
                     }
 
                     bottomChatMessages.innerHTML = list.map(function(n) {
-                      const title = (n.title || 'Notification');
-                      const message = (n.message || '');
+                      const title = n.title || 'Notification';
+                      const message = n.message || '';
                       const timeAgo = getTimeAgo(n.created_at);
-                      const viewUrl = n.data && n.data.task_id ? `{{ url('tasks') }}/${n.data.task_id}` : '';
-                      const notificationType = n.type || 'info';
-                      const typeIcon = getNotificationIcon(notificationType);
-                      const typeColor = getNotificationColor(notificationType);
+                      const viewUrl = n.category === 'task' && n.task_id ? `{{ url('tasks') }}/${n.task_id}` :
+                                     n.category === 'email' && n.email_id ? `{{ url('emails') }}/${n.email_id}` : '';
+                      const typeIcon = n.icon || 'bx-bell';
+                      const typeColor = n.color === 'danger' ? '#dc3545' :
+                                       n.color === 'warning' ? '#ffc107' :
+                                       n.color === 'success' ? '#198754' :
+                                       n.color === 'info' ? '#0dcaf0' : '#6c757d';
 
                       return `
                         <div class="chat-message p-3 border-bottom" style="transition: all 0.2s ease; cursor: pointer; background: white; margin: 4px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);" onclick="handleNotificationClick(${n.id}, '${viewUrl}')">
@@ -1327,13 +1340,16 @@
                             </div>
                             <div class="flex-grow-1" style="min-width: 0;">
                               <div class="d-flex align-items-center justify-content-between mb-1">
-                                <h6 class="mb-0 fw-semibold text-dark" style="font-size: 13px;">${title}</h6>
+                                <h6 class="mb-0 fw-semibold text-dark" style="font-size: 13px;">
+                                  <span class="badge bg-${n.badge_color} me-2" style="font-size: 9px;">${n.category}</span>
+                                  ${title}
+                                </h6>
                                 <small class="text-muted" style="font-size: 10px;">${timeAgo}</small>
                               </div>
                               <p class="mb-2 text-muted" style="font-size: 12px; line-height: 1.4; margin: 0;">${message}</p>
                               ${viewUrl ? `
                                 <span class="badge bg-primary" style="font-size: 9px; padding: 1px 4px;">
-                                  <i class="bx bx-link-external me-1"></i>Click to view task
+                                  <i class="bx bx-link-external me-1"></i>Click to view ${n.category}
                                 </span>
                               ` : ''}
                             </div>
@@ -1355,9 +1371,10 @@
                 // Fetch notification count for bottom chat
                 async function fetchBottomCount() {
                   try {
-                    const r = await fetch('{{ route('api.notifications.count') }}', { credentials: 'same-origin' });
+                    // Use new unified notification system
+                    const r = await fetch('{{ route('notifications.unread-count') }}', { credentials: 'same-origin' });
                     const d = await r.json();
-                    const currentCount = d.count ?? 0;
+                    const currentCount = d.success ? d.counts.total : 0;
 
                     // Auto-open chat if new notification arrives
                     if (currentCount > previousBottomCount && previousBottomCount >= 0) {
