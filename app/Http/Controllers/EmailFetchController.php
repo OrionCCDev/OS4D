@@ -167,13 +167,13 @@ class EmailFetchController extends Controller
     public function show($id)
     {
         $user = Auth::user();
-        
+
         // Check if user is a manager
         if (!$user->isManager()) {
             return redirect()->route('dashboard')
                 ->with('error', 'Access denied. Only managers can view designers inbox emails.');
         }
-        
+
         $email = Email::where('id', $id)
             ->where('email_source', 'designers_inbox')
             ->firstOrFail();
@@ -192,7 +192,7 @@ class EmailFetchController extends Controller
     public function markAsRead($id)
     {
         $user = Auth::user();
-        
+
         // Check if user is a manager
         if (!$user->isManager()) {
             return response()->json([
@@ -200,7 +200,7 @@ class EmailFetchController extends Controller
                 'message' => 'Access denied. Only managers can access designers inbox.'
             ], 403);
         }
-        
+
         $email = Email::where('id', $id)
             ->where('email_source', 'designers_inbox')
             ->firstOrFail();
@@ -216,7 +216,7 @@ class EmailFetchController extends Controller
     public function markAsUnread($id)
     {
         $user = Auth::user();
-        
+
         // Check if user is a manager
         if (!$user->isManager()) {
             return response()->json([
@@ -224,7 +224,7 @@ class EmailFetchController extends Controller
                 'message' => 'Access denied. Only managers can access designers inbox.'
             ], 403);
         }
-        
+
         $email = Email::where('id', $id)
             ->where('email_source', 'designers_inbox')
             ->firstOrFail();
@@ -362,7 +362,7 @@ class EmailFetchController extends Controller
         }
 
         try {
-            $emails = Email::where('user_id', $user->id)
+            $emails = Email::where('email_source', 'designers_inbox')
                 ->whereIn('id', $emailIds)
                 ->get();
 

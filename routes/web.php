@@ -370,8 +370,6 @@ Route::post('/create-notification-for-user', [App\Http\Controllers\DebugNotifica
     // Email management routes (authenticated)
     Route::middleware('auth')->group(function () {
         Route::get('/emails', [EmailController::class, 'index'])->name('emails.index');
-        Route::get('/emails/{email}', [EmailController::class, 'show'])->name('emails.show');
-        Route::post('/emails/{email}/mark-read', [EmailController::class, 'markAsRead'])->name('emails.mark-read');
         Route::post('/emails/check-new', [EmailController::class, 'checkNewEmails'])->name('emails.check-new');
 
         // Email fetching routes
@@ -380,6 +378,7 @@ Route::post('/create-notification-for-user', [App\Http\Controllers\DebugNotifica
         Route::post('/emails/search', [App\Http\Controllers\EmailFetchController::class, 'search'])->name('emails.search');
         Route::get('/emails/stats', [App\Http\Controllers\EmailFetchController::class, 'getStats'])->name('emails.stats');
         Route::get('/emails/export', [App\Http\Controllers\EmailFetchController::class, 'export'])->name('emails.export');
+        Route::get('/emails/{id}', [App\Http\Controllers\EmailFetchController::class, 'show'])->name('emails.show');
         Route::post('/emails/{id}/mark-read', [App\Http\Controllers\EmailFetchController::class, 'markAsRead'])->name('emails.mark-read');
         Route::post('/emails/{id}/mark-unread', [App\Http\Controllers\EmailFetchController::class, 'markAsUnread'])->name('emails.mark-unread');
         Route::delete('/emails/{id}', [App\Http\Controllers\EmailFetchController::class, 'destroy'])->name('emails.destroy');
