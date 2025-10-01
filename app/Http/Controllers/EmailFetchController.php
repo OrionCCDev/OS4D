@@ -281,15 +281,26 @@ class EmailFetchController extends Controller
 
         \Log::info('Parsing email body, length: ' . strlen($body));
 
-        // Handle multipart emails with boundaries
-        if (strpos($body, '--0000000000009d3e4c064011fe0b') !== false) {
-            \Log::info('Found multipart email with boundary');
+        // Handle quoted-printable encoding first
+        if (strpos($body, 'Content-Transfer-Encoding: quoted-printable') !== false) {
+            $body = quoted_printable_decode($body);
+        }
 
-            // Split by the specific boundary
-            $parts = explode('--0000000000009d3e4c064011fe0b', $body);
+        // Handle multipart emails with any boundary
+        if (preg_match('/--([a-f0-9]+)/', $body, $matches)) {
+            $boundary = '--' . $matches[1];
+            \Log::info('Found multipart email with boundary: ' . $boundary);
+
+            // Split by the detected boundary
+            $parts = explode($boundary, $body);
 
             foreach ($parts as $index => $part) {
                 \Log::info("Processing part $index, length: " . strlen($part));
+
+                // Skip empty parts
+                if (trim($part) === '' || trim($part) === '--') {
+                    continue;
+                }
 
                 // Look for HTML part
                 if (strpos($part, 'Content-Type: text/html') !== false) {
@@ -312,10 +323,15 @@ class EmailFetchController extends Controller
                     $htmlContent = trim($htmlContent);
                     $htmlContent = preg_replace('/^Content-Transfer-Encoding:.*$/m', '', $htmlContent);
                     $htmlContent = preg_replace('/^Content-Type:.*$/m', '', $htmlContent);
+                    $htmlContent = preg_replace('/^charset=.*$/m', '', $htmlContent);
                     $htmlContent = preg_replace('/^\s*$/m', '', $htmlContent);
 
-                    \Log::info('Extracted HTML content length: ' . strlen($htmlContent));
-                    return trim($htmlContent);
+                    $htmlContent = trim($htmlContent);
+
+                    if (!empty($htmlContent) && strlen($htmlContent) > 50) {
+                        \Log::info('Extracted HTML content length: ' . strlen($htmlContent));
+                        return $htmlContent;
+                    }
                 }
 
                 // Look for plain text part if no HTML found
@@ -334,12 +350,20 @@ class EmailFetchController extends Controller
                         }
                     }
 
+                    // Clean up the text content
+                    $textContent = trim($textContent);
+                    $textContent = preg_replace('/^Content-Transfer-Encoding:.*$/m', '', $textContent);
+                    $textContent = preg_replace('/^Content-Type:.*$/m', '', $textContent);
+                    $textContent = preg_replace('/^charset=.*$/m', '', $textContent);
+
                     // Convert plain text to HTML
-                    $textContent = htmlspecialchars(trim($textContent));
+                    $textContent = htmlspecialchars($textContent);
                     $textContent = nl2br($textContent);
 
-                    \Log::info('Converted plain text to HTML, length: ' . strlen($textContent));
-                    return $textContent;
+                    if (!empty($textContent) && strlen($textContent) > 20) {
+                        \Log::info('Converted plain text to HTML, length: ' . strlen($textContent));
+                        return $textContent;
+                    }
                 }
             }
         }

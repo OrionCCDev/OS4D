@@ -10,12 +10,23 @@ if (!function_exists('parseEmailBody')) {
             return '';
         }
 
-        // Handle multipart emails with boundaries
-        if (strpos($body, '--0000000000009d3e4c064011fe0b') !== false) {
-            // Split by the specific boundary
-            $parts = explode('--0000000000009d3e4c064011fe0b', $body);
+        // Handle quoted-printable encoding first
+        if (strpos($body, 'Content-Transfer-Encoding: quoted-printable') !== false) {
+            $body = quoted_printable_decode($body);
+        }
+
+        // Handle multipart emails with any boundary
+        if (preg_match('/--([a-f0-9]+)/', $body, $matches)) {
+            $boundary = '--' . $matches[1];
+            // Split by the detected boundary
+            $parts = explode($boundary, $body);
 
             foreach ($parts as $part) {
+                // Skip empty parts
+                if (trim($part) === '' || trim($part) === '--') {
+                    continue;
+                }
+
                 // Look for HTML part
                 if (strpos($part, 'Content-Type: text/html') !== false) {
                     // Extract HTML content after headers
@@ -35,9 +46,14 @@ if (!function_exists('parseEmailBody')) {
                     $htmlContent = trim($htmlContent);
                     $htmlContent = preg_replace('/^Content-Transfer-Encoding:.*$/m', '', $htmlContent);
                     $htmlContent = preg_replace('/^Content-Type:.*$/m', '', $htmlContent);
+                    $htmlContent = preg_replace('/^charset=.*$/m', '', $htmlContent);
                     $htmlContent = preg_replace('/^\s*$/m', '', $htmlContent);
 
-                    return trim($htmlContent);
+                    $htmlContent = trim($htmlContent);
+
+                    if (!empty($htmlContent) && strlen($htmlContent) > 50) {
+                        return $htmlContent;
+                    }
                 }
 
                 // Look for plain text part if no HTML found
@@ -54,17 +70,25 @@ if (!function_exists('parseEmailBody')) {
                         }
                     }
 
+                    // Clean up the text content
+                    $textContent = trim($textContent);
+                    $textContent = preg_replace('/^Content-Transfer-Encoding:.*$/m', '', $textContent);
+                    $textContent = preg_replace('/^Content-Type:.*$/m', '', $textContent);
+                    $textContent = preg_replace('/^charset=.*$/m', '', $textContent);
+
                     // Convert plain text to HTML
-                    $textContent = htmlspecialchars(trim($textContent));
+                    $textContent = htmlspecialchars($textContent);
                     $textContent = nl2br($textContent);
 
-                    return $textContent;
+                    if (!empty($textContent) && strlen($textContent) > 20) {
+                        return $textContent;
+                    }
                 }
             }
         }
 
         // If it's already HTML, return as is
-        if (strpos($body, '<html') !== false || strpos($body, '<div') !== false) {
+        if (strpos($body, '<html') !== false || strpos($body, '<div') !== false || strpos($body, '<p') !== false) {
             return $body;
         }
 
@@ -86,6 +110,13 @@ if (!function_exists('parseEmailBody')) {
             $textContent = htmlspecialchars(trim($textContent));
             $textContent = nl2br($textContent);
 
+            return $textContent;
+        }
+
+        // If it looks like plain text, convert it
+        if (strlen($body) > 20 && !preg_match('/^--[a-f0-9]+/', $body)) {
+            $textContent = htmlspecialchars($body);
+            $textContent = nl2br($textContent);
             return $textContent;
         }
 
