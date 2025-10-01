@@ -1,4 +1,4 @@
-/* Email Content Styling - Separate from main page styles */
+/* Email Content Styling - Completely separate from original email styles */
 
 .email-content-container {
     background: #ffffff;
@@ -9,6 +9,26 @@
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     max-width: 100%;
     overflow-x: auto;
+
+    /* Reset all inherited styles */
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+    font-size: 14px !important;
+    line-height: 1.6 !important;
+    color: #333 !important;
+    background-color: #ffffff !important;
+}
+
+/* Override all original email styles with our custom design */
+.email-content-container * {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+    color: #333 !important;
+    background-color: transparent !important;
+    border: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+    border-radius: 0 !important;
 }
 
 .email-content-container h1,
@@ -17,162 +37,361 @@
 .email-content-container h4,
 .email-content-container h5,
 .email-content-container h6 {
-    color: #333;
-    margin-top: 0;
-    margin-bottom: 15px;
+    color: #2c3e50 !important;
+    font-weight: 600 !important;
+    margin: 0 0 15px 0 !important;
+    padding: 0 !important;
+    background: none !important;
+    border: none !important;
+    text-align: left !important;
+}
+
+.email-content-container h1 {
+    font-size: 24px !important;
+    border-bottom: 2px solid #3498db !important;
+    padding-bottom: 10px !important;
+}
+
+.email-content-container h2 {
+    font-size: 20px !important;
+    color: #34495e !important;
+}
+
+.email-content-container h3 {
+    font-size: 18px !important;
+    color: #34495e !important;
 }
 
 .email-content-container p {
-    margin-bottom: 15px;
-    line-height: 1.6;
-    color: #555;
+    margin: 0 0 15px 0 !important;
+    line-height: 1.6 !important;
+    color: #555 !important;
+    font-size: 14px !important;
+    background: none !important;
+    padding: 0 !important;
 }
 
+/* Custom table styling - completely override original */
 .email-content-container table {
-    width: 100%;
-    border-collapse: collapse;
-    margin: 15px 0;
+    width: 100% !important;
+    border-collapse: collapse !important;
+    margin: 15px 0 !important;
+    background: #ffffff !important;
+    border: 1px solid #e0e0e0 !important;
+    border-radius: 6px !important;
+    overflow: hidden !important;
 }
 
 .email-content-container table td,
 .email-content-container table th {
-    padding: 8px 12px;
-    border: 1px solid #ddd;
-    text-align: left;
+    padding: 12px 15px !important;
+    border: 1px solid #e0e0e0 !important;
+    text-align: left !important;
+    font-size: 14px !important;
+    color: #333 !important;
+    background: #ffffff !important;
 }
 
 .email-content-container table th {
-    background-color: #f8f9fa;
-    font-weight: bold;
+    background-color: #f8f9fa !important;
+    font-weight: 600 !important;
+    color: #2c3e50 !important;
+    border-bottom: 2px solid #3498db !important;
 }
 
-.email-content-container .btn {
-    display: inline-block;
-    padding: 10px 20px;
-    background-color: #007bff;
-    color: white;
-    text-decoration: none;
-    border-radius: 4px;
-    margin: 10px 5px 10px 0;
-    border: none;
-    cursor: pointer;
+.email-content-container table tr:nth-child(even) {
+    background-color: #f8f9fa !important;
 }
 
-.email-content-container .btn:hover {
-    background-color: #0056b3;
+/* Custom button styling - override original email buttons */
+.email-content-container .btn,
+.email-content-container a[class*="btn"],
+.email-content-container input[type="button"],
+.email-content-container input[type="submit"] {
+    display: inline-block !important;
+    padding: 12px 24px !important;
+    background-color: #3498db !important;
+    color: #ffffff !important;
+    text-decoration: none !important;
+    border-radius: 6px !important;
+    margin: 10px 5px 10px 0 !important;
+    border: none !important;
+    cursor: pointer !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    transition: all 0.3s ease !important;
 }
 
+.email-content-container .btn:hover,
+.email-content-container a[class*="btn"]:hover {
+    background-color: #2980b9 !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3) !important;
+}
+
+/* Custom badge styling - override original email badges */
 .email-content-container .status-badge,
-.email-content-container .priority-badge {
-    display: inline-block;
-    padding: 4px 8px;
-    border-radius: 12px;
-    font-size: 12px;
-    font-weight: bold;
-    margin: 2px;
+.email-content-container .priority-badge,
+.email-content-container [class*="badge"],
+.email-content-container [class*="status"],
+.email-content-container [class*="priority"] {
+    display: inline-block !important;
+    padding: 6px 12px !important;
+    border-radius: 20px !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    margin: 2px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
 }
 
-.email-content-container .status-completed {
-    background-color: #d4edda;
-    color: #155724;
-    border: 1px solid #c3e6cb;
+.email-content-container .status-completed,
+.email-content-container [class*="completed"] {
+    background-color: #27ae60 !important;
+    color: #ffffff !important;
+    border: none !important;
 }
 
-.email-content-container .priority-normal {
-    background-color: #e3f2fd;
-    color: #1976d2;
+.email-content-container .priority-normal,
+.email-content-container [class*="normal"] {
+    background-color: #3498db !important;
+    color: #ffffff !important;
+    border: none !important;
 }
 
-.email-content-container .priority-high {
-    background-color: #fff3e0;
-    color: #f57c00;
+.email-content-container .priority-high,
+.email-content-container [class*="high"] {
+    background-color: #f39c12 !important;
+    color: #ffffff !important;
+    border: none !important;
 }
 
-.email-content-container .priority-urgent {
-    background-color: #ffebee;
-    color: #c62828;
+.email-content-container .priority-urgent,
+.email-content-container [class*="urgent"] {
+    background-color: #e74c3c !important;
+    color: #ffffff !important;
+    border: none !important;
 }
 
-.email-content-container .completion-section {
-    background-color: #d4edda;
-    border: 1px solid #c3e6cb;
-    border-radius: 6px;
-    padding: 15px;
-    margin: 15px 0;
+/* Custom section styling - override original email sections */
+.email-content-container .completion-section,
+.email-content-container [class*="completion"],
+.email-content-container [class*="section"] {
+    background-color: #ecf0f1 !important;
+    border: 2px solid #bdc3c7 !important;
+    border-radius: 8px !important;
+    padding: 20px !important;
+    margin: 20px 0 !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
 }
 
-.email-content-container .task-details {
-    background-color: #f8f9fa;
-    border: 1px solid #dee2e6;
-    border-radius: 6px;
-    padding: 15px;
-    margin: 15px 0;
+.email-content-container .task-details,
+.email-content-container [class*="task"],
+.email-content-container [class*="details"] {
+    background-color: #ffffff !important;
+    border: 2px solid #3498db !important;
+    border-radius: 8px !important;
+    padding: 20px !important;
+    margin: 20px 0 !important;
+    box-shadow: 0 2px 8px rgba(52, 152, 219, 0.1) !important;
 }
 
-.email-content-container .custom-body {
-    background-color: #ffffff;
-    border-left: 4px solid #007bff;
-    padding: 15px;
-    margin: 15px 0;
-    border-radius: 0 4px 4px 0;
+.email-content-container .custom-body,
+.email-content-container [class*="custom"] {
+    background-color: #ffffff !important;
+    border-left: 4px solid #3498db !important;
+    padding: 20px !important;
+    margin: 20px 0 !important;
+    border-radius: 0 6px 6px 0 !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05) !important;
 }
 
-.email-content-container .footer {
-    text-align: center;
-    margin-top: 20px;
-    padding-top: 15px;
-    border-top: 1px solid #ddd;
-    color: #666;
-    font-size: 14px;
+.email-content-container .footer,
+.email-content-container [class*="footer"] {
+    text-align: center !important;
+    margin-top: 30px !important;
+    padding-top: 20px !important;
+    border-top: 2px solid #bdc3c7 !important;
+    color: #7f8c8d !important;
+    font-size: 13px !important;
+    background: none !important;
 }
 
-.email-content-container .header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    padding: 20px;
-    text-align: center;
-    border-radius: 6px 6px 0 0;
-    margin-bottom: 20px;
+.email-content-container .header,
+.email-content-container [class*="header"] {
+    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%) !important;
+    color: #ffffff !important;
+    padding: 25px !important;
+    text-align: center !important;
+    border-radius: 8px 8px 0 0 !important;
+    margin-bottom: 0 !important;
+    box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3) !important;
 }
 
-.email-content-container .content {
-    background-color: #f8f9fa;
-    padding: 20px;
-    border-radius: 0 0 6px 6px;
+.email-content-container .content,
+.email-content-container [class*="content"] {
+    background-color: #ffffff !important;
+    padding: 25px !important;
+    border-radius: 0 0 8px 8px !important;
+    margin: 0 !important;
+    border: 2px solid #ecf0f1 !important;
+    border-top: none !important;
+}
+
+/* Additional overrides to completely remove original email styling */
+.email-content-container strong,
+.email-content-container b {
+    font-weight: 600 !important;
+    color: #2c3e50 !important;
+}
+
+.email-content-container em,
+.email-content-container i {
+    font-style: italic !important;
+    color: #7f8c8d !important;
+}
+
+.email-content-container ul,
+.email-content-container ol {
+    margin: 15px 0 !important;
+    padding-left: 25px !important;
+}
+
+.email-content-container li {
+    margin: 5px 0 !important;
+    color: #555 !important;
+}
+
+.email-content-container a {
+    color: #3498db !important;
+    text-decoration: none !important;
+    font-weight: 500 !important;
+}
+
+.email-content-container a:hover {
+    color: #2980b9 !important;
+    text-decoration: underline !important;
 }
 
 /* Ensure email content doesn't break page layout */
 .email-content-container * {
-    max-width: 100%;
-    box-sizing: border-box;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
 }
 
 .email-content-container img {
-    max-width: 100%;
-    height: auto;
+    max-width: 100% !important;
+    height: auto !important;
+    border-radius: 4px !important;
+    margin: 10px 0 !important;
 }
 
 .email-content-container pre {
-    background-color: #f8f9fa;
-    border: 1px solid #e9ecef;
-    border-radius: 4px;
-    padding: 15px;
-    overflow-x: auto;
-    font-family: 'Courier New', monospace;
-    font-size: 12px;
-    color: #6c757d;
-    white-space: pre-wrap;
-    word-wrap: break-word;
+    background-color: #2c3e50 !important;
+    border: none !important;
+    border-radius: 6px !important;
+    padding: 20px !important;
+    overflow-x: auto !important;
+    font-family: 'Courier New', monospace !important;
+    font-size: 13px !important;
+    color: #ecf0f1 !important;
+    white-space: pre-wrap !important;
+    word-wrap: break-word !important;
+    margin: 15px 0 !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
 }
 
 .email-content-container code {
-    background-color: #f8f9fa;
-    border: 1px solid #e9ecef;
-    border-radius: 3px;
-    padding: 2px 4px;
-    font-family: 'Courier New', monospace;
-    font-size: 12px;
-    color: #e83e8c;
+    background-color: #ecf0f1 !important;
+    border: 1px solid #bdc3c7 !important;
+    border-radius: 4px !important;
+    padding: 4px 8px !important;
+    font-family: 'Courier New', monospace !important;
+    font-size: 13px !important;
+    color: #e74c3c !important;
+    font-weight: 600 !important;
+}
+
+/* Override any remaining inline styles */
+.email-content-container [style*="background"],
+.email-content-container [style*="color"],
+.email-content-container [style*="font"],
+.email-content-container [style*="border"] {
+    background: inherit !important;
+    color: inherit !important;
+    font-family: inherit !important;
+    border: inherit !important;
+}
+
+/* Completely strip original email styling */
+.custom-email-style,
+.custom-email-style * {
+    /* Reset all possible email styles */
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+    font-size: 14px !important;
+    line-height: 1.6 !important;
+    color: #333 !important;
+    background-color: transparent !important;
+    background-image: none !important;
+    border: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+    border-radius: 0 !important;
+    text-align: left !important;
+    text-decoration: none !important;
+    font-weight: normal !important;
+    font-style: normal !important;
+    text-transform: none !important;
+    letter-spacing: normal !important;
+    word-spacing: normal !important;
+    vertical-align: baseline !important;
+    white-space: normal !important;
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+}
+
+/* Apply our custom styles after reset */
+.custom-email-style h1,
+.custom-email-style h2,
+.custom-email-style h3,
+.custom-email-style h4,
+.custom-email-style h5,
+.custom-email-style h6 {
+    color: #2c3e50 !important;
+    font-weight: 600 !important;
+    margin: 0 0 15px 0 !important;
+}
+
+.custom-email-style p {
+    margin: 0 0 15px 0 !important;
+    color: #555 !important;
+}
+
+.custom-email-style table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    margin: 15px 0 !important;
+    background: #ffffff !important;
+    border: 1px solid #e0e0e0 !important;
+    border-radius: 6px !important;
+}
+
+.custom-email-style table td,
+.custom-email-style table th {
+    padding: 12px 15px !important;
+    border: 1px solid #e0e0e0 !important;
+    text-align: left !important;
+    color: #333 !important;
+    background: #ffffff !important;
+}
+
+.custom-email-style table th {
+    background-color: #f8f9fa !important;
+    font-weight: 600 !important;
+    color: #2c3e50 !important;
+    border-bottom: 2px solid #3498db !important;
 }
 
 /* Responsive design for email content */

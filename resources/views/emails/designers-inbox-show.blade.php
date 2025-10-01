@@ -120,7 +120,7 @@
                         </div>
                         <div class="card-body">
                             @if($parsedBody && strlen($parsedBody) > 10)
-                                <div class="email-content-container">
+                                <div class="email-content-container custom-email-style">
                                     {!! $parsedBody !!}
                                 </div>
                             @elseif($email->body && strlen($email->body) > 10)
