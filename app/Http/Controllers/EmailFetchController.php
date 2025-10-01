@@ -307,75 +307,61 @@ class EmailFetchController extends Controller
         // Handle multipart emails with any boundary
         if (preg_match('/--([a-f0-9]+)/', $body, $matches)) {
             $boundary = '--' . $matches[1];
-            \Log::info('Found multipart email with boundary: ' . $boundary);
+            \Log::info('[parseEmailBody] Found multipart email with boundary: ' . $boundary);
 
             // Split by the detected boundary
             $parts = explode($boundary, $body);
+            \Log::info('[parseEmailBody] Number of parts after explode: ' . count($parts));
 
             foreach ($parts as $index => $part) {
-                \Log::info("Processing part $index, length: " . strlen($part));
+                \Log::info('[parseEmailBody] Processing part ' . $index . ', length: ' . strlen($part));
 
                 // Skip empty parts
                 if (trim($part) === '' || trim($part) === '--') {
+                    \Log::info('[parseEmailBody] Skipping empty part ' . $index);
                     continue;
                 }
 
                 // Look for HTML part
                 if (strpos($part, 'Content-Type: text/html') !== false) {
-                    \Log::info('Found HTML part');
+                    \Log::info('[parseEmailBody] Found HTML part in part ' . $index);
 
-                    // Find the start of HTML content (after headers)
+                    // Extract HTML content after headers
                     $lines = explode("\n", $part);
-                    $htmlStart = false;
                     $htmlContent = '';
                     $headerEnded = false;
 
                     foreach ($lines as $line) {
-                        // Skip until we find the HTML content type
-                        if (!$htmlStart && strpos($line, 'Content-Type: text/html') !== false) {
-                            $htmlStart = true;
-                            continue;
-                        }
-
-                        // After finding HTML content type, look for empty line to mark end of headers
-                        if ($htmlStart && !$headerEnded) {
-                            if (trim($line) === '') {
-                                $headerEnded = true;
-                                continue;
-                            }
-                            // Skip header lines
-                            if (strpos($line, 'Content-') === 0 || strpos($line, 'charset=') !== false) {
-                                continue;
-                            }
-                        }
-
-                        // Collect HTML content after headers
-                        if ($htmlStart && $headerEnded) {
+                        if ($headerEnded) {
                             $htmlContent .= $line . "\n";
+                        } elseif (trim($line) === '') { // Empty line signifies end of headers
+                            $headerEnded = true;
+                            \Log::info('[parseEmailBody] Header ended in HTML part ' . $index);
                         }
                     }
 
                     // Clean up the HTML content
                     $htmlContent = trim($htmlContent);
-
-                    // Remove any remaining MIME artifacts
                     $htmlContent = preg_replace('/^Content-Transfer-Encoding:.*$/m', '', $htmlContent);
                     $htmlContent = preg_replace('/^Content-Type:.*$/m', '', $htmlContent);
-                    $htmlContent = preg_replace('/^charset=.*$/m', '', $htmlContent);
-                    $htmlContent = preg_replace('/^\s*$/m', '', $htmlContent);
+                    $htmlContent = preg_replace('/^\s*$/m', '', $htmlContent); // Remove empty lines
+                    $htmlContent = preg_replace('/^--.*--$/m', '', $htmlContent); // Remove trailing boundary if any
+                    $htmlContent = preg_replace('/^--.*$/m', '', $htmlContent); // Remove boundary if any
+                    $htmlContent = trim($htmlContent); // Trim again after cleaning
 
-                    $htmlContent = trim($htmlContent);
-
-                    if (!empty($htmlContent) && strlen($htmlContent) > 50) {
-                        \Log::info('Extracted HTML content length: ' . strlen($htmlContent));
-                        \Log::info('HTML content preview: ' . substr($htmlContent, 0, 200));
+                    // Validate content length before returning
+                    if (strlen($htmlContent) > 10) {
+                        \Log::info('[parseEmailBody] Returning HTML content from part ' . $index . ', length: ' . strlen($htmlContent));
+                        \Log::info('[parseEmailBody] HTML content preview: ' . substr($htmlContent, 0, 200));
                         return $htmlContent;
+                    } else {
+                        \Log::warning('[parseEmailBody] HTML content from part ' . $index . ' too short or empty after cleaning.');
                     }
                 }
 
                 // Look for plain text part if no HTML found
                 if (strpos($part, 'Content-Type: text/plain') !== false) {
-                    \Log::info('Found plain text part');
+                    \Log::info('[parseEmailBody] Found plain text part in part ' . $index);
 
                     $lines = explode("\n", $part);
                     $textStart = false;
@@ -386,6 +372,7 @@ class EmailFetchController extends Controller
                             $textContent .= $line . "\n";
                         } elseif (strpos($line, 'Content-Type: text/plain') !== false) {
                             $textStart = true;
+                            \Log::info('[parseEmailBody] Header ended in plain text part ' . $index);
                         }
                     }
 
@@ -399,24 +386,29 @@ class EmailFetchController extends Controller
                     $textContent = htmlspecialchars($textContent);
                     $textContent = nl2br($textContent);
 
-                    if (!empty($textContent) && strlen($textContent) > 20) {
-                        \Log::info('Converted plain text to HTML, length: ' . strlen($textContent));
+                    if (strlen($textContent) > 10) {
+                        \Log::info('[parseEmailBody] Returning plain text content from part ' . $index . ', length: ' . strlen($textContent));
                         return $textContent;
+                    } else {
+                        \Log::warning('[parseEmailBody] Plain text content from part ' . $index . ' too short or empty after cleaning.');
                     }
                 }
             }
+
+            // Fallback if no HTML or plain text part was returned from multipart
+            \Log::warning('[parseEmailBody] No suitable HTML or plain text part found in multipart email. Falling back to full body.');
+            return $body;
         }
 
         // If it's already HTML, return as is
         if (strpos($body, '<html') !== false || strpos($body, '<div') !== false) {
-            \Log::info('Body appears to be HTML already');
+            \Log::info('[parseEmailBody] Body appears to be HTML already. Returning as is.');
             return $body;
         }
 
         // If it's plain text, convert to HTML
         if (strpos($body, 'Content-Type: text/plain') !== false) {
-            \Log::info('Found plain text content type');
-
+            \Log::info('[parseEmailBody] Found plain text content type. Converting to HTML.');
             $lines = explode("\n", $body);
             $textStart = false;
             $textContent = '';
@@ -433,11 +425,16 @@ class EmailFetchController extends Controller
             $textContent = htmlspecialchars(trim($textContent));
             $textContent = nl2br($textContent);
 
-            return $textContent;
+            if (strlen($textContent) > 10) {
+                \Log::info('[parseEmailBody] Returning converted plain text, length: ' . strlen($textContent));
+                return $textContent;
+            } else {
+                \Log::warning('[parseEmailBody] Converted plain text too short or empty. Falling back to full body.');
+            }
         }
 
         // Fallback: return the body as is
-        \Log::info('Using fallback - returning body as is');
+        \Log::warning('[parseEmailBody] Using final fallback - returning body as is, length: ' . strlen($body));
         return $body;
     }
 

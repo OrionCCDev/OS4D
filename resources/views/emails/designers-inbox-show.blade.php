@@ -2,6 +2,10 @@
 
 @section('title', 'Designers Inbox Email')
 
+@section('head')
+<link rel="stylesheet" href="{{ asset('css/email-content.css') }}">
+@endsection
+
 @section('content')
 <div class="container-fluid">
     <div class="row">
@@ -116,16 +120,16 @@
                         </div>
                         <div class="card-body">
                             @if($parsedBody && strlen($parsedBody) > 10)
-                                <div class="email-content">
+                                <div class="email-content-container">
                                     {!! $parsedBody !!}
                                 </div>
                             @elseif($email->body && strlen($email->body) > 10)
-                                <div class="email-content">
+                                <div class="email-content-container">
                                     <div class="alert alert-warning mb-3">
                                         <i class="bx bx-info-circle me-2"></i>
-                                        <strong>Raw Email Content:</strong> Unable to parse email body properly.
+                                        <strong>Raw Email Content:</strong> Unable to parse email body properly. Showing raw content for debugging.
                                     </div>
-                                    <pre style="white-space: pre-wrap; word-wrap: break-word; max-height: 400px; overflow-y: auto; background: #f8f9fa; padding: 1rem; border-radius: 8px;">{{ $email->body }}</pre>
+                                    <pre>{{ $email->body }}</pre>
                                 </div>
                             @else
                                 <div class="text-muted text-center py-4">
@@ -194,7 +198,7 @@
                                             </div>
                                             <span class="badge bg-info">Reply</span>
                                         </div>
-                                        <div class="reply-content">
+                                        <div class="email-content-container">
                                             {!! parseEmailBody($reply->body) !!}
                                         </div>
                                     </div>
@@ -313,64 +317,9 @@ function showAlert(type, message) {
 </script>
 
 <style>
-.email-content {
-    max-height: 600px;
-    overflow-y: auto;
-    border: 1px solid #e5e7eb;
-    border-radius: 8px;
-    padding: 1.5rem;
-    background-color: #f8f9fa;
-    font-family: Arial, sans-serif;
-    line-height: 1.6;
-}
-
-.email-content img {
-    max-width: 100%;
-    height: auto;
-}
-
-.email-content table {
-    width: 100%;
-    border-collapse: collapse;
-    margin: 1rem 0;
-}
-
-.email-content table th,
-.email-content table td {
-    padding: 8px 12px;
-    border: 1px solid #dee2e6;
-    text-align: left;
-}
-
-.email-content table th {
-    background-color: #f8f9fa;
-    font-weight: bold;
-}
-
-.reply-content {
-    max-height: 300px;
-    overflow-y: auto;
-    border: 1px solid #e5e7eb;
-    border-radius: 6px;
-    padding: 1rem;
-    background-color: #f8f9fa;
-    font-family: Arial, sans-serif;
-    line-height: 1.5;
-}
-
 .avatar-sm {
     width: 32px;
     height: 32px;
-}
-
-/* Clean up email body formatting */
-.email-content * {
-    max-width: 100% !important;
-}
-
-.email-content pre {
-    white-space: pre-wrap;
-    word-wrap: break-word;
 }
 </style>
 @endsection
