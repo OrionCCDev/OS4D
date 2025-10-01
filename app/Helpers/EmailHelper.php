@@ -34,19 +34,19 @@ if (!function_exists('parseEmailBody')) {
                 if (strpos($part, 'Content-Type: text/html') !== false) {
                     // Find the start of HTML content (after headers)
                     $lines = explode("\n", $part);
-                    $htmlStart = false;
                     $htmlContent = '';
+                    $inContent = false;
                     $headerEnded = false;
 
                     foreach ($lines as $line) {
                         // Skip until we find the HTML content type
-                        if (!$htmlStart && strpos($line, 'Content-Type: text/html') !== false) {
-                            $htmlStart = true;
+                        if (!$inContent && strpos($line, 'Content-Type: text/html') !== false) {
+                            $inContent = true;
                             continue;
                         }
 
                         // After finding HTML content type, look for empty line to mark end of headers
-                        if ($htmlStart && !$headerEnded) {
+                        if ($inContent && !$headerEnded) {
                             if (trim($line) === '') {
                                 $headerEnded = true;
                                 continue;
@@ -58,19 +58,21 @@ if (!function_exists('parseEmailBody')) {
                         }
 
                         // Collect HTML content after headers
-                        if ($htmlStart && $headerEnded) {
+                        if ($inContent && $headerEnded) {
                             $htmlContent .= $line . "\n";
                         }
                     }
 
-                    // Clean up the HTML content
+                    // Clean up the HTML content more carefully
                     $htmlContent = trim($htmlContent);
 
-                    // Remove any remaining MIME artifacts
+                    // Remove any remaining MIME artifacts but preserve HTML content
                     $htmlContent = preg_replace('/^Content-Transfer-Encoding:.*$/m', '', $htmlContent);
                     $htmlContent = preg_replace('/^Content-Type:.*$/m', '', $htmlContent);
                     $htmlContent = preg_replace('/^charset=.*$/m', '', $htmlContent);
-                    $htmlContent = preg_replace('/^\s*$/m', '', $htmlContent);
+
+                    // Remove boundary markers but preserve HTML
+                    $htmlContent = preg_replace('/^--[a-f0-9]+--?$/m', '', $htmlContent);
 
                     $htmlContent = trim($htmlContent);
 
@@ -81,23 +83,49 @@ if (!function_exists('parseEmailBody')) {
 
                 // Look for plain text part if no HTML found
                 if (strpos($part, 'Content-Type: text/plain') !== false) {
+                    // Find the start of plain text content (after headers)
                     $lines = explode("\n", $part);
-                    $textStart = false;
                     $textContent = '';
+                    $inContent = false;
+                    $headerEnded = false;
 
                     foreach ($lines as $line) {
-                        if ($textStart) {
+                        // Skip until we find the plain text content type
+                        if (!$inContent && strpos($line, 'Content-Type: text/plain') !== false) {
+                            $inContent = true;
+                            continue;
+                        }
+
+                        // After finding plain text content type, look for empty line to mark end of headers
+                        if ($inContent && !$headerEnded) {
+                            if (trim($line) === '') {
+                                $headerEnded = true;
+                                continue;
+                            }
+                            // Skip header lines
+                            if (strpos($line, 'Content-') === 0 || strpos($line, 'charset=') !== false) {
+                                continue;
+                            }
+                        }
+
+                        // Collect plain text content after headers
+                        if ($inContent && $headerEnded) {
                             $textContent .= $line . "\n";
-                        } elseif (strpos($line, 'Content-Type: text/plain') !== false) {
-                            $textStart = true;
                         }
                     }
 
-                    // Clean up the text content
+                    // Clean up the text content more carefully
                     $textContent = trim($textContent);
+
+                    // Remove any remaining MIME artifacts but preserve text content
                     $textContent = preg_replace('/^Content-Transfer-Encoding:.*$/m', '', $textContent);
                     $textContent = preg_replace('/^Content-Type:.*$/m', '', $textContent);
                     $textContent = preg_replace('/^charset=.*$/m', '', $textContent);
+
+                    // Remove boundary markers but preserve text
+                    $textContent = preg_replace('/^--[a-f0-9]+--?$/m', '', $textContent);
+
+                    $textContent = trim($textContent);
 
                     // Convert plain text to HTML
                     $textContent = htmlspecialchars($textContent);

@@ -326,36 +326,60 @@ class EmailFetchController extends Controller
                 if (strpos($part, 'Content-Type: text/html') !== false) {
                     \Log::info('[parseEmailBody] Found HTML part in part ' . $index);
 
-                    // Extract HTML content after headers
+                    // Find the start of HTML content (after headers)
                     $lines = explode("\n", $part);
                     $htmlContent = '';
+                    $inContent = false;
                     $headerEnded = false;
 
                     foreach ($lines as $line) {
-                        if ($headerEnded) {
+                        // Skip until we find the HTML content type
+                        if (!$inContent && strpos($line, 'Content-Type: text/html') !== false) {
+                            $inContent = true;
+                            continue;
+                        }
+
+                        // After finding HTML content type, look for empty line to mark end of headers
+                        if ($inContent && !$headerEnded) {
+                            if (trim($line) === '') {
+                                $headerEnded = true;
+                                \Log::info('[parseEmailBody] Header ended in HTML part ' . $index);
+                                continue;
+                            }
+                            // Skip header lines
+                            if (strpos($line, 'Content-') === 0 || strpos($line, 'charset=') !== false) {
+                                continue;
+                            }
+                        }
+
+                        // Collect HTML content after headers
+                        if ($inContent && $headerEnded) {
                             $htmlContent .= $line . "\n";
-                        } elseif (trim($line) === '') { // Empty line signifies end of headers
-                            $headerEnded = true;
-                            \Log::info('[parseEmailBody] Header ended in HTML part ' . $index);
                         }
                     }
 
-                    // Clean up the HTML content
+                    // Clean up the HTML content more carefully
                     $htmlContent = trim($htmlContent);
+
+                    // Remove any remaining MIME artifacts but preserve HTML content
                     $htmlContent = preg_replace('/^Content-Transfer-Encoding:.*$/m', '', $htmlContent);
                     $htmlContent = preg_replace('/^Content-Type:.*$/m', '', $htmlContent);
-                    $htmlContent = preg_replace('/^\s*$/m', '', $htmlContent); // Remove empty lines
-                    $htmlContent = preg_replace('/^--.*--$/m', '', $htmlContent); // Remove trailing boundary if any
-                    $htmlContent = preg_replace('/^--.*$/m', '', $htmlContent); // Remove boundary if any
-                    $htmlContent = trim($htmlContent); // Trim again after cleaning
+                    $htmlContent = preg_replace('/^charset=.*$/m', '', $htmlContent);
+
+                    // Remove boundary markers but preserve HTML
+                    $htmlContent = preg_replace('/^--[a-f0-9]+--?$/m', '', $htmlContent);
+
+                    $htmlContent = trim($htmlContent);
+
+                    \Log::info('[parseEmailBody] HTML content after cleaning, length: ' . strlen($htmlContent));
+                    \Log::info('[parseEmailBody] HTML content preview: ' . substr($htmlContent, 0, 300));
 
                     // Validate content length before returning
-                    if (strlen($htmlContent) > 10) {
+                    if (strlen($htmlContent) > 50) {
                         \Log::info('[parseEmailBody] Returning HTML content from part ' . $index . ', length: ' . strlen($htmlContent));
-                        \Log::info('[parseEmailBody] HTML content preview: ' . substr($htmlContent, 0, 200));
                         return $htmlContent;
                     } else {
-                        \Log::warning('[parseEmailBody] HTML content from part ' . $index . ' too short or empty after cleaning.');
+                        \Log::warning('[parseEmailBody] HTML content from part ' . $index . ' too short or empty after cleaning. Length: ' . strlen($htmlContent));
                     }
                 }
 
@@ -363,34 +387,63 @@ class EmailFetchController extends Controller
                 if (strpos($part, 'Content-Type: text/plain') !== false) {
                     \Log::info('[parseEmailBody] Found plain text part in part ' . $index);
 
+                    // Find the start of plain text content (after headers)
                     $lines = explode("\n", $part);
-                    $textStart = false;
                     $textContent = '';
+                    $inContent = false;
+                    $headerEnded = false;
 
                     foreach ($lines as $line) {
-                        if ($textStart) {
+                        // Skip until we find the plain text content type
+                        if (!$inContent && strpos($line, 'Content-Type: text/plain') !== false) {
+                            $inContent = true;
+                            continue;
+                        }
+
+                        // After finding plain text content type, look for empty line to mark end of headers
+                        if ($inContent && !$headerEnded) {
+                            if (trim($line) === '') {
+                                $headerEnded = true;
+                                \Log::info('[parseEmailBody] Header ended in plain text part ' . $index);
+                                continue;
+                            }
+                            // Skip header lines
+                            if (strpos($line, 'Content-') === 0 || strpos($line, 'charset=') !== false) {
+                                continue;
+                            }
+                        }
+
+                        // Collect plain text content after headers
+                        if ($inContent && $headerEnded) {
                             $textContent .= $line . "\n";
-                        } elseif (strpos($line, 'Content-Type: text/plain') !== false) {
-                            $textStart = true;
-                            \Log::info('[parseEmailBody] Header ended in plain text part ' . $index);
                         }
                     }
 
-                    // Clean up the text content
+                    // Clean up the text content more carefully
                     $textContent = trim($textContent);
+
+                    // Remove any remaining MIME artifacts but preserve text content
                     $textContent = preg_replace('/^Content-Transfer-Encoding:.*$/m', '', $textContent);
                     $textContent = preg_replace('/^Content-Type:.*$/m', '', $textContent);
                     $textContent = preg_replace('/^charset=.*$/m', '', $textContent);
+
+                    // Remove boundary markers but preserve text
+                    $textContent = preg_replace('/^--[a-f0-9]+--?$/m', '', $textContent);
+
+                    $textContent = trim($textContent);
 
                     // Convert plain text to HTML
                     $textContent = htmlspecialchars($textContent);
                     $textContent = nl2br($textContent);
 
-                    if (strlen($textContent) > 10) {
+                    \Log::info('[parseEmailBody] Plain text content after cleaning, length: ' . strlen($textContent));
+                    \Log::info('[parseEmailBody] Plain text content preview: ' . substr($textContent, 0, 300));
+
+                    if (strlen($textContent) > 20) {
                         \Log::info('[parseEmailBody] Returning plain text content from part ' . $index . ', length: ' . strlen($textContent));
                         return $textContent;
                     } else {
-                        \Log::warning('[parseEmailBody] Plain text content from part ' . $index . ' too short or empty after cleaning.');
+                        \Log::warning('[parseEmailBody] Plain text content from part ' . $index . ' too short or empty after cleaning. Length: ' . strlen($textContent));
                     }
                 }
             }
