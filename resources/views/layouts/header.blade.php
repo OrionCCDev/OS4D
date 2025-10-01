@@ -906,7 +906,7 @@
                                        n.color === 'info' ? '#0dcaf0' : '#6c757d';
 
                       return `
-                        <div class="notification-message p-3 border-bottom" style="transition: all 0.2s ease; cursor: pointer; background: ${n.is_read ? '#ffffff' : '#f8f9ff'};" onclick="handleNotificationClick(${n.id}, '${viewUrl}')">
+                        <div class="notification-message p-3 border-bottom" style="transition: all 0.2s ease; cursor: pointer; background: ${n.is_read ? '#f8f9fa' : '#e3f2fd'}; border-left: 3px solid ${n.is_read ? '#e0e0e0' : '#2196f3'};" onclick="handleNotificationClick(${n.id}, '${viewUrl}')">
                           <div class="d-flex align-items-start gap-3">
                             <div class="notification-avatar" style="width: 40px; height: 40px; background: ${typeColor}; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
                               <i class="bx ${typeIcon}" style="color: white; font-size: 18px;"></i>
@@ -916,6 +916,7 @@
                                 <h6 class="mb-0 fw-semibold text-dark" style="font-size: 14px;">
                                   <span class="badge bg-${n.badge_color} me-2" style="font-size: 10px;">${n.category}</span>
                                   ${title}
+                                  ${!n.is_read ? '<span class="badge bg-danger ms-2" style="font-size: 8px;">NEW</span>' : ''}
                                 </h6>
                                 <small class="text-muted" style="font-size: 11px;">${timeAgo}</small>
                               </div>
@@ -1021,11 +1022,12 @@
                 // Global function for handling notification clicks
                 window.handleNotificationClick = async function(notificationId, viewUrl) {
                   try {
-                    // Mark notification as read first
-                    await fetch(`{{ url('notifications') }}/${notificationId}/read`, {
+                    // Mark notification as read first using unified notification system
+                    await fetch(`{{ route('notifications.mark-read', ':id') }}`.replace(':id', notificationId), {
                       method: 'POST',
                       headers: {
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                        'Content-Type': 'application/json'
                       },
                       credentials: 'same-origin'
                     });
@@ -1228,15 +1230,18 @@
                 if(markAllBtn){
                   markAllBtn.addEventListener('click', async function(){
                     try{
-                      await fetch('{{ route('notifications.read-all') }}', {
+                      await fetch('{{ route('notifications.mark-all-read') }}', {
                         method: 'POST',
                         headers: {
-                          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                          'Content-Type': 'application/json'
                         },
                         credentials: 'same-origin'
                       });
                       refreshAllNotifications();
-                    } catch(e){ /* noop */ }
+                    } catch(e){
+                      console.error('Failed to mark all notifications as read:', e);
+                    }
                   });
                 }
 
@@ -1333,7 +1338,7 @@
                                        n.color === 'info' ? '#0dcaf0' : '#6c757d';
 
                       return `
-                        <div class="chat-message p-3 border-bottom" style="transition: all 0.2s ease; cursor: pointer; background: white; margin: 4px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);" onclick="handleNotificationClick(${n.id}, '${viewUrl}')">
+                        <div class="chat-message p-3 border-bottom" style="transition: all 0.2s ease; cursor: pointer; background: ${n.is_read ? '#ffffff' : '#e3f2fd'}; margin: 4px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-left: 3px solid ${n.is_read ? '#e0e0e0' : '#2196f3'};" onclick="handleNotificationClick(${n.id}, '${viewUrl}')">
                           <div class="d-flex align-items-start gap-3">
                             <div class="notification-avatar" style="width: 36px; height: 36px; background: ${typeColor}; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
                               <i class="bx ${typeIcon}" style="color: white; font-size: 16px;"></i>
@@ -1343,6 +1348,7 @@
                                 <h6 class="mb-0 fw-semibold text-dark" style="font-size: 13px;">
                                   <span class="badge bg-${n.badge_color} me-2" style="font-size: 9px;">${n.category}</span>
                                   ${title}
+                                  ${!n.is_read ? '<span class="badge bg-danger ms-2" style="font-size: 7px;">NEW</span>' : ''}
                                 </h6>
                                 <small class="text-muted" style="font-size: 10px;">${timeAgo}</small>
                               </div>
@@ -1412,10 +1418,11 @@
                 if (bottomMarkAllBtn) {
                   bottomMarkAllBtn.addEventListener('click', async function() {
                     try {
-                      await fetch('{{ route('notifications.read-all') }}', {
+                      await fetch('{{ route('notifications.mark-all-read') }}', {
                         method: 'POST',
                         headers: {
-                          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                          'Content-Type': 'application/json'
                         },
                         credentials: 'same-origin'
                       });
@@ -1531,6 +1538,13 @@
               .notification-message:hover {
                 background-color: #f1f3f4 !important;
                 border-left-color: #667eea;
+                transform: translateX(2px);
+                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+              }
+
+              .chat-message:hover {
+                transform: translateX(2px);
+                box-shadow: 0 2px 8px rgba(0,0,0,0.15) !important;
               }
 
               .notification-avatar {
