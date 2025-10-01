@@ -269,13 +269,15 @@ Route::middleware('auth')->group(function () {
 
     // Test route for notification sound (remove in production)
     Route::post('test-notification', function () {
-        \App\Models\CustomNotification::create([
-            'user_id' => auth()->id(),
-            'type' => 'test',
-            'title' => 'Test Notification',
-            'message' => 'This is a test notification to check the sound functionality.',
-            'data' => ['test' => true]
-        ]);
+        \App\Models\UnifiedNotification::createTaskNotification(
+            auth()->id(),
+            'test',
+            'Test Notification',
+            'This is a test notification to check the sound functionality.',
+            ['test' => true],
+            null,
+            'normal'
+        );
         return response()->json(['success' => true, 'message' => 'Test notification created']);
     })->name('test.notification');
 

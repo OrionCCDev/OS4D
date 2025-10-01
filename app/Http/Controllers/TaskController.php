@@ -365,10 +365,7 @@ class TaskController extends Controller
 
     public function markAllNotificationsAsRead()
     {
-        Auth::user()->customNotifications()->unread()->update([
-            'read' => true,
-            'read_at' => now(),
-        ]);
+        \App\Models\UnifiedNotification::markAllAsReadForUser(Auth::id());
 
         return response()->json(['success' => true]);
     }
@@ -376,13 +373,18 @@ class TaskController extends Controller
     // API endpoints for live notifications
     public function getUnreadNotifications()
     {
-        $notifications = Auth::user()->unreadNotifications()->latest()->take(10)->get();
+        $notifications = \App\Models\UnifiedNotification::forUser(Auth::id())
+            ->unread()
+            ->active()
+            ->latest()
+            ->take(10)
+            ->get();
         return response()->json($notifications);
     }
 
     public function getNotificationCount()
     {
-        $count = Auth::user()->unreadNotifications()->count();
+        $count = \App\Models\UnifiedNotification::getUnreadCountForUser(Auth::id());
         return response()->json(['count' => $count]);
     }
 

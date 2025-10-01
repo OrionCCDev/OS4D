@@ -7,9 +7,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Models\ExternalStakeholder;
 use App\Models\TaskNotification;
+use App\Models\UnifiedNotification;
 use App\Mail\TaskNotificationMail;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 
 class Task extends Model
 {
@@ -99,7 +101,7 @@ class Task extends Model
 
         // Create history record
         $this->histories()->create([
-            'user_id' => auth()->id() ?? 1, // Fallback for testing
+            'user_id' => Auth::id() ?? 1, // Fallback for testing
             'action' => 'assigned',
             'new_value' => $user->name,
             'description' => "Task assigned to {$user->name}",
@@ -109,7 +111,7 @@ class Task extends Model
         // Send notification to assigned user
         $this->sendNotification($user, 'task_assigned', 'Task Assigned', "You have been assigned a new task: {$this->title}");
 
-        // Optionally notify managers about the assignment
+        // Notify managers about the assignment
         $this->notifyManagers('task_assigned', 'Task Assigned', "Task '{$this->title}' assigned to {$user->name}");
     }
 
@@ -135,7 +137,7 @@ class Task extends Model
 
         // Create history record
         $this->histories()->create([
-            'user_id' => auth()->id() ?? 1, // Fallback for testing
+            'user_id' => Auth::id() ?? 1, // Fallback for testing
             'action' => 'status_changed',
             'old_value' => $oldStatus,
             'new_value' => $status,
@@ -143,23 +145,37 @@ class Task extends Model
             'metadata' => ['notes' => $notes]
         ]);
 
-        // Send notification to managers
-        $this->notifyManagers('task_status_changed', 'Task Status Changed', "Task '{$this->title}' status changed to {$status}");
+        // Send notification to managers with more specific messaging
+        $statusMessages = [
+            'pending' => 'Task is pending',
+            'assigned' => 'Task has been assigned',
+            'in_progress' => 'Task is now in progress',
+            'submitted_for_review' => 'Task has been submitted for review',
+            'approved' => 'Task has been approved',
+            'rejected' => 'Task has been rejected',
+            'completed' => 'Task has been completed',
+            'cancelled' => 'Task has been cancelled'
+        ];
+
+        $statusMessage = $statusMessages[$status] ?? "Task status changed to {$status}";
+        $this->notifyManagers('task_status_changed', 'Task Status Changed', "Task '{$this->title}' - {$statusMessage}" . ($notes ? ". Notes: {$notes}" : ""));
     }
 
     private function sendNotification(User $user, string $type, string $title, string $message)
     {
-        CustomNotification::create([
-            'user_id' => $user->id,
-            'type' => $type,
-            'title' => $title,
-            'message' => $message,
-            'data' => [
+        UnifiedNotification::createTaskNotification(
+            $user->id,
+            $type,
+            $title,
+            $message,
+            [
                 'task_id' => $this->id,
                 'project_id' => $this->project_id,
                 'due_date' => $this->due_date ? $this->due_date->format('Y-m-d') : null
-            ]
-        ]);
+            ],
+            $this->id,
+            'normal'
+        );
     }
 
     private function notifyManagers(string $type, string $title, string $message)
@@ -245,14 +261,14 @@ class Task extends Model
 
         // Create history record
         $this->histories()->create([
-            'user_id' => auth()->id(),
+            'user_id' => Auth::id(),
             'action' => 'accepted',
             'description' => "Task accepted and work started by {$this->assignee->name}",
             'metadata' => ['accepted_at' => now(), 'started_at' => now()]
         ]);
 
         // Notify managers that task is now in progress
-        $this->notifyManagers('task_in_progress', 'Task Started', "Task '{$this->title}' has been accepted and work has started by {$this->assignee->name}");
+        $this->notifyManagers('task_accepted', 'Task Accepted', "Task '{$this->title}' has been accepted and work has started by {$this->assignee->name}");
 
         // Notify external stakeholders
         $this->notifyExternalStakeholders('in_progress', 'Task Started', "Task '{$this->title}' has been accepted and work is now in progress.");
@@ -272,14 +288,14 @@ class Task extends Model
 
         // Create history record
         $this->histories()->create([
-            'user_id' => auth()->id(),
+            'user_id' => Auth::id(),
             'action' => 'submitted_for_review',
             'description' => "Task submitted for review by {$this->assignee->name}",
             'metadata' => ['submitted_at' => now(), 'notes' => $notes]
         ]);
 
         // Notify managers
-        $this->notifyManagers('task_submitted_for_review', 'Task Submitted for Review', "Task '{$this->title}' has been submitted for review by {$this->assignee->name}");
+        $this->notifyManagers('task_submitted_for_review', 'Task Submitted for Review', "Task '{$this->title}' has been submitted for review by {$this->assignee->name}" . ($notes ? ". Notes: {$notes}" : ""));
 
         // Notify external stakeholders
         $this->notifyExternalStakeholders('submitted_for_review', 'Task Submitted for Review', "Task '{$this->title}' has been completed and submitted for review.");
@@ -320,9 +336,9 @@ class Task extends Model
 
         // Create history record
         $this->histories()->create([
-            'user_id' => auth()->id(),
+            'user_id' => Auth::id(),
             'action' => 'approved',
-            'description' => "Task approved by " . auth()->user()->name,
+            'description' => "Task approved by " . Auth::user()->name,
             'metadata' => ['approved_at' => now(), 'notes' => $notes]
         ]);
 
@@ -332,7 +348,7 @@ class Task extends Model
         // Send email to assigned user (internal) - GMAIL ONLY
         if ($this->assignee && $this->assignee->email) {
             try {
-                $approver = auth()->user();
+                $approver = Auth::user();
 
                 // FORCE GMAIL ONLY - No SMTP fallback
                 if (!$approver || !$approver->hasGmailConnected()) {
@@ -369,9 +385,9 @@ class Task extends Model
 
         // Create history record
         $this->histories()->create([
-            'user_id' => auth()->id(),
+            'user_id' => Auth::id(),
             'action' => 'rejected',
-            'description' => "Task rejected by " . auth()->user()->name,
+            'description' => "Task rejected by " . Auth::user()->name,
             'metadata' => ['rejected_at' => now(), 'notes' => $notes]
         ]);
 
