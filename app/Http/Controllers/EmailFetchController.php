@@ -5,30 +5,30 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
-use App\Services\GmailEmailFetchService;
+use App\Services\DesignersInboxEmailService;
 use App\Models\Email;
 use App\Models\User;
 
 class EmailFetchController extends Controller
 {
-    protected $gmailEmailFetchService;
+    protected $designersInboxService;
 
-    public function __construct(GmailEmailFetchService $gmailEmailFetchService)
+    public function __construct(DesignersInboxEmailService $designersInboxService)
     {
-        $this->gmailEmailFetchService = $gmailEmailFetchService;
+        $this->designersInboxService = $designersInboxService;
     }
 
     /**
-     * Display all emails from user's Gmail account
+     * Display all emails from designers@orion-contracting.com inbox
      */
     public function index(Request $request)
     {
         $user = Auth::user();
 
-        // Check if user has Gmail connected
-        if (!$user->gmail_connected) {
-            return redirect()->route('gmail.redirect')
-                ->with('error', 'Please connect your Gmail account first to view emails.');
+        // Check if user is a manager
+        if (!$user->isManager()) {
+            return redirect()->route('dashboard')
+                ->with('error', 'Access denied. Only managers can view the designers inbox.');
         }
 
         // Get search criteria from request
@@ -48,16 +48,16 @@ class EmailFetchController extends Controller
             return !empty($value);
         });
 
-        // Fetch emails from Gmail
-        $fetchResult = $this->gmailEmailFetchService->fetchAllEmails($user, $searchCriteria['maxResults'] ?? 50);
+        // Fetch emails from designers inbox
+        $fetchResult = $this->designersInboxService->fetchAllEmails($searchCriteria['maxResults'] ?? 50);
 
-        // Get stored emails from database
-        $storedEmails = Email::where('user_id', $user->id)
+        // Get stored emails from database (designers inbox only)
+        $storedEmails = Email::where('email_source', 'designers_inbox')
             ->orderBy('received_at', 'desc')
             ->paginate(20);
 
         // Get email statistics
-        $emailStats = $this->gmailEmailFetchService->getEmailStats($user);
+        $emailStats = $this->designersInboxService->getEmailStats();
 
         return view('emails.all-emails', [
             'fetchResult' => $fetchResult,
@@ -69,35 +69,36 @@ class EmailFetchController extends Controller
     }
 
     /**
-     * Fetch emails from Gmail and store in database
+     * Fetch emails from designers inbox and store in database
      */
     public function fetchAndStore(Request $request)
     {
         $user = Auth::user();
 
-        if (!$user->gmail_connected) {
+        // Check if user is a manager
+        if (!$user->isManager()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Gmail not connected'
-            ], 400);
+                'message' => 'Access denied. Only managers can access designers inbox.'
+            ], 403);
         }
 
         try {
             $maxResults = $request->get('maxResults', 100);
 
-            // Fetch emails from Gmail
-            $fetchResult = $this->gmailEmailFetchService->fetchAllEmails($user, $maxResults);
+            // Fetch emails from designers inbox
+            $fetchResult = $this->designersInboxService->fetchAllEmails($maxResults);
 
             if (!$fetchResult['success']) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Failed to fetch emails',
+                    'message' => 'Failed to fetch emails from designers inbox',
                     'errors' => $fetchResult['errors']
                 ], 500);
             }
 
             // Store emails in database
-            $storeResult = $this->gmailEmailFetchService->storeEmailsInDatabase($fetchResult['emails'], $user);
+            $storeResult = $this->designersInboxService->storeEmailsInDatabase($fetchResult['emails'], $user);
 
             return response()->json([
                 'success' => true,
@@ -127,11 +128,12 @@ class EmailFetchController extends Controller
     {
         $user = Auth::user();
 
-        if (!$user->gmail_connected) {
+        // Check if user is a manager
+        if (!$user->isManager()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Gmail not connected'
-            ], 400);
+                'message' => 'Access denied. Only managers can access designers inbox.'
+            ], 403);
         }
 
         try {
@@ -140,7 +142,7 @@ class EmailFetchController extends Controller
                 'after', 'before', 'maxResults'
             ]);
 
-            $searchResult = $this->gmailEmailFetchService->searchEmails($user, $criteria);
+            $searchResult = $this->designersInboxService->searchEmails($criteria);
 
             return response()->json([
                 'success' => $searchResult['success'],
@@ -165,8 +167,15 @@ class EmailFetchController extends Controller
     public function show($id)
     {
         $user = Auth::user();
+
+        // Check if user is a manager
+        if (!$user->isManager()) {
+            return redirect()->route('dashboard')
+                ->with('error', 'Access denied. Only managers can view designers inbox emails.');
+        }
+
         $email = Email::where('id', $id)
-            ->where('user_id', $user->id)
+            ->where('email_source', 'designers_inbox')
             ->firstOrFail();
 
         // Mark as read if not already
@@ -184,26 +193,27 @@ class EmailFetchController extends Controller
     {
         $user = Auth::user();
 
-        if (!$user->gmail_connected) {
+        // Check if user is a manager
+        if (!$user->isManager()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Gmail not connected'
-            ], 400);
+                'message' => 'Access denied. Only managers can access designers inbox.'
+            ], 403);
         }
 
         try {
-            $gmailStats = $this->gmailEmailFetchService->getEmailStats($user);
+            $inboxStats = $this->designersInboxService->getEmailStats();
 
             $dbStats = [
-                'total_stored' => Email::where('user_id', $user->id)->count(),
-                'unread_count' => Email::where('user_id', $user->id)->where('status', 'received')->count(),
-                'read_count' => Email::where('user_id', $user->id)->where('status', 'read')->count(),
-                'replied_count' => Email::where('user_id', $user->id)->where('status', 'replied')->count(),
+                'total_stored' => Email::where('email_source', 'designers_inbox')->count(),
+                'unread_count' => Email::where('email_source', 'designers_inbox')->where('status', 'received')->count(),
+                'read_count' => Email::where('email_source', 'designers_inbox')->where('status', 'read')->count(),
+                'replied_count' => Email::where('email_source', 'designers_inbox')->where('status', 'replied')->count(),
             ];
 
             return response()->json([
                 'success' => true,
-                'gmail_stats' => $gmailStats,
+                'inbox_stats' => $inboxStats,
                 'database_stats' => $dbStats
             ]);
 
@@ -224,7 +234,13 @@ class EmailFetchController extends Controller
     {
         $user = Auth::user();
 
-        $emails = Email::where('user_id', $user->id)
+        // Check if user is a manager
+        if (!$user->isManager()) {
+            return redirect()->route('dashboard')
+                ->with('error', 'Access denied. Only managers can export designers inbox emails.');
+        }
+
+        $emails = Email::where('email_source', 'designers_inbox')
             ->orderBy('received_at', 'desc')
             ->get();
 

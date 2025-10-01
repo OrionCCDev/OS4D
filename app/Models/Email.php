@@ -31,7 +31,8 @@ class Email extends Model
         'bcc_emails',
         'tracking_pixel_url',
         'is_tracked',
-        'user_id'
+        'user_id',
+        'email_source'
     ];
 
     protected $casts = [

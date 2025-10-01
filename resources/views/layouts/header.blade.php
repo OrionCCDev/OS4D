@@ -190,13 +190,16 @@
               </a>
             </li>
 
-            <!-- All Emails - Available to all users -->
+            @if(Auth::user()->isManager())
+            <!-- All Emails - Managers only (Designers Inbox) -->
             <li class="menu-item {{ request()->routeIs('emails.all') ? 'active' : '' }}">
               <a href="{{ route('emails.all') }}" class="menu-link">
                 <i class="menu-icon tf-icons bx bx-envelope-open"></i>
-                <div data-i18n="All Emails">All Emails</div>
+                <div data-i18n="Designers Inbox">Designers Inbox</div>
+                <span class="badge rounded-pill bg-primary ms-auto">designers@orion-contracting.com</span>
               </a>
             </li>
+            @endif
 {{--
             <!-- Layouts -->
             <li class="menu-item">
@@ -595,6 +598,51 @@
                     </div>
                   </div>
                 </li>
+
+                @if(Auth::user()->isManager())
+                <!-- Designers Inbox Notifications - Managers Only -->
+                <li class="nav-item dropdown me-3">
+                  <a class="nav-link dropdown-toggle hide-arrow position-relative" href="#" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bx bx-envelope-open fs-4"></i>
+                    <span class="badge rounded-pill bg-primary position-absolute" style="top: 0; right: -4px;" id="nav-designers-inbox-count">0</span>
+                  </a>
+                  <div class="dropdown-menu dropdown-menu-end p-0 designers-inbox-popup" style="min-width: 380px; max-width: 400px; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.12); border: 1px solid #e5e7eb;">
+                    <!-- Designers Inbox Header -->
+                    <div class="d-flex align-items-center justify-content-between p-3 border-bottom" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 12px 12px 0 0;">
+                      <div class="d-flex align-items-center">
+                        <div class="avatar-sm bg-white bg-opacity-20 rounded-circle d-flex align-items-center justify-content-center me-2">
+                          <i class="bx bx-envelope-open" style="font-size: 16px;"></i>
+                        </div>
+                        <div>
+                          <h6 class="mb-0 fw-semibold">Designers Inbox</h6>
+                          <small class="opacity-75">designers@orion-contracting.com</small>
+                        </div>
+                      </div>
+                      <button class="btn btn-sm btn-outline-light" type="button" id="nav-mark-all-designers-read" style="border-radius: 6px; padding: 4px 8px; font-size: 12px;">Mark all</button>
+                    </div>
+
+                    <!-- Designers Inbox Messages Area -->
+                    <div class="notification-messages" style="max-height: 400px; overflow-y: auto; background: #f8f9fa;" id="nav-designers-inbox-list">
+                      <div class="p-3 text-center text-muted">
+                        <i class="bx bx-loader-alt bx-spin me-2"></i>
+                        Loading designers inbox notifications...
+                      </div>
+                    </div>
+
+                    <!-- Designers Inbox Footer -->
+                    <div class="p-3 border-top" style="background: #f8f9fa; border-radius: 0 0 12px 12px;">
+                      <div class="d-flex gap-2">
+                        <a href="{{ route('emails.all') }}" class="btn btn-outline-primary btn-sm" style="border-radius: 8px;">
+                          <i class="bx bx-envelope-open me-1"></i>View Inbox
+                        </a>
+                        <button class="btn btn-outline-secondary btn-sm" type="button" id="test-designers-notification-btn" style="border-radius: 8px;">
+                          <i class="bx bx-test-tube me-1"></i>Test
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </li>
+                @endif
 
                 <!-- Live Notifications - Chat Style -->
                 <li class="nav-item dropdown me-3">
