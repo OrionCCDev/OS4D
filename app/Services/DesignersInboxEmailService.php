@@ -344,6 +344,10 @@ class DesignersInboxEmailService
                     'email_source' => 'designers_inbox', // Mark as from designers inbox
                 ]);
 
+                // Check if this is a reply and process it
+                Log::info("Processing email for reply detection: {$emailData['subject']} from {$emailData['from_email']}");
+                $this->processReplyIfApplicable($email, $emailData);
+
                 // Create notifications for managers
                 $this->notificationService->processEmailNotifications($email);
 
@@ -364,16 +368,28 @@ class DesignersInboxEmailService
      */
     protected function checkForDuplicateEmail(array $emailData): ?Email
     {
-        // Check by message_id (primary check)
+        // Check by message_id (primary check) - this is the most reliable
         if (!empty($emailData['message_id'])) {
             $existing = Email::where('message_id', $emailData['message_id'])
                 ->where('email_source', 'designers_inbox')
                 ->first();
             if ($existing) {
+                Log::info("Found duplicate by message_id: {$emailData['message_id']}");
                 return $existing;
             }
         }
 
+        // For replies, be more lenient with duplication checks
+        $isReply = $this->isReplyEmail($emailData['subject']);
+
+        if ($isReply) {
+            Log::info("Email is a reply, using lenient duplication check: {$emailData['subject']}");
+            // For replies, only check exact message_id match
+            // Don't use subject/body matching as replies can have similar content
+            return null;
+        }
+
+        // For non-replies, use stricter duplication checks
         // Check by subject + from_email + received_at (secondary check)
         if (!empty($emailData['subject']) && !empty($emailData['from_email']) && !empty($emailData['date'])) {
             $existing = Email::where('subject', $emailData['subject'])
@@ -385,6 +401,7 @@ class DesignersInboxEmailService
                 ])
                 ->first();
             if ($existing) {
+                Log::info("Found duplicate by subject+from+date: {$emailData['subject']}");
                 return $existing;
             }
         }
@@ -398,6 +415,7 @@ class DesignersInboxEmailService
                 ->whereRaw('MD5(SUBSTRING(body, 1, 1000)) = ?', [$bodyHash])
                 ->first();
             if ($existing) {
+                Log::info("Found duplicate by subject+from+body: {$emailData['subject']}");
                 return $existing;
             }
         }
@@ -412,6 +430,133 @@ class DesignersInboxEmailService
     {
         $email = Email::where('message_id', $inReplyTo)->first();
         return $email ? $email->id : null;
+    }
+
+    /**
+     * Process reply if this email is a reply to an existing email
+     */
+    protected function processReplyIfApplicable(Email $email, array $emailData): void
+    {
+        try {
+            // Check if this is a reply email
+            if (!$this->isReplyEmail($emailData['subject'])) {
+                return;
+            }
+
+            Log::info("Processing potential reply: {$emailData['subject']}");
+
+            // Try to find the original email this is replying to
+            $originalEmail = $this->findOriginalEmailForReply($emailData);
+
+            if ($originalEmail) {
+                // Update the email record to link it to the original
+                $email->update([
+                    'reply_to_email_id' => $originalEmail->id,
+                    'user_id' => $originalEmail->user_id,
+                    'task_id' => $originalEmail->task_id,
+                ]);
+
+                // Mark original email as replied
+                $originalEmail->update([
+                    'status' => 'replied',
+                    'replied_at' => now()
+                ]);
+
+                // Create reply notification
+                $this->createReplyNotification($originalEmail, $email);
+
+                Log::info("Reply processed successfully for email ID: {$originalEmail->id}");
+            } else {
+                Log::info("Could not find original email for reply: {$emailData['subject']}");
+            }
+
+        } catch (\Exception $e) {
+            Log::error('Error processing reply: ' . $e->getMessage());
+        }
+    }
+
+
+    /**
+     * Find original email this is replying to
+     */
+    protected function findOriginalEmailForReply(array $emailData): ?Email
+    {
+        try {
+            // Method 1: Try to find by in_reply_to header
+            if (!empty($emailData['in_reply_to'])) {
+                $originalEmail = Email::where('message_id', $emailData['in_reply_to'])
+                    ->where('email_source', 'designers_inbox')
+                    ->first();
+                if ($originalEmail) {
+                    Log::info("Found original email by in_reply_to: {$originalEmail->id}");
+                    return $originalEmail;
+                }
+            }
+
+            // Method 2: Try to find by subject (remove "Re:" prefix)
+            $cleanSubject = preg_replace('/^(Re:|RE:|Fwd:|FWD:)\s*/i', '', $emailData['subject']);
+            $originalEmail = Email::where('subject', $cleanSubject)
+                ->where('email_source', 'designers_inbox')
+                ->where('email_type', 'sent')
+                ->orderBy('created_at', 'desc')
+                ->first();
+
+            if ($originalEmail) {
+                Log::info("Found original email by subject: {$originalEmail->id}");
+                return $originalEmail;
+            }
+
+            // Method 3: Try to find by from_email and similar subject
+            if (!empty($emailData['from_email'])) {
+                $originalEmail = Email::where('to_email', $emailData['from_email'])
+                    ->where('email_source', 'designers_inbox')
+                    ->where('email_type', 'sent')
+                    ->where('subject', 'like', '%' . $cleanSubject . '%')
+                    ->orderBy('created_at', 'desc')
+                    ->first();
+
+                if ($originalEmail) {
+                    Log::info("Found original email by from_email and subject: {$originalEmail->id}");
+                    return $originalEmail;
+                }
+            }
+
+            return null;
+
+        } catch (\Exception $e) {
+            Log::error('Error finding original email: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Create reply notification
+     */
+    protected function createReplyNotification(Email $originalEmail, Email $replyEmail): void
+    {
+        try {
+            // Create notification for the user who sent the original email
+            if ($originalEmail->user_id) {
+                $notification = \App\Models\CustomNotification::create([
+                    'user_id' => $originalEmail->user_id,
+                    'title' => 'Email Reply Received',
+                    'message' => "You received a reply to your email: {$originalEmail->subject}",
+                    'type' => 'email_reply',
+                    'data' => [
+                        'original_email_id' => $originalEmail->id,
+                        'reply_email_id' => $replyEmail->id,
+                        'from' => $replyEmail->from_email,
+                        'subject' => $replyEmail->subject
+                    ],
+                    'is_read' => false
+                ]);
+
+                Log::info("Reply notification created for user {$originalEmail->user_id}");
+            }
+
+        } catch (\Exception $e) {
+            Log::error('Error creating reply notification: ' . $e->getMessage());
+        }
     }
 
     /**
