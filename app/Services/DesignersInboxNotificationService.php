@@ -43,6 +43,35 @@ class DesignersInboxNotificationService
     }
 
     /**
+     * Process email notifications (main method called by auto-fetch)
+     */
+    public function processEmailNotifications(Email $email): void
+    {
+        try {
+            // Create new email notification
+            $this->createNewEmailNotification($email);
+
+            // If it's a reply, also create reply notification
+            if ($this->isReplyEmail($email->subject)) {
+                $this->createReplyNotification($email);
+            }
+
+            Log::info("Processed email notifications for email ID: {$email->id}");
+
+        } catch (\Exception $e) {
+            Log::error('Error processing email notifications: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Check if email is a reply
+     */
+    protected function isReplyEmail(string $subject): bool
+    {
+        return preg_match('/^(Re:|RE:|Fwd:|FWD:)/i', $subject);
+    }
+
+    /**
      * Create notification for email reply
      */
     public function createReplyNotification(Email $email): void

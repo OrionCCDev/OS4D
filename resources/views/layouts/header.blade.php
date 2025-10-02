@@ -1072,9 +1072,16 @@
                       designersCountEl.textContent = currentCount;
                       designersCountEl.style.display = currentCount > 0 ? 'inline-block' : 'none';
 
+                      // Also update the main email notification badge
+                      const mainEmailBadge = document.getElementById('nav-email-notification-count');
+                      if (mainEmailBadge) {
+                        mainEmailBadge.textContent = currentCount;
+                        mainEmailBadge.style.display = currentCount > 0 ? 'inline-block' : 'none';
+                      }
+
                       designersPreviousCount = currentCount;
                     } catch (e) {
-                      // silent
+                      console.error('Error fetching designers count:', e);
                     }
                   }
 
@@ -1201,8 +1208,13 @@
                   // Initial load
                   fetchDesignersCount();
 
-                  // Auto-refresh every 30 seconds
-                  setInterval(fetchDesignersCount, 30000);
+                  // Auto-refresh every 10 seconds
+                  setInterval(fetchDesignersCount, 10000);
+
+                  // Global function to refresh notification count
+                  window.refreshNotificationCount = function() {
+                    fetchDesignersCount();
+                  };
                 })();
 
                 // Global refresh function that updates both notification areas

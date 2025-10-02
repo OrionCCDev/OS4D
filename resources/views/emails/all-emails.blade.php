@@ -489,15 +489,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Initialize automatic email fetching
 function initializeAutoEmailFetch() {
-    // Auto-fetch emails every 5 minutes
+    // Auto-fetch emails every 3 minutes
     setInterval(function() {
         autoFetchEmails();
-    }, 5 * 60 * 1000); // 5 minutes
+    }, 3 * 60 * 1000); // 3 minutes
 
-    // Update notification count every 30 seconds
+    // Update notification count every 10 seconds
     setInterval(function() {
         updateNotificationCount();
-    }, 30 * 1000); // 30 seconds
+    }, 10 * 1000); // 10 seconds
 
     // Initial fetch and count update
     updateNotificationCount();
