@@ -40,7 +40,7 @@ class AutoEmailFetchService
         ];
 
         try {
-            // Check if another auto-fetch is running
+            // Check if another auto-fetch is running (shorter lock time)
             $lockKey = 'auto-email-fetch:running';
             if (Cache::has($lockKey)) {
                 Log::info('AutoEmailFetchService: Another auto-fetch is already running, skipping...');
@@ -49,8 +49,8 @@ class AutoEmailFetchService
                 return $result;
             }
 
-            // Set lock for 5 minutes
-            Cache::put($lockKey, true, 300);
+            // Set lock for 2 minutes (shorter to prevent conflicts)
+            Cache::put($lockKey, true, 120);
 
             try {
                 // Get manager user for email association
@@ -64,6 +64,12 @@ class AutoEmailFetchService
 
                 // Fetch new emails (incremental)
                 $fetchResult = $this->emailService->fetchNewEmails(50); // Limit to 50 for auto-fetch
+
+                Log::info('AutoEmailFetchService: Fetch result', [
+                    'success' => $fetchResult['success'],
+                    'total_fetched' => $fetchResult['total_fetched'],
+                    'errors' => $fetchResult['errors'] ?? []
+                ]);
 
                 if (!$fetchResult['success']) {
                     $result['errors'] = array_merge($result['errors'], $fetchResult['errors']);

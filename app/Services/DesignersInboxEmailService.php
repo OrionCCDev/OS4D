@@ -389,15 +389,15 @@ class DesignersInboxEmailService
             return null;
         }
 
-        // For non-replies, use stricter duplication checks
+        // For non-replies, use stricter duplication checks but with shorter time window
         // Check by subject + from_email + received_at (secondary check)
         if (!empty($emailData['subject']) && !empty($emailData['from_email']) && !empty($emailData['date'])) {
             $existing = Email::where('subject', $emailData['subject'])
                 ->where('from_email', $emailData['from_email'])
                 ->where('email_source', 'designers_inbox')
                 ->whereBetween('received_at', [
-                    Carbon::parse($emailData['date'])->subMinutes(5),
-                    Carbon::parse($emailData['date'])->addMinutes(5)
+                    Carbon::parse($emailData['date'])->subMinutes(2),
+                    Carbon::parse($emailData['date'])->addMinutes(2)
                 ])
                 ->first();
             if ($existing) {
