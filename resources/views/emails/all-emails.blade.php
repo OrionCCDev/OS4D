@@ -302,21 +302,20 @@ function fetchAndStoreEmails() {
     const modal = new bootstrap.Modal(document.getElementById('loadingModal'));
     modal.show();
 
-    fetch('{{ route("emails.fetch-store") }}', {
+    fetch('{{ route("auto-emails.fetch") }}', {
         method: 'POST',
         headers: {
             'X-CSRF-TOKEN': '{{ csrf_token() }}',
             'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            maxResults: 100
-        })
+        }
     })
     .then(response => response.json())
     .then(data => {
         modal.hide();
         if (data.success) {
-            showAlert('success', `Successfully fetched ${data.data.fetched} emails and stored ${data.data.stored} new emails.`);
+            showAlert('success', `Successfully fetched ${data.data.fetched} emails and stored ${data.data.stored} new emails. Created ${data.data.notifications_created} notifications.`);
+            // Update notification count in navigation
+            updateNotificationCount();
             setTimeout(() => {
                 window.location.reload();
             }, 2000);
@@ -483,6 +482,73 @@ document.addEventListener('DOMContentLoaded', function() {
             selectAll.checked = selectedEmails.size === checkboxes.length;
         });
     });
+
+    // Initialize automatic email fetching
+    initializeAutoEmailFetch();
 });
+
+// Initialize automatic email fetching
+function initializeAutoEmailFetch() {
+    // Auto-fetch emails every 5 minutes
+    setInterval(function() {
+        autoFetchEmails();
+    }, 5 * 60 * 1000); // 5 minutes
+
+    // Update notification count every 30 seconds
+    setInterval(function() {
+        updateNotificationCount();
+    }, 30 * 1000); // 30 seconds
+
+    // Initial fetch and count update
+    updateNotificationCount();
+}
+
+// Automatic email fetching function
+function autoFetchEmails() {
+    fetch('{{ route("auto-emails.fetch") }}', {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success && data.data.stored > 0) {
+            console.log(`Auto-fetch: Stored ${data.data.stored} new emails, created ${data.data.notifications_created} notifications`);
+            // Update notification count
+            updateNotificationCount();
+            // Show subtle notification
+            showAutoFetchNotification(data.data);
+        }
+    })
+    .catch(error => {
+        console.error('Auto-fetch error:', error);
+    });
+}
+
+// Update notification count in navigation
+function updateNotificationCount() {
+    fetch('{{ route("auto-emails.unread-count") }}')
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const badge = document.getElementById('nav-designers-inbox-count');
+            if (badge) {
+                badge.textContent = data.count;
+                badge.style.display = data.count > 0 ? 'block' : 'none';
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error updating notification count:', error);
+    });
+}
+
+// Show auto-fetch notification
+function showAutoFetchNotification(data) {
+    const message = `Auto-fetch: ${data.stored} new emails stored, ${data.notifications_created} notifications created`;
+    showAlert('info', message);
+}
 </script>
 @endsection

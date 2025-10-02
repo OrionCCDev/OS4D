@@ -389,6 +389,14 @@ Route::middleware('auth')->group(function () {
 
     // Debug route for email parsing
     Route::get('/emails/{id}/debug', [App\Http\Controllers\EmailFetchController::class, 'debugEmail'])->name('emails.debug');
+
+    // Auto email fetching routes
+    Route::post('/auto-emails/fetch', [App\Http\Controllers\AutoEmailController::class, 'autoFetch'])->name('auto-emails.fetch');
+    Route::get('/auto-emails/unread-count', [App\Http\Controllers\AutoEmailController::class, 'getUnreadCount'])->name('auto-emails.unread-count');
+    Route::get('/auto-emails/recent-notifications', [App\Http\Controllers\AutoEmailController::class, 'getRecentNotifications'])->name('auto-emails.recent-notifications');
+    Route::post('/auto-emails/notifications/{id}/mark-read', [App\Http\Controllers\AutoEmailController::class, 'markAsRead'])->name('auto-emails.mark-read');
+    Route::post('/auto-emails/notifications/mark-all-read', [App\Http\Controllers\AutoEmailController::class, 'markAllAsRead'])->name('auto-emails.mark-all-read');
+    Route::get('/auto-emails/statistics', [App\Http\Controllers\AutoEmailController::class, 'getStatistics'])->name('auto-emails.statistics');
 });
 
 // Notification routes

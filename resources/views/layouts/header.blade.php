@@ -1048,6 +1048,163 @@
                   }
                 };
 
+                // Designers Inbox Notifications
+                (function(){
+                  const designersCountEl = document.getElementById('nav-designers-inbox-count');
+                  const designersListEl = document.getElementById('nav-designers-inbox-list');
+                  const designersMarkAllBtn = document.getElementById('nav-mark-all-designers-read');
+
+                  if(!designersCountEl || !designersListEl) return;
+
+                  let designersPreviousCount = 0;
+
+                  async function fetchDesignersCount(){
+                    try {
+                      const r = await fetch('{{ route("auto-emails.unread-count") }}', { credentials: 'same-origin' });
+                      const d = await r.json();
+                      const currentCount = d.success ? d.count : 0;
+
+                      // Play sound if count increased (new notification)
+                      if (currentCount > designersPreviousCount && designersPreviousCount > 0) {
+                        playNotificationSound();
+                      }
+
+                      designersCountEl.textContent = currentCount;
+                      designersCountEl.style.display = currentCount > 0 ? 'inline-block' : 'none';
+
+                      designersPreviousCount = currentCount;
+                    } catch (e) {
+                      // silent
+                    }
+                  }
+
+                  async function fetchDesignersNotifications(){
+                    try {
+                      const r = await fetch('{{ route("auto-emails.recent-notifications") }}', { credentials: 'same-origin' });
+                      const d = await r.json();
+                      const list = d.success ? d.notifications : [];
+
+                      if(!Array.isArray(list) || list.length === 0){
+                        designersListEl.innerHTML = `
+                          <div class="p-4 text-center text-muted">
+                            <div class="mb-3">
+                              <i class="bx bx-envelope-open" style="font-size: 3rem; color: #d1d5db;"></i>
+                            </div>
+                            <h6 class="text-muted mb-2">No new emails</h6>
+                            <small class="text-muted">Designers inbox is up to date!</small>
+                          </div>`;
+                        return;
+                      }
+
+                      designersListEl.innerHTML = list.map(function(n){
+                        const title = n.title || 'Email Notification';
+                        const message = n.message || '';
+                        const timeAgo = getTimeAgo(n.created_at);
+                        const viewUrl = n.email ? `{{ url('emails') }}/${n.email.id}` : '';
+                        const typeIcon = n.type === 'new_email' ? 'bx-envelope' :
+                                       n.type === 'email_reply' ? 'bx-reply' : 'bx-bell';
+                        const typeColor = n.type === 'new_email' ? '#3b82f6' :
+                                         n.type === 'email_reply' ? '#10b981' : '#6c757d';
+
+                        return `
+                          <div class="notification-message p-3 border-bottom" style="transition: all 0.2s ease; cursor: pointer; background: ${n.is_read ? '#f8f9fa' : '#e3f2fd'}; border-left: 3px solid ${n.is_read ? '#e0e0e0' : '#2196f3'};" onclick="handleDesignersNotificationClick(${n.id}, '${viewUrl}')">
+                            <div class="d-flex align-items-start gap-3">
+                              <div class="notification-avatar" style="width: 40px; height: 40px; background: ${typeColor}; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                <i class="bx ${typeIcon}" style="color: white; font-size: 18px;"></i>
+                              </div>
+                              <div class="flex-grow-1" style="min-width: 0;">
+                                <div class="d-flex align-items-center justify-content-between mb-1">
+                                  <h6 class="mb-0 fw-semibold text-dark" style="font-size: 14px;">
+                                    <span class="badge bg-primary me-2" style="font-size: 10px;">designers@orion-contracting.com</span>
+                                    ${title}
+                                    ${!n.is_read ? '<span class="badge bg-danger ms-2" style="font-size: 8px;">NEW</span>' : ''}
+                                  </h6>
+                                  <small class="text-muted" style="font-size: 11px;">${timeAgo}</small>
+                                </div>
+                                <p class="mb-2 text-muted" style="font-size: 13px; line-height: 1.4; margin: 0;">${message}</p>
+                                ${n.email ? `
+                                  <div class="d-flex align-items-center gap-2 mt-2">
+                                    <span class="badge bg-light text-dark" style="font-size: 10px; padding: 2px 6px;">
+                                      <i class="bx bx-user me-1"></i>${n.email.from_email}
+                                    </span>
+                                    <span class="badge bg-light text-dark" style="font-size: 10px; padding: 2px 6px;">
+                                      <i class="bx bx-time me-1"></i>${n.email.received_at}
+                                    </span>
+                                  </div>
+                                ` : ''}
+                                ${viewUrl ? `
+                                  <span class="badge bg-primary mt-2" style="font-size: 10px; padding: 2px 6px;">
+                                    <i class="bx bx-link-external me-1"></i>Click to view email
+                                  </span>
+                                ` : ''}
+                              </div>
+                            </div>
+                          </div>`;
+                      }).join('');
+                    } catch (e) {
+                      designersListEl.innerHTML = `
+                        <div class="p-4 text-center text-muted">
+                          <div class="mb-3">
+                            <i class="bx bx-error-circle" style="font-size: 3rem; color: #f56565;"></i>
+                          </div>
+                          <h6 class="text-muted mb-2">Failed to load</h6>
+                          <small class="text-muted">Please try again later</small>
+                        </div>`;
+                    }
+                  }
+
+                  // Global function for handling designers notification clicks
+                  window.handleDesignersNotificationClick = function(notificationId, viewUrl) {
+                    // Mark as read
+                    fetch(`{{ url('auto-emails/notifications') }}/${notificationId}/mark-read`, {
+                      method: 'POST',
+                      headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Content-Type': 'application/json',
+                      }
+                    }).then(() => {
+                      // Refresh count and list
+                      fetchDesignersCount();
+                      fetchDesignersNotifications();
+                    });
+
+                    // Navigate to email if URL provided
+                    if (viewUrl) {
+                      window.location.href = viewUrl;
+                    }
+                  };
+
+                  // Mark all designers notifications as read
+                  if (designersMarkAllBtn) {
+                    designersMarkAllBtn.addEventListener('click', function() {
+                      fetch('{{ route("auto-emails.mark-all-read") }}', {
+                        method: 'POST',
+                        headers: {
+                          'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                          'Content-Type': 'application/json',
+                        }
+                      }).then(() => {
+                        fetchDesignersCount();
+                        fetchDesignersNotifications();
+                      });
+                    });
+                  }
+
+                  // Load notifications when dropdown is shown
+                  const designersDropdown = document.querySelector('[data-bs-toggle="dropdown"]');
+                  if (designersDropdown) {
+                    designersDropdown.addEventListener('shown.bs.dropdown', function() {
+                      fetchDesignersNotifications();
+                    });
+                  }
+
+                  // Initial load
+                  fetchDesignersCount();
+
+                  // Auto-refresh every 30 seconds
+                  setInterval(fetchDesignersCount, 30000);
+                })();
+
                 // Global refresh function that updates both notification areas
                 window.refreshAllNotifications = function(){
                   fetchCount();

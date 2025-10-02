@@ -33,6 +33,13 @@ Schedule::command('emails:fetch-designers-inbox')
     ->withoutOverlapping()
     ->runInBackground();
 
+// Schedule enhanced auto-email fetch with notifications every 3 minutes
+// This provides more frequent checking with better notification handling
+Schedule::command('emails:auto-fetch --max-results=50')
+    ->everyThreeMinutes()
+    ->withoutOverlapping()
+    ->runInBackground();
+
 // DISABLED: These commands were causing conflicts with the main email fetching
 // Schedule designers inbox monitoring every 5 minutes
 // Schedule::command('email:monitor-designers-inbox')
