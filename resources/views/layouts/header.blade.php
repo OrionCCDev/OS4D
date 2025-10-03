@@ -946,6 +946,12 @@
                 window.getTimeAgo = function(dateString) {
                   const now = new Date();
                   const date = new Date(dateString);
+
+                  // Check if date is valid
+                  if (isNaN(date.getTime())) {
+                    return 'Invalid Date';
+                  }
+
                   const diffInSeconds = Math.floor((now - date) / 1000);
 
                   if (diffInSeconds < 60) return 'Just now';
@@ -955,6 +961,9 @@
 
                   return date.toLocaleDateString();
                 };
+
+                // Alias for formatTimeAgo function (used in email notifications)
+                window.formatTimeAgo = window.getTimeAgo;
 
                 // Global function for notification icons
                 window.getNotificationIcon = function(type) {
@@ -1060,9 +1069,10 @@
 
                   async function fetchDesignersCount(){
                     try {
-                      const r = await fetch('{{ route("auto-emails.unread-count") }}', { credentials: 'same-origin' });
+                      // Use unified notification system for all notifications
+                      const r = await fetch('{{ route('notifications.unread-count') }}', { credentials: 'same-origin' });
                       const d = await r.json();
-                      const currentCount = d.success ? d.count : 0;
+                      const currentCount = d.success ? d.counts.total : 0;
 
                       // Play sound if count increased (new notification)
                       if (currentCount > designersPreviousCount && designersPreviousCount > 0) {
@@ -1079,6 +1089,13 @@
                         mainEmailBadge.style.display = currentCount > 0 ? 'inline-block' : 'none';
                       }
 
+                      // Update the main notification bell count
+                      const mainBellCount = document.getElementById('nav-bell-count');
+                      if (mainBellCount) {
+                        mainBellCount.textContent = currentCount;
+                        mainBellCount.style.display = currentCount > 0 ? 'inline' : 'none';
+                      }
+
                       designersPreviousCount = currentCount;
                     } catch (e) {
                       console.error('Error fetching designers count:', e);
@@ -1087,7 +1104,8 @@
 
                   async function fetchDesignersNotifications(){
                     try {
-                      const r = await fetch('{{ route("auto-emails.recent-notifications") }}', { credentials: 'same-origin' });
+                      // Use unified notification system for all notifications
+                      const r = await fetch('{{ route('notifications.index') }}', { credentials: 'same-origin' });
                       const d = await r.json();
                       const list = d.success ? d.notifications : [];
 
@@ -1104,17 +1122,19 @@
                       }
 
                       designersListEl.innerHTML = list.map(function(n){
-                        const title = n.title || 'Email Notification';
+                        const title = n.title || 'Notification';
                         const message = n.message || '';
                         const timeAgo = getTimeAgo(n.created_at);
-                        const viewUrl = n.email ? `{{ url('emails') }}/${n.email.id}` : '';
-                        const typeIcon = n.type === 'new_email' ? 'bx-envelope' :
-                                       n.type === 'email_reply' ? 'bx-reply' : 'bx-bell';
-                        const typeColor = n.type === 'new_email' ? '#3b82f6' :
-                                         n.type === 'email_reply' ? '#10b981' : '#6c757d';
+                        const viewUrl = n.category === 'task' && n.task_id ? `{{ url('tasks') }}/${n.task_id}` :
+                                       n.category === 'email' && n.email_id ? `{{ url('emails') }}/${n.email_id}` : '';
+                        const typeIcon = n.icon || 'bx-bell';
+                        const typeColor = n.color === 'danger' ? '#dc3545' :
+                                         n.color === 'warning' ? '#ffc107' :
+                                         n.color === 'success' ? '#10b981' :
+                                         n.color === 'info' ? '#3b82f6' : '#6c757d';
 
                         return `
-                          <div class="notification-message p-3 border-bottom" style="transition: all 0.2s ease; cursor: pointer; background: ${n.is_read ? '#f8f9fa' : '#e3f2fd'}; border-left: 3px solid ${n.is_read ? '#e0e0e0' : '#2196f3'};" onclick="handleDesignersNotificationClick(${n.id}, '${viewUrl}')">
+                          <div class="notification-message p-3 border-bottom" style="transition: all 0.2s ease; cursor: pointer; background: ${n.is_read ? '#f8f9fa' : '#e3f2fd'}; border-left: 3px solid ${n.is_read ? '#e0e0e0' : '#2196f3'};" onclick="handleNotificationClick(${n.id}, '${viewUrl}')">
                             <div class="d-flex align-items-start gap-3">
                               <div class="notification-avatar" style="width: 40px; height: 40px; background: ${typeColor}; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
                                 <i class="bx ${typeIcon}" style="color: white; font-size: 18px;"></i>
@@ -1122,7 +1142,7 @@
                               <div class="flex-grow-1" style="min-width: 0;">
                                 <div class="d-flex align-items-center justify-content-between mb-1">
                                   <h6 class="mb-0 fw-semibold text-dark" style="font-size: 14px;">
-                                    <span class="badge bg-primary me-2" style="font-size: 10px;">designers@orion-contracting.com</span>
+                                    <span class="badge bg-${n.badge_color || 'primary'} me-2" style="font-size: 10px;">${n.category || 'notification'}</span>
                                     ${title}
                                     ${!n.is_read ? '<span class="badge bg-danger ms-2" style="font-size: 8px;">NEW</span>' : ''}
                                   </h6>
@@ -1160,10 +1180,10 @@
                     }
                   }
 
-                  // Global function for handling designers notification clicks
-                  window.handleDesignersNotificationClick = function(notificationId, viewUrl) {
-                    // Mark as read
-                    fetch(`{{ url('auto-emails/notifications') }}/${notificationId}/mark-read`, {
+                  // Global function for handling notification clicks
+                  window.handleNotificationClick = function(notificationId, viewUrl) {
+                    // Mark as read using unified notification system
+                    fetch(`{{ url('notifications') }}/${notificationId}/mark-read`, {
                       method: 'POST',
                       headers: {
                         'X-CSRF-TOKEN': '{{ csrf_token() }}',
@@ -1184,7 +1204,7 @@
                   // Mark all designers notifications as read
                   if (designersMarkAllBtn) {
                     designersMarkAllBtn.addEventListener('click', function() {
-                      fetch('{{ route("auto-emails.mark-all-read") }}', {
+                      fetch('{{ route("notifications.mark-all-read") }}', {
                         method: 'POST',
                         headers: {
                           'X-CSRF-TOKEN': '{{ csrf_token() }}',
@@ -1221,7 +1241,8 @@
                 window.refreshAllNotifications = function(){
                   fetchCount();
                   fetchUnread();
-                  fetchEmailNotifications();
+                  // Use unified notification system for all notifications
+                  fetchDesignersCount();
                   // Also refresh bottom chat if it exists
                   if (typeof refreshBottomChat === 'function') {
                     refreshBottomChat();
