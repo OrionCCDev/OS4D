@@ -548,13 +548,13 @@
 
               <ul class="navbar-nav flex-row align-items-center ms-auto">
                 <!-- Email Notifications - Separate Icon -->
-                <li class="nav-item dropdown me-3">
+                {{--  <li class="nav-item dropdown me-3">
                   <a class="nav-link dropdown-toggle hide-arrow position-relative" href="#" data-bs-toggle="dropdown" aria-expanded="false">
                     <i class="bx bx-envelope fs-4"></i>
                     <span class="badge rounded-pill bg-warning position-absolute" style="top: 0; right: -4px;" id="nav-email-notification-count">0</span>
                   </a>
                   <div class="dropdown-menu dropdown-menu-end p-0 email-notification-popup" style="min-width: 380px; max-width: 400px; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.12); border: 1px solid #e5e7eb;">
-                    <!-- Email Header -->
+                      <!-- Email Header -->
                     <div class="notification-header d-flex align-items-center justify-content-between p-3 border-bottom" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; border-radius: 12px 12px 0 0;">
                       <div class="d-flex align-items-center">
                         <div class="avatar avatar-sm me-2" style="width: 32px; height: 32px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
@@ -597,7 +597,7 @@
                       </div>
                     </div>
                   </div>
-                </li>
+                </li>  --}}
 
                 @if(Auth::user()->isManager())
                 <!-- Designers Inbox Notifications - Managers Only -->
