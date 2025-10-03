@@ -155,7 +155,7 @@
               </a>
             </li>
 
-            <!-- Email Notifications - Available to all users -->
+            {{--  <!-- Email Notifications - Available to all users -->
             <li class="menu-item {{ request()->routeIs('email-notifications.*') ? 'active' : '' }}">
               <a href="{{ route('email-notifications.index') }}" class="menu-link">
                 <i class="menu-icon tf-icons bx bx-bell"></i>
@@ -171,9 +171,9 @@
                 <div data-i18n="Live Email Monitoring">Live Email Monitoring</div>
                 <span class="badge rounded-pill bg-success ms-auto" id="live-monitoring-badge" style="display: none;">LIVE</span>
               </a>
-            </li>
+            </li>  --}}
 
-            <!-- Email Tracker - Available to all users -->
+            {{--  <!-- Email Tracker - Available to all users -->
             <li class="menu-item {{ request()->routeIs('email-tracker.*') ? 'active' : '' }}">
               <a href="{{ route('email-tracker.index') }}" class="menu-link">
                 <i class="menu-icon tf-icons bx bx-envelope-open"></i>
@@ -188,7 +188,7 @@
                 <i class="menu-icon tf-icons bx bx-envelope"></i>
                 <div data-i18n="Email Monitoring">Email Monitoring</div>
               </a>
-            </li>
+            </li>  --}}
 
             @if(Auth::user()->isManager())
             <!-- All Emails - Managers only (Designers Inbox) -->
