@@ -21,23 +21,17 @@
 @section('content')
 <div class="container-xxl flex-grow-1 container-p-y">
     <!-- Project Header -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div class="d-flex align-items-center gap-3">
-            @php($initial = mb_strtoupper(mb_substr($project->name, 0, 1)))
-            <div class="rounded-circle d-flex align-items-center justify-content-center" style="width:64px;height:64px;background:#eef2ff;color:#4338ca;font-weight:700;">
-                {{ $project->short_code ? strtoupper($project->short_code) : $initial }}
-            </div>
-            <div>
-                <h4 class="mb-1">{{ $project->name }}</h4>
-                <div class="text-muted">Status: {{ ucfirst(str_replace('_',' ', $project->status)) }}</div>
-            </div>
-        </div>
-        <div class="d-flex gap-2">
-            <a class="btn btn-outline-secondary" href="{{ route('projects.index') }}">
-                <i class="bx bx-arrow-back me-1"></i>Back
-            </a>
-        </div>
-    </div>
+    <x-modern-breadcrumb
+        title="{{ $project->name }}"
+        subtitle="Status: {{ ucfirst(str_replace('_',' ', $project->status)) }}"
+        icon="bx-folder-open"
+        theme="projects"
+        :breadcrumbs="[
+            ['title' => 'Dashboard', 'url' => route('dashboard'), 'icon' => 'bx-home'],
+            ['title' => 'Projects', 'url' => route('projects.index'), 'icon' => 'bx-folder'],
+            ['title' => $project->name, 'url' => '#', 'icon' => 'bx-folder-open']
+        ]"
+    />
 
     <!-- Current Folder Breadcrumb -->
     @if($selectedFolder)

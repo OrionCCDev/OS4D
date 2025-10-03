@@ -5,21 +5,17 @@
     <!-- Header Section -->
     <div class="row mb-4">
         <div class="col-12">
-            <div class="d-flex justify-content-between align-items-start">
-                <div class="flex-grow-1">
-                    <div class="d-flex align-items-center gap-3 mb-2">
-                        <a href="{{ route('tasks.index') }}" class="btn btn-outline-secondary btn-sm">
-                            <i class="bx bx-arrow-back me-1"></i>Back
-                        </a>
-                        <div class="vr"></div>
-                        <nav aria-label="breadcrumb" class="mb-0">
-                            <ol class="breadcrumb mb-0">
-                                <li class="breadcrumb-item"><a href="{{ route('tasks.index') }}">Tasks</a></li>
-                                <li class="breadcrumb-item active">{{ Str::limit($task->title, 50) }}</li>
-                            </ol>
-                        </nav>
-                    </div>
-                    <h2 class="mb-2 text-primary">{{ $task->title }}</h2>
+            <x-modern-breadcrumb
+                title="{{ $task->title }}"
+                subtitle="Task details and management"
+                icon="bx-task"
+                theme="tasks"
+                :breadcrumbs="[
+                    ['title' => 'Dashboard', 'url' => route('dashboard'), 'icon' => 'bx-home'],
+                    ['title' => 'Tasks', 'url' => route('tasks.index'), 'icon' => 'bx-list-ul'],
+                    ['title' => Str::limit($task->title, 30), 'url' => '#', 'icon' => 'bx-task']
+                ]"
+            />
                     <div class="d-flex align-items-center gap-3 flex-wrap">
                         @php
                             $statusColors = [
