@@ -196,7 +196,7 @@
               <a href="{{ route('emails.all') }}" class="menu-link">
                 <i class="menu-icon tf-icons bx bx-envelope-open"></i>
                 <div data-i18n="Designers Inbox">Designers Inbox</div>
-                <span class="badge rounded-pill bg-primary ms-auto">designers@orion-contracting.com</span>
+                {{--  <span class="badge rounded-pill bg-primary ms-auto">designers@orion-contracting.com</span>  --}}
               </a>
             </li>
             @endif
