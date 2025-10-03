@@ -32,10 +32,10 @@ Schedule::command('email:check-simple-replies')
 //     ->withoutOverlapping()
 //     ->runInBackground();
 
-// Schedule enhanced auto-email fetch with notifications every 3 minutes
+// Schedule enhanced auto-email fetch with notifications every 5 minutes
 // This is now the PRIMARY command for fetching emails from designers@orion-contracting.com
 Schedule::command('emails:auto-fetch --max-results=50')
-    ->everyThreeMinutes()
+    ->everyFiveMinutes()
     ->withoutOverlapping()
     ->runInBackground();
 
