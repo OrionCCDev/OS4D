@@ -74,13 +74,14 @@ class DetectSentEmailsCommand extends Command
                 return false;
             }
 
-            // Check if notification already exists
+            // Check if notification already exists for the sender
             $existingNotification = EmailNotification::where('user_id', $user->id)
                 ->where('email_id', $email->id)
                 ->where('notification_type', 'email_sent')
                 ->first();
 
             if ($existingNotification) {
+                Log::info("Email sent notification already exists for user {$user->id}, email ID: {$email->id}");
                 return false; // Already exists
             }
 
@@ -98,15 +99,25 @@ class DetectSentEmailsCommand extends Command
             // ALSO create notification for manager (User ID 1)
             $manager = User::find(1);
             if ($manager && $manager->id !== $user->id) {
-                $managerNotification = EmailNotification::create([
-                    'user_id' => $manager->id,
-                    'email_id' => $email->id,
-                    'notification_type' => 'email_sent',
-                    'message' => "Email sent by {$user->name} to {$email->to_email}: {$email->subject}",
-                    'is_read' => false,
-                ]);
+                // Check if manager notification already exists
+                $existingManagerNotification = EmailNotification::where('user_id', $manager->id)
+                    ->where('email_id', $email->id)
+                    ->where('notification_type', 'email_sent')
+                    ->first();
 
-                Log::info("✅ Created manager notification: {$email->subject}");
+                if (!$existingManagerNotification) {
+                    $managerNotification = EmailNotification::create([
+                        'user_id' => $manager->id,
+                        'email_id' => $email->id,
+                        'notification_type' => 'email_sent',
+                        'message' => "Email sent by {$user->name} to {$email->to_email}: {$email->subject}",
+                        'is_read' => false,
+                    ]);
+
+                    Log::info("✅ Created manager notification: {$email->subject}");
+                } else {
+                    Log::info("Manager notification already exists for email ID: {$email->id}");
+                }
             }
 
             return true;

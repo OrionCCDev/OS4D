@@ -845,6 +845,9 @@
                     const d = await r.json();
                     const currentCount = d.success ? d.counts.total : 0;
 
+                    // Debug logging
+                    console.log('Notification count fetch result:', { success: d.success, counts: d.counts, currentCount });
+
                     // Play sound if count increased (new notification)
                     if (currentCount > previousCount && previousCount > 0) {
                       playNotificationSound();
@@ -866,7 +869,15 @@
 
                     previousCount = currentCount;
                   } catch (e) {
-                    // silent
+                    console.error('Error fetching notification count:', e);
+                    // Reset counters on error
+                    countEl.textContent = '0';
+                    countEl.style.display = 'none';
+                    const navBellCount = document.getElementById('nav-bell-count');
+                    if (navBellCount) {
+                      navBellCount.textContent = '0';
+                      navBellCount.style.display = 'none';
+                    }
                   }
                 }
 
@@ -1074,6 +1085,9 @@
                       const d = await r.json();
                       const currentCount = d.success ? d.counts.total : 0;
 
+                      // Debug logging
+                      console.log('Designers inbox count fetch result:', { success: d.success, counts: d.counts, currentCount });
+
                       // Play sound if count increased (new notification)
                       if (currentCount > designersPreviousCount && designersPreviousCount > 0) {
                         playNotificationSound();
@@ -1099,6 +1113,19 @@
                       designersPreviousCount = currentCount;
                     } catch (e) {
                       console.error('Error fetching designers count:', e);
+                      // Reset counters on error
+                      designersCountEl.textContent = '0';
+                      designersCountEl.style.display = 'none';
+                      const mainEmailBadge = document.getElementById('nav-email-notification-count');
+                      if (mainEmailBadge) {
+                        mainEmailBadge.textContent = '0';
+                        mainEmailBadge.style.display = 'none';
+                      }
+                      const mainBellCount = document.getElementById('nav-bell-count');
+                      if (mainBellCount) {
+                        mainBellCount.textContent = '0';
+                        mainBellCount.style.display = 'none';
+                      }
                     }
                   }
 
@@ -1236,6 +1263,43 @@
                     fetchDesignersCount();
                   };
                 })();
+
+                // Global function to force reset all notification counters to 0
+                window.resetAllNotificationCounters = function(){
+                  console.log('Resetting all notification counters to 0');
+
+                  // Reset main notification counter
+                  if (countEl) {
+                    countEl.textContent = '0';
+                    countEl.style.display = 'none';
+                  }
+
+                  // Reset designers inbox counter
+                  if (designersCountEl) {
+                    designersCountEl.textContent = '0';
+                    designersCountEl.style.display = 'none';
+                  }
+
+                  // Reset sidebar bell count
+                  const navBellCount = document.getElementById('nav-bell-count');
+                  if (navBellCount) {
+                    navBellCount.textContent = '0';
+                    navBellCount.style.display = 'none';
+                  }
+
+                  // Reset main email notification badge
+                  const mainEmailBadge = document.getElementById('nav-email-notification-count');
+                  if (mainEmailBadge) {
+                    mainEmailBadge.textContent = '0';
+                    mainEmailBadge.style.display = 'none';
+                  }
+
+                  // Reset previous counts
+                  previousCount = 0;
+                  designersPreviousCount = 0;
+
+                  console.log('All notification counters reset to 0');
+                };
 
                 // Global refresh function that updates both notification areas
                 window.refreshAllNotifications = function(){

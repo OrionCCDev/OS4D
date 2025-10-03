@@ -19,6 +19,17 @@ class DesignersInboxNotificationService
             $managers = User::whereIn('role', ['admin', 'manager'])->get();
 
             foreach ($managers as $manager) {
+                // Check if notification already exists to prevent duplicates
+                $existingNotification = DesignersInboxNotification::where('user_id', $manager->id)
+                    ->where('email_id', $email->id)
+                    ->where('type', 'new_email')
+                    ->first();
+
+                if ($existingNotification) {
+                    Log::info("Notification already exists for email ID: {$email->id}, user ID: {$manager->id}");
+                    continue; // Skip creating duplicate notification
+                }
+
                 DesignersInboxNotification::create([
                     'user_id' => $manager->id,
                     'email_id' => $email->id,
@@ -61,6 +72,17 @@ class DesignersInboxNotificationService
             $managers = User::whereIn('role', ['admin', 'manager'])->get();
 
             foreach ($managers as $manager) {
+                // Check if reply notification already exists to prevent duplicates
+                $existingNotification = DesignersInboxNotification::where('user_id', $manager->id)
+                    ->where('email_id', $email->id)
+                    ->where('type', 'email_reply')
+                    ->first();
+
+                if ($existingNotification) {
+                    Log::info("Reply notification already exists for email ID: {$email->id}, user ID: {$manager->id}");
+                    continue; // Skip creating duplicate notification
+                }
+
                 DesignersInboxNotification::create([
                     'user_id' => $manager->id,
                     'email_id' => $email->id,
@@ -94,6 +116,17 @@ class DesignersInboxNotificationService
             $managers = User::whereIn('role', ['admin', 'manager'])->get();
 
             foreach ($managers as $manager) {
+                // Check if attachment notification already exists to prevent duplicates
+                $existingNotification = DesignersInboxNotification::where('user_id', $manager->id)
+                    ->where('email_id', $email->id)
+                    ->where('type', 'email_attachment')
+                    ->first();
+
+                if ($existingNotification) {
+                    Log::info("Attachment notification already exists for email ID: {$email->id}, user ID: {$manager->id}");
+                    continue; // Skip creating duplicate notification
+                }
+
                 DesignersInboxNotification::create([
                     'user_id' => $manager->id,
                     'email_id' => $email->id,
@@ -127,6 +160,17 @@ class DesignersInboxNotificationService
             $managers = User::whereIn('role', ['admin', 'manager'])->get();
 
             foreach ($managers as $manager) {
+                // Check if urgent notification already exists to prevent duplicates
+                $existingNotification = DesignersInboxNotification::where('user_id', $manager->id)
+                    ->where('email_id', $email->id)
+                    ->where('type', 'email_urgent')
+                    ->first();
+
+                if ($existingNotification) {
+                    Log::info("Urgent notification already exists for email ID: {$email->id}, user ID: {$manager->id}");
+                    continue; // Skip creating duplicate notification
+                }
+
                 DesignersInboxNotification::create([
                     'user_id' => $manager->id,
                     'email_id' => $email->id,
