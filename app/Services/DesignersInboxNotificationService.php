@@ -15,8 +15,8 @@ class DesignersInboxNotificationService
     public function createNewEmailNotification(Email $email): void
     {
         try {
-            // Get all managers
-            $managers = User::where('role', 'manager')->get();
+            // Get all managers and admins
+            $managers = User::whereIn('role', ['admin', 'manager'])->get();
 
             foreach ($managers as $manager) {
                 DesignersInboxNotification::create([
@@ -57,8 +57,8 @@ class DesignersInboxNotificationService
     public function createReplyNotification(Email $email): void
     {
         try {
-            // Get all managers
-            $managers = User::where('role', 'manager')->get();
+            // Get all managers and admins
+            $managers = User::whereIn('role', ['admin', 'manager'])->get();
 
             foreach ($managers as $manager) {
                 DesignersInboxNotification::create([
@@ -90,8 +90,8 @@ class DesignersInboxNotificationService
     public function createAttachmentNotification(Email $email): void
     {
         try {
-            // Get all managers
-            $managers = User::where('role', 'manager')->get();
+            // Get all managers and admins
+            $managers = User::whereIn('role', ['admin', 'manager'])->get();
 
             foreach ($managers as $manager) {
                 DesignersInboxNotification::create([
@@ -123,8 +123,8 @@ class DesignersInboxNotificationService
     public function createUrgentNotification(Email $email, string $reason = 'Urgent email received'): void
     {
         try {
-            // Get all managers
-            $managers = User::where('role', 'manager')->get();
+            // Get all managers and admins
+            $managers = User::whereIn('role', ['admin', 'manager'])->get();
 
             foreach ($managers as $manager) {
                 DesignersInboxNotification::create([
