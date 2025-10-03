@@ -10,14 +10,43 @@
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
-            <div class="page-title-box d-sm-flex align-items-center justify-content-between">
-                <h4 class="mb-sm-0">Designers Inbox Email</h4>
-                <div class="page-title-right">
-                    <ol class="breadcrumb m-0">
-                        <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li>
-                        <li class="breadcrumb-item"><a href="{{ route('emails.all') }}">Designers Inbox</a></li>
-                        <li class="breadcrumb-item active">Email Details</li>
-                    </ol>
+            <!-- Modern Header Card -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body p-4" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <div class="d-flex align-items-center">
+                                <div class="avatar-sm bg-white bg-opacity-20 rounded-circle d-flex align-items-center justify-content-center me-3">
+                                    <i class="bx bx-envelope-open fs-5 text-white"></i>
+                                </div>
+                                <div>
+                                    <h3 class="mb-1 fw-bold text-white">Designers Inbox Email</h3>
+                                    <p class="mb-0 text-white-50">View and manage email details from designers inbox</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-md-end">
+                                <nav aria-label="breadcrumb">
+                                    <ol class="breadcrumb mb-0 justify-content-md-end" style="background: rgba(255,255,255,0.1); border-radius: 8px; padding: 8px 16px;">
+                                        <li class="breadcrumb-item">
+                                            <a href="{{ route('dashboard') }}" class="text-white-50 text-decoration-none">
+                                                <i class="bx bx-home me-1"></i>Dashboard
+                                            </a>
+                                        </li>
+                                        <li class="breadcrumb-item">
+                                            <a href="{{ route('emails.all') }}" class="text-white-50 text-decoration-none">
+                                                <i class="bx bx-inbox me-1"></i>Inbox
+                                            </a>
+                                        </li>
+                                        <li class="breadcrumb-item active text-white" aria-current="page">
+                                            <i class="bx bx-envelope me-1"></i>Details
+                                        </li>
+                                    </ol>
+                                </nav>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
