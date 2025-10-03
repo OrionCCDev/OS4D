@@ -1239,59 +1239,65 @@
                     // Store previous count to detect new notifications
                     const previousCount = parseInt(countEl.textContent) || 0;
 
-                    // Fetch email notifications
-                    const r = await fetch('{{ route('email-monitoring.notifications') }}?type=email', { credentials: 'same-origin' });
+                    // Fetch email notifications from auto-emails endpoint
+                    const r = await fetch('{{ route('auto-emails.recent-notifications') }}', { credentials: 'same-origin' });
                     const data = await r.json();
 
-                    const currentCount = data.count || 0;
-                    countEl.textContent = currentCount;
-                    countEl.style.display = currentCount > 0 ? 'inline' : 'none';
+                    if (data.success) {
+                      const notifications = data.notifications || [];
+                      const currentCount = notifications.length;
 
-                    // Play sound if count increased (new notification)
-                    if (currentCount > previousCount && previousCount >= 0) {
-                      playNotificationSound();
-                    }
+                      countEl.textContent = currentCount;
+                      countEl.style.display = currentCount > 0 ? 'inline' : 'none';
 
-                    // Update email notification list
-                    if (data.data && data.data.length > 0) {
-                      listEl.innerHTML = data.data.map(n => {
-                        const viewUrl = n.email && n.email.task_id ? `/tasks/${n.email.task_id}` :
-                                       n.email ? `/emails/${n.email.id}` : '#';
+                      // Play sound if count increased (new notification)
+                      if (currentCount > previousCount && previousCount >= 0) {
+                        playNotificationSound();
+                      }
 
-                        const title = (n.message || 'Email Notification');
-                        const timeAgo = formatTimeAgo(n.created_at);
-                        const notificationType = n.notification_type || 'email_received';
-                        const typeIcon = getEmailNotificationIcon(notificationType);
-                        const typeColor = getEmailNotificationColor(notificationType);
+                      // Update email notification list
+                      if (notifications.length > 0) {
+                        listEl.innerHTML = notifications.map(n => {
+                          const viewUrl = n.email ? `/emails/${n.email.id}` : '#';
+                          const title = n.title || 'Email Notification';
+                          const timeAgo = formatTimeAgo(n.created_at);
+                          const notificationType = n.type || 'new_email';
+                          const typeIcon = getEmailNotificationIcon(notificationType);
+                          const typeColor = getEmailNotificationColor(notificationType);
 
-                        return `
-                          <div class="notification-message p-3 border-bottom" style="transition: all 0.2s ease; cursor: pointer;" onclick="handleEmailNotificationClick(${n.id}, '${viewUrl}')">
-                            <div class="d-flex align-items-start">
-                              <div class="notification-avatar" style="width: 40px; height: 40px; background: ${typeColor}; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                                <i class="${typeIcon}" style="color: white; font-size: 18px;"></i>
-                              </div>
-                              <div class="flex-grow-1 ms-3">
-                                <div class="d-flex justify-content-between align-items-start">
-                                  <div>
-                                    <h6 class="mb-1 fw-semibold" style="font-size: 14px; line-height: 1.3;">${title}</h6>
-                                    <p class="mb-1 text-muted small">${timeAgo}</p>
-                                    ${n.email ? `<p class="mb-0 small text-info"><i class="bx bx-envelope me-1"></i>${n.email.subject || 'Email notification'}</p>` : ''}
+                          return `
+                            <div class="notification-message p-3 border-bottom" style="transition: all 0.2s ease; cursor: pointer;" onclick="handleEmailNotificationClick(${n.id}, '${viewUrl}')">
+                              <div class="d-flex align-items-start">
+                                <div class="notification-avatar" style="width: 40px; height: 40px; background: ${typeColor}; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                  <i class="${typeIcon}" style="color: white; font-size: 18px;"></i>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                  <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                      <h6 class="mb-1 fw-semibold" style="font-size: 14px; line-height: 1.3;">${title}</h6>
+                                      <p class="mb-1 text-muted small">${timeAgo}</p>
+                                      ${n.email ? `<p class="mb-0 small text-info"><i class="bx bx-envelope me-1"></i>${n.email.subject || 'Email notification'}</p>` : ''}
+                                    </div>
+                                    ${!n.is_read ? '<div class="unread-indicator" style="width: 8px; height: 8px; background: #ffc107; border-radius: 50%; flex-shrink: 0;"></div>' : ''}
                                   </div>
-                                  ${!n.is_read ? '<div class="unread-indicator" style="width: 8px; height: 8px; background: #ffc107; border-radius: 50%; flex-shrink: 0;"></div>' : ''}
                                 </div>
                               </div>
                             </div>
+                          `;
+                        }).join('');
+                      } else {
+                        listEl.innerHTML = `
+                          <div class="p-4 text-center text-muted">
+                            <i class="bx bx-envelope-open fs-1 mb-3" style="color: #dee2e6;"></i>
+                            <h6 class="text-muted mb-2">No email notifications</h6>
+                            <p class="small mb-0">You'll see email replies and updates here</p>
                           </div>
                         `;
-                      }).join('');
+                      }
                     } else {
-                      listEl.innerHTML = `
-                        <div class="p-4 text-center text-muted">
-                          <i class="bx bx-envelope-open fs-1 mb-3" style="color: #dee2e6;"></i>
-                          <h6 class="text-muted mb-2">No email notifications</h6>
-                          <p class="small mb-0">You'll see email replies and updates here</p>
-                        </div>
-                      `;
+                      // Handle error case
+                      countEl.textContent = '0';
+                      countEl.style.display = 'none';
                     }
                   } catch (e) {
                     console.error('Failed to fetch email notifications:', e);
@@ -1325,8 +1331,8 @@
                 // Handle email notification click
                 window.handleEmailNotificationClick = async function(notificationId, viewUrl) {
                   try {
-                    // Mark email notification as read
-                    await fetch(`{{ route('email-monitoring.notifications.mark-read', ':id') }}`.replace(':id', notificationId), {
+                    // Mark email notification as read using auto-emails route
+                    await fetch(`{{ route('auto-emails.mark-read', ':id') }}`.replace(':id', notificationId), {
                       method: 'POST',
                       headers: {
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
@@ -1419,7 +1425,7 @@
                 if(markAllEmailBtn){
                   markAllEmailBtn.addEventListener('click', async function(){
                     try{
-                      await fetch('{{ route('email-monitoring.notifications.mark-all-read') }}', {
+                      await fetch('{{ route('auto-emails.mark-all-read') }}', {
                         method: 'POST',
                         headers: {
                           'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
