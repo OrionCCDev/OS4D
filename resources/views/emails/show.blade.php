@@ -49,7 +49,7 @@
                                         </div>
                                         @endif
                                         <div class="mb-1">
-                                            <strong>Date:</strong> {{ $email->created_at->format('F d, Y \a\t H:i') }}
+                                            <strong>Date:</strong> {{ $email->created_at ? $email->created_at->format('F d, Y \a\t H:i') : 'N/A' }}                                          
                                         </div>
                                     </div>
                                 </div>
@@ -130,7 +130,7 @@
                                         <div class="d-flex justify-content-between align-items-start mb-2">
                                             <div>
                                                 <strong>{{ $reply->from_email }}</strong>
-                                                <small class="text-muted ms-2">{{ $reply->created_at->format('M d, Y H:i') }}</small>
+                                                <small class="text-muted ms-2">{{ $reply->created_at ? $reply->created_at->format('M d, Y H:i') : 'N/A' }}</small>
                                             </div>
                                             <span class="badge bg-success">Reply</span>
                                         </div>
@@ -166,7 +166,7 @@
                                     <div class="d-flex justify-content-between align-items-start mb-1">
                                         <div>
                                             <strong>{{ $notification->user->name ?? 'Unknown User' }}</strong>
-                                            <small class="text-muted ms-2">{{ $notification->created_at->format('M d, Y H:i') }}</small>
+                                            <small class="text-muted ms-2">{{ $notification->created_at ? $notification->created_at->format('M d, Y H:i') : 'N/A' }}</small>
                                         </div>
                                         @if(!$notification->is_read)
                                         <span class="badge bg-warning">Unread</span>
