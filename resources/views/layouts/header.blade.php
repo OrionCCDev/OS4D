@@ -521,7 +521,7 @@
           <!-- Navbar -->
 
           <nav
-            class="layout-navbar container-xxl navbar navbar-expand-xl navbar-detached align-items-center bg-navbar-theme"
+            class="layout-navbar container navbar navbar-expand-xl navbar-detached align-items-center bg-navbar-theme"
             id="layout-navbar"
           >
             <div class="layout-menu-toggle navbar-nav align-items-xl-center me-3 me-xl-0 d-xl-none">
@@ -855,6 +855,25 @@
                   }
                 };
 
+                // Function for playing task notification sound
+                window.playTaskNotificationSound = function() {
+                  try {
+                    const audio = new Audio('{{ asset("uploads/gun.mp3") }}');
+                    audio.volume = 0.8; // Set volume to 80%
+                    audio.play().then(() => {
+                      console.log('Task notification sound played');
+                    }).catch(e => {
+                      console.log('Task notification sound play failed:', e);
+                      // Fallback to mail sound if task sound fails
+                      playNotificationSound();
+                    });
+                  } catch (e) {
+                    console.log('Task notification sound creation failed:', e);
+                    // Fallback to mail sound
+                    playNotificationSound();
+                  }
+                };
+
                 // Fallback beep sound
                 function playFallbackSound() {
                   try {
@@ -922,9 +941,9 @@
                     // Debug logging
                     console.log('Task notification count fetch result:', { success: d.success, taskCount: d.counts.task, currentCount });
 
-                    // Play sound if count increased (new notification)
+                    // Play task sound if count increased (new task notification)
                     if (currentCount > previousTaskCount && previousTaskCount > 0) {
-                      playNotificationSound();
+                      playTaskNotificationSound();
                     }
 
                     taskCountEl.textContent = currentCount;
@@ -1783,10 +1802,18 @@
                     const r = await fetch('{{ route('notifications.unread-count') }}', { credentials: 'same-origin' });
                     const d = await r.json();
                     const currentCount = d.success ? d.counts.total : 0;
+                    const taskCount = d.success ? d.counts.task : 0;
+                    const emailCount = d.success ? d.counts.email : 0;
 
                     // Auto-open chat if new notification arrives
                     if (currentCount > previousBottomCount && previousBottomCount >= 0) {
-                      playNotificationSound();
+                      // Play appropriate sound based on notification type
+                      if (taskCount > 0) {
+                        playTaskNotificationSound();
+                      } else {
+                        playNotificationSound();
+                      }
+                      
                       // Auto-open chat when new notification arrives
                       if (!isBottomChatOpen) {
                         openBottomChat();

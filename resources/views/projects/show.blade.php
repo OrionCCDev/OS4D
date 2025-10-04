@@ -19,7 +19,7 @@
 @endphp
 
 @section('content')
-<div class="container-xxl flex-grow-1 container-p-y">
+<div class="container flex-grow-1 container-p-y">
     <!-- Project Header -->
     <x-modern-breadcrumb
         title="{{ $project->name }}"

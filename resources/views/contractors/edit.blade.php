@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container-xxl flex-grow-1 container-p-y">
+<div class="container flex-grow-1 container-p-y">
     <h4 class="mb-3">Edit Contractor</h4>
     <div class="card p-3">
         <form method="POST" action="{{ route('contractors.update', $contractor) }}">

@@ -2,7 +2,7 @@
 
 @section('content')
 <!-- Content -->
-<div class="container-xxl container-p-y">
+<div class="container container-p-y">
   <div class="d-flex align-items-center justify-content-between mb-4">
     <h4 class="fw-bold mb-0">{{ __('Profile') }}</h4>
   </div>

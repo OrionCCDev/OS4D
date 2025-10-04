@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container-xxl container-p-y">
+<div class="container container-p-y">
   <div class="d-flex align-items-center justify-content-between mb-3">
     <h4 class="mb-0">Edit User</h4>
     <a href="{{ route('admin.users.index') }}" class="btn btn-outline-secondary">Back</a>
