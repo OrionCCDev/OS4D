@@ -12,6 +12,7 @@ class Email extends Model
     protected $fillable = [
         'from_email',
         'to_email',
+        'cc',
         'subject',
         'body',
         'received_at',
