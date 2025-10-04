@@ -181,9 +181,13 @@ class Task extends Model
     private function notifyManagers(string $type, string $title, string $message)
     {
         $managers = User::where('role', 'admin')->orWhere('role', 'manager')->get();
+        $currentUserId = Auth::id();
 
         foreach ($managers as $manager) {
-            $this->sendNotification($manager, $type, $title, $message);
+            // Don't send notification to the current user (manager who performed the action)
+            if ($manager->id !== $currentUserId) {
+                $this->sendNotification($manager, $type, $title, $message);
+            }
         }
     }
 

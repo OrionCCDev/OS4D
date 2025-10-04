@@ -9,8 +9,7 @@
 * License: You must have a valid license purchased in order to legally use the theme for your project.
 * Copyright ThemeSelection (https://themeselection.com)
 
-=========================================================
- -->
+=========================================================-->
 <!-- beautify ignore:start -->
 <html
   lang="en"
@@ -599,95 +598,100 @@
                   </div>
                 </li>  --}}
 
-                @if(Auth::user()->isManager())
-                <!-- Designers Inbox Notifications - Managers Only -->
+                <!-- Email Notifications - All Users -->
                 <li class="nav-item dropdown me-3">
                   <a class="nav-link dropdown-toggle hide-arrow position-relative" href="#" data-bs-toggle="dropdown" aria-expanded="false">
-                    <i class="bx bx-envelope-open fs-4"></i>
-                    <span class="badge rounded-pill bg-primary position-absolute" style="top: 0; right: -4px;" id="nav-designers-inbox-count">0</span>
+                    <i class="bx bx-envelope fs-4"></i>
+                    <span class="badge rounded-pill bg-primary position-absolute" style="top: 0; right: -4px;" id="nav-email-notification-count">0</span>
                   </a>
-                  <div class="dropdown-menu dropdown-menu-end p-0 designers-inbox-popup" style="min-width: 380px; max-width: 400px; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.12); border: 1px solid #e5e7eb;">
-                    <!-- Designers Inbox Header -->
-                    <div class="d-flex align-items-center justify-content-between p-3 border-bottom" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 12px 12px 0 0;">
+                  <div class="dropdown-menu dropdown-menu-end p-0 email-notification-popup" style="min-width: 380px; max-width: 400px; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.12); border: 1px solid #e5e7eb;">
+                    <!-- Email Header -->
+                    <div class="d-flex align-items-center justify-content-between p-3 border-bottom" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; border-radius: 12px 12px 0 0;">
                       <div class="d-flex align-items-center">
                         <div class="avatar-sm bg-white bg-opacity-20 rounded-circle d-flex align-items-center justify-content-center me-2">
-                          <i class="bx bx-envelope-open" style="font-size: 16px;"></i>
+                          <i class="bx bx-envelope" style="font-size: 16px;"></i>
                         </div>
                         <div>
-                          <h6 class="mb-0 fw-semibold">Designers Inbox</h6>
-                          <small class="opacity-75">designers@orion-contracting.com</small>
+                          <h6 class="mb-0 fw-semibold">Email Notifications</h6>
+                          <small class="opacity-75">Email replies & updates</small>
                         </div>
                       </div>
-                      <button class="btn btn-sm btn-outline-light" type="button" id="nav-mark-all-designers-read" style="border-radius: 6px; padding: 4px 8px; font-size: 12px;">Mark all</button>
+                      <button class="btn btn-sm btn-outline-light" type="button" id="nav-mark-all-email-read" style="border-radius: 6px; padding: 4px 8px; font-size: 12px;">Mark all</button>
                     </div>
 
-                    <!-- Designers Inbox Messages Area -->
-                    <div class="notification-messages" style="max-height: 400px; overflow-y: auto; background: #f8f9fa;" id="nav-designers-inbox-list">
-                      <div class="p-3 text-center text-muted">
-                        <i class="bx bx-loader-alt bx-spin me-2"></i>
-                        Loading designers inbox notifications...
-                      </div>
-                    </div>
-
-                    <!-- Designers Inbox Footer -->
-                    <div class="p-3 border-top" style="background: #f8f9fa; border-radius: 0 0 12px 12px;">
-                      <div class="d-flex gap-2">
-                        <a href="{{ route('emails.all') }}" class="btn btn-outline-primary btn-sm" style="border-radius: 8px;">
-                          <i class="bx bx-envelope-open me-1"></i>View Inbox
-                        </a>
-                        <button class="btn btn-outline-secondary btn-sm" type="button" id="test-designers-notification-btn" style="border-radius: 8px;">
-                          <i class="bx bx-test-tube me-1"></i>Test
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </li>
-                @endif
-
-                <!-- Live Notifications - Chat Style -->
-                <li class="nav-item dropdown me-3">
-                  <a class="nav-link dropdown-toggle hide-arrow position-relative" href="#" data-bs-toggle="dropdown" aria-expanded="false">
-                    <i class="bx bx-message-dots fs-4"></i>
-                    <span class="badge rounded-pill bg-danger position-absolute" style="top: 0; right: -4px;" id="nav-notification-count">0</span>
-                  </a>
-                  <div class="dropdown-menu dropdown-menu-end p-0 notification-chat-popup" style="min-width: 380px; max-width: 400px; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.12); border: 1px solid #e5e7eb;">
-                    <!-- Chat Header -->
-                    <div class="notification-header d-flex align-items-center justify-content-between p-3 border-bottom" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 12px 12px 0 0;">
-                      <div class="d-flex align-items-center">
-                        <div class="avatar avatar-sm me-2" style="width: 32px; height: 32px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                          <i class="bx bx-message-dots" style="font-size: 16px;"></i>
-                        </div>
-                        <div>
-                          <h6 class="mb-0 fw-semibold">Notifications</h6>
-                          <small class="opacity-75">Live updates</small>
-                        </div>
-                      </div>
-                      <div class="d-flex gap-1">
-                        <button class="btn btn-sm btn-outline-light" type="button" id="nav-mark-all-read" style="border-radius: 6px; padding: 4px 8px; font-size: 12px;">Mark all</button>
-                      </div>
-                    </div>
-
-                    <!-- Chat Messages Area -->
-                    <div class="notification-messages" style="max-height: 400px; overflow-y: auto; background: #f8f9fa;" id="nav-notification-list">
+                    <!-- Email Messages Area -->
+                    <div class="notification-messages" style="max-height: 400px; overflow-y: auto; background: #f8f9fa;" id="nav-email-notification-list">
                       <div class="p-4 text-center text-muted">
                         <div class="spinner-border spinner-border-sm me-2" role="status">
                           <span class="visually-hidden">Loading...</span>
                         </div>
-                        Loading notifications...
+                        Loading email notifications...
                       </div>
                     </div>
 
-                    <!-- Chat Footer -->
-                    <div class="notification-footer p-3 border-top" style="background: white; border-radius: 0 0 12px 12px;">
+                    <!-- Email Footer -->
+                    <div class="p-3 border-top" style="background: white; border-radius: 0 0 12px 12px;">
                       <div class="d-flex align-items-center justify-content-between">
-                        <a href="{{ route('email-notifications.index') }}" class="btn btn-outline-primary btn-sm" style="border-radius: 8px;">
+                        <a href="{{ route('notifications.emails') }}" class="btn btn-outline-primary btn-sm" style="border-radius: 8px;">
                           <i class="bx bx-list-ul me-1"></i>View All
                         </a>
-                        <a href="{{ route('email-monitoring.index') }}" class="btn btn-outline-info btn-sm" style="border-radius: 8px;">
-                          <i class="bx bx-envelope me-1"></i>Monitor
+                        @if(Auth::user()->isManager())
+                        <a href="{{ route('emails.all') }}" class="btn btn-outline-info btn-sm" style="border-radius: 8px;">
+                          <i class="bx bx-envelope-open me-1"></i>Designers Inbox
+                        </a>
+                        @endif
+                        @if(config('app.debug'))
+                        <button class="btn btn-outline-secondary btn-sm" type="button" id="test-email-notification-btn" style="border-radius: 8px;">
+                          <i class="bx bx-test-tube me-1"></i>Test
+                        </button>
+                        @endif
+                      </div>
+                    </div>
+                  </div>
+                </li>
+
+                <!-- Task Notifications - All Users -->
+                <li class="nav-item dropdown me-3">
+                  <a class="nav-link dropdown-toggle hide-arrow position-relative" href="#" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bx bx-task fs-4"></i>
+                    <span class="badge rounded-pill bg-success position-absolute" style="top: 0; right: -4px;" id="nav-task-notification-count">0</span>
+                  </a>
+                  <div class="dropdown-menu dropdown-menu-end p-0 task-notification-popup" style="min-width: 380px; max-width: 400px; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.12); border: 1px solid #e5e7eb;">
+                    <!-- Task Header -->
+                    <div class="d-flex align-items-center justify-content-between p-3 border-bottom" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; border-radius: 12px 12px 0 0;">
+                      <div class="d-flex align-items-center">
+                        <div class="avatar-sm bg-white bg-opacity-20 rounded-circle d-flex align-items-center justify-content-center me-2">
+                          <i class="bx bx-task" style="font-size: 16px;"></i>
+                        </div>
+                        <div>
+                          <h6 class="mb-0 fw-semibold">Task Notifications</h6>
+                          <small class="opacity-75">Task updates & assignments</small>
+                        </div>
+                      </div>
+                      <button class="btn btn-sm btn-outline-light" type="button" id="nav-mark-all-task-read" style="border-radius: 6px; padding: 4px 8px; font-size: 12px;">Mark all</button>
+                    </div>
+
+                    <!-- Task Messages Area -->
+                    <div class="notification-messages" style="max-height: 400px; overflow-y: auto; background: #f8f9fa;" id="nav-task-notification-list">
+                      <div class="p-4 text-center text-muted">
+                        <div class="spinner-border spinner-border-sm me-2" role="status">
+                          <span class="visually-hidden">Loading...</span>
+                        </div>
+                        Loading task notifications...
+                      </div>
+                    </div>
+
+                    <!-- Task Footer -->
+                    <div class="p-3 border-top" style="background: white; border-radius: 0 0 12px 12px;">
+                      <div class="d-flex align-items-center justify-content-between">
+                        <a href="{{ route('notifications.tasks') }}" class="btn btn-outline-primary btn-sm" style="border-radius: 8px;">
+                          <i class="bx bx-list-ul me-1"></i>View All
+                        </a>
+                        <a href="{{ route('tasks.index') }}" class="btn btn-outline-success btn-sm" style="border-radius: 8px;">
+                          <i class="bx bx-task me-1"></i>My Tasks
                         </a>
                         @if(config('app.debug'))
-                        <button class="btn btn-outline-secondary btn-sm" type="button" id="test-notification-btn" style="border-radius: 8px;">
+                        <button class="btn btn-outline-secondary btn-sm" type="button" id="test-task-notification-btn" style="border-radius: 8px;">
                           <i class="bx bx-test-tube me-1"></i>Test
                         </button>
                         @endif
@@ -815,14 +819,21 @@
           <div class="content-wrapper">
             <script>
               (function(){
-                const countEl = document.getElementById('nav-notification-count');
-                const listEl = document.getElementById('nav-notification-list');
-                const markAllBtn = document.getElementById('nav-mark-all-read');
+                // Email notification elements
+                const emailCountEl = document.getElementById('nav-email-notification-count');
+                const emailListEl = document.getElementById('nav-email-notification-list');
+                const emailMarkAllBtn = document.getElementById('nav-mark-all-email-read');
 
-                if(!countEl || !listEl) return;
+                // Task notification elements
+                const taskCountEl = document.getElementById('nav-task-notification-count');
+                const taskListEl = document.getElementById('nav-task-notification-list');
+                const taskMarkAllBtn = document.getElementById('nav-mark-all-task-read');
 
-                // Store previous count to detect new notifications
-                let previousCount = 0;
+                if(!emailCountEl || !emailListEl || !taskCountEl || !taskListEl) return;
+
+                // Store previous counts to detect new notifications
+                let previousEmailCount = 0;
+                let previousTaskCount = 0;
 
 
                 // Global function for playing notification sound
@@ -838,53 +849,64 @@
                   }
                 };
 
-                async function fetchCount(){
+                // Fetch email notification count
+                async function fetchEmailCount(){
                   try {
-                    // Use new unified notification system
                     const r = await fetch('{{ route('notifications.unread-count') }}', { credentials: 'same-origin' });
                     const d = await r.json();
-                    const currentCount = d.success ? d.counts.total : 0;
+                    const currentCount = d.success ? d.counts.email : 0;
 
                     // Debug logging
-                    console.log('Notification count fetch result:', { success: d.success, counts: d.counts, currentCount });
+                    console.log('Email notification count fetch result:', { success: d.success, emailCount: d.counts.email, currentCount });
 
                     // Play sound if count increased (new notification)
-                    if (currentCount > previousCount && previousCount > 0) {
+                    if (currentCount > previousEmailCount && previousEmailCount > 0) {
                       playNotificationSound();
-                      // Also refresh bottom chat if it exists
-                      if (typeof refreshBottomChat === 'function') {
-                        refreshBottomChat();
-                      }
                     }
 
-                    countEl.textContent = currentCount;
-                    countEl.style.display = currentCount > 0 ? 'inline-block' : 'none';
+                    emailCountEl.textContent = currentCount;
+                    emailCountEl.style.display = currentCount > 0 ? 'inline-block' : 'none';
 
-                    // Update sidebar bell count
-                    const navBellCount = document.getElementById('nav-bell-count');
-                    if (navBellCount) {
-                      navBellCount.textContent = currentCount;
-                      navBellCount.style.display = currentCount > 0 ? 'inline' : 'none';
-                    }
-
-                    previousCount = currentCount;
+                    previousEmailCount = currentCount;
                   } catch (e) {
-                    console.error('Error fetching notification count:', e);
-                    // Reset counters on error
-                    countEl.textContent = '0';
-                    countEl.style.display = 'none';
-                    const navBellCount = document.getElementById('nav-bell-count');
-                    if (navBellCount) {
-                      navBellCount.textContent = '0';
-                      navBellCount.style.display = 'none';
-                    }
+                    console.error('Error fetching email notification count:', e);
+                    // Reset counter on error
+                    emailCountEl.textContent = '0';
+                    emailCountEl.style.display = 'none';
                   }
                 }
 
-                async function fetchUnread(){
+                // Fetch task notification count
+                async function fetchTaskCount(){
                   try {
-                    // Use new unified notification system
-                    const r = await fetch('{{ route('notifications.index') }}', { credentials: 'same-origin' });
+                    const r = await fetch('{{ route('notifications.unread-count') }}', { credentials: 'same-origin' });
+                    const d = await r.json();
+                    const currentCount = d.success ? d.counts.task : 0;
+
+                    // Debug logging
+                    console.log('Task notification count fetch result:', { success: d.success, taskCount: d.counts.task, currentCount });
+
+                    // Play sound if count increased (new notification)
+                    if (currentCount > previousTaskCount && previousTaskCount > 0) {
+                      playNotificationSound();
+                    }
+
+                    taskCountEl.textContent = currentCount;
+                    taskCountEl.style.display = currentCount > 0 ? 'inline-block' : 'none';
+
+                    previousTaskCount = currentCount;
+                  } catch (e) {
+                    console.error('Error fetching task notification count:', e);
+                    // Reset counter on error
+                    taskCountEl.textContent = '0';
+                    taskCountEl.style.display = 'none';
+                  }
+                }
+
+                // Fetch email notifications
+                async function fetchEmailNotifications(){
+                  try {
+                    const r = await fetch('{{ route('notifications.emails') }}', { credentials: 'same-origin' });
 
                     if (!r.ok) {
                       throw new Error(`HTTP error! status: ${r.status}`);
@@ -894,30 +916,26 @@
                     const list = data.success ? data.notifications : [];
 
                     if(!Array.isArray(list) || list.length === 0){
-                      listEl.innerHTML = `
+                      emailListEl.innerHTML = `
                         <div class="p-4 text-center text-muted">
                           <div class="mb-3">
-                            <i class="bx bx-message-dots" style="font-size: 3rem; color: #d1d5db;"></i>
+                            <i class="bx bx-envelope" style="font-size: 3rem; color: #d1d5db;"></i>
                           </div>
-                          <h6 class="text-muted mb-2">No new notifications</h6>
+                          <h6 class="text-muted mb-2">No email notifications</h6>
                           <small class="text-muted">You're all caught up!</small>
                         </div>`;
                       return;
                     }
-                    listEl.innerHTML = list.map(function(n){
-                      const title = n.title || 'Notification';
+                    emailListEl.innerHTML = list.map(function(n){
+                      const title = n.title || 'Email Notification';
                       const message = n.message || '';
                       const timeAgo = getTimeAgo(n.created_at);
-                      const viewUrl = n.category === 'task' && n.task_id ? `{{ url('tasks') }}/${n.task_id}` :
-                                     n.category === 'email' && n.email_id ? `{{ url('emails') }}/${n.email_id}` : '';
-                      const typeIcon = n.icon || 'bx-bell';
-                      const typeColor = n.color === 'danger' ? '#dc3545' :
-                                       n.color === 'warning' ? '#ffc107' :
-                                       n.color === 'success' ? '#198754' :
-                                       n.color === 'info' ? '#0dcaf0' : '#6c757d';
+                      const viewUrl = n.email_id ? `{{ url('emails') }}/${n.email_id}` : '';
+                      const typeIcon = 'bx-envelope';
+                      const typeColor = '#3b82f6';
 
                       return `
-                        <div class="notification-message p-3 border-bottom" style="transition: all 0.2s ease; cursor: pointer; background: ${n.is_read ? '#f8f9fa' : '#e3f2fd'}; border-left: 3px solid ${n.is_read ? '#e0e0e0' : '#2196f3'};" onclick="handleNotificationClick(${n.id}, '${viewUrl}')">
+                        <div class="notification-message p-3 border-bottom" style="transition: all 0.2s ease; cursor: pointer; background: ${n.is_read ? '#f8f9fa' : '#e3f2fd'}; border-left: 3px solid ${n.is_read ? '#e0e0e0' : '#2196f3'};" onclick="handleEmailNotificationClick(${n.id}, '${viewUrl}')">
                           <div class="d-flex align-items-start gap-3">
                             <div class="notification-avatar" style="width: 40px; height: 40px; background: ${typeColor}; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
                               <i class="bx ${typeIcon}" style="color: white; font-size: 18px;"></i>
@@ -925,7 +943,7 @@
                             <div class="flex-grow-1" style="min-width: 0;">
                               <div class="d-flex align-items-center justify-content-between mb-1">
                                 <h6 class="mb-0 fw-semibold text-dark" style="font-size: 14px;">
-                                  <span class="badge bg-${n.badge_color} me-2" style="font-size: 10px;">${n.category}</span>
+                                  <span class="badge bg-primary me-2" style="font-size: 10px;">email</span>
                                   ${title}
                                   ${!n.is_read ? '<span class="badge bg-danger ms-2" style="font-size: 8px;">NEW</span>' : ''}
                                 </h6>
@@ -934,7 +952,7 @@
                               <p class="mb-2 text-muted" style="font-size: 13px; line-height: 1.4; margin: 0;">${message}</p>
                               ${viewUrl ? `
                                 <span class="badge bg-primary" style="font-size: 10px; padding: 2px 6px;">
-                                  <i class="bx bx-link-external me-1"></i>Click to view ${n.category}
+                                  <i class="bx bx-link-external me-1"></i>Click to view email
                                 </span>
                               ` : ''}
                             </div>
@@ -942,7 +960,75 @@
                         </div>`;
                     }).join('');
                   } catch (e) {
-                    listEl.innerHTML = `
+                    emailListEl.innerHTML = `
+                      <div class="p-4 text-center text-muted">
+                        <div class="mb-3">
+                          <i class="bx bx-error-circle" style="font-size: 3rem; color: #f56565;"></i>
+                        </div>
+                        <h6 class="text-muted mb-2">Failed to load</h6>
+                        <small class="text-muted">Please try again later</small>
+                      </div>`;
+                  }
+                }
+
+                // Fetch task notifications
+                async function fetchTaskNotifications(){
+                  try {
+                    const r = await fetch('{{ route('notifications.tasks') }}', { credentials: 'same-origin' });
+
+                    if (!r.ok) {
+                      throw new Error(`HTTP error! status: ${r.status}`);
+                    }
+
+                    const data = await r.json();
+                    const list = data.success ? data.notifications : [];
+
+                    if(!Array.isArray(list) || list.length === 0){
+                      taskListEl.innerHTML = `
+                        <div class="p-4 text-center text-muted">
+                          <div class="mb-3">
+                            <i class="bx bx-task" style="font-size: 3rem; color: #d1d5db;"></i>
+                          </div>
+                          <h6 class="text-muted mb-2">No task notifications</h6>
+                          <small class="text-muted">You're all caught up!</small>
+                        </div>`;
+                      return;
+                    }
+                    taskListEl.innerHTML = list.map(function(n){
+                      const title = n.title || 'Task Notification';
+                      const message = n.message || '';
+                      const timeAgo = getTimeAgo(n.created_at);
+                      const viewUrl = n.task_id ? `{{ url('tasks') }}/${n.task_id}` : '';
+                      const typeIcon = 'bx-task';
+                      const typeColor = '#10b981';
+
+                      return `
+                        <div class="notification-message p-3 border-bottom" style="transition: all 0.2s ease; cursor: pointer; background: ${n.is_read ? '#f8f9fa' : '#e3f2fd'}; border-left: 3px solid ${n.is_read ? '#e0e0e0' : '#10b981'};" onclick="handleTaskNotificationClick(${n.id}, '${viewUrl}')">
+                          <div class="d-flex align-items-start gap-3">
+                            <div class="notification-avatar" style="width: 40px; height: 40px; background: ${typeColor}; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                              <i class="bx ${typeIcon}" style="color: white; font-size: 18px;"></i>
+                            </div>
+                            <div class="flex-grow-1" style="min-width: 0;">
+                              <div class="d-flex align-items-center justify-content-between mb-1">
+                                <h6 class="mb-0 fw-semibold text-dark" style="font-size: 14px;">
+                                  <span class="badge bg-success me-2" style="font-size: 10px;">task</span>
+                                  ${title}
+                                  ${!n.is_read ? '<span class="badge bg-danger ms-2" style="font-size: 8px;">NEW</span>' : ''}
+                                </h6>
+                                <small class="text-muted" style="font-size: 11px;">${timeAgo}</small>
+                              </div>
+                              <p class="mb-2 text-muted" style="font-size: 13px; line-height: 1.4; margin: 0;">${message}</p>
+                              ${viewUrl ? `
+                                <span class="badge bg-success" style="font-size: 10px; padding: 2px 6px;">
+                                  <i class="bx bx-link-external me-1"></i>Click to view task
+                                </span>
+                              ` : ''}
+                            </div>
+                          </div>
+                        </div>`;
+                    }).join('');
+                  } catch (e) {
+                    taskListEl.innerHTML = `
                       <div class="p-4 text-center text-muted">
                         <div class="mb-3">
                           <i class="bx bx-error-circle" style="font-size: 3rem; color: #f56565;"></i>
@@ -1039,10 +1125,10 @@
                   }
                 };
 
-                // Global function for handling notification clicks
-                window.handleNotificationClick = async function(notificationId, viewUrl) {
+                // Global function for handling email notification clicks
+                window.handleEmailNotificationClick = async function(notificationId, viewUrl) {
                   try {
-                    // Mark notification as read first using unified notification system
+                    // Mark email notification as read
                     await fetch(`{{ route('notifications.mark-read', ':id') }}`.replace(':id', notificationId), {
                       method: 'POST',
                       headers: {
@@ -1052,15 +1138,46 @@
                       credentials: 'same-origin'
                     });
 
-                    // Refresh all notification areas
-                    refreshAllNotifications();
+                    // Refresh email notifications
+                    fetchEmailCount();
+                    fetchEmailNotifications();
 
-                    // If there's a task URL, navigate to it
+                    // If there's a URL, navigate to it
                     if (viewUrl && viewUrl.trim() !== '') {
                       window.location.href = viewUrl;
                     }
                   } catch (e) {
-                    console.error('Failed to handle notification click:', e);
+                    console.error('Failed to handle email notification click:', e);
+                    // Still try to navigate if there's a URL
+                    if (viewUrl && viewUrl.trim() !== '') {
+                      window.location.href = viewUrl;
+                    }
+                  }
+                };
+
+                // Global function for handling task notification clicks
+                window.handleTaskNotificationClick = async function(notificationId, viewUrl) {
+                  try {
+                    // Mark task notification as read
+                    await fetch(`{{ route('notifications.mark-read', ':id') }}`.replace(':id', notificationId), {
+                      method: 'POST',
+                      headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                        'Content-Type': 'application/json'
+                      },
+                      credentials: 'same-origin'
+                    });
+
+                    // Refresh task notifications
+                    fetchTaskCount();
+                    fetchTaskNotifications();
+
+                    // If there's a URL, navigate to it
+                    if (viewUrl && viewUrl.trim() !== '') {
+                      window.location.href = viewUrl;
+                    }
+                  } catch (e) {
+                    console.error('Failed to handle task notification click:', e);
                     // Still try to navigate if there's a URL
                     if (viewUrl && viewUrl.trim() !== '') {
                       window.location.href = viewUrl;
@@ -1303,10 +1420,10 @@
 
                 // Global refresh function that updates both notification areas
                 window.refreshAllNotifications = function(){
-                  fetchCount();
-                  fetchUnread();
-                  // Use unified notification system for all notifications
-                  fetchDesignersCount();
+                  fetchEmailCount();
+                  fetchEmailNotifications();
+                  fetchTaskCount();
+                  fetchTaskNotifications();
                   // Also refresh bottom chat if it exists
                   if (typeof refreshBottomChat === 'function') {
                     refreshBottomChat();
@@ -1441,10 +1558,57 @@
                   }
                 };
 
-                function refresh(){
-                  refreshAllNotifications();
+                // Event listeners for mark all buttons
+                if (emailMarkAllBtn) {
+                  emailMarkAllBtn.addEventListener('click', async function() {
+                    try {
+                      await fetch('{{ route('notifications.mark-all-read') }}', {
+                        method: 'POST',
+                        headers: {
+                          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                          'Content-Type': 'application/json'
+                        },
+                        credentials: 'same-origin'
+                      });
+                      refreshAllNotifications();
+                    } catch (e) {
+                      console.error('Failed to mark all email notifications as read:', e);
+                    }
+                  });
                 }
 
+                if (taskMarkAllBtn) {
+                  taskMarkAllBtn.addEventListener('click', async function() {
+                    try {
+                      await fetch('{{ route('notifications.mark-all-read') }}', {
+                        method: 'POST',
+                        headers: {
+                          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                          'Content-Type': 'application/json'
+                        },
+                        credentials: 'same-origin'
+                      });
+                      refreshAllNotifications();
+                    } catch (e) {
+                      console.error('Failed to mark all task notifications as read:', e);
+                    }
+                  });
+                }
+
+                // Load notifications when dropdowns are shown
+                const emailDropdown = document.querySelector('[data-bs-toggle="dropdown"]');
+                if (emailDropdown) {
+                  emailDropdown.addEventListener('shown.bs.dropdown', function() {
+                    fetchEmailNotifications();
+                  });
+                }
+
+                const taskDropdown = document.querySelectorAll('[data-bs-toggle="dropdown"]')[1];
+                if (taskDropdown) {
+                  taskDropdown.addEventListener('shown.bs.dropdown', function() {
+                    fetchTaskNotifications();
+                  });
+                }
 
                 // Poll every 20s - refresh both areas
                 refreshAllNotifications();
@@ -1969,3 +2133,4 @@
                 animation: slideInUp 0.3s ease-out;
               }
             </style>
+

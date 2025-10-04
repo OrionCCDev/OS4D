@@ -6,6 +6,7 @@ use App\Models\DesignersInboxNotification;
 use App\Models\Email;
 use App\Models\User;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 
 class DesignersInboxNotificationService
 {
@@ -17,8 +18,14 @@ class DesignersInboxNotificationService
         try {
             // Get all managers and admins
             $managers = User::whereIn('role', ['admin', 'manager'])->get();
+            $currentUserId = Auth::id();
 
             foreach ($managers as $manager) {
+                // Don't send notification to the current user (manager who performed the action)
+                if ($manager->id === $currentUserId) {
+                    continue;
+                }
+
                 // Check if notification already exists to prevent duplicates
                 $existingNotification = DesignersInboxNotification::where('user_id', $manager->id)
                     ->where('email_id', $email->id)
@@ -70,8 +77,14 @@ class DesignersInboxNotificationService
         try {
             // Get all managers and admins
             $managers = User::whereIn('role', ['admin', 'manager'])->get();
+            $currentUserId = Auth::id();
 
             foreach ($managers as $manager) {
+                // Don't send notification to the current user (manager who performed the action)
+                if ($manager->id === $currentUserId) {
+                    continue;
+                }
+
                 // Check if reply notification already exists to prevent duplicates
                 $existingNotification = DesignersInboxNotification::where('user_id', $manager->id)
                     ->where('email_id', $email->id)
@@ -114,8 +127,14 @@ class DesignersInboxNotificationService
         try {
             // Get all managers and admins
             $managers = User::whereIn('role', ['admin', 'manager'])->get();
+            $currentUserId = Auth::id();
 
             foreach ($managers as $manager) {
+                // Don't send notification to the current user (manager who performed the action)
+                if ($manager->id === $currentUserId) {
+                    continue;
+                }
+
                 // Check if attachment notification already exists to prevent duplicates
                 $existingNotification = DesignersInboxNotification::where('user_id', $manager->id)
                     ->where('email_id', $email->id)
@@ -158,8 +177,14 @@ class DesignersInboxNotificationService
         try {
             // Get all managers and admins
             $managers = User::whereIn('role', ['admin', 'manager'])->get();
+            $currentUserId = Auth::id();
 
             foreach ($managers as $manager) {
+                // Don't send notification to the current user (manager who performed the action)
+                if ($manager->id === $currentUserId) {
+                    continue;
+                }
+
                 // Check if urgent notification already exists to prevent duplicates
                 $existingNotification = DesignersInboxNotification::where('user_id', $manager->id)
                     ->where('email_id', $email->id)
