@@ -860,25 +860,25 @@
                   try {
                     // Create audio context for better browser compatibility
                     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                    
+
                     // Create a simple beep sound using oscillator
                     const oscillator = audioContext.createOscillator();
                     const gainNode = audioContext.createGain();
-                    
+
                     oscillator.connect(gainNode);
                     gainNode.connect(audioContext.destination);
-                    
+
                     // Configure the beep sound
                     oscillator.frequency.setValueAtTime(800, audioContext.currentTime); // 800Hz frequency
                     oscillator.type = 'sine';
-                    
+
                     // Set volume (0.0 to 1.0)
                     gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-                    
+
                     // Play the beep
                     oscillator.start(audioContext.currentTime);
                     oscillator.stop(audioContext.currentTime + 0.2); // 200ms duration
-                    
+
                     console.log('Fallback notification sound played');
                   } catch (e) {
                     console.log('Fallback notification sound creation failed:', e);
