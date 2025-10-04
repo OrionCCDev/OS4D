@@ -54,16 +54,16 @@ class AutoEmailFetchCommand extends Command
             $interval = (int) $this->option('interval');
             $maxResults = (int) $this->option('max-results');
 
-            // Check if another auto-fetch is running
+            // Check if another auto-fetch is running (use atomic lock)
             $lockKey = 'auto-email-fetch:running';
-            if (Cache::has($lockKey)) {
+            $lockValue = time() . '-' . uniqid();
+
+            // Try to acquire lock atomically
+            if (!Cache::add($lockKey, $lockValue, 300)) {
                 $this->info('Another auto-fetch process is already running. Skipping...');
                 Log::info('AutoEmailFetchCommand: Skipped - another instance is running');
                 return 0;
             }
-
-            // Set lock for 10 minutes
-            Cache::put($lockKey, true, 600);
 
             try {
                 $this->info("Fetching emails with max results: {$maxResults}");

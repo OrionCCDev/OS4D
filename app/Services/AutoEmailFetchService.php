@@ -41,17 +41,17 @@ class AutoEmailFetchService
         ];
 
         try {
-            // Check if another auto-fetch is running (shorter lock time)
+            // Check if another auto-fetch is running (use atomic lock)
             $lockKey = 'auto-email-fetch:running';
-            if (Cache::has($lockKey)) {
+            $lockValue = time() . '-' . uniqid();
+
+            // Try to acquire lock atomically
+            if (!Cache::add($lockKey, $lockValue, 300)) {
                 Log::info('AutoEmailFetchService: Another auto-fetch is already running, skipping...');
                 $result['success'] = true;
                 $result['message'] = 'Another auto-fetch is already running';
                 return $result;
             }
-
-            // Set lock for 2 minutes (shorter to prevent conflicts)
-            Cache::put($lockKey, true, 120);
 
             try {
                 // Get manager user for email association
