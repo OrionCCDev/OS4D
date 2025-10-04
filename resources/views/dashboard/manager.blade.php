@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container-xxl flex-grow-1 container-p-y">
+<div class="container flex-grow-1 container-p-y">
     <!-- Header -->
     <div class="row">
         <div class="col-lg-12 mb-4 order-0">
