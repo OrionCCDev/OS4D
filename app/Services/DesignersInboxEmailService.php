@@ -335,6 +335,7 @@ class DesignersInboxEmailService
                 $email = Email::create([
                     'from_email' => $emailData['from_email'],
                     'to_email' => $emailData['to_email'],
+                    'cc' => is_array($emailData['cc_emails']) ? implode(', ', $emailData['cc_emails']) : $emailData['cc_emails'],
                     'cc_emails' => $emailData['cc_emails'],
                     'subject' => $emailData['subject'],
                     'body' => $emailData['body'],
