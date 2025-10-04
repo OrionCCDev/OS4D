@@ -177,12 +177,15 @@ class EmailFetchController extends Controller
 
         if (!$user->isManager()) {
             return redirect()->route('dashboard')
-                ->with('error', 'Access denied. Only managers can view designers inbox emails.');
+                ->with('error', 'Access denied. Only managers can view emails.');
         }
 
-        $email = Email::where('id', $id)
-            ->where('email_source', 'designers_inbox')
-            ->firstOrFail();
+        // Try to find email by ID first, regardless of source
+        $email = Email::find($id);
+        
+        if (!$email) {
+            abort(404, 'Email not found');
+        }
 
         if ($email->status === 'received') {
             $email->update(['status' => 'read']);

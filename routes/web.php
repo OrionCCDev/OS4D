@@ -382,6 +382,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/emails/stats', [App\Http\Controllers\EmailFetchController::class, 'getStats'])->name('emails.stats');
     Route::get('/emails/export', [App\Http\Controllers\EmailFetchController::class, 'export'])->name('emails.export');
     Route::get('/emails/{id}', [App\Http\Controllers\EmailFetchController::class, 'show'])->name('emails.show');
+    Route::get('/email/{id}', [App\Http\Controllers\EmailController::class, 'show'])->name('email.show');
     Route::post('/emails/{id}/mark-read', [App\Http\Controllers\EmailFetchController::class, 'markAsRead'])->name('emails.mark-read');
     Route::post('/emails/{id}/mark-unread', [App\Http\Controllers\EmailFetchController::class, 'markAsUnread'])->name('emails.mark-unread');
     Route::delete('/emails/{id}', [App\Http\Controllers\EmailFetchController::class, 'destroy'])->name('emails.destroy');
