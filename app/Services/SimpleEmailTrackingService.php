@@ -20,10 +20,10 @@ class SimpleEmailTrackingService
     public function trackSentEmail(User $user, array $emailData, string $messageId = null): ?Email
     {
         try {
-            // Always add designers@orion-contracting.com to CC
+            // Always add engineering@orion-contracting.com to CC
             $ccEmails = $emailData['cc'] ?? [];
-            if (!in_array('designers@orion-contracting.com', $ccEmails)) {
-                $ccEmails[] = 'designers@orion-contracting.com';
+            if (!in_array('engineering@orion-contracting.com', $ccEmails)) {
+                $ccEmails[] = 'engineering@orion-contracting.com';
             }
 
             // Create email record
@@ -56,7 +56,7 @@ class SimpleEmailTrackingService
     }
 
     /**
-     * Check for replies by monitoring designers@orion-contracting.com inbox
+     * Check for replies by monitoring engineering@orion-contracting.com inbox
      * This would typically be called via a webhook or scheduled job
      */
     public function checkForReplies(): array
@@ -72,7 +72,7 @@ class SimpleEmailTrackingService
             $replies = [];
 
             foreach ($trackedEmails as $email) {
-                // Check if there's a reply in the designers@orion-contracting.com inbox
+                // Check if there's a reply in the engineering@orion-contracting.com inbox
                 $reply = $this->checkDesignersInboxForReply($email);
                 if ($reply) {
                     $replies[] = $reply;
@@ -87,7 +87,7 @@ class SimpleEmailTrackingService
     }
 
     /**
-     * Check designers@orion-contracting.com inbox for replies to specific email
+     * Check engineering@orion-contracting.com inbox for replies to specific email
      * This method can be called manually or via webhook when a reply is detected
      */
     protected function checkDesignersInboxForReply(Email $email): ?array
@@ -96,7 +96,7 @@ class SimpleEmailTrackingService
             // For now, we'll implement a simple approach that can be triggered manually
             // In production, this would be called by:
             // 1. Email service webhooks (SendGrid, Mailgun, etc.)
-            // 2. IMAP connection to designers@orion-contracting.com
+            // 2. IMAP connection to engineering@orion-contracting.com
             // 3. Email forwarding rules
             // 4. Manual webhook calls
 
@@ -125,7 +125,7 @@ class SimpleEmailTrackingService
     }
 
     /**
-     * Process a reply found in designers@orion-contracting.com inbox
+     * Process a reply found in engineering@orion-contracting.com inbox
      */
     public function processReply(array $replyData, Email $originalEmail): ?Email
     {
@@ -269,7 +269,7 @@ class SimpleEmailTrackingService
     }
 
     /**
-     * Handle incoming email webhook from designers@orion-contracting.com
+     * Handle incoming email webhook from engineering@orion-contracting.com
      * This would be called when a reply is received
      */
     public function handleIncomingReply(array $emailData): bool

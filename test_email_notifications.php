@@ -11,7 +11,7 @@
 require_once __DIR__ . '/vendor/autoload.php';
 
 echo "=== Email Notifications Test ===\n";
-echo "Testing email notification system for designers@orion-contracting.com\n\n";
+echo "Testing email notification system for engineering@orion-contracting.com\n\n";
 
 try {
     // Initialize Laravel application

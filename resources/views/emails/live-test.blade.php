@@ -45,7 +45,7 @@
                                     <h6>📧 Designers Reply</h6>
                                 </div>
                                 <div class="card-body">
-                                    <p>Simulate reply from designers@orion-contracting.com:</p>
+                                    <p>Simulate reply from engineering@orion-contracting.com:</p>
                                     <button class="btn btn-primary btn-block" onclick="simulateDesignersReply()">
                                         <i class="fas fa-reply"></i> Simulate Designers Reply
                                     </button>
@@ -286,7 +286,7 @@ function simulateDesignersReplyForEmail(emailId) {
                 <p><strong>Notification ID:</strong> ${data.data.notification_id}</p>
                 <p><strong>User ID:</strong> ${data.data.user_id}</p>
                 <p><strong>Subject:</strong> ${data.data.original_subject}</p>
-                <p><em>This simulates a reply from designers@orion-contracting.com!</em></p>
+                <p><em>This simulates a reply from engineering@orion-contracting.com!</em></p>
             `;
         } else {
             resultsDiv.className = 'alert alert-danger';

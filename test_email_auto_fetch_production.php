@@ -2,7 +2,7 @@
 /**
  * Production Email Auto-Fetch Test Script
  *
- * This script tests the automatic email fetching system for designers@orion-contracting.com
+ * This script tests the automatic email fetching system for engineering@orion-contracting.com
  * Run this to verify that the system is working correctly in production.
  */
 
@@ -14,7 +14,7 @@ use App\Services\DesignersInboxNotificationService;
 use Illuminate\Support\Facades\Log;
 
 echo "=== Production Email Auto-Fetch Test ===\n";
-echo "Testing automatic email fetching for designers@orion-contracting.com\n\n";
+echo "Testing automatic email fetching for engineering@orion-contracting.com\n\n";
 
 try {
     // Initialize Laravel application
@@ -167,7 +167,7 @@ try {
 
     echo "\n=== Test Summary ===\n";
     echo "The automatic email fetching system is configured to:\n";
-    echo "✅ Fetch emails from designers@orion-contracting.com every 5 minutes\n";
+    echo "✅ Fetch emails from engineering@orion-contracting.com every 5 minutes\n";
     echo "✅ Prevent duplicate emails using message_id and enhanced checks\n";
     echo "✅ Create notifications for new emails and replies\n";
     echo "✅ Display notifications in the navbar dropdown\n";

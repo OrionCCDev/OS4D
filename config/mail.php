@@ -120,7 +120,7 @@ return [
     | IMAP Configuration for Email Monitoring
     |--------------------------------------------------------------------------
     |
-    | Configuration for monitoring designers@orion-contracting.com inbox
+    | Configuration for monitoring engineering@orion-contracting.com inbox
     | via IMAP connection
     |
     */
@@ -128,7 +128,7 @@ return [
     'imap' => [
         'host' => env('IMAP_HOST', 'mail.orion-contracting.com'),
         'port' => env('IMAP_PORT', 993),
-        'username' => env('IMAP_USERNAME', 'designers@orion-contracting.com'),
+        'username' => env('IMAP_USERNAME', 'engineering@orion-contracting.com'),
         'password' => env('IMAP_PASSWORD', ''),
         'folder' => env('IMAP_FOLDER', 'INBOX'),
         'ssl' => env('IMAP_SSL', true),

@@ -27,9 +27,9 @@ class EmailTrackerController extends Controller
         if ($user->isManager()) {
             // Manager can see ALL emails
             $query->where(function($q) {
-                $q->where('from_email', 'like', '%designers@orion-contracting.com%')
-                  ->orWhere('to_email', 'like', '%designers@orion-contracting.com%')
-                  ->orWhere('cc', 'like', '%designers@orion-contracting.com%');
+                $q->where('from_email', 'like', '%engineering@orion-contracting.com%')
+                  ->orWhere('to_email', 'like', '%engineering@orion-contracting.com%')
+                  ->orWhere('cc', 'like', '%engineering@orion-contracting.com%');
             });
         } else {
             // Regular users can only see emails they're involved in
@@ -66,9 +66,9 @@ class EmailTrackerController extends Controller
                 break;
             case 'designers':
                 $query->where(function($q) {
-                    $q->where('from_email', 'like', '%designers@orion-contracting.com%')
-                      ->orWhere('to_email', 'like', '%designers@orion-contracting.com%')
-                      ->orWhere('cc', 'like', '%designers@orion-contracting.com%');
+                    $q->where('from_email', 'like', '%engineering@orion-contracting.com%')
+                      ->orWhere('to_email', 'like', '%engineering@orion-contracting.com%')
+                      ->orWhere('cc', 'like', '%engineering@orion-contracting.com%');
                 });
                 break;
         }
@@ -105,9 +105,9 @@ class EmailTrackerController extends Controller
         if ($user->isManager()) {
             // Manager sees all emails
             $baseQuery->where(function($q) {
-                $q->where('from_email', 'like', '%designers@orion-contracting.com%')
-                  ->orWhere('to_email', 'like', '%designers@orion-contracting.com%')
-                  ->orWhere('cc', 'like', '%designers@orion-contracting.com%');
+                $q->where('from_email', 'like', '%engineering@orion-contracting.com%')
+                  ->orWhere('to_email', 'like', '%engineering@orion-contracting.com%')
+                  ->orWhere('cc', 'like', '%engineering@orion-contracting.com%');
             });
         } else {
             // User sees only their emails
@@ -127,9 +127,9 @@ class EmailTrackerController extends Controller
             'received_emails' => (clone $baseQuery)->where('email_type', 'received')->count(),
             'replies' => (clone $baseQuery)->whereNotNull('reply_to_email_id')->count(),
             'designers_emails' => (clone $baseQuery)->where(function($q) {
-                $q->where('from_email', 'like', '%designers@orion-contracting.com%')
-                  ->orWhere('to_email', 'like', '%designers@orion-contracting.com%')
-                  ->orWhere('cc', 'like', '%designers@orion-contracting.com%');
+                $q->where('from_email', 'like', '%engineering@orion-contracting.com%')
+                  ->orWhere('to_email', 'like', '%engineering@orion-contracting.com%')
+                  ->orWhere('cc', 'like', '%engineering@orion-contracting.com%');
             })->count(),
             'emails_today' => (clone $baseQuery)->whereDate('created_at', today())->count(),
             'emails_this_week' => (clone $baseQuery)->where('created_at', '>=', now()->subWeek())->count(),
@@ -202,9 +202,9 @@ class EmailTrackerController extends Controller
 
         if ($user->isManager()) {
             $query->where(function($q) {
-                $q->where('from_email', 'like', '%designers@orion-contracting.com%')
-                  ->orWhere('to_email', 'like', '%designers@orion-contracting.com%')
-                  ->orWhere('cc', 'like', '%designers@orion-contracting.com%');
+                $q->where('from_email', 'like', '%engineering@orion-contracting.com%')
+                  ->orWhere('to_email', 'like', '%engineering@orion-contracting.com%')
+                  ->orWhere('cc', 'like', '%engineering@orion-contracting.com%');
             });
         } else {
             $query->where(function($q) use ($user) {
@@ -238,9 +238,9 @@ class EmailTrackerController extends Controller
                 break;
             case 'designers':
                 $query->where(function($q) {
-                    $q->where('from_email', 'like', '%designers@orion-contracting.com%')
-                      ->orWhere('to_email', 'like', '%designers@orion-contracting.com%')
-                      ->orWhere('cc', 'like', '%designers@orion-contracting.com%');
+                    $q->where('from_email', 'like', '%engineering@orion-contracting.com%')
+                      ->orWhere('to_email', 'like', '%engineering@orion-contracting.com%')
+                      ->orWhere('cc', 'like', '%engineering@orion-contracting.com%');
                 });
                 break;
         }
@@ -291,9 +291,9 @@ class EmailTrackerController extends Controller
 
         if ($user->isManager()) {
             $query->where(function($q) {
-                $q->where('from_email', 'like', '%designers@orion-contracting.com%')
-                  ->orWhere('to_email', 'like', '%designers@orion-contracting.com%')
-                  ->orWhere('cc', 'like', '%designers@orion-contracting.com%');
+                $q->where('from_email', 'like', '%engineering@orion-contracting.com%')
+                  ->orWhere('to_email', 'like', '%engineering@orion-contracting.com%')
+                  ->orWhere('cc', 'like', '%engineering@orion-contracting.com%');
             });
         } else {
             $query->where(function($q) use ($user) {
@@ -318,9 +318,9 @@ class EmailTrackerController extends Controller
                 break;
             case 'designers':
                 $query->where(function($q) {
-                    $q->where('from_email', 'like', '%designers@orion-contracting.com%')
-                      ->orWhere('to_email', 'like', '%designers@orion-contracting.com%')
-                      ->orWhere('cc', 'like', '%designers@orion-contracting.com%');
+                    $q->where('from_email', 'like', '%engineering@orion-contracting.com%')
+                      ->orWhere('to_email', 'like', '%engineering@orion-contracting.com%')
+                      ->orWhere('cc', 'like', '%engineering@orion-contracting.com%');
                 });
                 break;
         }

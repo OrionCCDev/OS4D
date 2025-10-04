@@ -65,13 +65,13 @@ Here are ALL the cron jobs you should have for complete automation:
 - **Status**: ❌ Needs to be added
 
 ### 4. Live Email Monitoring (Every 2 Minutes) - **ADD THIS**
-- Monitors designers@orion-contracting.com inbox
+- Monitors engineering@orion-contracting.com inbox
 - Creates live notifications
 - Updates statistics
 - **Status**: ❌ Needs to be added
 
 ### 5. Designers Inbox Monitoring (Every 5 Minutes) - **ADD THIS**
-- Monitors designers@orion-contracting.com specifically
+- Monitors engineering@orion-contracting.com specifically
 - Processes incoming emails
 - Creates notifications for relevant users
 - **Status**: ❌ Needs to be added
@@ -100,7 +100,7 @@ Once all cron jobs are set up, the system will automatically:
 
 ### ✅ **Live Email Monitoring**
 - Every 2 minutes, update live statistics
-- Monitor designers@orion-contracting.com inbox
+- Monitor engineering@orion-contracting.com inbox
 - Real-time notifications
 
 ### ✅ **Email Tracker Updates**

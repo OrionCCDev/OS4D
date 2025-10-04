@@ -23,7 +23,7 @@ class FetchDesignersInboxEmails extends Command
      *
      * @var string
      */
-    protected $description = 'Automatically fetch and store emails from designers@orion-contracting.com inbox';
+    protected $description = 'Automatically fetch and store emails from engineering@orion-contracting.com inbox';
 
     /**
      * The email service instance.

@@ -128,7 +128,7 @@ class LiveEmailTestController extends Controller
     }
 
     /**
-     * Simulate a real email reply from designers@orion-contracting.com
+     * Simulate a real email reply from engineering@orion-contracting.com
      */
     public function simulateDesignersReply(Request $request)
     {
@@ -144,12 +144,12 @@ class LiveEmailTestController extends Controller
                 return response()->json(['error' => 'Email not found'], 404);
             }
 
-            // Create a reply email as if it came from designers@orion-contracting.com
+            // Create a reply email as if it came from engineering@orion-contracting.com
             $replyEmail = Email::create([
-                'from_email' => 'designers@orion-contracting.com',
+                'from_email' => 'engineering@orion-contracting.com',
                 'to_email' => $email->from_email,
                 'subject' => 'Re: ' . $email->subject,
-                'body' => 'This is a simulated reply from designers@orion-contracting.com at ' . now()->toISOString() . '. This simulates someone replying to your email.',
+                'body' => 'This is a simulated reply from engineering@orion-contracting.com at ' . now()->toISOString() . '. This simulates someone replying to your email.',
                 'email_type' => 'received',
                 'status' => 'received',
                 'received_at' => now(),
@@ -168,7 +168,7 @@ class LiveEmailTestController extends Controller
                 'user_id' => $email->user_id,
                 'email_id' => $email->id,
                 'notification_type' => 'reply_received',
-                'message' => "You received a reply from designers@orion-contracting.com regarding: {$email->subject}",
+                'message' => "You received a reply from engineering@orion-contracting.com regarding: {$email->subject}",
                 'is_read' => false,
             ]);
 

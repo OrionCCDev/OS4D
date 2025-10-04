@@ -19,7 +19,7 @@ class EmailFetchController extends Controller
     }
 
     /**
-     * Display all emails from designers@orion-contracting.com inbox
+     * Display all emails from engineering@orion-contracting.com inbox
      */
     public function index(Request $request)
     {

@@ -36,7 +36,7 @@
                                     <div class="text-muted">
                                         <div class="mb-1">
                                             <strong>From:</strong> {{ $email->from_email }}
-                                            @if(str_contains($email->from_email, 'designers@orion-contracting.com'))
+                                            @if(str_contains($email->from_email, 'engineering@orion-contracting.com'))
                                                 <span class="badge bg-success ms-2">Designers</span>
                                             @endif
                                         </div>

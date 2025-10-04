@@ -1,6 +1,6 @@
 @extends('layouts.header')
 
-@section('title', 'Email Tracker - designers@orion-contracting.com')
+@section('title', 'Email Tracker - engineering@orion-contracting.com')
 
 @section('content')
 <div class="container-xxl flex-grow-1 container-p-y">
@@ -11,7 +11,7 @@
                     <div>
                         <h5 class="mb-0">
                             <i class="bx bx-envelope me-2"></i>
-                            Email Tracker - designers@orion-contracting.com
+                            Email Tracker - engineering@orion-contracting.com
                         </h5>
                         <small class="text-muted">
                             @if(Auth::user()->isManager())
@@ -149,7 +149,7 @@
                                             </div>
                                             <div>
                                                 <div class="fw-semibold">{{ $email->from_email }}</div>
-                                                @if(str_contains($email->from_email, 'designers@orion-contracting.com'))
+                                                @if(str_contains($email->from_email, 'engineering@orion-contracting.com'))
                                                     <small class="text-success">Designers</small>
                                                 @endif
                                             </div>

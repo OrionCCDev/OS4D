@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Log;
 class LiveEmailMonitorCommand extends Command
 {
     protected $signature = 'email:live-monitor {--test : Test mode without actual IMAP connection}';
-    protected $description = 'Monitor designers@orion-contracting.com inbox for live email notifications';
+    protected $description = 'Monitor engineering@orion-contracting.com inbox for live email notifications';
 
     public function handle()
     {

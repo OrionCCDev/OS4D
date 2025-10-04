@@ -34,7 +34,7 @@ class SimpleNotificationTestController extends Controller
                 'user_id' => $email->user_id ?? 1,
                 'email_id' => $email->id,
                 'notification_type' => 'reply_received',
-                'message' => "You received a reply from designers@orion-contracting.com regarding: {$email->subject}",
+                'message' => "You received a reply from engineering@orion-contracting.com regarding: {$email->subject}",
                 'is_read' => false,
             ]);
 
@@ -45,7 +45,7 @@ class SimpleNotificationTestController extends Controller
                     'user_id' => $manager->id,
                     'email_id' => $email->id,
                     'notification_type' => 'reply_received',
-                    'message' => "Reply received from designers@orion-contracting.com for email: {$email->subject}",
+                    'message' => "Reply received from engineering@orion-contracting.com for email: {$email->subject}",
                     'is_read' => false,
                 ]);
             }

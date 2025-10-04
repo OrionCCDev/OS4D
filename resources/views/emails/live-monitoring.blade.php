@@ -10,7 +10,7 @@
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">
                         <i class="bx bx-envelope me-2"></i>
-                        Live Email Monitoring - designers@orion-contracting.com
+                        Live Email Monitoring - engineering@orion-contracting.com
                     </h5>
                     <div class="d-flex gap-2">
                         <button class="btn btn-primary btn-sm" onclick="triggerMonitoring()">

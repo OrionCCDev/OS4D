@@ -8,7 +8,7 @@
         <div class="col-12">
             <x-modern-breadcrumb
                 title="Designers Inbox"
-                subtitle="Monitor emails from designers@orion-contracting.com"
+                subtitle="Monitor emails from engineering@orion-contracting.com"
                 icon="bx-inbox"
                 theme="emails"
                 :breadcrumbs="[
@@ -25,7 +25,7 @@
             <div class="alert alert-info d-flex align-items-center">
                 <i class="bx bx-info-circle me-2"></i>
                 <div>
-                    <strong>Designers Inbox:</strong> This section shows emails from <strong>designers@orion-contracting.com</strong>.
+                    <strong>Engineering Inbox:</strong> This section shows emails from <strong>engineering@orion-contracting.com</strong>.
                     Only managers can access this inbox to monitor incoming emails from clients and stakeholders.
                 </div>
             </div>

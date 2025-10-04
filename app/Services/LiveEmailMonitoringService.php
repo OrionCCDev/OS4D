@@ -23,7 +23,7 @@ class LiveEmailMonitoringService
     {
         $this->imapHost = config('mail.imap.host', 'mail.orion-contracting.com');
         $this->imapPort = config('mail.imap.port', 993);
-        $this->imapUsername = config('mail.imap.username', 'designers@orion-contracting.com');
+        $this->imapUsername = config('mail.imap.username', 'engineering@orion-contracting.com');
         $this->imapPassword = config('mail.imap.password', '');
         $this->imapFolder = config('mail.imap.folder', 'INBOX');
     }

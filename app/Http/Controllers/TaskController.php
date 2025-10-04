@@ -754,9 +754,9 @@ class TaskController extends Controller
             $ccEmails = $emailPreparation->cc_emails ? array_filter(array_map('trim', explode(',', $emailPreparation->cc_emails))) : [];
             $bccEmails = $emailPreparation->bcc_emails ? array_filter(array_map('trim', explode(',', $emailPreparation->bcc_emails))) : [];
 
-            // Always add designers@orion-contracting.com to CC
-            if (!in_array('designers@orion-contracting.com', $ccEmails)) {
-                $ccEmails[] = 'designers@orion-contracting.com';
+            // Always add engineering@orion-contracting.com to CC
+            if (!in_array('engineering@orion-contracting.com', $ccEmails)) {
+                $ccEmails[] = 'engineering@orion-contracting.com';
             }
 
             // Prepare email data
@@ -789,11 +789,11 @@ class TaskController extends Controller
                 Log::info('Using Gmail OAuth for sending email - Gmail Only Mode');
                 $gmailOAuthService = app(\App\Services\GmailOAuthService::class);
 
-                // Remove designers@orion-contracting.com from CC for Gmail OAuth
+                // Remove engineering@orion-contracting.com from CC for Gmail OAuth
                 $gmailEmailData = $emailData;
                 if (isset($gmailEmailData['cc'])) {
                     $gmailEmailData['cc'] = array_filter($gmailEmailData['cc'], function($email) {
-                        return $email !== 'designers@orion-contracting.com';
+                        return $email !== 'engineering@orion-contracting.com';
                     });
                 }
 
@@ -802,7 +802,7 @@ class TaskController extends Controller
                 if ($success) {
                     Log::info('Confirmation email sent successfully for task: ' . $task->id . ' by user: ' . Auth::id() . ' via Gmail OAuth');
 
-                    // Send separate email to designers@orion-contracting.com via SMTP
+                    // Send separate email to engineering@orion-contracting.com via SMTP
                     $this->sendDesignersNotification($task, $emailPreparation, $user);
                 } else {
                     Log::error('Gmail OAuth failed for user: ' . $user->id . ' - Email not sent');
@@ -814,7 +814,7 @@ class TaskController extends Controller
                 }
             } else {
                 // Use Laravel Mail with simple tracking
-                Log::info('Using simple email tracking - CC to designers@orion-contracting.com');
+                Log::info('Using simple email tracking - CC to engineering@orion-contracting.com');
 
                 // Create the mail instance
                 $mail = new \App\Mail\TaskConfirmationMail($task, $emailPreparation, $user);
@@ -844,7 +844,7 @@ class TaskController extends Controller
                     ], 400);
                 }
 
-                Log::info('Confirmation email sent successfully for task: ' . $task->id . ' by user: ' . Auth::id() . ' with CC to designers@orion-contracting.com');
+                Log::info('Confirmation email sent successfully for task: ' . $task->id . ' by user: ' . Auth::id() . ' with CC to engineering@orion-contracting.com');
             }
 
             // Update email preparation status
@@ -936,7 +936,7 @@ class TaskController extends Controller
     }
 
     /**
-     * Send notification email to designers@orion-contracting.com via SMTP
+     * Send notification email to engineering@orion-contracting.com via SMTP
      */
     private function sendDesignersNotification(Task $task, $emailPreparation, User $sender)
     {
@@ -945,9 +945,9 @@ class TaskController extends Controller
 
             // Create a copy of the email preparation for designers
             $designersEmailData = [
-                'from' => 'designers@orion-contracting.com',
-                'from_name' => 'Orion Designers System',
-                'to' => ['designers@orion-contracting.com'],
+                'from' => 'engineering@orion-contracting.com',
+                'from_name' => 'Orion Engineering System',
+                'to' => ['engineering@orion-contracting.com'],
                 'subject' => '[NOTIFICATION] ' . $emailPreparation->subject,
                 'body' => view('emails.task-confirmation', [
                     'task' => $task,
@@ -959,7 +959,7 @@ class TaskController extends Controller
 
             // Send via Laravel Mail (SMTP)
             $mail = new \App\Mail\TaskConfirmationMail($task, $emailPreparation, $sender);
-            $mail->from('designers@orion-contracting.com', 'Orion Designers System');
+            $mail->from('engineering@orion-contracting.com', 'Orion Engineering System');
 
             Mail::send($mail);
 

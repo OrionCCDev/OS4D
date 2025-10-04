@@ -42,7 +42,7 @@ class DebugNotificationController extends Controller
                 'user_id' => $userId,
                 'email_id' => $email->id,
                 'notification_type' => 'reply_received',
-                'message' => "You received a reply from designers@orion-contracting.com regarding: {$email->subject}",
+                'message' => "You received a reply from engineering@orion-contracting.com regarding: {$email->subject}",
                 'is_read' => false,
             ]);
 

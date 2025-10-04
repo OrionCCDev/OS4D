@@ -166,7 +166,7 @@ try {
     // Summary
     echo "=== Summary ===\n";
     echo "Your email auto-fetch system is configured to:\n";
-    echo "• Fetch emails from designers@orion-contracting.com every 5 minutes\n";
+    echo "• Fetch emails from engineering@orion-contracting.com every 5 minutes\n";
     echo "• Prevent duplicate emails using enhanced checks\n";
     echo "• Create notifications for new emails and replies\n";
     echo "• Display notifications in the navbar with real-time updates\n\n";

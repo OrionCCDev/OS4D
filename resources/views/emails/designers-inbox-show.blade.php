@@ -104,7 +104,7 @@
                                 @endif
 
                                 <div class="text-muted small mt-2">
-                                    <div><strong>Source:</strong> designers@orion-contracting.com</div>
+                                    <div><strong>Source:</strong> engineering@orion-contracting.com</div>
                                     <div><strong>Message ID:</strong> {{ $email->message_id }}</div>
                                 </div>
                             </div>

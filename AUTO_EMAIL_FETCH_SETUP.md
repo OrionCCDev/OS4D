@@ -4,13 +4,13 @@ This document describes the new automatic email fetching and notification system
 
 ## Overview
 
-The system automatically fetches emails from `designers@orion-contracting.com` every 3 minutes, stores them in the database (preventing duplicates), and creates notifications for managers when new emails or replies are received.
+The system automatically fetches emails from `engineering@orion-contracting.com` every 3 minutes, stores them in the database (preventing duplicates), and creates notifications for managers when new emails or replies are received.
 
 ## Features
 
 ### ✅ Automatic Email Fetching
 - **Frequency**: Every 3 minutes via scheduled command
-- **Source**: `designers@orion-contracting.com` IMAP inbox
+- **Source**: `engineering@orion-contracting.com` IMAP inbox
 - **Duplicate Prevention**: Advanced checking using message_id, subject+from+date, and body hash
 - **Incremental Fetching**: Only fetches new emails since last fetch
 
@@ -149,7 +149,7 @@ The system uses existing IMAP configuration from `config/mail.php`:
 'imap' => [
     'host' => 'mail.orion-contracting.com',
     'port' => 993,
-    'username' => 'designers@orion-contracting.com',
+    'username' => 'engineering@orion-contracting.com',
     'password' => env('IMAP_PASSWORD'),
     'folder' => 'INBOX',
 ],
@@ -241,7 +241,7 @@ IMAP_PASSWORD=your_imap_password
 MAIL_MAILER=smtp
 MAIL_HOST=mail.orion-contracting.com
 MAIL_PORT=993
-MAIL_USERNAME=designers@orion-contracting.com
+MAIL_USERNAME=engineering@orion-contracting.com
 ```
 
 ### 2. Cron Job

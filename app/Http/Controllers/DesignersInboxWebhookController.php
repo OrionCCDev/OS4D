@@ -74,7 +74,7 @@ class DesignersInboxWebhookController extends Controller
         if ($request->has('from') && $request->has('subject')) {
             return [
                 'from' => $request->input('from'),
-                'to' => $request->input('to', 'designers@orion-contracting.com'),
+                'to' => $request->input('to', 'engineering@orion-contracting.com'),
                 'subject' => $request->input('subject'),
                 'body' => $request->input('body', ''),
                 'message_id' => $request->input('message_id', 'webhook-' . time()),
@@ -87,7 +87,7 @@ class DesignersInboxWebhookController extends Controller
         if (!empty($jsonData)) {
             return [
                 'from' => $jsonData['from'] ?? 'unknown@example.com',
-                'to' => $jsonData['to'] ?? 'designers@orion-contracting.com',
+                'to' => $jsonData['to'] ?? 'engineering@orion-contracting.com',
                 'subject' => $jsonData['subject'] ?? 'No Subject',
                 'body' => $jsonData['body'] ?? '',
                 'message_id' => $jsonData['message_id'] ?? 'webhook-' . time(),
@@ -98,7 +98,7 @@ class DesignersInboxWebhookController extends Controller
         // Format 3: Form data
         return [
             'from' => $request->input('from', 'unknown@example.com'),
-            'to' => $request->input('to', 'designers@orion-contracting.com'),
+            'to' => $request->input('to', 'engineering@orion-contracting.com'),
             'subject' => $request->input('subject', 'No Subject'),
             'body' => $request->input('body', ''),
             'message_id' => $request->input('message_id', 'webhook-' . time()),

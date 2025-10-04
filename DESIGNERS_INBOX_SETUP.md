@@ -1,15 +1,15 @@
-# 📧 Complete Email Tracking Setup for designers@orion-contracting.com
+# 📧 Complete Email Tracking Setup for engineering@orion-contracting.com
 
 ## 🎯 **Overview**
 
-I've created a comprehensive email tracking system that monitors ALL emails sent to `designers@orion-contracting.com` and automatically detects replies. This system works with ANY email service provider, not just Gmail.
+I've created a comprehensive email tracking system that monitors ALL emails sent to `engineering@orion-contracting.com` and automatically detects replies. This system works with ANY email service provider, not just Gmail.
 
 ## 🔧 **What I've Built**
 
 ### ✅ **1. IMAP Monitoring Service**
 - **File**: `app/Services/DesignersInboxMonitorService.php`
 - **Command**: `php artisan email:monitor-designers-inbox`
-- **Function**: Connects to `designers@orion-contracting.com` via IMAP and monitors for new emails
+- **Function**: Connects to `engineering@orion-contracting.com` via IMAP and monitors for new emails
 
 ### ✅ **2. Webhook Handler**
 - **File**: `app/Http/Controllers/DesignersInboxWebhookController.php`
@@ -33,10 +33,10 @@ I've created a comprehensive email tracking system that monitors ALL emails sent
 Add these to your `.env` file:
 
 ```env
-# IMAP Configuration for designers@orion-contracting.com
+# IMAP Configuration for engineering@orion-contracting.com
 IMAP_HOST=mail.orion-contracting.com
 IMAP_PORT=993
-IMAP_USERNAME=designers@orion-contracting.com
+IMAP_USERNAME=engineering@orion-contracting.com
 IMAP_PASSWORD=your_designers_email_password_here
 IMAP_FOLDER=INBOX
 IMAP_SSL=true
@@ -49,7 +49,7 @@ IMAP_SSL=true
 - **Cons**: Requires IMAP credentials, runs on schedule (not real-time)
 
 **Setup:**
-1. Get the password for `designers@orion-contracting.com`
+1. Get the password for `engineering@orion-contracting.com`
 2. Add it to your `.env` file
 3. Test: `php artisan email:monitor-designers-inbox --test`
 
@@ -59,7 +59,7 @@ IMAP_SSL=true
 
 **Setup:**
 1. Go to cPanel → Email Forwarders
-2. Create forwarder: `designers@orion-contracting.com` → `webhook@odc.com.orion-contracting.com`
+2. Create forwarder: `engineering@orion-contracting.com` → `webhook@odc.com.orion-contracting.com`
 3. Configure webhook endpoint: `https://odc.com.orion-contracting.com/webhook/designers-inbox`
 
 #### **Option C: Both Methods (Best)**
@@ -85,7 +85,7 @@ curl -X POST https://odc.com.orion-contracting.com/webhook/designers-inbox \
   -H "Content-Type: application/json" \
   -d '{
     "from": "test@example.com",
-    "to": "designers@orion-contracting.com",
+    "to": "engineering@orion-contracting.com",
     "subject": "Re: Task Completion Confirmation - Test Task",
     "body": "This is a test reply",
     "message_id": "test-reply-' . time() . '"
