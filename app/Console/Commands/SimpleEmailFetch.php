@@ -1,0 +1,112 @@
+<?php
+
+namespace App\Console\Commands;
+
+use Illuminate\Console\Command;
+use App\Services\DesignersInboxEmailService;
+use App\Services\NotificationService;
+use App\Models\User;
+use Illuminate\Support\Facades\Log;
+
+class SimpleEmailFetch extends Command
+{
+    /**
+     * The name and signature of the console command.
+     *
+     * @var string
+     */
+    protected $signature = 'emails:simple-fetch {--max-results=50 : Maximum number of emails to fetch}';
+
+    /**
+     * The console command description.
+     *
+     * @var string
+     */
+    protected $description = 'Simple email fetch without locks (for debugging)';
+
+    protected $emailService;
+    protected $notificationService;
+
+    public function __construct(
+        DesignersInboxEmailService $emailService,
+        NotificationService $notificationService
+    ) {
+        parent::__construct();
+        $this->emailService = $emailService;
+        $this->notificationService = $notificationService;
+    }
+
+    /**
+     * Execute the console command.
+     */
+    public function handle()
+    {
+        $this->info('🚀 Starting simple email fetch (no locks)...');
+
+        try {
+            $maxResults = (int) $this->option('max-results');
+
+            // Get manager user
+            $manager = User::whereIn('role', ['admin', 'manager'])->first();
+            if (!$manager) {
+                $this->error('❌ No manager user found');
+                return 1;
+            }
+
+            $this->info("Using manager: {$manager->name}");
+
+            // Fetch emails
+            $this->info("Fetching emails with max results: {$maxResults}");
+            $fetchResult = $this->emailService->fetchNewEmails($maxResults);
+
+            if (!$fetchResult['success']) {
+                $this->error('❌ Failed to fetch emails: ' . implode(', ', $fetchResult['errors']));
+                return 1;
+            }
+
+            $this->info("✅ Fetched: {$fetchResult['total_fetched']} emails");
+
+            if ($fetchResult['total_fetched'] === 0) {
+                $this->info('ℹ️  No new emails found');
+                return 0;
+            }
+
+            // Store emails
+            $storeResult = $this->emailService->storeEmailsInDatabase($fetchResult['emails'], $manager);
+            $this->info("✅ Stored: {$storeResult['stored']} new emails");
+            $this->info("⏭️  Skipped: {$storeResult['skipped']} duplicates");
+
+            // Create notifications
+            $notificationCount = 0;
+            if (!empty($storeResult['stored_emails'])) {
+                foreach ($storeResult['stored_emails'] as $email) {
+                    try {
+                        $this->notificationService->createNewEmailNotification($email);
+                        $notificationCount++;
+                    } catch (\Exception $e) {
+                        $this->warn("Failed to create notification for email {$email->id}: " . $e->getMessage());
+                    }
+                }
+            }
+
+            $this->info("🔔 Created: {$notificationCount} notifications");
+
+            Log::info('SimpleEmailFetch: Successfully completed', [
+                'fetched' => $fetchResult['total_fetched'],
+                'stored' => $storeResult['stored'],
+                'skipped' => $storeResult['skipped'],
+                'notifications' => $notificationCount
+            ]);
+
+            return 0;
+
+        } catch (\Exception $e) {
+            $this->error('❌ Exception: ' . $e->getMessage());
+            Log::error('SimpleEmailFetch: Exception occurred', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return 1;
+        }
+    }
+}
