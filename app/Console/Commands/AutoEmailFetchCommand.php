@@ -54,8 +54,8 @@ class AutoEmailFetchCommand extends Command
             $interval = (int) $this->option('interval');
             $maxResults = (int) $this->option('max-results');
 
-            // Check if another auto-fetch is running (use atomic lock)
-            $lockKey = 'auto-email-fetch:running';
+            // Use a different lock key to avoid conflicts with old code
+            $lockKey = 'auto-email-fetch-v2:running';
             $lockValue = time() . '-' . uniqid();
 
             // Try to acquire lock atomically
