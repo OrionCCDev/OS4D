@@ -8,6 +8,7 @@ use App\Models\EmailFetchLog;
 use App\Models\DesignersInboxNotification;
 use App\Services\DesignersInboxEmailService;
 use App\Services\DesignersInboxNotificationService;
+use App\Services\NotificationService;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
 use Carbon\Carbon;
@@ -19,7 +20,7 @@ class AutoEmailFetchService
 
     public function __construct(
         DesignersInboxEmailService $emailService,
-        DesignersInboxNotificationService $notificationService
+        NotificationService $notificationService
     ) {
         $this->emailService = $emailService;
         $this->notificationService = $notificationService;

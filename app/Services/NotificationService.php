@@ -4,7 +4,9 @@ namespace App\Services;
 
 use App\Models\UnifiedNotification;
 use App\Models\User;
+use App\Models\Email;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 
 class NotificationService
 {
@@ -242,5 +244,105 @@ class NotificationService
             $email->id,
             'low'
         );
+    }
+
+    /**
+     * Create notification for new email (used by AutoEmailFetchService)
+     */
+    public function createNewEmailNotification(Email $email)
+    {
+        try {
+            // Get all managers and admins
+            $managers = User::whereIn('role', ['admin', 'manager'])->get();
+            $currentUserId = Auth::id();
+
+            foreach ($managers as $manager) {
+                // Don't send notification to the current user (manager who performed the action)
+                if ($manager->id === $currentUserId) {
+                    continue;
+                }
+
+                // Check if notification already exists to prevent duplicates
+                $existingNotification = UnifiedNotification::where('user_id', $manager->id)
+                    ->where('email_id', $email->id)
+                    ->where('type', 'email_received')
+                    ->first();
+
+                if ($existingNotification) {
+                    Log::info("UnifiedNotification already exists for email ID: {$email->id}, user ID: {$manager->id}");
+                    continue; // Skip creating duplicate notification
+                }
+
+                $this->createEmailNotification(
+                    $manager->id,
+                    'email_received',
+                    'New Email Received',
+                    "New email received from {$email->from_email}: {$email->subject}",
+                    [
+                        'from' => $email->from_email,
+                        'subject' => $email->subject,
+                        'has_attachments' => !empty($email->attachments),
+                        'email_source' => $email->email_source ?? 'designers_inbox'
+                    ],
+                    $email->id,
+                    'normal'
+                );
+
+                Log::info("Created UnifiedNotification for new email: {$email->subject} for user: {$manager->id}");
+            }
+
+        } catch (\Exception $e) {
+            Log::error('Error creating new email notification: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Create notification for email reply (used by AutoEmailFetchService)
+     */
+    public function createReplyNotification(Email $email)
+    {
+        try {
+            // Get all managers and admins
+            $managers = User::whereIn('role', ['admin', 'manager'])->get();
+            $currentUserId = Auth::id();
+
+            foreach ($managers as $manager) {
+                // Don't send notification to the current user (manager who performed the action)
+                if ($manager->id === $currentUserId) {
+                    continue;
+                }
+
+                // Check if notification already exists to prevent duplicates
+                $existingNotification = UnifiedNotification::where('user_id', $manager->id)
+                    ->where('email_id', $email->id)
+                    ->where('type', 'email_reply')
+                    ->first();
+
+                if ($existingNotification) {
+                    Log::info("UnifiedNotification reply already exists for email ID: {$email->id}, user ID: {$manager->id}");
+                    continue; // Skip creating duplicate notification
+                }
+
+                $this->createEmailNotification(
+                    $manager->id,
+                    'email_reply',
+                    'Email Reply Received',
+                    "You received a reply from {$email->from_email} regarding: {$email->subject}",
+                    [
+                        'from' => $email->from_email,
+                        'subject' => $email->subject,
+                        'has_attachments' => !empty($email->attachments),
+                        'email_source' => $email->email_source ?? 'designers_inbox'
+                    ],
+                    $email->id,
+                    'normal'
+                );
+
+                Log::info("Created UnifiedNotification for email reply: {$email->subject} for user: {$manager->id}");
+            }
+
+        } catch (\Exception $e) {
+            Log::error('Error creating reply notification: ' . $e->getMessage());
+        }
     }
 }
