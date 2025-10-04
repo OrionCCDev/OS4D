@@ -291,9 +291,174 @@ class NotificationService
                 Log::info("Created UnifiedNotification for new email: {$email->subject} for user: {$manager->id}");
             }
 
+            // NEW: Also notify users (role: 'user') if their email is in CC or TO
+            $this->createUserEmailNotifications($email);
+
         } catch (\Exception $e) {
             Log::error('Error creating new email notification: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Create notifications for users (role: 'user') when their email is relevant
+     */
+    public function createUserEmailNotifications(Email $email)
+    {
+        try {
+            // Get all users (role: 'user')
+            $users = User::where('role', 'user')->get();
+            
+            foreach ($users as $user) {
+                // Check if user's email is in CC, TO, or if this is a reply to their email
+                if ($this->isEmailRelevantToUser($email, $user)) {
+                    // Check if notification already exists to prevent duplicates
+                    $existingNotification = UnifiedNotification::where('user_id', $user->id)
+                        ->where('email_id', $email->id)
+                        ->where('type', 'email_received')
+                        ->first();
+
+                    if ($existingNotification) {
+                        Log::info("User notification already exists for email ID: {$email->id}, user ID: {$user->id} (notification ID: {$existingNotification->id})");
+                        continue;
+                    }
+
+                    // Determine notification message based on relevance
+                    $message = $this->getUserEmailNotificationMessage($email, $user);
+
+                    $this->createEmailNotification(
+                        $user->id,
+                        'email_received',
+                        'New Email Received',
+                        $message,
+                        [
+                            'from' => $email->from_email,
+                            'subject' => $email->subject,
+                            'has_attachments' => !empty($email->attachments),
+                            'email_source' => $email->email_source ?? 'designers_inbox',
+                            'relevance_reason' => $this->getEmailRelevanceReason($email, $user)
+                        ],
+                        $email->id,
+                        'normal'
+                    );
+
+                    Log::info("Created user notification for email: {$email->subject} for user: {$user->id} ({$user->email})");
+                }
+            }
+
+        } catch (\Exception $e) {
+            Log::error('Error creating user email notifications: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Check if an email is relevant to a user
+     */
+    private function isEmailRelevantToUser(Email $email, User $user): bool
+    {
+        $userEmail = strtolower(trim($user->email));
+        
+        // Check if user's email is in TO field
+        if ($email->to_email && strpos(strtolower($email->to_email), $userEmail) !== false) {
+            return true;
+        }
+        
+        // Check if user's email is in CC field
+        if ($email->cc && strpos(strtolower($email->cc), $userEmail) !== false) {
+            return true;
+        }
+        
+        // Check if this is a reply to an email where the user was involved
+        if ($email->in_reply_to_email_id) {
+            $originalEmail = Email::find($email->in_reply_to_email_id);
+            if ($originalEmail) {
+                // Check if user was in the original email's TO or CC
+                if ($originalEmail->to_email && strpos(strtolower($originalEmail->to_email), $userEmail) !== false) {
+                    return true;
+                }
+                if ($originalEmail->cc && strpos(strtolower($originalEmail->cc), $userEmail) !== false) {
+                    return true;
+                }
+            }
+        }
+        
+        // Check if this is a reply to an email sent by the user
+        if ($email->in_reply_to_email_id) {
+            $originalEmail = Email::find($email->in_reply_to_email_id);
+            if ($originalEmail && strpos(strtolower($originalEmail->from_email), $userEmail) !== false) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+
+    /**
+     * Get the notification message for user email notifications
+     */
+    private function getUserEmailNotificationMessage(Email $email, User $user): string
+    {
+        $userEmail = strtolower(trim($user->email));
+        
+        // Check if user's email is in TO field
+        if ($email->to_email && strpos(strtolower($email->to_email), $userEmail) !== false) {
+            return "New email sent to you from {$email->from_email}: {$email->subject}";
+        }
+        
+        // Check if user's email is in CC field
+        if ($email->cc && strpos(strtolower($email->cc), $userEmail) !== false) {
+            return "New email (you're CC'd) from {$email->from_email}: {$email->subject}";
+        }
+        
+        // Check if this is a reply to an email where the user was involved
+        if ($email->in_reply_to_email_id) {
+            $originalEmail = Email::find($email->in_reply_to_email_id);
+            if ($originalEmail) {
+                if ($originalEmail->to_email && strpos(strtolower($originalEmail->to_email), $userEmail) !== false) {
+                    return "Reply received to your email from {$email->from_email}: {$email->subject}";
+                }
+                if ($originalEmail->cc && strpos(strtolower($originalEmail->cc), $userEmail) !== false) {
+                    return "Reply received to email you were CC'd on from {$email->from_email}: {$email->subject}";
+                }
+                if (strpos(strtolower($originalEmail->from_email), $userEmail) !== false) {
+                    return "Reply received to your email from {$email->from_email}: {$email->subject}";
+                }
+            }
+        }
+        
+        return "New email received from {$email->from_email}: {$email->subject}";
+    }
+
+    /**
+     * Get the reason why the email is relevant to the user
+     */
+    private function getEmailRelevanceReason(Email $email, User $user): string
+    {
+        $userEmail = strtolower(trim($user->email));
+        
+        if ($email->to_email && strpos(strtolower($email->to_email), $userEmail) !== false) {
+            return 'addressed_to_user';
+        }
+        
+        if ($email->cc && strpos(strtolower($email->cc), $userEmail) !== false) {
+            return 'user_ccd';
+        }
+        
+        if ($email->in_reply_to_email_id) {
+            $originalEmail = Email::find($email->in_reply_to_email_id);
+            if ($originalEmail) {
+                if ($originalEmail->to_email && strpos(strtolower($originalEmail->to_email), $userEmail) !== false) {
+                    return 'reply_to_user_email';
+                }
+                if ($originalEmail->cc && strpos(strtolower($originalEmail->cc), $userEmail) !== false) {
+                    return 'reply_to_user_ccd_email';
+                }
+                if (strpos(strtolower($originalEmail->from_email), $userEmail) !== false) {
+                    return 'reply_to_user_sent_email';
+                }
+            }
+        }
+        
+        return 'general_relevance';
     }
 
     /**
@@ -341,8 +506,169 @@ class NotificationService
                 Log::info("Created UnifiedNotification for email reply: {$email->subject} for user: {$manager->id}");
             }
 
+            // NEW: Also notify users (role: 'user') if this reply is relevant to them
+            $this->createUserReplyNotifications($email);
+
         } catch (\Exception $e) {
             Log::error('Error creating reply notification: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Create reply notifications for users (role: 'user') when the reply is relevant
+     */
+    public function createUserReplyNotifications(Email $email)
+    {
+        try {
+            // Get all users (role: 'user')
+            $users = User::where('role', 'user')->get();
+            
+            foreach ($users as $user) {
+                // Check if this reply is relevant to the user
+                if ($this->isReplyRelevantToUser($email, $user)) {
+                    // Check if notification already exists to prevent duplicates
+                    $existingNotification = UnifiedNotification::where('user_id', $user->id)
+                        ->where('email_id', $email->id)
+                        ->where('type', 'email_reply')
+                        ->first();
+
+                    if ($existingNotification) {
+                        Log::info("User reply notification already exists for email ID: {$email->id}, user ID: {$user->id} (notification ID: {$existingNotification->id})");
+                        continue;
+                    }
+
+                    // Determine notification message based on relevance
+                    $message = $this->getUserReplyNotificationMessage($email, $user);
+
+                    $this->createEmailNotification(
+                        $user->id,
+                        'email_reply',
+                        'Email Reply Received',
+                        $message,
+                        [
+                            'from' => $email->from_email,
+                            'subject' => $email->subject,
+                            'has_attachments' => !empty($email->attachments),
+                            'email_source' => $email->email_source ?? 'designers_inbox',
+                            'relevance_reason' => $this->getReplyRelevanceReason($email, $user)
+                        ],
+                        $email->id,
+                        'normal'
+                    );
+
+                    Log::info("Created user reply notification for email: {$email->subject} for user: {$user->id} ({$user->email})");
+                }
+            }
+
+        } catch (\Exception $e) {
+            Log::error('Error creating user reply notifications: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Check if a reply email is relevant to a user
+     */
+    private function isReplyRelevantToUser(Email $email, User $user): bool
+    {
+        $userEmail = strtolower(trim($user->email));
+        
+        // Check if user's email is in TO field
+        if ($email->to_email && strpos(strtolower($email->to_email), $userEmail) !== false) {
+            return true;
+        }
+        
+        // Check if user's email is in CC field
+        if ($email->cc && strpos(strtolower($email->cc), $userEmail) !== false) {
+            return true;
+        }
+        
+        // Check if this is a reply to an email where the user was involved
+        if ($email->in_reply_to_email_id) {
+            $originalEmail = Email::find($email->in_reply_to_email_id);
+            if ($originalEmail) {
+                // Check if user was in the original email's TO or CC
+                if ($originalEmail->to_email && strpos(strtolower($originalEmail->to_email), $userEmail) !== false) {
+                    return true;
+                }
+                if ($originalEmail->cc && strpos(strtolower($originalEmail->cc), $userEmail) !== false) {
+                    return true;
+                }
+                // Check if user sent the original email
+                if (strpos(strtolower($originalEmail->from_email), $userEmail) !== false) {
+                    return true;
+                }
+            }
+        }
+        
+        return false;
+    }
+
+    /**
+     * Get the notification message for user reply notifications
+     */
+    private function getUserReplyNotificationMessage(Email $email, User $user): string
+    {
+        $userEmail = strtolower(trim($user->email));
+        
+        // Check if user's email is in TO field
+        if ($email->to_email && strpos(strtolower($email->to_email), $userEmail) !== false) {
+            return "Reply sent to you from {$email->from_email}: {$email->subject}";
+        }
+        
+        // Check if user's email is in CC field
+        if ($email->cc && strpos(strtolower($email->cc), $userEmail) !== false) {
+            return "Reply (you're CC'd) from {$email->from_email}: {$email->subject}";
+        }
+        
+        // Check if this is a reply to an email where the user was involved
+        if ($email->in_reply_to_email_id) {
+            $originalEmail = Email::find($email->in_reply_to_email_id);
+            if ($originalEmail) {
+                if ($originalEmail->to_email && strpos(strtolower($originalEmail->to_email), $userEmail) !== false) {
+                    return "Reply to your email from {$email->from_email}: {$email->subject}";
+                }
+                if ($originalEmail->cc && strpos(strtolower($originalEmail->cc), $userEmail) !== false) {
+                    return "Reply to email you were CC'd on from {$email->from_email}: {$email->subject}";
+                }
+                if (strpos(strtolower($originalEmail->from_email), $userEmail) !== false) {
+                    return "Reply to your email from {$email->from_email}: {$email->subject}";
+                }
+            }
+        }
+        
+        return "Reply received from {$email->from_email}: {$email->subject}";
+    }
+
+    /**
+     * Get the reason why the reply is relevant to the user
+     */
+    private function getReplyRelevanceReason(Email $email, User $user): string
+    {
+        $userEmail = strtolower(trim($user->email));
+        
+        if ($email->to_email && strpos(strtolower($email->to_email), $userEmail) !== false) {
+            return 'reply_addressed_to_user';
+        }
+        
+        if ($email->cc && strpos(strtolower($email->cc), $userEmail) !== false) {
+            return 'reply_user_ccd';
+        }
+        
+        if ($email->in_reply_to_email_id) {
+            $originalEmail = Email::find($email->in_reply_to_email_id);
+            if ($originalEmail) {
+                if ($originalEmail->to_email && strpos(strtolower($originalEmail->to_email), $userEmail) !== false) {
+                    return 'reply_to_user_email';
+                }
+                if ($originalEmail->cc && strpos(strtolower($originalEmail->cc), $userEmail) !== false) {
+                    return 'reply_to_user_ccd_email';
+                }
+                if (strpos(strtolower($originalEmail->from_email), $userEmail) !== false) {
+                    return 'reply_to_user_sent_email';
+                }
+            }
+        }
+        
+        return 'general_reply_relevance';
     }
 }

@@ -759,6 +759,14 @@ class TaskController extends Controller
                 $ccEmails[] = 'engineering@orion-contracting.com';
             }
 
+            // NEW: Add all users (role: 'user') to CC so they get notifications
+            $users = User::where('role', 'user')->get();
+            foreach ($users as $userToNotify) {
+                if (!in_array($userToNotify->email, $ccEmails)) {
+                    $ccEmails[] = $userToNotify->email;
+                }
+            }
+
             // Prepare email data
             $emailData = [
                 'from' => $user->email,
