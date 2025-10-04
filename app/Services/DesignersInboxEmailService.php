@@ -38,6 +38,7 @@ class DesignersInboxEmailService
             'success' => false,
             'emails' => [],
             'total_fetched' => 0,
+            'current_message_count' => 0,
             'errors' => []
         ];
 
@@ -54,11 +55,12 @@ class DesignersInboxEmailService
 
             // Get current message count
             $currentMessageCount = imap_num_msg($connection);
+            $result['current_message_count'] = $currentMessageCount;
             Log::info("Current message count: {$currentMessageCount}, Last fetch count: {$lastMessageCount}");
 
             // Only fetch new messages
             if ($currentMessageCount <= $lastMessageCount) {
-                Log::info('No new messages since last fetch');
+                Log::info("No new messages since last fetch. Current: {$currentMessageCount}, Last: {$lastMessageCount}");
                 imap_close($connection);
                 $result['success'] = true;
                 $result['total_fetched'] = 0;
@@ -199,7 +201,7 @@ class DesignersInboxEmailService
 
             return [
                 'message_number' => $messageNumber,
-                'message_id' => $header->message_id ?? 'msg-' . $messageNumber . '-' . time(),
+                'message_id' => $header->message_id ?? 'msg-' . $messageNumber . '-' . $header->date,
                 'from_email' => $fromEmail,
                 'to_email' => $toEmail,
                 'cc_emails' => $ccEmails,
@@ -314,6 +316,7 @@ class DesignersInboxEmailService
         $result = [
             'stored' => 0,
             'skipped' => 0,
+            'stored_emails' => [],
             'errors' => []
         ];
 
@@ -323,7 +326,7 @@ class DesignersInboxEmailService
                 $existingEmail = $this->checkForDuplicateEmail($emailData);
 
                 if ($existingEmail) {
-                    Log::info("Skipping duplicate email: {$emailData['subject']} from {$emailData['from_email']}");
+                    Log::info("Skipping duplicate email: {$emailData['subject']} from {$emailData['from_email']} (existing ID: {$existingEmail->id})");
                     $result['skipped']++;
                     continue;
                 }
@@ -345,12 +348,12 @@ class DesignersInboxEmailService
                     'email_source' => 'designers_inbox', // Mark as from designers inbox
                 ]);
 
+                // Add to stored emails array
+                $result['stored_emails'][] = $email;
+
                 // Check if this is a reply and process it
                 Log::info("Processing email for reply detection: {$emailData['subject']} from {$emailData['from_email']}");
                 $this->processReplyIfApplicable($email, $emailData);
-
-                // Create notifications for managers using unified notification service
-                $this->notificationService->createNewEmailNotification($email);
 
                 Log::info("Stored new email: {$emailData['subject']} from {$emailData['from_email']}");
                 $result['stored']++;
@@ -375,7 +378,7 @@ class DesignersInboxEmailService
                 ->where('email_source', 'designers_inbox')
                 ->first();
             if ($existing) {
-                Log::info("Found duplicate by message_id: {$emailData['message_id']}");
+                Log::info("Found duplicate by message_id: {$emailData['message_id']} (existing ID: {$existing->id})");
                 return $existing;
             }
         }

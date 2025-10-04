@@ -269,7 +269,7 @@ class NotificationService
                     ->first();
 
                 if ($existingNotification) {
-                    Log::info("UnifiedNotification already exists for email ID: {$email->id}, user ID: {$manager->id}");
+                    Log::info("UnifiedNotification already exists for email ID: {$email->id}, user ID: {$manager->id} (notification ID: {$existingNotification->id})");
                     continue; // Skip creating duplicate notification
                 }
 
@@ -319,7 +319,7 @@ class NotificationService
                     ->first();
 
                 if ($existingNotification) {
-                    Log::info("UnifiedNotification reply already exists for email ID: {$email->id}, user ID: {$manager->id}");
+                    Log::info("UnifiedNotification reply already exists for email ID: {$email->id}, user ID: {$manager->id} (notification ID: {$existingNotification->id})");
                     continue; // Skip creating duplicate notification
                 }
 

@@ -92,12 +92,12 @@ class AutoEmailFetchService
                 $result['skipped'] = $storeResult['skipped'];
                 $result['errors'] = array_merge($result['errors'], $storeResult['errors']);
 
-                // Create notifications for new emails
-                $notificationCount = $this->createNotificationsForNewEmails($fetchResult['emails'], $manager);
+                // Create notifications only for newly stored emails
+                $notificationCount = $this->createNotificationsForStoredEmails($storeResult['stored_emails'] ?? []);
                 $result['notifications_created'] = $notificationCount;
 
                 // Log the operation
-                $this->emailService->logFetchOperation($fetchResult, $storeResult, $fetchResult['total_fetched']);
+                $this->emailService->logFetchOperation($fetchResult, $storeResult, $fetchResult['current_message_count'] ?? $fetchResult['total_fetched']);
 
                 $result['success'] = true;
                 $result['message'] = "Successfully processed {$result['fetched']} emails, stored {$result['stored']} new emails, created {$result['notifications_created']} notifications";
@@ -118,29 +118,20 @@ class AutoEmailFetchService
     }
 
     /**
-     * Create notifications for new emails
+     * Create notifications for stored emails
      */
-    protected function createNotificationsForNewEmails(array $emails, User $manager): int
+    protected function createNotificationsForStoredEmails(array $storedEmails): int
     {
         $notificationCount = 0;
 
         try {
-            foreach ($emails as $emailData) {
-                // Check if this email was actually stored (not skipped)
-                $email = Email::where('message_id', $emailData['message_id'])
-                    ->where('email_source', 'designers_inbox')
-                    ->first();
-
-                if (!$email) {
-                    continue; // Email was skipped, don't create notification
-                }
-
+            foreach ($storedEmails as $email) {
                 // Create notification for managers
                 $this->notificationService->createNewEmailNotification($email);
                 $notificationCount++;
 
                 // If it's a reply, create reply notification
-                if ($this->isReplyEmail($emailData['subject'])) {
+                if ($this->isReplyEmail($email->subject)) {
                     $this->notificationService->createReplyNotification($email);
                     $notificationCount++;
                 }

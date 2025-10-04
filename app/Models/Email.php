@@ -72,6 +72,14 @@ class Email extends Model
     }
 
     /**
+     * Get unified notifications for this email
+     */
+    public function unifiedNotifications()
+    {
+        return $this->hasMany(UnifiedNotification::class);
+    }
+
+    /**
      * Get the email this is a reply to
      */
     public function replyTo()
