@@ -7,6 +7,7 @@ use App\Models\EmailNotification;
 use App\Models\User;
 use App\Models\Task;
 use App\Notifications\EmailReplyNotification;
+use App\Services\NotificationService;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
@@ -43,6 +44,9 @@ class SimpleEmailTrackingService
             ]);
 
             Log::info('Email tracked successfully - ID: ' . $email->id . ', Message ID: ' . $messageId);
+
+            // Create notification for managers about the sent email
+            $this->createSentEmailNotification($email);
 
             return $email;
         } catch (\Exception $e) {
@@ -207,6 +211,60 @@ class SimpleEmailTrackingService
 
         } catch (\Exception $e) {
             Log::error('Error creating reply notification: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Create notification for sent email
+     */
+    protected function createSentEmailNotification(Email $email): void
+    {
+        try {
+            $notificationService = app(NotificationService::class);
+
+            // Get all managers and admins
+            $managers = User::whereIn('role', ['admin', 'manager'])->get();
+            $sender = User::find($email->user_id);
+
+            foreach ($managers as $manager) {
+                // Don't send notification to the sender
+                if ($manager->id === $email->user_id) {
+                    continue;
+                }
+
+                // Check if notification already exists to prevent duplicates
+                $existingNotification = \App\Models\UnifiedNotification::where('user_id', $manager->id)
+                    ->where('email_id', $email->id)
+                    ->where('type', 'email_sent')
+                    ->first();
+
+                if ($existingNotification) {
+                    Log::info("UnifiedNotification already exists for sent email ID: {$email->id}, user ID: {$manager->id}");
+                    continue;
+                }
+
+                $notificationService->createEmailNotification(
+                    $manager->id,
+                    'email_sent',
+                    'Email Sent',
+                    "Email sent by {$sender->name} to: {$email->to_email}",
+                    [
+                        'from' => $email->from_email,
+                        'to' => $email->to_email,
+                        'subject' => $email->subject,
+                        'sender_name' => $sender->name,
+                        'has_attachments' => !empty($email->attachments),
+                        'task_id' => $email->task_id
+                    ],
+                    $email->id,
+                    'normal'
+                );
+
+                Log::info("Created UnifiedNotification for sent email: {$email->subject} for user: {$manager->id}");
+            }
+
+        } catch (\Exception $e) {
+            Log::error('Error creating sent email notification: ' . $e->getMessage());
         }
     }
 
