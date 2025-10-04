@@ -1535,9 +1535,26 @@
                   });
                 }
 
-                // Poll every 20s - refresh both areas
+                // Poll every 5s for faster updates - refresh both areas
                 refreshAllNotifications();
-                setInterval(refreshAllNotifications, 20000);
+                setInterval(refreshAllNotifications, 5000);
+
+                // Refresh notifications when page becomes visible (user switches back to tab)
+                document.addEventListener("visibilitychange", function() {
+                  if (!document.hidden) {
+                    refreshAllNotifications();
+                  }
+                });
+
+                // Refresh notifications when window gains focus
+                window.addEventListener("focus", function() {
+                  refreshAllNotifications();
+                });
+
+                // Refresh notifications when user comes back online
+                window.addEventListener("online", function() {
+                  refreshAllNotifications();
+                });
 
                 // Test notification button (debug mode only)
                 const testBtn = document.getElementById('test-notification-btn');

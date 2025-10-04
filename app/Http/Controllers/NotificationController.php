@@ -92,6 +92,24 @@ class NotificationController extends Controller
     }
 
     /**
+     * Get unread notification count
+     */
+    public function unreadCount()
+    {
+        $user = Auth::user();
+        $stats = $this->notificationService->getNotificationStats($user->id);
+
+        return response()->json([
+            'success' => true,
+            'counts' => [
+                'total' => $stats['unread'],
+                'task' => $stats['task_unread'],
+                'email' => $stats['email_unread']
+            ]
+        ]);
+    }
+
+    /**
      * Mark notification as read
      */
     public function markAsRead(Request $request, $id)
@@ -134,7 +152,7 @@ class NotificationController extends Controller
     public function destroy($id)
     {
         $user = Auth::user();
-        $success = $this->notificationService->deleteNotification($id, $user->id);
+        $success = $this->notificationService->delete($id, $user->id);
 
         if ($success) {
             return response()->json([
@@ -147,44 +165,5 @@ class NotificationController extends Controller
             'success' => false,
             'message' => 'Notification not found'
         ], 404);
-    }
-
-    /**
-     * Archive notification
-     */
-    public function archive($id)
-    {
-        $user = Auth::user();
-        $success = $this->notificationService->archiveNotification($id, $user->id);
-
-        if ($success) {
-            return response()->json([
-                'success' => true,
-                'message' => 'Notification archived'
-            ]);
-        }
-
-        return response()->json([
-            'success' => false,
-            'message' => 'Notification not found'
-        ], 404);
-    }
-
-    /**
-     * Get unread count for header/badge
-     */
-    public function unreadCount()
-    {
-        $user = Auth::user();
-        $stats = $this->notificationService->getNotificationStats($user->id);
-
-        return response()->json([
-            'success' => true,
-            'counts' => [
-                'total' => $stats['unread'],
-                'task' => $stats['task_unread'],
-                'email' => $stats['email_unread']
-            ]
-        ]);
     }
 }
