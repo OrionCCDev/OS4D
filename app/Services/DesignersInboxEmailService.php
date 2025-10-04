@@ -6,6 +6,7 @@ use App\Models\Email;
 use App\Models\User;
 use App\Models\EmailFetchLog;
 use App\Services\DesignersInboxNotificationService;
+use App\Services\NotificationService;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 
@@ -18,7 +19,7 @@ class DesignersInboxEmailService
     protected $imapFolder;
     protected $notificationService;
 
-    public function __construct(DesignersInboxNotificationService $notificationService)
+    public function __construct(NotificationService $notificationService)
     {
         $this->imapHost = config('mail.imap.host', 'mail.orion-contracting.com');
         $this->imapPort = config('mail.imap.port', 993);
@@ -348,8 +349,8 @@ class DesignersInboxEmailService
                 Log::info("Processing email for reply detection: {$emailData['subject']} from {$emailData['from_email']}");
                 $this->processReplyIfApplicable($email, $emailData);
 
-                // Create notifications for managers
-                $this->notificationService->processEmailNotifications($email);
+                // Create notifications for managers using unified notification service
+                $this->notificationService->createNewEmailNotification($email);
 
                 Log::info("Stored new email: {$emailData['subject']} from {$emailData['from_email']}");
                 $result['stored']++;
@@ -462,8 +463,8 @@ class DesignersInboxEmailService
                     'replied_at' => now()
                 ]);
 
-                // Create reply notification
-                $this->createReplyNotification($originalEmail, $email);
+                // Create reply notification using unified notification service
+                $this->notificationService->createReplyNotification($email);
 
                 Log::info("Reply processed successfully for email ID: {$originalEmail->id}");
             } else {
