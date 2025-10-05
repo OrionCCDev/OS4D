@@ -173,7 +173,21 @@ class Task extends Model
             $statusMessage .= " (Manager Override)";
         }
 
+        // Notify managers about the status change
         $this->notifyManagers('task_status_changed', 'Task Status Changed', "Task '{$this->title}' - {$statusMessage}" . ($notes ? ". Notes: {$notes}" : ""));
+
+        // Notify the assigned user about the status change (if they exist and are not the current user)
+        if ($this->assignee && $this->assignee->id !== Auth::id()) {
+            $userMessage = "Your task '{$this->title}' status has been changed to: " . ucfirst(str_replace('_', ' ', $status));
+            if ($notes) {
+                $userMessage .= ". Notes: {$notes}";
+            }
+            if ($currentUser && $currentUser->isManager()) {
+                $userMessage .= " (Changed by Manager)";
+            }
+
+            $this->sendNotification($this->assignee, 'task_status_changed', 'Task Status Updated', $userMessage);
+        }
     }
 
     private function sendNotification(User $user, string $type, string $title, string $message)
