@@ -993,7 +993,7 @@
                       const title = n.title || 'Email Notification';
                       const message = n.message || '';
                       const timeAgo = getTimeAgo(n.created_at);
-                      const viewUrl = n.email_id ? `{{ url('email') }}/${n.email_id}` : '';
+                      const viewUrl = n.email_id ? `{{ route('emails.show', ':id') }}`.replace(':id', n.email_id) : '';
                       const typeIcon = 'bx-envelope';
                       const typeColor = '#3b82f6';
 
@@ -1333,7 +1333,7 @@
                         const message = n.message || '';
                         const timeAgo = getTimeAgo(n.created_at);
                         const viewUrl = n.category === 'task' && n.task_id ? `{{ url('tasks') }}/${n.task_id}` :
-                                       n.category === 'email' && n.email_id ? `{{ url('email') }}/${n.email_id}` : '';
+                                       n.category === 'email' && n.email_id ? `{{ route('emails.show', ':id') }}`.replace(':id', n.email_id) : '';
                         const typeIcon = n.icon || 'bx-bell';
                         const typeColor = n.color === 'danger' ? '#dc3545' :
                                          n.color === 'warning' ? '#ffc107' :
@@ -1759,7 +1759,7 @@
                       const message = n.message || '';
                       const timeAgo = getTimeAgo(n.created_at);
                       const viewUrl = n.category === 'task' && n.task_id ? `{{ url('tasks') }}/${n.task_id}` :
-                                     n.category === 'email' && n.email_id ? `{{ url('email') }}/${n.email_id}` : '';
+                                     n.category === 'email' && n.email_id ? `{{ route('emails.show', ':id') }}`.replace(':id', n.email_id) : '';
                       const typeIcon = n.icon || 'bx-bell';
                       const typeColor = n.color === 'danger' ? '#dc3545' :
                                        n.color === 'warning' ? '#ffc107' :
