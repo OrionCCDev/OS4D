@@ -97,9 +97,9 @@
                             @endif
                         </td>
                         <td>
-                            @if($task->status === 'completed' && $task->completion_time)
+                            @if($task->status === 'completed')
                                 <span class="badge bg-success">
-                                    <i class="bx bx-check"></i> {{ $task->completion_time }}d
+                                    <i class="bx bx-check"></i> Completed
                                 </span>
                             @elseif($task->days_remaining !== null)
                                 <span class="badge {{ $task->is_overdue ? 'bg-danger' : 'bg-info' }}">

@@ -142,8 +142,8 @@ class TaskController extends Controller
             abort(403, 'Access denied. Only managers can edit tasks. Regular users can upload files and change status from the task view.');
         }
 
-        // Additional restriction: No editing of tasks under review
-        if (in_array($task->status, ['submitted_for_review', 'in_review', 'approved', 'completed'])) {
+        // Additional restriction: No editing of tasks under review (but managers can edit completed tasks)
+        if (in_array($task->status, ['submitted_for_review', 'in_review', 'approved'])) {
             abort(403, 'Access denied. This task is under review and cannot be edited.');
         }
 
@@ -161,8 +161,8 @@ class TaskController extends Controller
             abort(403, 'Access denied. Only managers can edit tasks. Regular users can upload files and change status from the task view.');
         }
 
-        // Additional restriction: No editing of tasks under review
-        if (in_array($task->status, ['submitted_for_review', 'in_review', 'approved', 'completed'])) {
+        // Additional restriction: No editing of tasks under review (but managers can edit completed tasks)
+        if (in_array($task->status, ['submitted_for_review', 'in_review', 'approved'])) {
             abort(403, 'Access denied. This task is under review and cannot be edited.');
         }
 
