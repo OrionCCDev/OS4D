@@ -1020,6 +1020,55 @@ private function sendApprovalEmailViaGmail(Task $task, User $approver)
             throw $e;
         }
     }
+
+    /**
+     * Show general email form
+     */
+    public function showGeneralEmailForm()
+    {
+        return view('emails.general-email-form');
+    }
+
+    /**
+     * Send general email
+     */
+    public function sendGeneralEmail(Request $request)
+    {
+        $validated = $request->validate([
+            'to_emails' => 'required|string',
+            'subject' => 'required|string|max:255',
+            'body' => 'required|string',
+        ]);
+
+        try {
+            $user = Auth::user();
+
+            // Parse recipient emails
+            $toEmails = array_filter(array_map('trim', explode(',', $validated['to_emails'])));
+
+            // Always add engineering@orion-contracting.com to CC
+            $ccEmails = ['engineering@orion-contracting.com'];
+
+            // Create the email
+            $email = new \App\Mail\GeneralEmail(
+                $validated['subject'],
+                $validated['body'],
+                $user,
+                $toEmails
+            );
+
+            // Send the email
+            Mail::to($toEmails)
+                ->cc($ccEmails)
+                ->send($email);
+
+            return redirect()->back()->with('success', 'Email sent successfully!');
+
+        } catch (\Exception $e) {
+            Log::error('Failed to send general email: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Failed to send email: ' . $e->getMessage());
+        }
+    }
 }
 
 

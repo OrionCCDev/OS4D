@@ -370,9 +370,13 @@ Route::get('/debug-notifications', function () {
 })->name('debug-notifications');
 Route::post('/create-notification-for-user', [App\Http\Controllers\DebugNotificationController::class, 'createNotificationForUser'])->name('create-notification-for-user');
 
-// Email management routes (authenticated)
+    // Email management routes (authenticated)
 Route::middleware('auth')->group(function () {
     Route::get('/emails', [EmailController::class, 'index'])->name('emails.index');
+
+    // General email routes
+    Route::get('/emails/send', [TaskController::class, 'showGeneralEmailForm'])->name('emails.send-form');
+    Route::post('/emails/send', [TaskController::class, 'sendGeneralEmail'])->name('emails.send-general');
     Route::post('/emails/check-new', [EmailController::class, 'checkNewEmails'])->name('emails.check-new');
 
     // Email fetching routes

@@ -154,6 +154,14 @@
               </a>
             </li>
 
+            <!-- Send Email - Available to all users -->
+            <li class="menu-item {{ request()->routeIs('emails.send*') ? 'active' : '' }}">
+              <a href="{{ route('emails.send-form') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-envelope"></i>
+                <div data-i18n="Send Email">Send Email</div>
+              </a>
+            </li>
+
             {{--  <!-- Email Notifications - Available to all users -->
             <li class="menu-item {{ request()->routeIs('email-notifications.*') ? 'active' : '' }}">
               <a href="{{ route('email-notifications.index') }}" class="menu-link">
