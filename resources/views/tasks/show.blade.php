@@ -776,10 +776,13 @@
                             @endif
                         @endif
 
-                        <!-- Legacy status change for other statuses - only for non-review statuses -->
-                        @if(Auth::user()->isManager() || ($task->assigned_to === auth()->id() && in_array($task->status, ['completed']) && $task->status !== 'submitted_for_review' && $task->status !== 'in_review'))
+                        <!-- Status change - managers can change any status, regular users only for their assigned tasks -->
+                        @if(Auth::user()->isManager() || ($task->assigned_to === auth()->id() && !in_array($task->status, ['submitted_for_review', 'in_review', 'approved', 'completed'])))
                             <button class="btn btn-outline-primary" onclick="changeTaskStatus({{ $task->id }})">
                                 <i class="bx bx-edit me-2"></i>Change Status
+                                @if(Auth::user()->isManager())
+                                    <span class="badge bg-warning ms-1">Manager Override</span>
+                                @endif
                             </button>
                         @endif
 
@@ -888,11 +891,21 @@
                     <div class="mb-3">
                         <label class="form-label">New Status</label>
                         <select name="status" class="form-select" required>
+                            <option value="pending">Pending</option>
+                            <option value="assigned">Assigned</option>
                             <option value="in_progress">In Progress</option>
+                            <option value="submitted_for_review">Submitted for Review</option>
                             <option value="in_review">In Review</option>
-                            <option value="completed">Completed</option>
+                            <option value="approved">Approved</option>
                             <option value="rejected">Rejected</option>
+                            <option value="completed">Completed</option>
                         </select>
+                        @if(Auth::user()->isManager())
+                            <div class="form-text text-warning">
+                                <i class="bx bx-info-circle me-1"></i>
+                                As a manager, you can change the status of any task at any time.
+                            </div>
+                        @endif
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Notes (Optional)</label>

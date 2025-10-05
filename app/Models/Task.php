@@ -118,6 +118,7 @@ class Task extends Model
     public function changeStatus(string $status, string $notes = null)
     {
         $oldStatus = $this->status;
+        $currentUser = Auth::user();
 
         $updateData = ['status' => $status];
 
@@ -135,14 +136,22 @@ class Task extends Model
 
         $this->update($updateData);
 
-        // Create history record
+        // Create history record with manager override indication
+        $description = "Status changed from {$oldStatus} to {$status}";
+        if ($currentUser && $currentUser->isManager()) {
+            $description .= " (Manager Override)";
+        }
+        if ($notes) {
+            $description .= ": {$notes}";
+        }
+
         $this->histories()->create([
             'user_id' => Auth::id() ?? 1, // Fallback for testing
             'action' => 'status_changed',
             'old_value' => $oldStatus,
             'new_value' => $status,
-            'description' => "Status changed from {$oldStatus} to {$status}" . ($notes ? ": {$notes}" : ''),
-            'metadata' => ['notes' => $notes]
+            'description' => $description,
+            'metadata' => ['notes' => $notes, 'manager_override' => $currentUser && $currentUser->isManager()]
         ]);
 
         // Send notification to managers with more specific messaging
@@ -158,6 +167,12 @@ class Task extends Model
         ];
 
         $statusMessage = $statusMessages[$status] ?? "Task status changed to {$status}";
+
+        // Add manager override indication to notification
+        if ($currentUser && $currentUser->isManager()) {
+            $statusMessage .= " (Manager Override)";
+        }
+
         $this->notifyManagers('task_status_changed', 'Task Status Changed', "Task '{$this->title}' - {$statusMessage}" . ($notes ? ". Notes: {$notes}" : ""));
     }
 

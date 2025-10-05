@@ -122,9 +122,12 @@
                                     </a>
                                 @endif
 
-                                @if($task->assigned_to === auth()->id() && in_array($task->status, ['assigned', 'in_progress']) && $task->status !== 'submitted_for_review' && $task->status !== 'in_review')
+                                @if(Auth::user()->isManager() || ($task->assigned_to === auth()->id() && !in_array($task->status, ['submitted_for_review', 'in_review', 'approved', 'completed'])))
                                     <button class="btn btn-sm btn-outline-success" onclick="changeTaskStatus({{ $task->id }})" title="Change Status">
                                         <i class="bx bx-check"></i>
+                                        @if(Auth::user()->isManager())
+                                            <span class="badge bg-warning ms-1" style="font-size: 0.6em;">M</span>
+                                        @endif
                                     </button>
                                 @endif
 
@@ -249,6 +252,94 @@ document.addEventListener('DOMContentLoaded', function() {
     updateNotificationCount();
 });
 </script>
+<!-- Status Change Modal -->
+<div class="modal fade" id="changeStatusModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Change Task Status</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="changeStatusForm" method="POST">
+                @csrf
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">New Status</label>
+                        <select name="status" class="form-select" required>
+                            <option value="pending">Pending</option>
+                            <option value="assigned">Assigned</option>
+                            <option value="in_progress">In Progress</option>
+                            <option value="submitted_for_review">Submitted for Review</option>
+                            <option value="in_review">In Review</option>
+                            <option value="approved">Approved</option>
+                            <option value="rejected">Rejected</option>
+                            <option value="completed">Completed</option>
+                        </select>
+                        @if(Auth::user()->isManager())
+                            <div class="form-text text-warning">
+                                <i class="bx bx-info-circle me-1"></i>
+                                As a manager, you can change the status of any task at any time.
+                            </div>
+                        @endif
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Notes (Optional)</label>
+                        <textarea name="notes" class="form-control" rows="3" placeholder="Add any notes about this status change..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update Status</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Assign Task Modal -->
+<div class="modal fade" id="assignTaskModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Assign Task</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="assignTaskForm" method="POST">
+                @csrf
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Assign To</label>
+                        <select name="assigned_to" class="form-select" required>
+                            <option value="">Select User</option>
+                            @foreach(\App\Models\User::where('role', 'user')->orderBy('name')->get() as $user)
+                                <option value="{{ $user->id }}">{{ $user->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Assign Task</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Status change
+function changeTaskStatus(taskId) {
+    document.getElementById('changeStatusForm').action = `/tasks/${taskId}/change-status`;
+    new bootstrap.Modal(document.getElementById('changeStatusModal')).show();
+}
+
+// Assign task
+function assignTask(taskId) {
+    document.getElementById('assignTaskForm').action = `/tasks/${taskId}/assign`;
+    new bootstrap.Modal(document.getElementById('assignTaskModal')).show();
+}
+</script>
+
 @endsection
 
 

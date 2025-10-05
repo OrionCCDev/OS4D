@@ -237,9 +237,17 @@ class TaskController extends Controller
 
     public function changeStatus(Request $request, Task $task)
     {
-        // Restrict status changes for tasks under review - only managers can change status
-        if (in_array($task->status, ['submitted_for_review', 'in_review', 'approved', 'completed']) && !Auth::user()->isManager()) {
-            abort(403, 'Access denied. Status changes are disabled for tasks under review. Only managers can change the status.');
+        $user = Auth::user();
+
+        // Regular users can only change status for tasks assigned to them and not under review
+        if (!$user->isManager()) {
+            if ($task->assigned_to !== $user->id) {
+                abort(403, 'Access denied. You can only change status of tasks assigned to you.');
+            }
+
+            if (in_array($task->status, ['submitted_for_review', 'in_review', 'approved', 'completed'])) {
+                abort(403, 'Access denied. Status changes are disabled for tasks under review. Only managers can change the status.');
+            }
         }
 
         $validated = $request->validate([
