@@ -240,10 +240,10 @@ class GmailOAuthService
     {
         $to = is_array($emailData['to']) ? implode(', ', $emailData['to']) : $emailData['to'];
 
-        // Always add designers@orion-contracting.com to CC
+        // Always add engineering@orion-contracting.com to CC
         $ccEmails = $emailData['cc'] ?? [];
-        if (!in_array('designers@orion-contracting.com', $ccEmails)) {
-            $ccEmails[] = 'designers@orion-contracting.com';
+        if (!in_array('engineering@orion-contracting.com', $ccEmails)) {
+            $ccEmails[] = 'engineering@orion-contracting.com';
         }
         $cc = implode(', ', $ccEmails);
 
