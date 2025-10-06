@@ -1030,7 +1030,7 @@ private function sendApprovalEmailViaGmail(Task $task, User $approver)
     }
 
     /**
-     * Send general email
+     * Send general email using Gmail OAuth (same as confirmation emails)
      */
     public function sendGeneralEmail(Request $request)
     {
@@ -1042,31 +1042,118 @@ private function sendApprovalEmailViaGmail(Task $task, User $approver)
 
         try {
             $user = Auth::user();
-
-            // Parse recipient emails
             $toEmails = array_filter(array_map('trim', explode(',', $validated['to_emails'])));
 
-            // Always add engineering@orion-contracting.com to CC
-            $ccEmails = ['engineering@orion-contracting.com'];
+            // Check if user has Gmail connected (same as confirmation emails)
+            $useGmailOAuth = $user->hasGmailConnected();
 
-            // Create the email
-            $email = new \App\Mail\GeneralEmail(
-                $validated['subject'],
-                $validated['body'],
-                $user,
-                $toEmails
-            );
+            Log::info('Sending general email for user: ' . $user->id . ' - Gmail OAuth: ' . ($useGmailOAuth ? 'Yes' : 'No'));
 
-            // Send the email
-            Mail::to($toEmails)
-                ->cc($ccEmails)
-                ->send($email);
+            // Prepare email data (same structure as confirmation emails)
+            $emailData = [
+                'from' => $user->email,
+                'from_name' => $user->name,
+                'to' => $toEmails,
+                'subject' => $validated['subject'],
+                'body' => view('emails.user-general-email-gmail', [
+                    'bodyContent' => $validated['body'],
+                    'senderName' => $user->name,
+                    'senderEmail' => $user->email,
+                    'toRecipients' => $toEmails,
+                    'subject' => $validated['subject'],
+                ])->render(),
+            ];
 
-            return redirect()->back()->with('success', 'Email sent successfully!');
+            $success = false;
 
+            if ($useGmailOAuth) {
+                // Use Gmail OAuth for sending email (same as confirmation emails)
+                Log::info('Using Gmail OAuth for sending general email - Gmail Only Mode');
+                $gmailOAuthService = app(\App\Services\GmailOAuthService::class);
+
+                // Remove engineering@orion-contracting.com from CC for Gmail OAuth
+                $gmailEmailData = $emailData;
+
+                $success = $gmailOAuthService->sendEmail($user, $gmailEmailData);
+
+                if ($success) {
+                    Log::info('General email sent successfully via Gmail OAuth for user: ' . $user->id);
+
+                    // Send separate email to engineering@orion-contracting.com via SMTP
+                    $this->sendGeneralEmailNotification($user, $validated, $toEmails);
+                } else {
+                    return redirect()->back()->with('error', 'Failed to send email via Gmail OAuth. Please check your Gmail connection.');
+                }
+            } else {
+                // Use Laravel Mail with simple tracking (fallback)
+                Log::info('Using simple email tracking for general email - CC to engineering@orion-contracting.com');
+
+                $email = new \App\Mail\UserGeneralEmail(
+                    $validated['subject'],
+                    $validated['body'],
+                    $user,
+                    $toEmails
+                );
+
+                Mail::to($toEmails)
+                    ->cc(['engineering@orion-contracting.com'])
+                    ->send($email);
+
+                $success = true;
+                Log::info('General email sent successfully via SMTP for user: ' . $user->id);
+            }
+
+            if ($success) {
+                return redirect()->back()->with('success', 'Email sent successfully from your Gmail account!');
+            } else {
+                return redirect()->back()->with('error', 'Failed to send email. Please try again.');
+            }
         } catch (\Exception $e) {
             Log::error('Failed to send general email: ' . $e->getMessage());
             return redirect()->back()->with('error', 'Failed to send email: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Send notification email to engineering@orion-contracting.com via SMTP
+     * (same as confirmation emails)
+     */
+    private function sendGeneralEmailNotification($user, $emailData, $toEmails)
+    {
+        try {
+            Log::info('Sending general email notification to engineering@orion-contracting.com');
+
+            // Create a copy of the email for engineering notification
+            $engineeringEmailData = [
+                'from' => 'engineering@orion-contracting.com',
+                'from_name' => 'Orion Engineering System',
+                'to' => ['engineering@orion-contracting.com'],
+                'subject' => '[NOTIFICATION] ' . $emailData['subject'],
+                'body' => view('emails.user-general-email-gmail', [
+                    'bodyContent' => $emailData['body'],
+                    'senderName' => $user->name,
+                    'senderEmail' => $user->email,
+                    'toRecipients' => $toEmails,
+                    'subject' => $emailData['subject'],
+                ])->render(),
+            ];
+
+            // Send via Laravel Mail (SMTP)
+            $mail = new \App\Mail\UserGeneralEmail(
+                $emailData['subject'],
+                $emailData['body'],
+                $user,
+                $toEmails
+            );
+            $mail->from('engineering@orion-contracting.com', 'Orion Engineering System');
+
+            Mail::send($mail);
+
+            Log::info('General email notification sent successfully to engineering@orion-contracting.com');
+
+        } catch (\Exception $e) {
+            Log::error('Failed to send general email notification: ' . $e->getMessage());
+            // Don't fail the main email if notification fails
         }
     }
 }
