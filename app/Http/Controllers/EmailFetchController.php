@@ -182,7 +182,7 @@ class EmailFetchController extends Controller
 
         // Try to find email by ID first, regardless of source
         $email = Email::find($id);
-        
+
         if (!$email) {
             abort(404, 'Email not found');
         }
@@ -654,6 +654,10 @@ class EmailFetchController extends Controller
     public function destroy($id)
     {
         $user = Auth::user();
+        if (!$user->canDelete()) {
+            abort(403, 'Access denied. Only admins and managers can delete emails.');
+        }
+
         $email = Email::where('id', $id)
             ->where('user_id', $user->id)
             ->firstOrFail();

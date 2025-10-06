@@ -1,4 +1,9 @@
-@if(auth()->user()->isManager())
+@if(auth()->user()->isSubAdmin())
+    @php
+        $data = app('App\Http\Controllers\DashboardController')->getDashboardData();
+    @endphp
+    @include('dashboard.sub-admin', compact('data'))
+@elseif(auth()->user()->isManager())
     @php
         $data = app('App\Http\Controllers\DashboardController')->getDashboardData();
     @endphp

@@ -88,12 +88,49 @@ class User extends Authenticatable implements HasMedia
 
     public function isManager()
     {
-        return in_array($this->role, ['admin', 'manager']);
+        return in_array($this->role, ['admin', 'manager', 'sub-admin']);
+    }
+
+    public function isSubAdmin()
+    {
+        return $this->role === 'sub-admin';
+    }
+
+    public function isAdmin()
+    {
+        return $this->role === 'admin';
     }
 
     public function isRegularUser()
     {
         return $this->role === 'user';
+    }
+
+    /**
+     * Check if user can delete anything
+     * Sub-admin cannot delete anything
+     */
+    public function canDelete()
+    {
+        return in_array($this->role, ['admin', 'manager']);
+    }
+
+    /**
+     * Check if user can view all sections
+     * Sub-admin can only view projects and tasks
+     */
+    public function canViewAll()
+    {
+        return in_array($this->role, ['admin', 'manager']);
+    }
+
+    /**
+     * Check if user has full admin privileges
+     * Sub-admin has most privileges except delete and view restrictions
+     */
+    public function hasFullPrivileges()
+    {
+        return in_array($this->role, ['admin', 'manager', 'sub-admin']);
     }
 
     /**

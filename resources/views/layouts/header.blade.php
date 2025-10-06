@@ -88,8 +88,8 @@
           <div class="menu-inner-shadow"></div>
 
           <ul class="menu-inner py-1">
-            @if(Auth::user()->isManager())
-            <!-- Dashboard - Manager only -->
+            @if(Auth::user()->isManager() || Auth::user()->isSubAdmin())
+            <!-- Dashboard - Manager and Sub-Admin -->
             <li class="menu-item {{ request()->routeIs('dashboard') ? 'active' : '' }}">
               <a href="{{ route('dashboard') }}" class="menu-link">
                 <i class="menu-icon tf-icons bx bx-home-circle"></i>
@@ -108,8 +108,8 @@
             </li>
             @endif
 
-            @if(Auth::user()->isManager())
-            <!-- Projects - Manager only -->
+            @if(Auth::user()->isManager() || Auth::user()->isSubAdmin())
+            <!-- Projects - Manager and Sub-Admin -->
             <li class="menu-item {{ request()->routeIs('projects.*') ? 'active' : '' }}">
               <a href="{{ route('projects.index') }}" class="menu-link">
                 <i class="menu-icon tf-icons bx bx-folder"></i>

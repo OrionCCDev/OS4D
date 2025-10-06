@@ -213,9 +213,9 @@ class TaskController extends Controller
 
     public function destroy(Task $task)
     {
-        // Only managers can delete tasks
-        if (!Auth::user()->isManager()) {
-            abort(403, 'Access denied. Only managers can delete tasks.');
+        // Only admins and managers can delete tasks (sub-admin cannot delete)
+        if (!Auth::user()->canDelete()) {
+            abort(403, 'Access denied. Only admins and managers can delete tasks.');
         }
 
         $task->delete();
@@ -321,9 +321,9 @@ class TaskController extends Controller
     {
         abort_unless($attachment->task_id === $task->id, 403);
 
-        // Restrict file deletion for tasks under review - only managers can delete
-        if (in_array($task->status, ['submitted_for_review', 'in_review', 'approved', 'completed']) && !Auth::user()->isManager()) {
-            abort(403, 'Access denied. File deletion is disabled for tasks under review. Only managers can delete files.');
+        // Restrict file deletion for tasks under review - only admins and managers can delete
+        if (in_array($task->status, ['submitted_for_review', 'in_review', 'approved', 'completed']) && !Auth::user()->canDelete()) {
+            abort(403, 'Access denied. File deletion is disabled for tasks under review. Only admins and managers can delete files.');
         }
 
         Storage::disk($attachment->disk)->delete($attachment->path);
