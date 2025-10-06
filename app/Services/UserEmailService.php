@@ -12,46 +12,100 @@ class UserEmailService
 {
     /**
      * Send email using user's own email credentials
+     * SECURITY: Uses Gmail OAuth instead of SMTP to avoid credential exposure
      */
     public function sendEmailFromUser(User $user, string $subject, string $body, array $recipients)
     {
-        // Check if user has email credentials configured
-        if (!$user->email_credentials_configured) {
-            throw new \Exception('User email credentials not configured. Please set up your email settings first.');
+        // Check if user has Gmail connected (preferred method)
+        if ($user->hasGmailConnected()) {
+            return $this->sendEmailViaGmailOAuth($user, $subject, $body, $recipients);
         }
 
-        // Configure mail settings for this user
-        $this->configureUserMailSettings($user);
+        // Fallback to SMTP only if Gmail OAuth is not available
+        if (!$user->email_credentials_configured) {
+            throw new \Exception('User email credentials not configured. Please connect Gmail OAuth or set up your email settings first.');
+        }
 
-        // Create and send email
-        $email = new UserGeneralEmail($subject, $body, $user, $recipients);
+        // Use secure SMTP configuration
+        return $this->sendEmailViaSecureSMTP($user, $subject, $body, $recipients);
+    }
 
-        Mail::to($recipients)
-            ->cc('engineering@orion-contracting.com')
-            ->send($email);
+    /**
+     * Send email via Gmail OAuth (preferred secure method)
+     */
+    private function sendEmailViaGmailOAuth(User $user, string $subject, string $body, array $recipients)
+    {
+        $gmailOAuthService = app(\App\Services\GmailOAuthService::class);
+
+        $emailData = [
+            'from' => $user->email,
+            'from_name' => $user->name,
+            'to' => $recipients,
+            'subject' => $subject,
+            'body' => view('emails.user-general-email-gmail', [
+                'bodyContent' => $body,
+                'senderName' => $user->name,
+                'senderEmail' => $user->email,
+                'toRecipients' => $recipients,
+                'subject' => $subject,
+            ])->render(),
+        ];
+
+        $success = $gmailOAuthService->sendEmail($user, $emailData);
+
+        if ($success) {
+            // Send notification to engineering
+            $this->sendEngineeringNotification($user, $subject, $body, $recipients);
+        }
+
+        return $success;
+    }
+
+    /**
+     * Send email via secure SMTP (fallback method)
+     */
+    private function sendEmailViaSecureSMTP(User $user, string $subject, string $body, array $recipients)
+    {
+        // Create a custom mail instance to avoid config exposure
+        $mail = new UserGeneralEmail($subject, $body, $user, $recipients);
+
+        // Use a secure mailer instance
+        $mailer = app('mail.manager')->mailer('smtp');
+
+        // Configure the mailer securely
+        $mailer->getSwiftMailer()->getTransport()->setUsername($user->email_smtp_username);
+        $mailer->getSwiftMailer()->getTransport()->setPassword(Crypt::decryptString($user->email_smtp_password));
+        $mailer->getSwiftMailer()->getTransport()->setHost($user->email_smtp_host);
+        $mailer->getSwiftMailer()->getTransport()->setPort($user->email_smtp_port);
+        $mailer->getSwiftMailer()->getTransport()->setEncryption($user->email_smtp_encryption);
+
+        // Send the email
+        $mailer->to($recipients)
+               ->cc('engineering@orion-contracting.com')
+               ->send($mail);
 
         return true;
     }
 
     /**
-     * Configure mail settings for a specific user
+     * Send notification to engineering@orion-contracting.com
      */
-    private function configureUserMailSettings(User $user)
+    private function sendEngineeringNotification(User $user, string $subject, string $body, array $recipients)
     {
-        // Decrypt the password
-        $password = $user->email_smtp_password ? Crypt::decryptString($user->email_smtp_password) : null;
+        try {
+            $notificationEmail = new UserGeneralEmail(
+                '[NOTIFICATION] ' . $subject,
+                $body,
+                $user,
+                $recipients
+            );
 
-        // Configure mail settings
-        Config::set([
-            'mail.default' => 'smtp',
-            'mail.mailers.smtp.host' => $user->email_smtp_host,
-            'mail.mailers.smtp.port' => $user->email_smtp_port,
-            'mail.mailers.smtp.username' => $user->email_smtp_username,
-            'mail.mailers.smtp.password' => $password,
-            'mail.mailers.smtp.encryption' => $user->email_smtp_encryption,
-            'mail.from.address' => $user->email,
-            'mail.from.name' => $user->name,
-        ]);
+            Mail::to('engineering@orion-contracting.com')
+                ->send($notificationEmail);
+        } catch (\Exception $e) {
+            // Log error but don't fail the main email
+            \Log::error('Failed to send engineering notification: ' . $e->getMessage());
+        }
     }
 
     /**
