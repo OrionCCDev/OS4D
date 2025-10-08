@@ -47,6 +47,17 @@ class Task extends Model
         'internal_notes',
         'internal_updated_at',
         'internal_approved_by',
+        'client_response_status',
+        'client_response_notes',
+        'client_response_updated_at',
+        'consultant_response_status',
+        'consultant_response_notes',
+        'consultant_response_updated_at',
+        'combined_response_status',
+        'manager_override_status',
+        'manager_override_notes',
+        'manager_override_updated_at',
+        'manager_override_by',
         'combined_approval_status',
     ];
 
@@ -62,6 +73,9 @@ class Task extends Model
         'client_updated_at' => 'datetime',
         'consultant_updated_at' => 'datetime',
         'internal_updated_at' => 'datetime',
+        'client_response_updated_at' => 'datetime',
+        'consultant_response_updated_at' => 'datetime',
+        'manager_override_updated_at' => 'datetime',
     ];
 
     public function project()
@@ -87,6 +101,11 @@ class Task extends Model
     public function internalApprover()
     {
         return $this->belongsTo(User::class, 'internal_approved_by');
+    }
+
+    public function managerOverrideBy()
+    {
+        return $this->belongsTo(User::class, 'manager_override_by');
     }
 
     public function histories()
@@ -666,6 +685,159 @@ class Task extends Model
         }
 
         return $this;
+    }
+
+    /**
+     * Update client response status
+     */
+    public function updateClientResponse($status, $notes = null)
+    {
+        if (!in_array($status, ['pending', 'approved', 'rejected'])) {
+            throw new \Exception('Invalid client response status');
+        }
+
+        $this->update([
+            'client_response_status' => $status,
+            'client_response_notes' => $notes,
+            'client_response_updated_at' => now(),
+        ]);
+
+        // Create history record
+        $this->histories()->create([
+            'action' => 'client_response_updated',
+            'description' => "Client response updated to: {$status}" . ($notes ? ". Notes: {$notes}" : ""),
+            'metadata' => ['client_response_status' => $status, 'notes' => $notes, 'updated_at' => now()]
+        ]);
+
+        $this->updateCombinedResponseStatus();
+        return $this;
+    }
+
+    /**
+     * Update consultant response status
+     */
+    public function updateConsultantResponse($status, $notes = null)
+    {
+        if (!in_array($status, ['pending', 'approved', 'rejected'])) {
+            throw new \Exception('Invalid consultant response status');
+        }
+
+        $this->update([
+            'consultant_response_status' => $status,
+            'consultant_response_notes' => $notes,
+            'consultant_response_updated_at' => now(),
+        ]);
+
+        // Create history record
+        $this->histories()->create([
+            'action' => 'consultant_response_updated',
+            'description' => "Consultant response updated to: {$status}" . ($notes ? ". Notes: {$notes}" : ""),
+            'metadata' => ['consultant_response_status' => $status, 'notes' => $notes, 'updated_at' => now()]
+        ]);
+
+        $this->updateCombinedResponseStatus();
+        return $this;
+    }
+
+    /**
+     * Update combined response status
+     */
+    private function updateCombinedResponseStatus()
+    {
+        $clientStatus = $this->client_response_status ?? 'pending';
+        $consultantStatus = $this->consultant_response_status ?? 'pending';
+
+        $combinedStatus = "client-{$clientStatus}-consultant-{$consultantStatus}";
+        $this->update(['combined_response_status' => $combinedStatus]);
+    }
+
+    /**
+     * Finish review and notify manager
+     */
+    public function finishReview()
+    {
+        $this->updateCombinedResponseStatus();
+
+        // Create history record
+        $this->histories()->create([
+            'action' => 'review_finished',
+            'description' => "Review finished with combined status: {$this->combined_response_status}",
+            'metadata' => [
+                'combined_response_status' => $this->combined_response_status,
+                'client_status' => $this->client_response_status,
+                'consultant_status' => $this->consultant_response_status
+            ]
+        ]);
+
+        // Notify manager about the combined response
+        $this->notifyManagerAboutReviewFinish();
+
+        return $this;
+    }
+
+    /**
+     * Manager override (reject or reset for review)
+     */
+    public function managerOverride($status, $notes = null)
+    {
+        if (!in_array($status, ['reject', 'reset_for_review'])) {
+            throw new \Exception('Invalid manager override status');
+        }
+
+        $this->update([
+            'manager_override_status' => $status,
+            'manager_override_notes' => $notes,
+            'manager_override_updated_at' => now(),
+            'manager_override_by' => auth()->id(),
+        ]);
+
+        // Create history record
+        $this->histories()->create([
+            'action' => 'manager_override',
+            'description' => "Manager override: {$status}" . ($notes ? ". Notes: {$notes}" : ""),
+            'metadata' => ['manager_override_status' => $status, 'notes' => $notes, 'updated_at' => now()]
+        ]);
+
+        // Change task status based on override
+        if ($status === 'reject') {
+            $this->updateStatus('rejected', 'Task rejected by manager override');
+        } elseif ($status === 'reset_for_review') {
+            $this->updateStatus('in_review', 'Task reset for review by manager');
+        }
+
+        return $this;
+    }
+
+    /**
+     * Notify manager about review finish
+     */
+    private function notifyManagerAboutReviewFinish()
+    {
+        try {
+            $manager = $this->creator;
+            if (!$manager) return;
+
+            $notification = new \App\Models\UnifiedNotification([
+                'user_id' => $manager->id,
+                'type' => 'review_finished',
+                'title' => 'Review Finished',
+                'message' => "Task review finished with status: {$this->combined_response_status}",
+                'data' => [
+                    'task_id' => $this->id,
+                    'task_title' => $this->title,
+                    'project_name' => $this->project->name ?? 'Unknown Project',
+                    'combined_response_status' => $this->combined_response_status,
+                    'client_status' => $this->client_response_status,
+                    'consultant_status' => $this->consultant_response_status
+                ],
+                'is_read' => false
+            ]);
+            $notification->save();
+
+            Log::info("Manager notified about review finish for task: {$this->id}");
+        } catch (\Exception $e) {
+            Log::error("Failed to notify manager about review finish: " . $e->getMessage());
+        }
     }
 
     /**

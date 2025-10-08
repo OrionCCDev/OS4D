@@ -640,7 +640,7 @@
                                                     <h6 class="mb-1">{{ $history->description }}</h6>
                                                     <div class="d-flex align-items-center gap-3 text-muted">
                                                         <small>
-                                                            <i class="bx bx-user me-1"></i>{{ $history->user->name }}
+                                                            <i class="bx bx-user me-1"></i>{{ $history->user->name ?? 'System' }}
                                                         </small>
                                                         <small>
                                                             <i class="bx bx-time me-1"></i>{{ $history->created_at->format('M d, Y H:i') }}
@@ -649,6 +649,53 @@
                                                 </div>
                                                 <span class="badge bg-label-secondary">{{ ucfirst(str_replace('_', ' ', $history->action)) }}</span>
                                             </div>
+
+                                            {{-- Show comments/notes from metadata --}}
+                                            @if($history->metadata && is_array($history->metadata))
+                                                @if(isset($history->metadata['completion_notes']))
+                                                    <div class="mt-2 p-2 bg-light rounded">
+                                                        <strong class="text-primary"><i class="bx bx-message-detail me-1"></i>Completion Notes:</strong>
+                                                        <p class="mb-0 mt-1">{{ $history->metadata['completion_notes'] }}</p>
+                                                    </div>
+                                                @endif
+                                                @if(isset($history->metadata['notes']) && $history->metadata['notes'])
+                                                    <div class="mt-2 p-2 bg-light rounded">
+                                                        <strong class="text-info"><i class="bx bx-comment-detail me-1"></i>Notes:</strong>
+                                                        <p class="mb-0 mt-1">{{ $history->metadata['notes'] }}</p>
+                                                    </div>
+                                                @endif
+                                                @if(isset($history->metadata['internal_notes']) && $history->metadata['internal_notes'])
+                                                    <div class="mt-2 p-2 bg-warning bg-opacity-10 rounded border border-warning">
+                                                        <strong class="text-warning"><i class="bx bx-shield me-1"></i>Internal Notes:</strong>
+                                                        <p class="mb-0 mt-1">{{ $history->metadata['internal_notes'] }}</p>
+                                                    </div>
+                                                @endif
+                                                @if(isset($history->metadata['client_response_notes']) && $history->metadata['client_response_notes'])
+                                                    <div class="mt-2 p-2 bg-primary bg-opacity-10 rounded border border-primary">
+                                                        <strong class="text-primary"><i class="bx bx-user me-1"></i>Client Response:</strong>
+                                                        <p class="mb-0 mt-1">{{ $history->metadata['client_response_notes'] }}</p>
+                                                    </div>
+                                                @endif
+                                                @if(isset($history->metadata['consultant_response_notes']) && $history->metadata['consultant_response_notes'])
+                                                    <div class="mt-2 p-2 bg-success bg-opacity-10 rounded border border-success">
+                                                        <strong class="text-success"><i class="bx bx-user-check me-1"></i>Consultant Response:</strong>
+                                                        <p class="mb-0 mt-1">{{ $history->metadata['consultant_response_notes'] }}</p>
+                                                    </div>
+                                                @endif
+                                                @if(isset($history->metadata['manager_override_notes']) && $history->metadata['manager_override_notes'])
+                                                    <div class="mt-2 p-2 bg-danger bg-opacity-10 rounded border border-danger">
+                                                        <strong class="text-danger"><i class="bx bx-shield-x me-1"></i>Manager Override:</strong>
+                                                        <p class="mb-0 mt-1">{{ $history->metadata['manager_override_notes'] }}</p>
+                                                    </div>
+                                                @endif
+                                                @if(isset($history->metadata['combined_response_status']))
+                                                    <div class="mt-2">
+                                                        <strong>Combined Status:</strong>
+                                                        <span class="badge bg-info">{{ $history->metadata['combined_response_status'] }}</span>
+                                                    </div>
+                                                @endif
+                                            @endif
+
                                             @if($history->old_value || $history->new_value)
                                                 <div class="mt-2">
                                                     @if($history->old_value)
@@ -682,55 +729,329 @@
                 </div>
                 <div class="card-body">
                     <div class="d-grid gap-2">
-                        <!-- Task Workflow Actions -->
-                        @if($task->assigned_to === auth()->id() || auth()->user()->isManager())
+                        <!-- USER ACTIONS -->
+                        @if($task->assigned_to === auth()->id())
+                            {{-- Status: Assigned - User can accept task --}}
                             @if($task->status === 'assigned')
-                                <form action="{{ route('tasks.accept', $task) }}" method="POST" class="d-inline">
+                                <form action="{{ route('tasks.accept', $task) }}" method="POST">
                                     @csrf
                                     <button type="submit" class="btn btn-success w-100">
-                                        <i class="bx bx-check me-2"></i>Accept Task
+                                        <i class="bx bx-check-circle me-2"></i>Accept Task & Start Working
                                     </button>
                                 </form>
+                                <small class="text-muted text-center">Click to accept this task and start working on it</small>
+
+                            {{-- Status: In Progress - User can submit for review --}}
                             @elseif($task->status === 'in_progress')
                                 <button class="btn btn-primary w-100" onclick="submitForReview({{ $task->id }})">
                                     <i class="bx bx-send me-2"></i>Submit for Review
                                 </button>
-                            @elseif($task->status === 'rejected')
-                                <button class="btn btn-warning w-100" onclick="submitForReview({{ $task->id }})">
-                                    <i class="bx bx-send me-2"></i>Resubmit for Review
-                                </button>
+                                <small class="text-muted text-center">Complete your work and submit it for manager review</small>
+
+                            {{-- Status: Submitted for Review - Waiting --}}
                             @elseif($task->status === 'submitted_for_review')
-                                <div class="alert alert-warning text-center">
-                                    <i class="bx bx-time me-2"></i>
-                                    <strong>Task submitted for review.</strong><br>
-                                    <small>Waiting for manager approval. You cannot modify files or change status.</small>
+                                <div class="alert alert-warning text-center mb-0">
+                                    <i class="bx bx-time-five me-2"></i>
+                                    <strong>Waiting for Manager</strong><br>
+                                    <small>Task submitted for review. Manager will review and start the review process.</small>
                                 </div>
+
+                            {{-- Status: In Review - Manager is reviewing --}}
                             @elseif($task->status === 'in_review')
-                                <div class="alert alert-warning text-center">
-                                    <i class="bx bx-time me-2"></i>
-                                    Task is under review by manager.
+                                <div class="alert alert-info text-center mb-0">
+                                    <i class="bx bx-search me-2"></i>
+                                    <strong>Under Review</strong><br>
+                                    <small>Manager is currently reviewing your task.</small>
                                 </div>
-                            @elseif($task->status === 'ready_for_email' || $task->status === 'approved')
-                                <div class="alert alert-info text-center">
+
+                            {{-- Status: Ready for Email - Internal approval done --}}
+                            @elseif($task->status === 'ready_for_email')
+                                <div class="alert alert-success text-center mb-3">
+                                    <i class="bx bx-check-circle me-2"></i>
+                                    <strong>Internally Approved!</strong><br>
+                                    <small>Manager approved. Now send confirmation email to clients/consultants.</small>
+                                </div>
+                                <a href="{{ route('tasks.prepare-email', $task) }}" class="btn btn-primary w-100">
+                                    <i class="bx bx-envelope me-2"></i>Prepare Confirmation Email
+                                </a>
+                                <small class="text-muted text-center mt-2 d-block">You can also assign contractors during email preparation</small>
+
+                            {{-- Client/Consultant Response Tracking --}}
+                            @else
+                                {{-- Show client/consultant response forms --}}
+                                <div class="card border-primary mb-3">
+                                    <div class="card-header bg-primary text-white">
+                                        <h6 class="mb-0"><i class="bx bx-envelope me-2"></i>Client/Consultant Responses</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <!-- Client Response Form -->
+                                        <form action="{{ route('tasks.client-response', $task) }}" method="POST" class="mb-3">
+                                            @csrf
+                                            <label class="form-label fw-semibold"><i class="bx bx-user me-1"></i>Client Status:</label>
+                                            <select name="client_response_status" class="form-select form-select-sm mb-2">
+                                                <option value="pending" {{ ($task->client_response_status ?? 'pending') === 'pending' ? 'selected' : '' }}>Pending</option>
+                                                <option value="approved" {{ ($task->client_response_status ?? 'pending') === 'approved' ? 'selected' : '' }}>Approved</option>
+                                                <option value="rejected" {{ ($task->client_response_status ?? 'pending') === 'rejected' ? 'selected' : '' }}>Rejected</option>
+                                            </select>
+                                            <textarea name="client_response_notes" class="form-control form-control-sm mb-2" rows="2" placeholder="Client response notes/comments...">{{ $task->client_response_notes ?? '' }}</textarea>
+                                            <button type="submit" class="btn btn-sm btn-primary w-100"><i class="bx bx-save me-1"></i>Save Client Response</button>
+                                        </form>
+
+                                        <hr>
+
+                                        <!-- Consultant Response Form -->
+                                        <form action="{{ route('tasks.consultant-response', $task) }}" method="POST" class="mb-3">
+                                            @csrf
+                                            <label class="form-label fw-semibold"><i class="bx bx-user-check me-1"></i>Consultant Status:</label>
+                                            <select name="consultant_response_status" class="form-select form-select-sm mb-2">
+                                                <option value="pending" {{ ($task->consultant_response_status ?? 'pending') === 'pending' ? 'selected' : '' }}>Pending</option>
+                                                <option value="approved" {{ ($task->consultant_response_status ?? 'pending') === 'approved' ? 'selected' : '' }}>Approved</option>
+                                                <option value="rejected" {{ ($task->consultant_response_status ?? 'pending') === 'rejected' ? 'selected' : '' }}>Rejected</option>
+                                            </select>
+                                            <textarea name="consultant_response_notes" class="form-control form-control-sm mb-2" rows="2" placeholder="Consultant response notes/comments...">{{ $task->consultant_response_notes ?? '' }}</textarea>
+                                            <button type="submit" class="btn btn-sm btn-success w-100"><i class="bx bx-save me-1"></i>Save Consultant Response</button>
+                                        </form>
+
+                                        @if($task->combined_response_status)
+                                        <div class="alert alert-info mb-2">
+                                            <strong>Combined Status:</strong><br>
+                                            <span class="badge bg-info">{{ $task->combined_response_status }}</span>
+                                        </div>
+                                        @endif
+
+                                        <!-- Finish Review Button -->
+                                        <form action="{{ route('tasks.finish-review', $task) }}" method="POST">
+                                            @csrf
+                                            <button type="submit" class="btn btn-warning w-100">
+                                                <i class="bx bx-check-double me-2"></i>Finish Review & Notify Manager
+                                            </button>
+                                        </form>
+                                        <small class="text-muted text-center mt-2 d-block">Click when you've recorded all responses</small>
+                                    </div>
+                                </div>
+                            @endif
+                        @endif
+
+                        <!-- MANAGER ACTIONS -->
+                        @if(auth()->user()->isManager())
+                            {{-- Status: Submitted for Review - Manager can start review --}}
+                            @if($task->status === 'submitted_for_review')
+                                <div class="alert alert-primary text-center mb-3">
+                                    <i class="bx bx-clipboard me-2"></i>
+                                    <strong>Task Submitted for Review</strong><br>
+                                    <small>User: {{ $task->assignee->name ?? 'Unknown' }}</small>
+                                </div>
+                                @if($task->completion_notes)
+                                <div class="card mb-3">
+                                    <div class="card-body">
+                                        <h6 class="text-muted mb-2">Completion Notes:</h6>
+                                        <p class="mb-0">{{ $task->completion_notes }}</p>
+                                    </div>
+                                </div>
+                                @endif
+                                <form action="{{ route('tasks.start-review', $task) }}" method="POST">
+                                    @csrf
+                                    <button type="submit" class="btn btn-info w-100">
+                                        <i class="bx bx-play-circle me-2"></i>Start Review
+                                    </button>
+                                </form>
+                                <small class="text-muted text-center">Click to begin reviewing this task</small>
+
+                            {{-- Status: In Review - Manager can approve internally --}}
+                            @elseif($task->status === 'in_review')
+                                <div class="card border-warning mb-3">
+                                    <div class="card-header bg-warning">
+                                        <h6 class="mb-0"><i class="bx bx-search me-2"></i>Internal Approval</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <form action="{{ route('tasks.internal-approval', $task) }}" method="POST">
+                                            @csrf
+                                            <label class="form-label fw-semibold">Decision:</label>
+                                            <select name="internal_status" class="form-select mb-2" required>
+                                                <option value="approved">Approve</option>
+                                                <option value="rejected">Reject</option>
+                                            </select>
+                                            <textarea name="internal_notes" class="form-control mb-2" rows="3" placeholder="Internal approval notes/feedback..." required></textarea>
+                                            <button type="submit" class="btn btn-success w-100">
+                                                <i class="bx bx-check-circle me-2"></i>Submit Internal Approval
+                                            </button>
+                                        </form>
+                                        <small class="text-muted text-center mt-2 d-block">Approve = Ready for client email | Reject = Back to user</small>
+                                    </div>
+                                </div>
+
+                            {{-- Status: Ready for Email - Waiting for user to send --}}
+                            @elseif($task->status === 'ready_for_email')
+                                <div class="alert alert-info text-center mb-0">
                                     <i class="bx bx-envelope me-2"></i>
-                                    <strong>Task approved! Ready for email confirmation.</strong><br>
-                                    <small>Your task has been approved. You can now prepare and send a confirmation email.</small>
+                                    <strong>Ready for Email</strong><br>
+                                    <small>Waiting for user to prepare and send confirmation email.</small>
                                 </div>
-                                <div class="d-grid gap-2">
-                                    <a href="{{ route('tasks.prepare-email', $task) }}" class="btn btn-primary">
-                                        <i class="bx bx-envelope me-2"></i>Prepare Confirmation Email
-                                    </a>
+
+                            {{-- Manager Override Options --}}
+                            @elseif($task->combined_response_status)
+                                <div class="card border-danger mb-3">
+                                    <div class="card-header bg-danger text-white">
+                                        <h6 class="mb-0"><i class="bx bx-shield me-2"></i>Manager Override</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="alert alert-warning mb-3">
+                                            <strong>Combined Status:</strong><br>
+                                            <span class="badge bg-info">{{ $task->combined_response_status }}</span>
+                                        </div>
+                                        <form action="{{ route('tasks.manager-override', $task) }}" method="POST">
+                                            @csrf
+                                            <label class="form-label fw-semibold">Override Action:</label>
+                                            <select name="manager_override_status" class="form-select mb-2" required>
+                                                <option value="reject">Reject Task</option>
+                                                <option value="reset_for_review">Reset for Review</option>
+                                            </select>
+                                            <textarea name="manager_override_notes" class="form-control mb-2" rows="3" placeholder="Reason for override..." required></textarea>
+                                            <button type="submit" class="btn btn-danger w-100">
+                                                <i class="bx bx-shield-x me-2"></i>Apply Override
+                                            </button>
+                                        </form>
+                                        <small class="text-muted text-center mt-2 d-block">Override will send task back to user</small>
+                                    </div>
                                 </div>
-                            @elseif($task->status === 'waiting_sending_client_consultant_approve')
-                                <div class="alert alert-warning text-center">
-                                    <i class="bx bx-time me-2"></i>
-                                    <strong>Task ready for client/consultant approval!</strong><br>
-                                    <small>You can now send this task for client and consultant approval.</small>
-                                </div>
-                                <button class="btn btn-primary w-100" onclick="sendForClientConsultantApproval({{ $task->id }})">
-                                    <i class="bx bx-send me-2"></i>Send for Client/Consultant Approval
+                            @endif
+
+                            {{-- Manager can assign unassigned tasks --}}
+                            @if(!$task->assigned_to)
+                                <button class="btn btn-info w-100" onclick="assignTask({{ $task->id }})">
+                                    <i class="bx bx-user-plus me-2"></i>Assign Task
                                 </button>
-                            @elseif($task->status === 'waiting_client_consultant_approve')
+                            @endif
+                        @endif
+
+                        <!-- Status change for managers (override) -->
+                        @if(Auth::user()->isManager())
+                            <hr>
+                            <button class="btn btn-outline-secondary w-100" onclick="changeTaskStatus({{ $task->id }})">
+                                <i class="bx bx-edit me-2"></i>Manual Status Change
+                                <span class="badge bg-warning ms-1">Manager</span>
+                            </button>
+                        @endif
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contractors Assigned -->
+            @if($task->contractors->count() > 0)
+            <div class="card mb-4 border-0 shadow-sm">
+                <div class="card-header bg-transparent border-0">
+                    <h5 class="mb-0"><i class="bx bx-group me-2"></i>Assigned Contractors</h5>
+                </div>
+                <div class="card-body">
+                    @foreach($task->contractors as $contractor)
+                    <div class="d-flex align-items-center mb-2 p-2 bg-light rounded">
+                        <div class="avatar avatar-sm me-2">
+                            <span class="avatar-initial rounded-circle bg-label-primary">{{ substr($contractor->name, 0, 1) }}</span>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h6 class="mb-0">{{ $contractor->name }}</h6>
+                            <small class="text-muted">{{ ucfirst($contractor->type) }}</small>
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
+            </div>
+            @endif
+
+            <!-- Internal Approval Status -->
+            @if($task->internal_status && $task->internal_status !== 'pending')
+            <div class="card mb-4 border-0 shadow-sm">
+                <div class="card-header bg-transparent border-0">
+                    <h5 class="mb-0"><i class="bx bx-check-shield me-2"></i>Internal Approval</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-2">
+                        <strong>Status:</strong>
+                        <span class="badge bg-{{ $task->internal_status === 'approved' ? 'success' : 'danger' }}">
+                            {{ ucfirst($task->internal_status) }}
+                        </span>
+                    </div>
+                    @if($task->internal_notes)
+                    <div class="mb-2">
+                        <strong>Notes:</strong>
+                        <p class="mb-0 text-muted">{{ $task->internal_notes }}</p>
+                    </div>
+                    @endif
+                    @if($task->internalApprover)
+                    <div>
+                        <strong>By:</strong> {{ $task->internalApprover->name }}<br>
+                        <small class="text-muted">{{ $task->internal_updated_at?->format('M d, Y H:i') }}</small>
+                    </div>
+                    @endif
+                </div>
+            </div>
+            @endif
+
+            <!-- Client/Consultant Response Status -->
+            @if($task->combined_response_status)
+            <div class="card mb-4 border-0 shadow-sm">
+                <div class="card-header bg-transparent border-0">
+                    <h5 class="mb-0"><i class="bx bx-message-check me-2"></i>External Approval</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <strong>Combined Status:</strong>
+                        <span class="badge bg-info">{{ $task->combined_response_status }}</span>
+                    </div>
+                    <div class="row">
+                        <div class="col-6">
+                            <strong>Client:</strong><br>
+                            <span class="badge bg-{{ ($task->client_response_status ?? 'pending') === 'approved' ? 'success' : (($task->client_response_status ?? 'pending') === 'rejected' ? 'danger' : 'secondary') }}">
+                                {{ ucfirst($task->client_response_status ?? 'pending') }}
+                            </span>
+                            @if($task->client_response_notes)
+                            <p class="mb-0 mt-1"><small class="text-muted">{{ $task->client_response_notes }}</small></p>
+                            @endif
+                        </div>
+                        <div class="col-6">
+                            <strong>Consultant:</strong><br>
+                            <span class="badge bg-{{ ($task->consultant_response_status ?? 'pending') === 'approved' ? 'success' : (($task->consultant_response_status ?? 'pending') === 'rejected' ? 'danger' : 'secondary') }}">
+                                {{ ucfirst($task->consultant_response_status ?? 'pending') }}
+                            </span>
+                            @if($task->consultant_response_notes)
+                            <p class="mb-0 mt-1"><small class="text-muted">{{ $task->consultant_response_notes }}</small></p>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @endif
+
+            <!-- Manager Override Status -->
+            @if($task->manager_override_status && $task->manager_override_status !== 'none')
+            <div class="card mb-4 border-0 shadow-sm border-danger">
+                <div class="card-header bg-danger text-white border-0">
+                    <h5 class="mb-0"><i class="bx bx-shield-x me-2"></i>Manager Override</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-2">
+                        <strong>Action:</strong>
+                        <span class="badge bg-{{ $task->manager_override_status === 'reject' ? 'danger' : 'warning' }}">
+                            {{ ucfirst(str_replace('_', ' ', $task->manager_override_status)) }}
+                        </span>
+                    </div>
+                    @if($task->manager_override_notes)
+                    <div class="mb-2">
+                        <strong>Notes:</strong>
+                        <p class="mb-0 text-muted">{{ $task->manager_override_notes }}</p>
+                    </div>
+                    @endif
+                    @if($task->managerOverrideBy)
+                    <div>
+                        <strong>By:</strong> {{ $task->managerOverrideBy->name }}<br>
+                        <small class="text-muted">{{ $task->manager_override_updated_at?->format('M d, Y H:i') }}</small>
+                    </div>
+                    @endif
+                </div>
+            </div>
+            @endif
+
+            @if($task->status === 'waiting_client_consultant_approve')
                                 <div class="alert alert-info text-center">
                                     <i class="bx bx-time me-2"></i>
                                     <strong>Waiting for client and consultant approval</strong><br>

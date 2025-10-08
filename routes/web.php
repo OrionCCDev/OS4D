@@ -147,8 +147,20 @@ Route::middleware('auth')->group(function () {
         // Task workflow routes
         Route::post('tasks/{task}/accept', [TaskController::class, 'acceptTask'])->name('tasks.accept');
         Route::post('tasks/{task}/submit-review', [TaskController::class, 'submitForReview'])->name('tasks.submit-review');
+        Route::post('tasks/{task}/start-review', [TaskController::class, 'startReview'])->name('tasks.start-review');
         Route::post('tasks/{task}/approve', [TaskController::class, 'approveTask'])->name('tasks.approve');
         Route::post('tasks/{task}/reject', [TaskController::class, 'rejectTask'])->name('tasks.reject');
+
+        // Internal approval routes
+        Route::post('tasks/{task}/internal-approval', [TaskController::class, 'updateInternalApproval'])->name('tasks.internal-approval');
+
+        // Client/Consultant response tracking routes
+        Route::post('tasks/{task}/client-response', [TaskController::class, 'updateClientResponse'])->name('tasks.client-response');
+        Route::post('tasks/{task}/consultant-response', [TaskController::class, 'updateConsultantResponse'])->name('tasks.consultant-response');
+        Route::post('tasks/{task}/finish-review', [TaskController::class, 'finishReview'])->name('tasks.finish-review');
+
+        // Manager override routes
+        Route::post('tasks/{task}/manager-override', [TaskController::class, 'managerOverride'])->name('tasks.manager-override');
         Route::post('tasks/{task}/send-approval-email', [TaskController::class, 'sendApprovalEmail'])->name('tasks.send-approval-email');
         Route::post('tasks/{task}/send-rejection-email', [TaskController::class, 'sendRejectionEmail'])->name('tasks.send-rejection-email');
 

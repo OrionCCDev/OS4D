@@ -1241,6 +1241,199 @@ private function sendApprovalEmailViaGmail(Task $task, User $approver)
     }
 
     /**
+     * Accept task assignment
+     */
+    public function acceptTask(Task $task)
+    {
+        // Only assigned user can accept the task
+        if ($task->assigned_to !== Auth::id()) {
+            abort(403, 'Access denied. Only the assigned user can accept this task.');
+        }
+
+        // Only pending or assigned tasks can be accepted
+        if (!in_array($task->status, ['pending', 'assigned'])) {
+            abort(403, 'Task cannot be accepted in current status.');
+        }
+
+        try {
+            $task->update([
+                'status' => 'in_progress',
+                'started_at' => now(),
+            ]);
+
+            // Add to history
+            $task->histories()->create([
+                'user_id' => Auth::id(),
+                'action' => 'task_accepted',
+                'description' => 'User accepted the task and started working on it.',
+                'metadata' => ['status_change' => 'assigned_to_in_progress']
+            ]);
+
+            // Notify manager
+            $this->notifyManagerAboutTaskAcceptance($task, Auth::user());
+
+            return redirect()->back()->with('success', 'Task accepted successfully. You can now start working on it.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Failed to accept task: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Submit task for review
+     */
+    public function submitForReview(Request $request, Task $task)
+    {
+        // Only assigned user can submit for review
+        if ($task->assigned_to !== Auth::id()) {
+            abort(403, 'Access denied. Only the assigned user can submit this task for review.');
+        }
+
+        // Only in_progress tasks can be submitted for review
+        if ($task->status !== 'in_progress') {
+            abort(403, 'Task must be in progress to submit for review.');
+        }
+
+        $request->validate([
+            'completion_notes' => 'required|string|max:2000'
+        ]);
+
+        try {
+            $task->update([
+                'status' => 'submitted_for_review',
+                'completion_notes' => $request->completion_notes,
+                'submitted_at' => now(),
+            ]);
+
+            // Add to history
+            $task->histories()->create([
+                'user_id' => Auth::id(),
+                'action' => 'submitted_for_review',
+                'description' => 'Task submitted for review with completion notes.',
+                'metadata' => [
+                    'status_change' => 'in_progress_to_submitted_for_review',
+                    'completion_notes' => $request->completion_notes
+                ]
+            ]);
+
+            // Notify manager
+            $this->notifyManagerAboutTaskSubmission($task, Auth::user(), $request->completion_notes);
+
+            return redirect()->back()->with('success', 'Task submitted for review successfully.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Failed to submit task: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Start review (Manager action)
+     */
+    public function startReview(Request $request, Task $task)
+    {
+        // Only managers can start review
+        if (!Auth::user()->isManager()) {
+            abort(403, 'Access denied. Only managers can start review.');
+        }
+
+        // Only submitted_for_review tasks can start review
+        if ($task->status !== 'submitted_for_review') {
+            abort(403, 'Task must be submitted for review to start review.');
+        }
+
+        try {
+            $task->update([
+                'status' => 'in_review',
+            ]);
+
+            // Add to history
+            $task->histories()->create([
+                'user_id' => Auth::id(),
+                'action' => 'review_started',
+                'description' => 'Manager started reviewing the task.',
+                'metadata' => ['status_change' => 'submitted_for_review_to_in_review']
+            ]);
+
+            // Notify user
+            $this->notifyUserAboutReviewStart($task, Auth::user());
+
+            return redirect()->back()->with('success', 'Review started successfully.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Failed to start review: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Update client response status
+     */
+    public function updateClientResponse(Request $request, Task $task)
+    {
+        $request->validate([
+            'client_response_status' => 'required|in:pending,approved,rejected',
+            'client_response_notes' => 'nullable|string|max:2000'
+        ]);
+
+        try {
+            $task->updateClientResponse($request->client_response_status, $request->client_response_notes);
+            return redirect()->back()->with('success', 'Client response updated successfully.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
+    }
+
+    /**
+     * Update consultant response status
+     */
+    public function updateConsultantResponse(Request $request, Task $task)
+    {
+        $request->validate([
+            'consultant_response_status' => 'required|in:pending,approved,rejected',
+            'consultant_response_notes' => 'nullable|string|max:2000'
+        ]);
+
+        try {
+            $task->updateConsultantResponse($request->consultant_response_status, $request->consultant_response_notes);
+            return redirect()->back()->with('success', 'Consultant response updated successfully.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
+    }
+
+    /**
+     * Finish review
+     */
+    public function finishReview(Task $task)
+    {
+        try {
+            $task->finishReview();
+            return redirect()->back()->with('success', 'Review finished successfully. Manager has been notified.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
+    }
+
+    /**
+     * Manager override (reject or reset for review)
+     */
+    public function managerOverride(Request $request, Task $task)
+    {
+        // Only managers can override
+        if (!Auth::user()->isManager()) {
+            abort(403, 'Access denied. Only managers can override task status.');
+        }
+
+        $request->validate([
+            'manager_override_status' => 'required|in:reject,reset_for_review',
+            'manager_override_notes' => 'nullable|string|max:2000'
+        ]);
+
+        try {
+            $task->managerOverride($request->manager_override_status, $request->manager_override_notes);
+            return redirect()->back()->with('success', 'Manager override applied successfully.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
+    }
+
+    /**
      * Send notification email to engineering@orion-contracting.com via SMTP
      * (same as confirmation emails)
      */
@@ -1330,6 +1523,102 @@ private function sendApprovalEmailViaGmail(Task $task, User $approver)
             Log::info("Managers notified about confirmation email for task: {$task->id} by user: {$sender->id}");
         } catch (\Exception $e) {
             Log::error("Failed to notify managers about confirmation email: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Notify manager when user accepts task
+     */
+    private function notifyManagerAboutTaskAcceptance(Task $task, User $user)
+    {
+        try {
+            // Get task creator (manager)
+            $manager = $task->creator;
+            if (!$manager || $manager->id === $user->id) return;
+
+            $notification = new \App\Models\UnifiedNotification([
+                'user_id' => $manager->id,
+                'type' => 'task_accepted',
+                'title' => 'Task Accepted',
+                'message' => "User {$user->name} has accepted task: {$task->title}",
+                'data' => [
+                    'task_id' => $task->id,
+                    'user_id' => $user->id,
+                    'user_name' => $user->name,
+                    'task_title' => $task->title,
+                    'project_name' => $task->project->name ?? 'Unknown Project'
+                ],
+                'is_read' => false
+            ]);
+            $notification->save();
+
+            Log::info("Manager notified about task acceptance for task: {$task->id} by user: {$user->id}");
+        } catch (\Exception $e) {
+            Log::error("Failed to notify manager about task acceptance: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Notify manager when user submits task for review
+     */
+    private function notifyManagerAboutTaskSubmission(Task $task, User $user, $completionNotes)
+    {
+        try {
+            // Get task creator (manager)
+            $manager = $task->creator;
+            if (!$manager || $manager->id === $user->id) return;
+
+            $notification = new \App\Models\UnifiedNotification([
+                'user_id' => $manager->id,
+                'type' => 'task_submitted_for_review',
+                'title' => 'Task Submitted for Review',
+                'message' => "User {$user->name} has submitted task: {$task->title} for review",
+                'data' => [
+                    'task_id' => $task->id,
+                    'user_id' => $user->id,
+                    'user_name' => $user->name,
+                    'task_title' => $task->title,
+                    'project_name' => $task->project->name ?? 'Unknown Project',
+                    'completion_notes' => $completionNotes
+                ],
+                'is_read' => false
+            ]);
+            $notification->save();
+
+            Log::info("Manager notified about task submission for task: {$task->id} by user: {$user->id}");
+        } catch (\Exception $e) {
+            Log::error("Failed to notify manager about task submission: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Notify user when manager starts review
+     */
+    private function notifyUserAboutReviewStart(Task $task, User $manager)
+    {
+        try {
+            $user = $task->assignee;
+            if (!$user || $user->id === $manager->id) return;
+
+            $notification = new \App\Models\UnifiedNotification([
+                'user_id' => $user->id,
+                'type' => 'review_started',
+                'title' => 'Review Started',
+                'message' => "Manager {$manager->name} has started reviewing your task: {$task->title}",
+                'data' => [
+                    'task_id' => $task->id,
+                    'manager_id' => $manager->id,
+                    'manager_name' => $manager->name,
+                    'task_title' => $task->title,
+                    'project_name' => $task->project->name ?? 'Unknown Project'
+                ],
+                'is_read' => false
+            ]);
+            $notification->save();
+
+            Log::info("User notified about review start for task: {$task->id} by manager: {$manager->id}");
+        } catch (\Exception $e) {
+            Log::error("Failed to notify user about review start: " . $e->getMessage());
         }
     }
 }
