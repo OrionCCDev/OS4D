@@ -545,7 +545,7 @@
                                     </button>
                                 </div>
                                 <div class="attachment-preview" id="attachmentPreview"></div>
-                                <div class="form-text">Maximum 10MB per file. You can select multiple files.</div>
+                                <div class="form-text">Maximum 50MB per file. You can select multiple files.</div>
                                 @error('attachments')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -824,9 +824,10 @@ document.addEventListener('DOMContentLoaded', function() {
         handleFiles(files);
     });
 
-    attachmentArea.addEventListener('click', function() {
-        attachmentInput.click();
-    });
+    // Removed area click to prevent double file chooser opening
+    // attachmentArea.addEventListener('click', function() {
+    //     attachmentInput.click();
+    // });
 
     attachmentInput.addEventListener('change', function() {
         handleFiles(this.files);
@@ -834,17 +835,27 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function handleFiles(files) {
         Array.from(files).forEach(file => {
-            if (file.size > 10 * 1024 * 1024) { // 10MB limit
-                alert(`File ${file.name} is too large. Maximum size is 10MB.`);
+            if (file.size > 50 * 1024 * 1024) { // 50MB limit
+                alert(`File ${file.name} is too large. Maximum size is 50MB.`);
                 return;
             }
 
             const attachmentItem = document.createElement('div');
-            attachmentItem.className = 'attachment-item';
+            attachmentItem.className = 'attachment-item d-flex align-items-center justify-content-between p-2 border rounded mb-2';
             attachmentItem.innerHTML = `
-                <i class="bx bx-file"></i>
-                <span>${file.name}</span>
-                <span class="attachment-remove" onclick="removeAttachment(this)">×</span>
+                <div class="d-flex align-items-center">
+                    <i class="bx bx-file me-2"></i>
+                    <span class="me-2">${file.name}</span>
+                    <small class="text-muted">(${(file.size / 1024 / 1024).toFixed(2)} MB)</small>
+                </div>
+                <div>
+                    <button type="button" class="btn btn-sm btn-outline-info me-1" onclick="viewFile('${file.name}', '${file.type}')">
+                        <i class="bx bx-show"></i> View
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeAttachment(this)">
+                        <i class="bx bx-x"></i> Remove
+                    </button>
+                </div>
             `;
             attachmentPreview.appendChild(attachmentItem);
         });
@@ -852,6 +863,60 @@ document.addEventListener('DOMContentLoaded', function() {
 
     window.removeAttachment = function(element) {
         element.parentElement.remove();
+    };
+
+    // File viewing functionality
+    window.viewFile = function(fileName, fileType) {
+        // Create a modal to display file content
+        const modal = document.createElement('div');
+        modal.className = 'modal fade';
+        modal.innerHTML = `
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">${fileName}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="text-center">
+                            <i class="bx bx-file" style="font-size: 4rem; color: #667eea;"></i>
+                            <h5 class="mt-3">${fileName}</h5>
+                            <p class="text-muted">File Type: ${fileType}</p>
+                            <p class="text-muted">This file will be attached to the email when sent.</p>
+                            <button type="button" class="btn btn-primary" onclick="downloadFile('${fileName}')">
+                                <i class="bx bx-download"></i> Download
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        const bsModal = new bootstrap.Modal(modal);
+        bsModal.show();
+
+        // Remove modal from DOM when hidden
+        modal.addEventListener('hidden.bs.modal', function() {
+            document.body.removeChild(modal);
+        });
+    };
+
+    window.downloadFile = function(fileName) {
+        // Find the file in the input and trigger download
+        const input = document.getElementById('attachments');
+        const files = Array.from(input.files);
+        const file = files.find(f => f.name === fileName);
+
+        if (file) {
+            const url = URL.createObjectURL(file);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
     };
 
     // Preview email functionality

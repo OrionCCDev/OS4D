@@ -677,7 +677,7 @@ class TaskController extends Controller
             'subject' => 'required|string|max:255',
             'body' => 'required|string',
             'attachments' => 'nullable|array',
-            'attachments.*' => 'file|max:10240', // 10MB max per file
+            'attachments.*' => 'file|max:51200', // 50MB max per file
         ]);
 
         try {
@@ -731,7 +731,7 @@ class TaskController extends Controller
                 'subject' => 'required|string|max:255',
                 'body' => 'required|string',
                 'attachments' => 'nullable|array',
-                'attachments.*' => 'file|max:10240',
+                'attachments.*' => 'file|max:51200',
             ]);
 
             // Handle file uploads
