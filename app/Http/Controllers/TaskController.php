@@ -651,10 +651,17 @@ class TaskController extends Controller
             // Handle file uploads
             $attachmentPaths = [];
             if ($request->hasFile('attachments')) {
+                Log::info('Processing file uploads - Count: ' . count($request->file('attachments')));
                 foreach ($request->file('attachments') as $file) {
+                    $originalName = $file->getClientOriginalName();
+                    $fileSize = $file->getSize();
+                    Log::info('Uploading file: ' . $originalName . ' - Size: ' . $fileSize . ' bytes');
                     $path = $file->store('email-attachments');
                     $attachmentPaths[] = $path;
+                    Log::info('File stored at: ' . $path);
                 }
+            } else {
+                Log::info('No files uploaded in request');
             }
 
             // Create or update email preparation
@@ -670,6 +677,8 @@ class TaskController extends Controller
                     'status' => 'draft',
                 ]
             );
+
+            Log::info('Email preparation saved with attachments: ' . json_encode($attachmentPaths));
 
             return redirect()->back()->with('success', 'Email preparation saved successfully!');
         } catch (\Exception $e) {
@@ -778,17 +787,27 @@ class TaskController extends Controller
 
             // Prepare attachments for Gmail OAuth service
             if ($emailPreparation->attachments && is_array($emailPreparation->attachments)) {
+                Log::info('Processing attachments for email - Count: ' . count($emailPreparation->attachments));
                 $emailData['attachments'] = [];
                 foreach ($emailPreparation->attachments as $attachmentPath) {
                     $fullPath = storage_path('app/' . $attachmentPath);
+                    Log::info('Checking attachment: ' . $fullPath . ' - Exists: ' . (file_exists($fullPath) ? 'Yes' : 'No'));
                     if (file_exists($fullPath)) {
+                        $fileSize = filesize($fullPath);
+                        $mimeType = mime_content_type($fullPath) ?: 'application/octet-stream';
+                        Log::info('Adding attachment: ' . basename($attachmentPath) . ' - Size: ' . $fileSize . ' bytes - MIME: ' . $mimeType);
                         $emailData['attachments'][] = [
                             'filename' => basename($attachmentPath),
-                            'mime_type' => mime_content_type($fullPath) ?: 'application/octet-stream',
+                            'mime_type' => $mimeType,
                             'content' => file_get_contents($fullPath)
                         ];
+                    } else {
+                        Log::error('Attachment file not found: ' . $fullPath);
                     }
                 }
+                Log::info('Total attachments prepared: ' . count($emailData['attachments']));
+            } else {
+                Log::info('No attachments found in email preparation');
             }
 
             if (!empty($ccEmails)) {

@@ -1,0 +1,61 @@
+[33m347138c[m modify 9
+[1mdiff --git a/app/Models/Task.php b/app/Models/Task.php[m
+[1mindex 7af7c66..dd865ba 100644[m
+[1m--- a/app/Models/Task.php[m
+[1m+++ b/app/Models/Task.php[m
+[36m@@ -686,8 +686,11 @@[m [mpublic function updateInternalApproval($status, $notes = null)[m
+         if ($status === 'approved') {[m
+             $this->changeStatus('ready_for_email', 'Task internally approved and ready for client/consultant confirmation email');[m
+         } elseif ($status === 'rejected') {[m
+[31m-            // When rejected, go back to submitted_for_review so user can resubmit[m
+[31m-            $this->changeStatus('submitted_for_review', 'Task rejected during internal approval - returned for resubmission');[m
+[32m+[m[32m            // When rejected, go back to in_progress so user can continue working[m
+[32m+[m[32m            $this->changeStatus('in_progress', 'Task rejected during internal approval - returned to user for revision');[m
+[32m+[m
+[32m+[m[32m            // Notify the user that their task was rejected[m
+[32m+[m[32m            $this->notifyUserAboutRejection();[m
+         }[m
+ [m
+         return $this;[m
+[36m@@ -850,6 +853,41 @@[m [mprivate function notifyManagerAboutReviewFinish()[m
+         }[m
+     }[m
+ [m
+[32m+[m[32m    /**[m
+[32m+[m[32m     * Notify user when task is rejected during internal approval[m
+[32m+[m[32m     */[m
+[32m+[m[32m    private function notifyUserAboutRejection()[m
+[32m+[m[32m    {[m
+[32m+[m[32m        try {[m
+[32m+[m[32m            $user = $this->assignee;[m
+[32m+[m[32m            if (!$user) return;[m
+[32m+[m
+[32m+[m[32m            $manager = auth()->user();[m
+[32m+[m[32m            $notification = new \App\Models\UnifiedNotification([[m
+[32m+[m[32m                'user_id' => $user->id,[m
+[32m+[m[32m                'category' => 'task',[m
+[32m+[m[32m                'type' => 'task_rejected_internal',[m
+[32m+[m[32m                'title' => 'Task Rejected - Needs Revision',[m
+[32m+[m[32m                'message' => "Your task '{$this->title}' was rejected during internal approval by {$manager->name}. Please review and resubmit.",[m
+[32m+[m[32m                'task_id' => $this->id,[m
+[32m+[m[32m                'data' => [[m
+[32m+[m[32m                    'task_id' => $this->id,[m
+[32m+[m[32m                    'task_title' => $this->title,[m
+[32m+[m[32m                    'manager_id' => $manager->id,[m
+[32m+[m[32m                    'manager_name' => $manager->name,[m
+[32m+[m[32m                    'project_name' => $this->project->name ?? 'Unknown Project',[m
+[32m+[m[32m                    'rejection_reason' => $this->internal_notes[m
+[32m+[m[32m                ],[m
+[32m+[m[32m                'is_read' => false[m
+[32m+[m[32m            ]);[m
+[32m+[m[32m            $notification->save();[m
+[32m+[m
+[32m+[m[32m            Log::info("User notified about task rejection for task: {$this->id} by manager: {$manager->id}");[m
+[32m+[m[32m        } catch (\Exception $e) {[m
+[32m+[m[32m            Log::error("Failed to notify user about task rejection: " . $e->getMessage());[m
+[32m+[m[32m        }[m
+[32m+[m[32m    }[m
+[32m+[m
+     /**[m
+      * Update combined approval status[m
+      */[m
