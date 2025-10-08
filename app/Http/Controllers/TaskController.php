@@ -6,6 +6,7 @@ use App\Models\Project;
 use App\Models\ProjectFolder;
 use App\Models\Task;
 use App\Models\User;
+use App\Models\Contractor;
 use App\Models\TaskHistory;
 use App\Models\CustomNotification;
 use App\Models\TaskAttachment;
