@@ -48,6 +48,8 @@
                                             'in_review' => 'bg-label-primary',
                                             'approved' => 'bg-label-success',
                                             'rejected' => 'bg-label-danger',
+                                            'waiting_sending_client_consultant_approve' => 'bg-label-warning',
+                                            'waiting_client_consultant_approve' => 'bg-label-info',
                                             'completed' => 'bg-label-success'
                                         ];
                                     @endphp
@@ -77,6 +79,10 @@
                             <span class="badge {{ $task->status_badge_class }}">
                                 @if($task->status === 'submitted_for_review')
                                     For Review
+                                @elseif($task->status === 'waiting_sending_client_consultant_approve')
+                                    Waiting to Send
+                                @elseif($task->status === 'waiting_client_consultant_approve')
+                                    Waiting Approval
                                 @else
                                     {{ ucfirst(str_replace('_', ' ', $task->status)) }}
                                 @endif
@@ -273,6 +279,8 @@ document.addEventListener('DOMContentLoaded', function() {
                             <option value="in_review">In Review</option>
                             <option value="approved">Approved</option>
                             <option value="rejected">Rejected</option>
+                            <option value="waiting_sending_client_consultant_approve">Waiting to Send</option>
+                            <option value="waiting_client_consultant_approve">Waiting Approval</option>
                             <option value="completed">Completed</option>
                         </select>
                         @if(Auth::user()->isManager())

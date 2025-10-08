@@ -152,6 +152,12 @@ Route::middleware('auth')->group(function () {
         Route::post('tasks/{task}/send-approval-email', [TaskController::class, 'sendApprovalEmail'])->name('tasks.send-approval-email');
         Route::post('tasks/{task}/send-rejection-email', [TaskController::class, 'sendRejectionEmail'])->name('tasks.send-rejection-email');
 
+        // Client/Consultant approval routes
+        Route::post('tasks/{task}/move-to-waiting-sending-approval', [TaskController::class, 'moveToWaitingSendingApproval'])->name('tasks.move-to-waiting-sending-approval');
+        Route::post('tasks/{task}/send-for-client-consultant-approval', [TaskController::class, 'sendForClientConsultantApproval'])->name('tasks.send-for-client-consultant-approval');
+        Route::post('tasks/{task}/update-client-approval', [TaskController::class, 'updateClientApproval'])->name('tasks.update-client-approval');
+        Route::post('tasks/{task}/update-consultant-approval', [TaskController::class, 'updateConsultantApproval'])->name('tasks.update-consultant-approval');
+
         // Email preparation routes
         Route::get('tasks/{task}/prepare-email', [TaskController::class, 'showEmailPreparationForm'])->name('tasks.prepare-email');
         Route::post('tasks/{task}/prepare-email', [TaskController::class, 'storeEmailPreparation'])->name('tasks.store-email-preparation');

@@ -26,6 +26,8 @@ class User extends Authenticatable implements HasMedia
         'password',
         'role',
         'img',
+        'mobile',
+        'position',
         'notification_sound_enabled',
         'gmail_token',
         'gmail_refresh_token',
@@ -84,6 +86,27 @@ class User extends Authenticatable implements HasMedia
     public function unreadNotifications()
     {
         return $this->customNotifications()->unread();
+    }
+
+    // Project relationships
+    public function ownedProjects()
+    {
+        return $this->hasMany(Project::class, 'owner_id');
+    }
+
+    public function projects()
+    {
+        return $this->belongsToMany(Project::class, 'project_user')
+                    ->withPivot('role', 'joined_at')
+                    ->withTimestamps();
+    }
+
+    public function projectsAsLead()
+    {
+        return $this->belongsToMany(Project::class, 'project_user')
+                    ->wherePivot('role', 'lead')
+                    ->withPivot('role', 'joined_at')
+                    ->withTimestamps();
     }
 
     public function isManager()

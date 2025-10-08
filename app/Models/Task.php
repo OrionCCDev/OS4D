@@ -37,6 +37,13 @@ class Task extends Model
         'rejected_at',
         'approval_notes',
         'rejection_notes',
+        'client_status',
+        'client_notes',
+        'client_updated_at',
+        'consultant_status',
+        'consultant_notes',
+        'consultant_updated_at',
+        'combined_approval_status',
     ];
 
     protected $casts = [
@@ -48,6 +55,8 @@ class Task extends Model
         'submitted_at' => 'datetime',
         'approved_at' => 'datetime',
         'rejected_at' => 'datetime',
+        'client_updated_at' => 'datetime',
+        'consultant_updated_at' => 'datetime',
     ];
 
     public function project()
@@ -88,6 +97,77 @@ class Task extends Model
     public function emailPreparations()
     {
         return $this->hasMany(TaskEmailPreparation::class);
+    }
+
+    public function contractors()
+    {
+        return $this->belongsToMany(Contractor::class, 'contractor_task')
+                    ->withPivot('role', 'added_at')
+                    ->withTimestamps();
+    }
+
+    public function clients()
+    {
+        return $this->contractors()->where('contractors.type', 'client');
+    }
+
+    public function consultants()
+    {
+        return $this->contractors()->where('contractors.type', 'consultant');
+    }
+
+    // Methods to manage task contractors
+    public function addContractor(Contractor $contractor, string $role = 'participant')
+    {
+        if (!$this->contractors()->where('contractor_id', $contractor->id)->exists()) {
+            $this->contractors()->attach($contractor->id, [
+                'role' => $role,
+                'added_at' => now(),
+                'created_at' => now(),
+                'updated_at' => now()
+            ]);
+        }
+    }
+
+    public function removeContractor(Contractor $contractor)
+    {
+        $this->contractors()->detach($contractor->id);
+    }
+
+    public function updateContractorRole(Contractor $contractor, string $role)
+    {
+        $this->contractors()->updateExistingPivot($contractor->id, [
+            'role' => $role,
+            'updated_at' => now()
+        ]);
+    }
+
+    // Get approved tasks for specific contractor type and project
+    public static function getApprovedTasksForContractorType($contractorType, $projectId = null)
+    {
+        $query = self::whereHas('contractors', function($q) use ($contractorType) {
+            $q->where('contractors.type', $contractorType);
+        })->where('status', 'completed');
+
+        if ($projectId) {
+            $query->where('project_id', $projectId);
+        }
+
+        return $query->get();
+    }
+
+    // Get approved tasks for specific contractor
+    public static function getApprovedTasksForContractor(Contractor $contractor, $projectId = null)
+    {
+        $query = self::whereHas('contractors', function($q) use ($contractor) {
+            $q->where('contractor_id', $contractor->id);
+        })->where('status', 'completed');
+
+        if ($projectId) {
+            $query->where('project_id', $projectId);
+        }
+
+        return $query->get();
     }
 
     // Status management methods
@@ -162,6 +242,8 @@ class Task extends Model
             'submitted_for_review' => 'Task has been submitted for review',
             'approved' => 'Task has been approved',
             'rejected' => 'Task has been rejected',
+            'waiting_sending_client_consultant_approve' => 'Waiting to send for client and consultant approval',
+            'waiting_client_consultant_approve' => 'Waiting for client and consultant approval',
             'completed' => 'Task has been completed',
             'cancelled' => 'Task has been cancelled'
         ];
@@ -261,6 +343,8 @@ class Task extends Model
             'approved' => 'bg-success',
             'ready_for_email' => 'bg-info',
             'rejected' => 'bg-danger',
+            'waiting_sending_client_consultant_approve' => 'bg-warning',
+            'waiting_client_consultant_approve' => 'bg-info',
             'completed' => 'bg-success',
             default => 'bg-secondary'
         };
@@ -429,6 +513,179 @@ class Task extends Model
 
         // Notify external stakeholders
         $this->notifyExternalStakeholders('rejected', 'Task Rejected', "Task '{$this->title}' has been rejected and requires revision.");
+    }
+
+    /**
+     * Move task to waiting for client/consultant approval after manager approval
+     */
+    public function moveToWaitingSendingApproval()
+    {
+        if ($this->status !== 'approved') {
+            throw new \Exception('Only approved tasks can be moved to waiting for sending approval');
+        }
+
+        $this->update([
+            'status' => 'waiting_sending_client_consultant_approve',
+        ]);
+
+        // Create history record
+        $this->histories()->create([
+            'action' => 'waiting_sending_client_consultant_approve',
+            'description' => "Task moved to waiting for sending client and consultant approval",
+            'metadata' => ['moved_at' => now()]
+        ]);
+
+        // Notify assigned user
+        $this->sendNotification($this->assignee, 'task_waiting_sending_approval', 'Task Ready for Client/Consultant Approval', "Your task '{$this->title}' is ready to send for client and consultant approval.");
+
+        // Notify managers
+        $this->notifyManagers('task_waiting_sending_approval', 'Task Ready for Client/Consultant Approval', "Task '{$this->title}' is ready to send for client and consultant approval.");
+    }
+
+    /**
+     * Send email to client and consultant and move to waiting status
+     */
+    public function sendForClientConsultantApproval()
+    {
+        if ($this->status !== 'waiting_sending_client_consultant_approve') {
+            throw new \Exception('Only tasks waiting to send approval can be sent for client/consultant approval');
+        }
+
+        $this->update([
+            'status' => 'waiting_client_consultant_approve',
+        ]);
+
+        // Create history record
+        $this->histories()->create([
+            'action' => 'sent_for_client_consultant_approval',
+            'description' => "Task sent for client and consultant approval",
+            'metadata' => ['sent_at' => now()]
+        ]);
+
+        // Notify assigned user
+        $this->sendNotification($this->assignee, 'task_sent_for_approval', 'Task Sent for Client/Consultant Approval', "Your task '{$this->title}' has been sent for client and consultant approval.");
+
+        // Notify managers
+        $this->notifyManagers('task_sent_for_approval', 'Task Sent for Client/Consultant Approval', "Task '{$this->title}' has been sent for client and consultant approval.");
+    }
+
+    /**
+     * Update client approval status
+     */
+    public function updateClientApproval($status, $notes = null)
+    {
+        if (!in_array($status, ['not_attached', 'approved', 'rejected'])) {
+            throw new \Exception('Invalid client status');
+        }
+
+        $this->update([
+            'client_status' => $status,
+            'client_notes' => $notes,
+            'client_updated_at' => now(),
+        ]);
+
+        $this->updateCombinedApprovalStatus();
+
+        // Create history record
+        $this->histories()->create([
+            'action' => 'client_approval_updated',
+            'description' => "Client approval updated to: {$status}" . ($notes ? ". Notes: {$notes}" : ""),
+            'metadata' => ['client_status' => $status, 'notes' => $notes, 'updated_at' => now()]
+        ]);
+
+        // Check if both approvals are complete
+        $this->checkApprovalCompletion();
+    }
+
+    /**
+     * Update consultant approval status
+     */
+    public function updateConsultantApproval($status, $notes = null)
+    {
+        if (!in_array($status, ['not_attached', 'approved', 'rejected'])) {
+            throw new \Exception('Invalid consultant status');
+        }
+
+        $this->update([
+            'consultant_status' => $status,
+            'consultant_notes' => $notes,
+            'consultant_updated_at' => now(),
+        ]);
+
+        $this->updateCombinedApprovalStatus();
+
+        // Create history record
+        $this->histories()->create([
+            'action' => 'consultant_approval_updated',
+            'description' => "Consultant approval updated to: {$status}" . ($notes ? ". Notes: {$notes}" : ""),
+            'metadata' => ['consultant_status' => $status, 'notes' => $notes, 'updated_at' => now()]
+        ]);
+
+        // Check if both approvals are complete
+        $this->checkApprovalCompletion();
+    }
+
+    /**
+     * Update combined approval status
+     */
+    private function updateCombinedApprovalStatus()
+    {
+        $clientStatus = $this->client_status ?? 'not_attached';
+        $consultantStatus = $this->consultant_status ?? 'not_attached';
+
+        $combinedStatus = "client-{$clientStatus}-consultant-{$consultantStatus}";
+
+        $this->update(['combined_approval_status' => $combinedStatus]);
+    }
+
+    /**
+     * Check if both approvals are complete and update task status
+     */
+    private function checkApprovalCompletion()
+    {
+        $clientStatus = $this->client_status ?? 'not_attached';
+        $consultantStatus = $this->consultant_status ?? 'not_attached';
+
+        // If both are approved, mark as completed
+        if ($clientStatus === 'approved' && $consultantStatus === 'approved') {
+            $this->update([
+                'status' => 'completed',
+                'completed_at' => now(),
+            ]);
+
+            // Create history record
+            $this->histories()->create([
+                'action' => 'completed',
+                'description' => "Task completed after client and consultant approval",
+                'metadata' => ['completed_at' => now()]
+            ]);
+
+            // Notify assigned user
+            $this->sendNotification($this->assignee, 'task_completed', 'Task Completed', "Your task '{$this->title}' has been completed after client and consultant approval.");
+
+            // Notify managers
+            $this->notifyManagers('task_completed', 'Task Completed', "Task '{$this->title}' has been completed after client and consultant approval.");
+        }
+        // If either is rejected, mark as rejected
+        elseif ($clientStatus === 'rejected' || $consultantStatus === 'rejected') {
+            $this->update([
+                'status' => 'rejected',
+                'rejected_at' => now(),
+            ]);
+
+            // Create history record
+            $this->histories()->create([
+                'action' => 'rejected',
+                'description' => "Task rejected by client or consultant",
+                'metadata' => ['rejected_at' => now()]
+            ]);
+
+            // Notify assigned user
+            $this->sendNotification($this->assignee, 'task_rejected', 'Task Rejected', "Your task '{$this->title}' has been rejected by client or consultant.");
+
+            // Notify managers
+            $this->notifyManagers('task_rejected', 'Task Rejected', "Task '{$this->title}' has been rejected by client or consultant.");
+        }
     }
 
     public function notifyExternalStakeholders($type, $subject, $message)

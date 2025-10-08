@@ -1115,6 +1115,68 @@ private function sendApprovalEmailViaGmail(Task $task, User $approver)
     }
 
     /**
+     * Move task to waiting for sending client/consultant approval
+     */
+    public function moveToWaitingSendingApproval(Task $task)
+    {
+        try {
+            $task->moveToWaitingSendingApproval();
+            return redirect()->back()->with('success', 'Task moved to waiting for sending client/consultant approval.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
+    }
+
+    /**
+     * Send task for client/consultant approval
+     */
+    public function sendForClientConsultantApproval(Task $task)
+    {
+        try {
+            $task->sendForClientConsultantApproval();
+            return redirect()->back()->with('success', 'Task sent for client/consultant approval.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
+    }
+
+    /**
+     * Update client approval status
+     */
+    public function updateClientApproval(Request $request, Task $task)
+    {
+        $request->validate([
+            'client_status' => 'required|in:not_attached,approved,rejected',
+            'client_notes' => 'nullable|string|max:1000'
+        ]);
+
+        try {
+            $task->updateClientApproval($request->client_status, $request->client_notes);
+            return redirect()->back()->with('success', 'Client approval status updated successfully.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
+    }
+
+    /**
+     * Update consultant approval status
+     */
+    public function updateConsultantApproval(Request $request, Task $task)
+    {
+        $request->validate([
+            'consultant_status' => 'required|in:not_attached,approved,rejected',
+            'consultant_notes' => 'nullable|string|max:1000'
+        ]);
+
+        try {
+            $task->updateConsultantApproval($request->consultant_status, $request->consultant_notes);
+            return redirect()->back()->with('success', 'Consultant approval status updated successfully.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
+    }
+
+    /**
      * Send notification email to engineering@orion-contracting.com via SMTP
      * (same as confirmation emails)
      */

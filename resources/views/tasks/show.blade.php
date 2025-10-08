@@ -721,6 +721,67 @@
                                         <i class="bx bx-envelope me-2"></i>Prepare Confirmation Email
                                     </a>
                                 </div>
+                            @elseif($task->status === 'waiting_sending_client_consultant_approve')
+                                <div class="alert alert-warning text-center">
+                                    <i class="bx bx-time me-2"></i>
+                                    <strong>Task ready for client/consultant approval!</strong><br>
+                                    <small>You can now send this task for client and consultant approval.</small>
+                                </div>
+                                <button class="btn btn-primary w-100" onclick="sendForClientConsultantApproval({{ $task->id }})">
+                                    <i class="bx bx-send me-2"></i>Send for Client/Consultant Approval
+                                </button>
+                            @elseif($task->status === 'waiting_client_consultant_approve')
+                                <div class="alert alert-info text-center">
+                                    <i class="bx bx-time me-2"></i>
+                                    <strong>Waiting for client and consultant approval</strong><br>
+                                    <small>Please check your email for responses and update the approval status below.</small>
+                                </div>
+
+                                <!-- Client/Consultant Approval Interface -->
+                                <div class="card mt-3">
+                                    <div class="card-header">
+                                        <h6 class="card-title mb-0">Client & Consultant Approval Status</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <!-- Client Approval -->
+                                            <div class="col-md-6">
+                                                <form action="{{ route('tasks.update-client-approval', $task) }}" method="POST" class="mb-3">
+                                                    @csrf
+                                                    <label class="form-label fw-semibold">Client Status:</label>
+                                                    <select name="client_status" class="form-select mb-2" onchange="this.form.submit()">
+                                                        <option value="not_attached" {{ $task->client_status === 'not_attached' ? 'selected' : '' }}>Not Attached</option>
+                                                        <option value="approved" {{ $task->client_status === 'approved' ? 'selected' : '' }}>Approved</option>
+                                                        <option value="rejected" {{ $task->client_status === 'rejected' ? 'selected' : '' }}>Rejected</option>
+                                                    </select>
+                                                    <textarea name="client_notes" class="form-control" rows="2" placeholder="Client notes...">{{ $task->client_notes }}</textarea>
+                                                </form>
+                                            </div>
+
+                                            <!-- Consultant Approval -->
+                                            <div class="col-md-6">
+                                                <form action="{{ route('tasks.update-consultant-approval', $task) }}" method="POST" class="mb-3">
+                                                    @csrf
+                                                    <label class="form-label fw-semibold">Consultant Status:</label>
+                                                    <select name="consultant_status" class="form-select mb-2" onchange="this.form.submit()">
+                                                        <option value="not_attached" {{ $task->consultant_status === 'not_attached' ? 'selected' : '' }}>Not Attached</option>
+                                                        <option value="approved" {{ $task->consultant_status === 'approved' ? 'selected' : '' }}>Approved</option>
+                                                        <option value="rejected" {{ $task->consultant_status === 'rejected' ? 'selected' : '' }}>Rejected</option>
+                                                    </select>
+                                                    <textarea name="consultant_notes" class="form-control" rows="2" placeholder="Consultant notes...">{{ $task->consultant_notes }}</textarea>
+                                                </form>
+                                            </div>
+                                        </div>
+
+                                        <!-- Combined Status Display -->
+                                        @if($task->combined_approval_status)
+                                        <div class="mt-3">
+                                            <label class="form-label fw-semibold">Combined Status:</label>
+                                            <div class="badge bg-info">{{ str_replace('-', ' ', ucwords($task->combined_approval_status, '-')) }}</div>
+                                        </div>
+                                        @endif
+                                    </div>
+                                </div>
                             @elseif($task->status === 'approved')
                                 <div class="alert alert-success text-center">
                                     <i class="bx bx-check-circle me-2"></i>
@@ -757,10 +818,61 @@
                                 </div>
                             @elseif($task->status === 'approved')
                                 <div class="d-grid gap-2">
-                                    <button class="btn btn-primary" onclick="sendApprovalEmail({{ $task->id }})">
-                                        <i class="bx bx-envelope me-2"></i>Send Approval Email
+                                    <button class="btn btn-warning" onclick="moveToWaitingSendingApproval({{ $task->id }})">
+                                        <i class="bx bx-send me-2"></i>Move to Client/Consultant Approval
                                     </button>
-                                    <small class="text-muted text-center">Send notification email to the assigned user</small>
+                                    <small class="text-muted text-center">Move task to waiting for client/consultant approval</small>
+                                </div>
+                            @elseif($task->status === 'waiting_sending_client_consultant_approve')
+                                <div class="alert alert-warning text-center">
+                                    <i class="bx bx-time me-2"></i>
+                                    <strong>Task ready for client/consultant approval</strong><br>
+                                    <small>The assigned user can now send this task for client and consultant approval.</small>
+                                </div>
+                            @elseif($task->status === 'waiting_client_consultant_approve')
+                                <div class="alert alert-info text-center">
+                                    <i class="bx bx-time me-2"></i>
+                                    <strong>Waiting for client and consultant approval</strong><br>
+                                    <small>The assigned user is managing the client and consultant approval process.</small>
+                                </div>
+
+                                <!-- Manager View of Approval Status -->
+                                <div class="card mt-3">
+                                    <div class="card-header">
+                                        <h6 class="card-title mb-0">Approval Status Overview</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-semibold">Client Status:</label>
+                                                <div class="badge {{ $task->client_status === 'approved' ? 'bg-success' : ($task->client_status === 'rejected' ? 'bg-danger' : 'bg-secondary') }}">
+                                                    {{ ucfirst(str_replace('_', ' ', $task->client_status ?? 'not_attached')) }}
+                                                </div>
+                                                @if($task->client_notes)
+                                                    <div class="mt-2">
+                                                        <small class="text-muted">Notes: {{ $task->client_notes }}</small>
+                                                    </div>
+                                                @endif
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-semibold">Consultant Status:</label>
+                                                <div class="badge {{ $task->consultant_status === 'approved' ? 'bg-success' : ($task->consultant_status === 'rejected' ? 'bg-danger' : 'bg-secondary') }}">
+                                                    {{ ucfirst(str_replace('_', ' ', $task->consultant_status ?? 'not_attached')) }}
+                                                </div>
+                                                @if($task->consultant_notes)
+                                                    <div class="mt-2">
+                                                        <small class="text-muted">Notes: {{ $task->consultant_notes }}</small>
+                                                    </div>
+                                                @endif
+                                            </div>
+                                        </div>
+                                        @if($task->combined_approval_status)
+                                        <div class="mt-3">
+                                            <label class="form-label fw-semibold">Combined Status:</label>
+                                            <div class="badge bg-info">{{ str_replace('-', ' ', ucwords($task->combined_approval_status, '-')) }}</div>
+                                        </div>
+                                        @endif
+                                    </div>
                                 </div>
                             @elseif($task->status === 'rejected')
                                 <div class="d-grid gap-2">
@@ -1329,6 +1441,58 @@ function sendRejectionEmail(taskId) {
         .catch(error => {
             console.error('Error:', error);
             alert('Error sending email. Please try again.');
+        });
+    }
+}
+
+// Move to waiting sending approval
+function moveToWaitingSendingApproval(taskId) {
+    if (confirm('Move this task to waiting for sending client/consultant approval?')) {
+        fetch(`/tasks/${taskId}/move-to-waiting-sending-approval`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Task moved to waiting for sending approval successfully!');
+                location.reload();
+            } else {
+                alert('Failed to move task: ' + (data.message || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error moving task. Please try again.');
+        });
+    }
+}
+
+// Send for client/consultant approval
+function sendForClientConsultantApproval(taskId) {
+    if (confirm('Send this task for client and consultant approval?')) {
+        fetch(`/tasks/${taskId}/send-for-client-consultant-approval`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Task sent for client/consultant approval successfully!');
+                location.reload();
+            } else {
+                alert('Failed to send task: ' + (data.message || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error sending task. Please try again.');
         });
     }
 }

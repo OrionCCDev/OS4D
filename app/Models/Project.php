@@ -43,6 +43,63 @@ class Project extends Model
         return $this->hasMany(Task::class);
     }
 
+    public function users()
+    {
+        return $this->belongsToMany(User::class, 'project_user')
+                    ->withPivot('role', 'joined_at')
+                    ->withTimestamps();
+    }
+
+    public function members()
+    {
+        return $this->belongsToMany(User::class, 'project_user')
+                    ->wherePivot('role', 'member')
+                    ->withPivot('role', 'joined_at')
+                    ->withTimestamps();
+    }
+
+    public function leads()
+    {
+        return $this->belongsToMany(User::class, 'project_user')
+                    ->wherePivot('role', 'lead')
+                    ->withPivot('role', 'joined_at')
+                    ->withTimestamps();
+    }
+
+    public function observers()
+    {
+        return $this->belongsToMany(User::class, 'project_user')
+                    ->wherePivot('role', 'observer')
+                    ->withPivot('role', 'joined_at')
+                    ->withTimestamps();
+    }
+
+    // Methods to manage project members
+    public function addUser(User $user, string $role = 'member')
+    {
+        if (!$this->users()->where('user_id', $user->id)->exists()) {
+            $this->users()->attach($user->id, [
+                'role' => $role,
+                'joined_at' => now(),
+                'created_at' => now(),
+                'updated_at' => now()
+            ]);
+        }
+    }
+
+    public function removeUser(User $user)
+    {
+        $this->users()->detach($user->id);
+    }
+
+    public function updateUserRole(User $user, string $role)
+    {
+        $this->users()->updateExistingPivot($user->id, [
+            'role' => $role,
+            'updated_at' => now()
+        ]);
+    }
+
     /**
      * Get the number of days remaining until the end date
      */
