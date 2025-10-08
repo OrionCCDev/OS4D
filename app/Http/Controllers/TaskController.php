@@ -416,40 +416,7 @@ class TaskController extends Controller
         return response()->json(['count' => $count]);
     }
 
-    // New workflow methods
-    public function acceptTask(Task $task)
-    {
-        // Only the assigned user can accept the task
-        if ($task->assigned_to !== Auth::id()) {
-            abort(403, 'Access denied. You can only accept tasks assigned to you.');
-        }
-
-        try {
-            $task->acceptTask();
-            return redirect()->back()->with('success', 'Task accepted successfully');
-        } catch (\Exception $e) {
-            return redirect()->back()->with('error', $e->getMessage());
-        }
-    }
-
-    public function submitForReview(Request $request, Task $task)
-    {
-        // Only the assigned user can submit for review
-        if ($task->assigned_to !== Auth::id()) {
-            abort(403, 'Access denied. You can only submit tasks assigned to you.');
-        }
-
-        $validated = $request->validate([
-            'completion_notes' => 'nullable|string|max:1000',
-        ]);
-
-        try {
-            $task->submitForReview($validated['completion_notes'] ?? null);
-            return redirect()->back()->with('success', 'Task submitted for review successfully');
-        } catch (\Exception $e) {
-            return redirect()->back()->with('error', $e->getMessage());
-        }
-    }
+    // New workflow methods have been moved to the bottom of the file
 
     public function approveTask(Request $request, Task $task)
     {
