@@ -36,6 +36,7 @@
                     <select name="type" class="form-control" required>
                         <option value="client" {{ old('type') == 'client' ? 'selected' : '' }}>Client</option>
                         <option value="consultant" {{ old('type') == 'consultant' ? 'selected' : '' }}>Consultant</option>
+                        <option value="other" {{ old('type') == 'other' ? 'selected' : '' }}>Other</option>
                     </select>
                 </div>
             </div>

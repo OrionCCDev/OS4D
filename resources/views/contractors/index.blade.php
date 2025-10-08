@@ -23,7 +23,11 @@
                     <tr>
                         <td>{{ $contractor->name }}</td>
                         <td>{{ $contractor->email }}</td>
-                        <td><span class="badge bg-{{ $contractor->type == 'client' ? 'primary' : 'success' }}">{{ ucfirst($contractor->type) }}</span></td>
+                        <td>
+                            <span class="badge bg-{{ $contractor->type == 'client' ? 'primary' : ($contractor->type == 'consultant' ? 'success' : 'info') }}">
+                                {{ ucfirst($contractor->type) }}
+                            </span>
+                        </td>
                         <td>{{ $contractor->position }}</td>
                         <td>{{ $contractor->company_name }}</td>
                         <td>{{ $contractor->mobile }}</td>

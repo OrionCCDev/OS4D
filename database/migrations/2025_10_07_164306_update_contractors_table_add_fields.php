@@ -29,7 +29,7 @@ return new class extends Migration
 
             // Add 'type' enum column
             if (!Schema::hasColumn('contractors', 'type')) {
-                $table->enum('type', ['client', 'consultant'])->default('client');
+                $table->enum('type', ['client', 'consultant', 'other'])->default('client');
             }
         });
     }

@@ -37,6 +37,7 @@
                     <select name="type" class="form-control" required>
                         <option value="client" {{ old('type', $contractor->type) == 'client' ? 'selected' : '' }}>Client</option>
                         <option value="consultant" {{ old('type', $contractor->type) == 'consultant' ? 'selected' : '' }}>Consultant</option>
+                        <option value="other" {{ old('type', $contractor->type) == 'other' ? 'selected' : '' }}>Other</option>
                     </select>
                 </div>
             </div>
