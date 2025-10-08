@@ -17,10 +17,12 @@ class Contractor extends Model
     protected $fillable = [
         'name',
         'email',
-        'mobile',
-        'position',
-        'company_name',
-        'type',
+        'company',        // Old field (backward compatibility)
+        'phone',          // Old field (backward compatibility)
+        'mobile',         // New field
+        'position',       // New field
+        'company_name',   // New field
+        'type',           // New field
     ];
 
     /**

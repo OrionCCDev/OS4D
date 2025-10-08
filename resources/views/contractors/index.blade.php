@@ -12,8 +12,10 @@
                 <thead><tr>
                     <th>Name</th>
                     <th>Email</th>
+                    <th>Type</th>
+                    <th>Position</th>
                     <th>Company</th>
-                    <th>Phone</th>
+                    <th>Mobile</th>
                     <th></th>
                 </tr></thead>
                 <tbody>
@@ -21,8 +23,10 @@
                     <tr>
                         <td>{{ $contractor->name }}</td>
                         <td>{{ $contractor->email }}</td>
-                        <td>{{ $contractor->company }}</td>
-                        <td>{{ $contractor->phone }}</td>
+                        <td><span class="badge bg-{{ $contractor->type == 'client' ? 'primary' : 'success' }}">{{ ucfirst($contractor->type) }}</span></td>
+                        <td>{{ $contractor->position }}</td>
+                        <td>{{ $contractor->company_name }}</td>
+                        <td>{{ $contractor->mobile }}</td>
                         <td class="text-end">
                             <a href="{{ route('contractors.edit', $contractor) }}" class="btn btn-sm btn-outline-secondary">Edit</a>
                             <form action="{{ route('contractors.destroy', $contractor) }}" method="POST" class="d-inline">

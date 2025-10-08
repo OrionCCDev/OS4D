@@ -19,12 +19,25 @@
             </div>
             <div class="row">
                 <div class="col-md-6 mb-3">
-                    <label class="form-label">Company</label>
-                    <input type="text" name="company" class="form-control" value="{{ old('company', $contractor->company) }}">
+                    <label class="form-label">Mobile</label>
+                    <input type="text" name="mobile" class="form-control" value="{{ old('mobile', $contractor->mobile) }}">
                 </div>
                 <div class="col-md-6 mb-3">
-                    <label class="form-label">Phone</label>
-                    <input type="text" name="phone" class="form-control" value="{{ old('phone', $contractor->phone) }}">
+                    <label class="form-label">Position</label>
+                    <input type="text" name="position" class="form-control" value="{{ old('position', $contractor->position) }}">
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Company Name</label>
+                    <input type="text" name="company_name" class="form-control" value="{{ old('company_name', $contractor->company_name) }}">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Type</label>
+                    <select name="type" class="form-control" required>
+                        <option value="client" {{ old('type', $contractor->type) == 'client' ? 'selected' : '' }}>Client</option>
+                        <option value="consultant" {{ old('type', $contractor->type) == 'consultant' ? 'selected' : '' }}>Consultant</option>
+                    </select>
                 </div>
             </div>
             <div class="d-flex gap-2">

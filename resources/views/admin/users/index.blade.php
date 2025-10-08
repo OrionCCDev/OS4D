@@ -20,6 +20,8 @@
             <th>Avatar</th>
             <th>Name</th>
             <th>Email</th>
+            <th>Mobile</th>
+            <th>Position</th>
             <th>Role</th>
             <th>Created</th>
             <th class="text-end">Actions</th>
@@ -34,6 +36,8 @@
             </td>
             <td>{{ $user->name }}</td>
             <td>{{ $user->email }}</td>
+            <td>{{ $user->mobile }}</td>
+            <td>{{ $user->position }}</td>
             <td><span class="badge bg-label-{{ $user->role === 'admin' ? 'primary' : 'secondary' }}">{{ ucfirst($user->role) }}</span></td>
             <td>{{ $user->created_at->format('Y-m-d') }}</td>
             <td class="text-end">

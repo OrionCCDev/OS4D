@@ -24,6 +24,14 @@
     <input type="password" id="password" name="password" class="form-control" {{ $editing ? '' : 'required' }}>
   </div>
   <div class="col-md-6">
+    <label for="mobile" class="form-label">Mobile</label>
+    <input type="text" id="mobile" name="mobile" class="form-control" value="{{ old('mobile', $user->mobile ?? '') }}">
+  </div>
+  <div class="col-md-6">
+    <label for="position" class="form-label">Position</label>
+    <input type="text" id="position" name="position" class="form-control" value="{{ old('position', $user->position ?? '') }}">
+  </div>
+  <div class="col-md-6">
     <label for="role" class="form-label">Role</label>
     <select id="role" name="role" class="form-select" required>
       <option value="user" {{ old('role', $user->role ?? 'user') === 'user' ? 'selected' : '' }}>User</option>

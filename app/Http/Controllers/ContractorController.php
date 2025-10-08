@@ -23,8 +23,10 @@ class ContractorController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:contractors,email',
-            'company' => 'nullable|string|max:255',
-            'phone' => 'nullable|string|max:50',
+            'mobile' => 'nullable|string|max:50',
+            'position' => 'nullable|string|max:255',
+            'company_name' => 'nullable|string|max:255',
+            'type' => 'required|in:client,consultant',
         ]);
         Contractor::create($validated);
         return redirect()->route('contractors.index')->with('success', 'Contractor created');
@@ -40,8 +42,10 @@ class ContractorController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:contractors,email,' . $contractor->id,
-            'company' => 'nullable|string|max:255',
-            'phone' => 'nullable|string|max:50',
+            'mobile' => 'nullable|string|max:50',
+            'position' => 'nullable|string|max:255',
+            'company_name' => 'nullable|string|max:255',
+            'type' => 'required|in:client,consultant',
         ]);
         $contractor->update($validated);
         return redirect()->route('contractors.index')->with('success', 'Contractor updated');
