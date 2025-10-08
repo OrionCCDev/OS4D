@@ -809,6 +809,21 @@ class TaskController extends Controller
                 'task_id' => $task->id,
             ];
 
+            // Prepare attachments for Gmail OAuth service
+            if ($emailPreparation->attachments && is_array($emailPreparation->attachments)) {
+                $emailData['attachments'] = [];
+                foreach ($emailPreparation->attachments as $attachmentPath) {
+                    $fullPath = storage_path('app/' . $attachmentPath);
+                    if (file_exists($fullPath)) {
+                        $emailData['attachments'][] = [
+                            'filename' => basename($attachmentPath),
+                            'mime_type' => mime_content_type($fullPath) ?: 'application/octet-stream',
+                            'content' => file_get_contents($fullPath)
+                        ];
+                    }
+                }
+            }
+
             if (!empty($ccEmails)) {
                 $emailData['cc'] = $ccEmails;
             }
