@@ -686,7 +686,8 @@ class Task extends Model
         if ($status === 'approved') {
             $this->changeStatus('ready_for_email', 'Task internally approved and ready for client/consultant confirmation email');
         } elseif ($status === 'rejected') {
-            $this->changeStatus('rejected', 'Task rejected during internal approval');
+            // When rejected, go back to submitted_for_review so user can resubmit
+            $this->changeStatus('submitted_for_review', 'Task rejected during internal approval - returned for resubmission');
         }
 
         return $this;
