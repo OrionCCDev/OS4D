@@ -686,8 +686,11 @@ class Task extends Model
         if ($status === 'approved') {
             $this->changeStatus('ready_for_email', 'Task internally approved and ready for client/consultant confirmation email');
         } elseif ($status === 'rejected') {
-            // When rejected, go back to submitted_for_review so user can resubmit
-            $this->changeStatus('submitted_for_review', 'Task rejected during internal approval - returned for resubmission');
+            // When rejected, go back to in_progress so user can continue working
+            $this->changeStatus('in_progress', 'Task rejected during internal approval - returned to user for revision');
+
+            // Notify the user that their task was rejected
+            $this->notifyUserAboutRejection();
         }
 
         return $this;
@@ -847,6 +850,41 @@ class Task extends Model
             Log::info("Manager notified about review finish for task: {$this->id}");
         } catch (\Exception $e) {
             Log::error("Failed to notify manager about review finish: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Notify user when task is rejected during internal approval
+     */
+    private function notifyUserAboutRejection()
+    {
+        try {
+            $user = $this->assignee;
+            if (!$user) return;
+
+            $manager = auth()->user();
+            $notification = new \App\Models\UnifiedNotification([
+                'user_id' => $user->id,
+                'category' => 'task',
+                'type' => 'task_rejected_internal',
+                'title' => 'Task Rejected - Needs Revision',
+                'message' => "Your task '{$this->title}' was rejected during internal approval by {$manager->name}. Please review and resubmit.",
+                'task_id' => $this->id,
+                'data' => [
+                    'task_id' => $this->id,
+                    'task_title' => $this->title,
+                    'manager_id' => $manager->id,
+                    'manager_name' => $manager->name,
+                    'project_name' => $this->project->name ?? 'Unknown Project',
+                    'rejection_reason' => $this->internal_notes
+                ],
+                'is_read' => false
+            ]);
+            $notification->save();
+
+            Log::info("User notified about task rejection for task: {$this->id} by manager: {$manager->id}");
+        } catch (\Exception $e) {
+            Log::error("Failed to notify user about task rejection: " . $e->getMessage());
         }
     }
 
