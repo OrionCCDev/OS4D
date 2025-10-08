@@ -41,6 +41,7 @@
                         <button type="button" class="btn btn-sm btn-outline-secondary" id="clear-all-contractors">Clear</button>
                     </div>
                     <select name="contractors[]" class="form-select" multiple id="contractors-select" style="min-height: 120px;">
+                        <option value="" @selected(empty(old('contractors', [])))>Not assigned to any contractor</option>
                         @foreach($contractors as $contractor)
                             <option value="{{ $contractor->id }}" @selected(in_array($contractor->id, old('contractors', [])))>
                                 {{ $contractor->name }} ({{ ucfirst($contractor->type) }})
@@ -170,15 +171,21 @@ document.addEventListener('DOMContentLoaded', function(){
 
   if (selectAllBtn && clearAllBtn && contractorsSelect) {
     selectAllBtn.addEventListener('click', function() {
-      Array.from(contractorsSelect.options).forEach(option => {
+      // Deselect "Not assigned" option
+      contractorsSelect.options[0].selected = false;
+      // Select all contractor options (skip the first "Not assigned" option)
+      Array.from(contractorsSelect.options).slice(1).forEach(option => {
         option.selected = true;
       });
     });
 
     clearAllBtn.addEventListener('click', function() {
+      // Deselect all contractor options
       Array.from(contractorsSelect.options).forEach(option => {
         option.selected = false;
       });
+      // Select "Not assigned" option
+      contractorsSelect.options[0].selected = true;
     });
   }
 });

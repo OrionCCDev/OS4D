@@ -138,7 +138,12 @@ class TaskController extends Controller
 
         // Handle contractor assignments
         if ($request->has('contractors') && is_array($request->contractors)) {
-            foreach ($request->contractors as $contractorId) {
+            // Filter out empty values (from "Not assigned" option)
+            $contractorIds = array_filter($request->contractors, function($id) {
+                return !empty($id);
+            });
+
+            foreach ($contractorIds as $contractorId) {
                 if ($contractor = Contractor::find($contractorId)) {
                     $task->addContractor($contractor, 'participant');
                 }
