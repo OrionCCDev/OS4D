@@ -52,6 +52,8 @@ class TaskController extends Controller
             ->orderBy('name')
             ->get();
 
+        $contractors = Contractor::orderBy('name')->get();
+
         // Preselect context if provided in query
         $selectedFolderId = request()->query('folder_id');
 
@@ -62,6 +64,7 @@ class TaskController extends Controller
             'projects',
             'folders',
             'users',
+            'contractors',
             'selectedProjectId',
             'selectedFolderId',
             'defaultDueDate'
@@ -79,6 +82,8 @@ class TaskController extends Controller
             'project_id' => 'required|exists:projects,id',
             'folder_id' => 'nullable|exists:project_folders,id',
             'assigned_to' => 'nullable|exists:users,id',
+            'contractors' => 'nullable|array',
+            'contractors.*' => 'exists:contractors,id',
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'due_date' => 'nullable|date',
@@ -127,6 +132,15 @@ class TaskController extends Controller
         if (!empty($task->assigned_to)) {
             if ($assignee = User::find($task->assigned_to)) {
                 $task->assignTo($assignee);
+            }
+        }
+
+        // Handle contractor assignments
+        if ($request->has('contractors') && is_array($request->contractors)) {
+            foreach ($request->contractors as $contractorId) {
+                if ($contractor = Contractor::find($contractorId)) {
+                    $task->addContractor($contractor, 'participant');
+                }
             }
         }
 

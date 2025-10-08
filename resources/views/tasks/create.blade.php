@@ -7,7 +7,7 @@
         <form method="POST" action="{{ route('tasks.store') }}" enctype="multipart/form-data">
             @csrf
             <div class="row">
-                <div class="col-md-4 mb-3">
+                <div class="col-md-3 mb-3">
                     <label class="form-label">Project</label>
                     <select name="project_id" class="form-select" required id="project_id">
                         <option value="">Select project</option>
@@ -16,7 +16,7 @@
                         @endforeach
                     </select>
                 </div>
-                <div class="col-md-4 mb-3">
+                <div class="col-md-3 mb-3">
                     <label class="form-label">Folder</label>
                     <select name="folder_id" class="form-select" id="folder_id">
                         <option value="">None</option>
@@ -25,7 +25,7 @@
                         @endforeach
                     </select>
                 </div>
-                <div class="col-md-4 mb-3">
+                <div class="col-md-3 mb-3">
                     <label class="form-label">Assign To</label>
                     <select name="assigned_to" class="form-select">
                         <option value="">Not assigned</option>
@@ -33,6 +33,21 @@
                             <option value="{{ $user->id }}" @selected(old('assigned_to')==$user->id)>{{ $user->name }}</option>
                         @endforeach
                     </select>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">Contractors</label>
+                    <div class="d-flex gap-1 mb-1">
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="select-all-contractors">All</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="clear-all-contractors">Clear</button>
+                    </div>
+                    <select name="contractors[]" class="form-select" multiple id="contractors-select" style="min-height: 120px;">
+                        @foreach($contractors as $contractor)
+                            <option value="{{ $contractor->id }}" @selected(in_array($contractor->id, old('contractors', [])))>
+                                {{ $contractor->name }} ({{ ucfirst($contractor->type) }})
+                            </option>
+                        @endforeach
+                    </select>
+                    <small class="text-muted">Hold Ctrl/Cmd to select multiple contractors</small>
                 </div>
             </div>
             <div class="mb-3">
@@ -145,5 +160,26 @@ document.addEventListener('DOMContentLoaded', function(){
   }
   projectSel.addEventListener('change', filterFolders);
   filterFolders();
+});
+
+// Contractor selection helpers
+document.addEventListener('DOMContentLoaded', function(){
+  const contractorsSelect = document.getElementById('contractors-select');
+  const selectAllBtn = document.getElementById('select-all-contractors');
+  const clearAllBtn = document.getElementById('clear-all-contractors');
+
+  if (selectAllBtn && clearAllBtn && contractorsSelect) {
+    selectAllBtn.addEventListener('click', function() {
+      Array.from(contractorsSelect.options).forEach(option => {
+        option.selected = true;
+      });
+    });
+
+    clearAllBtn.addEventListener('click', function() {
+      Array.from(contractorsSelect.options).forEach(option => {
+        option.selected = false;
+      });
+    });
+  }
 });
 </script>
