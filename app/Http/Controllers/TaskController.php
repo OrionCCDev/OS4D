@@ -1461,9 +1461,11 @@ private function sendApprovalEmailViaGmail(Task $task, User $approver)
                 // Create notification
                 $notification = new \App\Models\UnifiedNotification([
                     'user_id' => $manager->id,
+                    'category' => 'task',
                     'type' => 'task_confirmation_email_sent',
                     'title' => 'Confirmation Email Sent',
                     'message' => "User {$sender->name} has sent a confirmation email for task: {$task->title}",
+                    'task_id' => $task->id,
                     'data' => [
                         'task_id' => $task->id,
                         'sender_id' => $sender->id,
@@ -1505,9 +1507,11 @@ private function sendApprovalEmailViaGmail(Task $task, User $approver)
 
             $notification = new \App\Models\UnifiedNotification([
                 'user_id' => $manager->id,
+                'category' => 'task',
                 'type' => 'task_accepted',
                 'title' => 'Task Accepted',
                 'message' => "User {$user->name} has accepted task: {$task->title}",
+                'task_id' => $task->id,
                 'data' => [
                     'task_id' => $task->id,
                     'user_id' => $user->id,
@@ -1537,9 +1541,11 @@ private function sendApprovalEmailViaGmail(Task $task, User $approver)
 
             $notification = new \App\Models\UnifiedNotification([
                 'user_id' => $manager->id,
+                'category' => 'task',
                 'type' => 'task_submitted_for_review',
                 'title' => 'Task Submitted for Review',
                 'message' => "User {$user->name} has submitted task: {$task->title} for review",
+                'task_id' => $task->id,
                 'data' => [
                     'task_id' => $task->id,
                     'user_id' => $user->id,
@@ -1569,9 +1575,11 @@ private function sendApprovalEmailViaGmail(Task $task, User $approver)
 
             $notification = new \App\Models\UnifiedNotification([
                 'user_id' => $user->id,
+                'category' => 'task',
                 'type' => 'review_started',
                 'title' => 'Review Started',
                 'message' => "Manager {$manager->name} has started reviewing your task: {$task->title}",
+                'task_id' => $task->id,
                 'data' => [
                     'task_id' => $task->id,
                     'manager_id' => $manager->id,
