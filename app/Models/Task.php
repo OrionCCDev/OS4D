@@ -684,9 +684,9 @@ class Task extends Model
 
         // If internal approval is given, change status to ready_for_email
         if ($status === 'approved') {
-            $this->updateStatus('ready_for_email', 'Task internally approved and ready for client/consultant confirmation email');
+            $this->changeStatus('ready_for_email', 'Task internally approved and ready for client/consultant confirmation email');
         } elseif ($status === 'rejected') {
-            $this->updateStatus('rejected', 'Task rejected during internal approval');
+            $this->changeStatus('rejected', 'Task rejected during internal approval');
         }
 
         return $this;
@@ -809,9 +809,9 @@ class Task extends Model
 
         // Change task status based on override
         if ($status === 'reject') {
-            $this->updateStatus('rejected', 'Task rejected by manager override');
+            $this->changeStatus('rejected', 'Task rejected by manager override');
         } elseif ($status === 'reset_for_review') {
-            $this->updateStatus('in_review', 'Task reset for review by manager');
+            $this->changeStatus('in_review', 'Task reset for review by manager');
         }
 
         return $this;
