@@ -559,6 +559,7 @@ class Task extends Model
 
         // Create history record
         $this->histories()->create([
+            'user_id' => auth()->id(),
             'action' => 'waiting_sending_client_consultant_approve',
             'description' => "Task moved to waiting for sending client and consultant approval",
             'metadata' => ['moved_at' => now()]
@@ -586,6 +587,7 @@ class Task extends Model
 
         // Create history record
         $this->histories()->create([
+            'user_id' => auth()->id(),
             'action' => 'sent_for_client_consultant_approval',
             'description' => "Task sent for client and consultant approval",
             'metadata' => ['sent_at' => now()]
@@ -617,6 +619,7 @@ class Task extends Model
 
         // Create history record
         $this->histories()->create([
+            'user_id' => auth()->id(),
             'action' => 'client_approval_updated',
             'description' => "Client approval updated to: {$status}" . ($notes ? ". Notes: {$notes}" : ""),
             'metadata' => ['client_status' => $status, 'notes' => $notes, 'updated_at' => now()]
@@ -645,6 +648,7 @@ class Task extends Model
 
         // Create history record
         $this->histories()->create([
+            'user_id' => auth()->id(),
             'action' => 'consultant_approval_updated',
             'description' => "Consultant approval updated to: {$status}" . ($notes ? ". Notes: {$notes}" : ""),
             'metadata' => ['consultant_status' => $status, 'notes' => $notes, 'updated_at' => now()]
@@ -672,6 +676,7 @@ class Task extends Model
 
         // Create history record
         $this->histories()->create([
+            'user_id' => auth()->id(),
             'action' => 'internal_approval_updated',
             'description' => "Internal approval updated to: {$status}" . ($notes ? ". Notes: {$notes}" : ""),
             'metadata' => ['internal_status' => $status, 'notes' => $notes, 'updated_at' => now()]
@@ -704,6 +709,7 @@ class Task extends Model
 
         // Create history record
         $this->histories()->create([
+            'user_id' => auth()->id(),
             'action' => 'client_response_updated',
             'description' => "Client response updated to: {$status}" . ($notes ? ". Notes: {$notes}" : ""),
             'metadata' => ['client_response_status' => $status, 'notes' => $notes, 'updated_at' => now()]
@@ -730,6 +736,7 @@ class Task extends Model
 
         // Create history record
         $this->histories()->create([
+            'user_id' => auth()->id(),
             'action' => 'consultant_response_updated',
             'description' => "Consultant response updated to: {$status}" . ($notes ? ". Notes: {$notes}" : ""),
             'metadata' => ['consultant_response_status' => $status, 'notes' => $notes, 'updated_at' => now()]
@@ -760,6 +767,7 @@ class Task extends Model
 
         // Create history record
         $this->histories()->create([
+            'user_id' => auth()->id(),
             'action' => 'review_finished',
             'description' => "Review finished with combined status: {$this->combined_response_status}",
             'metadata' => [
@@ -793,6 +801,7 @@ class Task extends Model
 
         // Create history record
         $this->histories()->create([
+            'user_id' => auth()->id(),
             'action' => 'manager_override',
             'description' => "Manager override: {$status}" . ($notes ? ". Notes: {$notes}" : ""),
             'metadata' => ['manager_override_status' => $status, 'notes' => $notes, 'updated_at' => now()]
@@ -870,6 +879,7 @@ class Task extends Model
 
             // Create history record
             $this->histories()->create([
+                'user_id' => auth()->id(),
                 'action' => 'completed',
                 'description' => "Task completed after client and consultant approval",
                 'metadata' => ['completed_at' => now()]
@@ -890,6 +900,7 @@ class Task extends Model
 
             // Create history record
             $this->histories()->create([
+                'user_id' => auth()->id(),
                 'action' => 'rejected',
                 'description' => "Task rejected by client or consultant",
                 'metadata' => ['rejected_at' => now()]
