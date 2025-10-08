@@ -855,6 +855,9 @@ class TaskController extends Controller
 
                     // Send separate email to engineering@orion-contracting.com via SMTP
                     $this->sendDesignersNotification($task, $emailPreparation, $user);
+
+                    // Notify managers about the sent confirmation email
+                    $this->notifyManagersAboutConfirmationEmail($task, $user);
                 } else {
                     Log::error('Gmail OAuth failed for user: ' . $user->id . ' - Email not sent');
                     return response()->json([
@@ -880,6 +883,9 @@ class TaskController extends Controller
 
                 // Send the email
                 Mail::send($mail);
+
+                // Notify managers about the sent confirmation email
+                $this->notifyManagersAboutConfirmationEmail($task, $user);
 
                 // Track the sent email
                 $simpleEmailTrackingService = app(\App\Services\SimpleEmailTrackingService::class);
@@ -1212,6 +1218,29 @@ private function sendApprovalEmailViaGmail(Task $task, User $approver)
     }
 
     /**
+     * Update internal approval status (manager approval)
+     */
+    public function updateInternalApproval(Request $request, Task $task)
+    {
+        // Only managers can update internal approval
+        if (!Auth::user()->isManager()) {
+            abort(403, 'Access denied. Only managers can update internal approval.');
+        }
+
+        $request->validate([
+            'internal_status' => 'required|in:pending,approved,rejected',
+            'internal_notes' => 'nullable|string|max:1000'
+        ]);
+
+        try {
+            $task->updateInternalApproval($request->internal_status, $request->internal_notes);
+            return redirect()->back()->with('success', 'Internal approval status updated successfully.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
+    }
+
+    /**
      * Send notification email to engineering@orion-contracting.com via SMTP
      * (same as confirmation emails)
      */
@@ -1251,6 +1280,56 @@ private function sendApprovalEmailViaGmail(Task $task, User $approver)
         } catch (\Exception $e) {
             Log::error('Failed to send general email notification: ' . $e->getMessage());
             // Don't fail the main email if notification fails
+        }
+    }
+
+    /**
+     * Notify managers when a user sends a confirmation email
+     */
+    private function notifyManagersAboutConfirmationEmail(Task $task, User $sender)
+    {
+        try {
+            // Get all managers
+            $managers = User::where('role', 'admin')->get();
+
+            foreach ($managers as $manager) {
+                // Skip if the sender is also a manager
+                if ($manager->id === $sender->id) {
+                    continue;
+                }
+
+                // Create notification
+                $notification = new \App\Models\UnifiedNotification([
+                    'user_id' => $manager->id,
+                    'type' => 'task_confirmation_email_sent',
+                    'title' => 'Confirmation Email Sent',
+                    'message' => "User {$sender->name} has sent a confirmation email for task: {$task->title}",
+                    'data' => [
+                        'task_id' => $task->id,
+                        'sender_id' => $sender->id,
+                        'sender_name' => $sender->name,
+                        'task_title' => $task->title,
+                        'project_name' => $task->project->name ?? 'Unknown Project'
+                    ],
+                    'is_read' => false
+                ]);
+                $notification->save();
+
+                // Add to task history
+                $task->histories()->create([
+                    'user_id' => $sender->id,
+                    'action' => 'confirmation_email_sent',
+                    'description' => "Confirmation email sent to clients/consultants. Manager {$manager->name} notified.",
+                    'metadata' => [
+                        'notification_id' => $notification->id,
+                        'manager_id' => $manager->id
+                    ]
+                ]);
+            }
+
+            Log::info("Managers notified about confirmation email for task: {$task->id} by user: {$sender->id}");
+        } catch (\Exception $e) {
+            Log::error("Failed to notify managers about confirmation email: " . $e->getMessage());
         }
     }
 }

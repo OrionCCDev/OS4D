@@ -43,6 +43,10 @@ class Task extends Model
         'consultant_status',
         'consultant_notes',
         'consultant_updated_at',
+        'internal_status',
+        'internal_notes',
+        'internal_updated_at',
+        'internal_approved_by',
         'combined_approval_status',
     ];
 
@@ -57,6 +61,7 @@ class Task extends Model
         'rejected_at' => 'datetime',
         'client_updated_at' => 'datetime',
         'consultant_updated_at' => 'datetime',
+        'internal_updated_at' => 'datetime',
     ];
 
     public function project()
@@ -77,6 +82,11 @@ class Task extends Model
     public function assignee()
     {
         return $this->belongsTo(User::class, 'assigned_to');
+    }
+
+    public function internalApprover()
+    {
+        return $this->belongsTo(User::class, 'internal_approved_by');
     }
 
     public function histories()
@@ -623,6 +633,39 @@ class Task extends Model
 
         // Check if both approvals are complete
         $this->checkApprovalCompletion();
+    }
+
+    /**
+     * Update internal approval status (manager approval)
+     */
+    public function updateInternalApproval($status, $notes = null)
+    {
+        if (!in_array($status, ['pending', 'approved', 'rejected'])) {
+            throw new \Exception('Invalid internal status');
+        }
+
+        $this->update([
+            'internal_status' => $status,
+            'internal_notes' => $notes,
+            'internal_updated_at' => now(),
+            'internal_approved_by' => auth()->id(),
+        ]);
+
+        // Create history record
+        $this->histories()->create([
+            'action' => 'internal_approval_updated',
+            'description' => "Internal approval updated to: {$status}" . ($notes ? ". Notes: {$notes}" : ""),
+            'metadata' => ['internal_status' => $status, 'notes' => $notes, 'updated_at' => now()]
+        ]);
+
+        // If internal approval is given, change status to ready_for_email
+        if ($status === 'approved') {
+            $this->updateStatus('ready_for_email', 'Task internally approved and ready for client/consultant confirmation email');
+        } elseif ($status === 'rejected') {
+            $this->updateStatus('rejected', 'Task rejected during internal approval');
+        }
+
+        return $this;
     }
 
     /**
