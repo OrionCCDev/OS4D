@@ -19,61 +19,116 @@
     $gradient = $gradients[$theme] ?? $gradients['default'];
 @endphp
 
-<!-- Modern Breadcrumb Component -->
-<div class="card border-0 shadow-sm mb-4">
-    <div class="card-body p-4" style="background: {{ $gradient }}; color: white;">
-        <div class="row align-items-center">
-            <div class="col-md-8">
-                <div class="d-flex align-items-center">
-                    <div class="avatar-sm bg-white bg-opacity-20 rounded-circle d-flex align-items-center justify-content-center me-3">
-                        <i class="{{ $icon }} fs-5 text-white"></i>
-                    </div>
-                    <div>
-                        <h3 class="mb-1 fw-bold text-white">{{ $title }}</h3>
-                        @if($subtitle)
-                            <p class="mb-0 text-white-50">{{ $subtitle }}</p>
-                        @endif
-                    </div>
-                </div>
-            </div>
-            @if(count($breadcrumbs) > 0)
-            <div class="col-md-4">
-                <div class="text-md-end">
-                    <nav aria-label="breadcrumb">
-                        <ol class="breadcrumb mb-0 justify-content-md-end" style="background: rgba(255,255,255,0.1); border-radius: 8px; padding: 8px 16px;">
-                            @foreach($breadcrumbs as $index => $crumb)
-                                @if($loop->last)
-                                    <li class="breadcrumb-item active text-white" aria-current="page">
-                                        @if(isset($crumb['icon']))
-                                            <i class="{{ $crumb['icon'] }} me-1"></i>
-                                        @endif
-                                        {{ $crumb['title'] }}
-                                    </li>
-                                @else
-                                    <li class="breadcrumb-item">
-                                        <a href="{{ $crumb['url'] }}" class="text-white-50 text-decoration-none">
-                                            @if(isset($crumb['icon']))
-                                                <i class="{{ $crumb['icon'] }} me-1"></i>
-                                            @endif
-                                            {{ $crumb['title'] }}
-                                        </a>
-                                    </li>
-                                @endif
-                            @endforeach
-                        </ol>
-                    </nav>
-                </div>
-            </div>
-            @endif
-        </div>
-    </div>
-</div>
 <style>
-    /* In your modern-breadcrumb component CSS */
+/* Modern Breadcrumb Styles - Fixed positioning */
 .modern-breadcrumb {
     position: relative !important;
     display: block !important;
     width: 100% !important;
     z-index: 1 !important;
+    margin-bottom: 1.5rem;
+}
+
+.modern-breadcrumb .card {
+    border: 0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 0;
+}
+
+.modern-breadcrumb .card-body {
+    padding: 1.5rem;
+    border-radius: 8px;
+}
+
+.modern-breadcrumb .breadcrumb {
+    margin-bottom: 0;
+    background: rgba(255,255,255,0.1);
+    border-radius: 8px;
+    padding: 8px 16px;
+}
+
+.modern-breadcrumb .breadcrumb-item + .breadcrumb-item::before {
+    content: "›";
+    color: rgba(255,255,255,0.6);
+    padding: 0 8px;
+}
+
+.modern-breadcrumb .breadcrumb-item a {
+    text-decoration: none;
+    transition: opacity 0.2s;
+}
+
+.modern-breadcrumb .breadcrumb-item a:hover {
+    opacity: 1;
+}
+
+.modern-breadcrumb .avatar-sm {
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+    min-height: 48px;
+}
+
+@media (max-width: 768px) {
+    .modern-breadcrumb .card-body {
+        padding: 1rem;
+    }
+
+    .modern-breadcrumb .breadcrumb {
+        margin-top: 1rem;
+        justify-content: start !important;
+    }
 }
 </style>
+
+<!-- Modern Breadcrumb Component -->
+<div class="modern-breadcrumb">
+    <div class="card border-0">
+        <div class="card-body" style="background: {{ $gradient }}; color: white;">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <div class="d-flex align-items-center">
+                        <div class="avatar-sm bg-white bg-opacity-20 rounded-circle d-flex align-items-center justify-content-center me-3">
+                            <i class="{{ $icon }} fs-5 text-white"></i>
+                        </div>
+                        <div>
+                            <h3 class="mb-1 fw-bold text-white">{{ $title }}</h3>
+                            @if($subtitle)
+                                <p class="mb-0 text-white-50 small">{{ $subtitle }}</p>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+                @if(count($breadcrumbs) > 0)
+                <div class="col-md-4">
+                    <div class="text-md-end">
+                        <nav aria-label="breadcrumb">
+                            <ol class="breadcrumb mb-0 justify-content-md-end">
+                                @foreach($breadcrumbs as $index => $crumb)
+                                    @if($loop->last)
+                                        <li class="breadcrumb-item active text-white" aria-current="page">
+                                            @if(isset($crumb['icon']))
+                                                <i class="{{ $crumb['icon'] }} me-1"></i>
+                                            @endif
+                                            {{ $crumb['title'] }}
+                                        </li>
+                                    @else
+                                        <li class="breadcrumb-item">
+                                            <a href="{{ $crumb['url'] }}" class="text-white text-opacity-75">
+                                                @if(isset($crumb['icon']))
+                                                    <i class="{{ $crumb['icon'] }} me-1"></i>
+                                                @endif
+                                                {{ $crumb['title'] }}
+                                            </a>
+                                        </li>
+                                    @endif
+                                @endforeach
+                            </ol>
+                        </nav>
+                    </div>
+                </div>
+                @endif
+            </div>
+        </div>
+    </div>
+</div>
