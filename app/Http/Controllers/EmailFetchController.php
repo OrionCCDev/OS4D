@@ -722,6 +722,14 @@ class EmailFetchController extends Controller
     }
 
     /**
+     * Show email - redirect to standalone view
+     */
+    public function show($id)
+    {
+        return redirect()->route('emails.show-standalone', $id);
+    }
+
+    /**
      * Show email in standalone view (no layout constraints)
      */
     public function showStandalone($id)
