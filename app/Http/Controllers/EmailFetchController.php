@@ -169,42 +169,12 @@ class EmailFetchController extends Controller
     }
 
     /**
-     * Get email details
+     * Get email details - redirect to standalone view
      */
     public function show($id)
     {
-        $user = Auth::user();
-
-        if (!$user->isManager()) {
-            return redirect()->route('dashboard')
-                ->with('error', 'Access denied. Only managers can view emails.');
-        }
-
-        // Try to find email by ID first, regardless of source
-        $email = Email::find($id);
-
-        if (!$email) {
-            abort(404, 'Email not found');
-        }
-
-        if ($email->status === 'received') {
-            $email->update(['status' => 'read']);
-        }
-
-        // Parse the main email body
-        $parsedBody = $this->parseEmailBody($email->body);
-        $parsedBody = mb_convert_encoding($parsedBody, 'UTF-8', 'UTF-8');
-
-        // Parse all reply bodies
-        $parsedReplies = [];
-        if ($email->replies && $email->replies->count() > 0) {
-            foreach ($email->replies as $reply) {
-                $parsedReplies[$reply->id] = $this->parseEmailBody($reply->body);
-                $parsedReplies[$reply->id] = mb_convert_encoding($parsedReplies[$reply->id], 'UTF-8', 'UTF-8');
-            }
-        }
-
-        return view('emails.designers-inbox-show', compact('email', 'parsedBody', 'parsedReplies'));
+        // Redirect to standalone view for better email display
+        return redirect()->route('emails.show-standalone', $id);
     }
 
     /**
@@ -722,20 +692,24 @@ class EmailFetchController extends Controller
     }
 
     /**
-     * Show email - redirect to standalone view
-     */
-    public function show($id)
-    {
-        return redirect()->route('emails.show-standalone', $id);
-    }
-
-    /**
      * Show email in standalone view (no layout constraints)
      */
     public function showStandalone($id)
     {
+        $user = Auth::user();
+
+        if (!$user->isManager()) {
+            return redirect()->route('dashboard')
+                ->with('error', 'Access denied. Only managers can view emails.');
+        }
+
         try {
             $email = Email::findOrFail($id);
+
+            // Mark as read if it's received
+            if ($email->status === 'received') {
+                $email->update(['status' => 'read']);
+            }
 
             // Parse email body for better display
             $parsedBody = null;
