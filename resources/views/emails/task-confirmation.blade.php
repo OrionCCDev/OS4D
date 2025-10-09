@@ -117,8 +117,16 @@
 
         <div class="completion-section">
             <h3>✅ Completion Details</h3>
-            <p><strong>Completed by:</strong> {{ $sender->name }}</p>
-            <p><strong>Completed on:</strong> {{ $task->completed_at ? $task->completed_at->format('M d, Y \a\t g:i A') : now()->format('M d, Y \a\t g:i A') }}</p>
+            <p><strong>Completed by:</strong> {{ $sender->name ?? 'Unknown' }}</p>
+            <p><strong>Completed on:</strong>
+                @if($task->completed_at && is_object($task->completed_at))
+                    {{ $task->completed_at->format('M d, Y \a\t g:i A') }}
+                @elseif($task->submitted_at && is_object($task->submitted_at))
+                    {{ $task->submitted_at->format('M d, Y \a\t g:i A') }}
+                @else
+                    {{ now()->format('M d, Y \a\t g:i A') }}
+                @endif
+            </p>
             @if($task->completion_notes)
                 <p><strong>Completion Notes:</strong> {{ $task->completion_notes }}</p>
             @endif
@@ -145,7 +153,13 @@
                 </tr>
                 <tr>
                     <td style="padding: 8px 0; font-weight: bold;">Due Date:</td>
-                    <td style="padding: 8px 0;">{{ $task->due_date ? $task->due_date->format('M d, Y') : 'Not set' }}</td>
+                    <td style="padding: 8px 0;">
+                        @if($task->due_date && is_object($task->due_date) && method_exists($task->due_date, 'format'))
+                            {{ $task->due_date->format('M d, Y') }}
+                        @else
+                            Not set
+                        @endif
+                    </td>
                 </tr>
                 <tr>
                     <td style="padding: 8px 0; font-weight: bold;">Status:</td>
