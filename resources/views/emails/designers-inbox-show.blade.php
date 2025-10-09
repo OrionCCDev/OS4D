@@ -78,8 +78,13 @@
                                         </div>
                                         @endif
                                         <div class="mb-1">
-                                            <strong>Received:</strong> {{ $email->received_at->format('F d, Y \a\t H:i') }}
-                                            <small class="text-muted ms-2">({{ $email->received_at->diffForHumans() }})</small>
+                                            <strong>Received:</strong>
+                                            @if($email->received_at)
+                                                {{ $email->received_at->format('F d, Y \a\t H:i') }}
+                                                <small class="text-muted ms-2">({{ $email->received_at->diffForHumans() }})</small>
+                                            @else
+                                                Unknown
+                                            @endif
                                         </div>
                                     </div>
                                 </div>
@@ -194,7 +199,13 @@
                                         <div class="d-flex justify-content-between align-items-start mb-2">
                                             <div>
                                                 <strong>{{ $reply->from_email }}</strong>
-                                                <small class="text-muted ms-2">{{ $reply->received_at->format('M d, Y H:i') }}</small>
+                                                <small class="text-muted ms-2">
+                                                    @if($reply->received_at)
+                                                        {{ $reply->received_at->format('M d, Y H:i') }}
+                                                    @else
+                                                        Unknown date
+                                                    @endif
+                                                </small>
                                             </div>
                                             <span class="badge bg-info">Reply</span>
                                         </div>
