@@ -661,8 +661,8 @@ class TaskController extends Controller
                     Log::info('Uploading file: ' . $originalName . ' - Size: ' . $fileSize . ' bytes');
 
                     // Store file with a unique name to avoid conflicts
-                    // Store directly in storage/app/email-attachments without using a disk
-                    $path = $file->store('email-attachments');
+                    // Use email_attachments disk which has root at storage/app
+                    $path = $file->store('email-attachments', 'email_attachments');
                     $attachmentPaths[] = $path;
                     Log::info('File stored at: ' . $path);
                 }
@@ -728,8 +728,8 @@ class TaskController extends Controller
                     Log::info('Uploading file: ' . $originalName . ' - Size: ' . $fileSize . ' bytes');
 
                     // Store file with a unique name to avoid conflicts
-                    // Store directly in storage/app/email-attachments without using a disk
-                    $path = $file->store('email-attachments');
+                    // Use email_attachments disk which has root at storage/app
+                    $path = $file->store('email-attachments', 'email_attachments');
                     $attachmentPaths[] = $path;
                     Log::info('File stored at: ' . $path);
                 }
