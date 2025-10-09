@@ -2,6 +2,34 @@
 
 @section('title', 'Email Details')
 
+@section('head')
+<style>
+.email-content {
+    max-width: 100%;
+    overflow-x: auto;
+    word-wrap: break-word;
+}
+
+.email-content img {
+    max-width: 100%;
+    height: auto;
+}
+
+.email-content table {
+    max-width: 100%;
+    overflow-x: auto;
+    display: block;
+    white-space: nowrap;
+}
+
+.email-content pre {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    max-width: 100%;
+}
+</style>
+@endsection
+
 @section('content')
 <div class="container flex-grow-1 container-p-y">
     <div class="row">
@@ -49,7 +77,7 @@
                                         </div>
                                         @endif
                                         <div class="mb-1">
-                                            <strong>Date:</strong> {{ $email->created_at ? $email->created_at->format('F d, Y \a\t H:i') : 'N/A' }}                                          
+                                            <strong>Date:</strong> {{ $email->created_at ? $email->created_at->format('F d, Y \a\t H:i') : 'N/A' }}
                                         </div>
                                     </div>
                                 </div>
@@ -97,7 +125,7 @@
                         <div class="card-body">
                             @if($email->body)
                                 <div class="email-content">
-                                    {!! $email->body !!}
+                                    {!! \App\Helpers\EmailHelper::decodeEmailContent($email->body) !!}
                                 </div>
                             @else
                                 <div class="text-muted text-center py-4">
@@ -135,7 +163,7 @@
                                             <span class="badge bg-success">Reply</span>
                                         </div>
                                         <div class="reply-content">
-                                            {!! $reply->body !!}
+                                            {!! \App\Helpers\EmailHelper::decodeEmailContent($reply->body) !!}
                                         </div>
                                     </div>
                                 </div>

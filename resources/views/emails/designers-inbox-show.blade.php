@@ -129,12 +129,8 @@
                                     {!! $parsedBody !!}
                                 </div>
                             @elseif($email->body && strlen($email->body) > 10)
-                                <div class="email-content-container">
-                                    <div class="alert alert-warning mb-3">
-                                        <i class="bx bx-info-circle me-2"></i>
-                                        <strong>Raw Email Content:</strong> Unable to parse email body properly. Showing raw content for debugging.
-                                    </div>
-                                    <pre>{{ $email->body }}</pre>
+                                <div class="email-content-container custom-email-style">
+                                    {!! \App\Helpers\EmailHelper::decodeEmailContent($email->body) !!}
                                 </div>
                             @else
                                 <div class="text-muted text-center py-4">
@@ -210,7 +206,7 @@
                                             <span class="badge bg-info">Reply</span>
                                         </div>
                                         <div class="email-content-container custom-email-style">
-                                            {!! $parsedReplies[$reply->id] ?? $reply->body !!}
+                                            {!! $parsedReplies[$reply->id] ?? \App\Helpers\EmailHelper::decodeEmailContent($reply->body) !!}
                                         </div>
                                     </div>
                                 </div>

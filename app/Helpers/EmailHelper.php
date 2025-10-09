@@ -1,212 +1,144 @@
 <?php
 
-if (!function_exists('parseEmailBody')) {
+namespace App\Helpers;
+
+class EmailHelper
+{
     /**
-     * Parse email body to extract HTML content from multipart emails
+     * Decode email content from quoted-printable and other encodings
+     *
+     * @param string $content
+     * @return string
      */
-    function parseEmailBody($body)
+    public static function decodeEmailContent($content)
     {
-        if (empty($body)) {
+        if (empty($content)) {
             return '';
         }
 
-        // Handle quoted-printable encoding first
-        if (strpos($body, 'Content-Transfer-Encoding: quoted-printable') !== false) {
-            $body = quoted_printable_decode($body);
+        // First, decode quoted-printable encoding
+        $decoded = quoted_printable_decode($content);
+
+        // If that didn't work or content is still encoded, try alternative methods
+        if ($decoded === $content || self::containsQuotedPrintable($content)) {
+            // Try manual decoding of common quoted-printable patterns
+            $decoded = self::manualQuotedPrintableDecode($content);
         }
 
-        // Ensure proper UTF-8 encoding
-        $body = mb_convert_encoding($body, 'UTF-8', 'UTF-8');
+        // Clean up any remaining encoding artifacts
+        $decoded = self::cleanEncodingArtifacts($decoded);
 
-        // Handle multipart emails with any boundary
-        if (preg_match('/--([a-f0-9]+)/', $body, $matches)) {
-            $boundary = '--' . $matches[1];
-            // Split by the detected boundary
-            $parts = explode($boundary, $body);
-
-            foreach ($parts as $part) {
-                // Skip empty parts
-                if (trim($part) === '' || trim($part) === '--') {
-                    continue;
-                }
-
-                // Look for HTML part
-                if (strpos($part, 'Content-Type: text/html') !== false) {
-                    // Find the start of HTML content (after headers)
-                    $lines = explode("\n", $part);
-                    $htmlContent = '';
-                    $inContent = false;
-                    $headerEnded = false;
-
-                    foreach ($lines as $line) {
-                        // Skip until we find the HTML content type
-                        if (!$inContent && strpos($line, 'Content-Type: text/html') !== false) {
-                            $inContent = true;
-                            continue;
-                        }
-
-                        // After finding HTML content type, look for empty line to mark end of headers
-                        if ($inContent && !$headerEnded) {
-                            if (trim($line) === '') {
-                                $headerEnded = true;
-                                continue;
-                            }
-                            // Skip header lines
-                            if (strpos($line, 'Content-') === 0 || strpos($line, 'charset=') !== false) {
-                                continue;
-                            }
-                        }
-
-                        // Collect HTML content after headers
-                        if ($inContent && $headerEnded) {
-                            $htmlContent .= $line . "\n";
-                        }
-                    }
-
-                    // Clean up the HTML content more carefully
-                    $htmlContent = trim($htmlContent);
-
-                    // Remove any remaining MIME artifacts but preserve HTML content
-                    $htmlContent = preg_replace('/^Content-Transfer-Encoding:.*$/m', '', $htmlContent);
-                    $htmlContent = preg_replace('/^Content-Type:.*$/m', '', $htmlContent);
-                    $htmlContent = preg_replace('/^charset=.*$/m', '', $htmlContent);
-
-                    // Remove boundary markers but preserve HTML
-                    $htmlContent = preg_replace('/^--[a-f0-9]+--?$/m', '', $htmlContent);
-
-                    $htmlContent = trim($htmlContent);
-
-                    if (!empty($htmlContent) && strlen($htmlContent) > 50) {
-                        return $htmlContent;
-                    }
-                }
-
-                // Look for plain text part if no HTML found
-                if (strpos($part, 'Content-Type: text/plain') !== false) {
-                    // Find the start of plain text content (after headers)
-                    $lines = explode("\n", $part);
-                    $textContent = '';
-                    $inContent = false;
-                    $headerEnded = false;
-
-                    foreach ($lines as $line) {
-                        // Skip until we find the plain text content type
-                        if (!$inContent && strpos($line, 'Content-Type: text/plain') !== false) {
-                            $inContent = true;
-                            continue;
-                        }
-
-                        // After finding plain text content type, look for empty line to mark end of headers
-                        if ($inContent && !$headerEnded) {
-                            if (trim($line) === '') {
-                                $headerEnded = true;
-                                continue;
-                            }
-                            // Skip header lines
-                            if (strpos($line, 'Content-') === 0 || strpos($line, 'charset=') !== false) {
-                                continue;
-                            }
-                        }
-
-                        // Collect plain text content after headers
-                        if ($inContent && $headerEnded) {
-                            $textContent .= $line . "\n";
-                        }
-                    }
-
-                    // Clean up the text content more carefully
-                    $textContent = trim($textContent);
-
-                    // Remove any remaining MIME artifacts but preserve text content
-                    $textContent = preg_replace('/^Content-Transfer-Encoding:.*$/m', '', $textContent);
-                    $textContent = preg_replace('/^Content-Type:.*$/m', '', $textContent);
-                    $textContent = preg_replace('/^charset=.*$/m', '', $textContent);
-
-                    // Remove boundary markers but preserve text
-                    $textContent = preg_replace('/^--[a-f0-9]+--?$/m', '', $textContent);
-
-                    $textContent = trim($textContent);
-
-                    // Convert plain text to HTML
-                    $textContent = htmlspecialchars($textContent);
-                    $textContent = nl2br($textContent);
-
-                    if (!empty($textContent) && strlen($textContent) > 20) {
-                        return $textContent;
-                    }
-                }
-            }
-        }
-
-        // If it's already HTML, return as is
-        if (strpos($body, '<html') !== false || strpos($body, '<div') !== false || strpos($body, '<p') !== false) {
-            return $body;
-        }
-
-        // If it's plain text, convert to HTML
-        if (strpos($body, 'Content-Type: text/plain') !== false) {
-            $lines = explode("\n", $body);
-            $textStart = false;
-            $textContent = '';
-
-            foreach ($lines as $line) {
-                if ($textStart) {
-                    $textContent .= $line . "\n";
-                } elseif (strpos($line, 'Content-Type: text/plain') !== false) {
-                    $textStart = true;
-                }
-            }
-
-            // Convert plain text to HTML
-            $textContent = htmlspecialchars(trim($textContent));
-            $textContent = nl2br($textContent);
-
-            return $textContent;
-        }
-
-        // If it looks like plain text, convert it
-        if (strlen($body) > 20 && !preg_match('/^--[a-f0-9]+/', $body)) {
-            $textContent = htmlspecialchars($body);
-            $textContent = nl2br($textContent);
-            return $textContent;
-        }
-
-        // Fallback: return the body as is
-        return $body;
+        return $decoded;
     }
-}
 
-if (!function_exists('cleanEmailBody')) {
     /**
-     * Clean and format email body for display
+     * Check if content contains quoted-printable encoding
+     *
+     * @param string $content
+     * @return bool
      */
-    function cleanEmailBody(string $body): string
+    private static function containsQuotedPrintable($content)
     {
-        // Decode quoted-printable if needed
-        if (strpos($body, 'quoted-printable') !== false) {
-            $body = quoted_printable_decode($body);
-        }
+        return strpos($content, '=3D') !== false ||
+               strpos($content, '=20') !== false ||
+               strpos($content, '=0A') !== false ||
+               strpos($content, '=0D') !== false;
+    }
 
-        // Remove MIME boundaries and headers
-        $body = preg_replace('/--[a-zA-Z0-9]+--/', '', $body);
-        $body = preg_replace('/Content-Type:.*?\r?\n/', '', $body);
-        $body = preg_replace('/Content-Transfer-Encoding:.*?\r?\n/', '', $body);
-        $body = preg_replace('/Content-Disposition:.*?\r?\n/', '', $body);
+    /**
+     * Manual decoding of quoted-printable content
+     *
+     * @param string $content
+     * @return string
+     */
+    private static function manualQuotedPrintableDecode($content)
+    {
+        // Replace common quoted-printable sequences
+        $replacements = [
+            '=3D' => '=',     // equals sign
+            '=20' => ' ',     // space
+            '=0A' => "\n",    // line feed
+            '=0D' => "\r",    // carriage return
+            '=3C' => '<',     // less than
+            '=3E' => '>',     // greater than
+            '=22' => '"',     // double quote
+            '=27' => "'",     // single quote
+            '=2C' => ',',     // comma
+            '=2E' => '.',     // period
+            '=2F' => '/',     // forward slash
+            '=3A' => ':',     // colon
+            '=3B' => ';',     // semicolon
+            '=40' => '@',     // at symbol
+            '=5B' => '[',     // left bracket
+            '=5D' => ']',     // right bracket
+            '=5F' => '_',     // underscore
+            '=60' => '`',     // backtick
+            '=7B' => '{',     // left brace
+            '=7D' => '}',     // right brace
+            '=7E' => '~',     // tilde
+        ];
 
-        // Clean up excessive whitespace
-        $body = preg_replace('/\s+/', ' ', $body);
-        $body = preg_replace('/\r?\n\s*\r?\n/', "\n\n", $body);
+        // Apply replacements
+        $decoded = str_replace(array_keys($replacements), array_values($replacements), $content);
 
-        // If it's HTML, clean it up
-        if (strpos($body, '<html') !== false || strpos($body, '<div') !== false) {
-            // Remove script tags for security
-            $body = preg_replace('/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/mi', '', $body);
+        // Handle line breaks that might be encoded
+        $decoded = preg_replace('/=\r?\n/', '', $decoded);
 
-            // Clean up HTML
-            $body = preg_replace('/\s+/', ' ', $body);
-            $body = preg_replace('/>\s+</', '><', $body);
-        }
+        return $decoded;
+    }
 
-        return trim($body);
+    /**
+     * Clean up encoding artifacts
+     *
+     * @param string $content
+     * @return string
+     */
+    private static function cleanEncodingArtifacts($content)
+    {
+        // Remove any remaining = at end of lines (soft line breaks)
+        $content = preg_replace('/=\s*\r?\n/', '', $content);
+
+        // Clean up any remaining malformed = sequences
+        $content = preg_replace('/=\s*$/', '', $content);
+
+        // Fix any double spaces that might have been created
+        $content = preg_replace('/\s{2,}/', ' ', $content);
+
+        return trim($content);
+    }
+
+    /**
+     * Extract plain text from HTML email content
+     *
+     * @param string $htmlContent
+     * @return string
+     */
+    public static function extractPlainText($htmlContent)
+    {
+        // Decode first
+        $decoded = self::decodeEmailContent($htmlContent);
+
+        // Strip HTML tags
+        $plainText = strip_tags($decoded);
+
+        // Decode HTML entities
+        $plainText = html_entity_decode($plainText, ENT_QUOTES, 'UTF-8');
+
+        // Clean up whitespace
+        $plainText = preg_replace('/\s+/', ' ', $plainText);
+
+        return trim($plainText);
+    }
+
+    /**
+     * Check if content is HTML
+     *
+     * @param string $content
+     * @return bool
+     */
+    public static function isHtmlContent($content)
+    {
+        $decoded = self::decodeEmailContent($content);
+        return preg_match('/<[^>]+>/', $decoded) === 1;
     }
 }
