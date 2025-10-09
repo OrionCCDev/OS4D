@@ -1,29 +1,26 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Engineering Inbox Email - {{ $email->subject }}</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+@extends('layouts.app')
+
+@section('title', 'Engineering Inbox Email - ' . Str::limit($email->subject, 50))
+
+@section('head')
+<link href="https://cdn.jsdelivr.net/npm/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        /* Override layout constraints for full-width email content */
+        .layout-page {
+            width: 100% !important;
         }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background-color: #f8f9fa;
-            color: #333;
-            line-height: 1.6;
+        .content-wrapper {
+            width: 100% !important;
+            max-width: 100% !important;
+            padding: 0 !important;
         }
 
         .email-page {
             width: 100%;
             min-height: 100vh;
             padding: 20px;
+            background-color: #f8f9fa;
         }
 
         .email-container {
@@ -369,9 +366,10 @@
             opacity: 0.5;
         }
     </style>
-</head>
-<body>
-    <div class="email-page">
+@endsection
+
+@section('content')
+<div class="email-page">
         <div class="email-container">
             <!-- Breadcrumb Section -->
             <div class="breadcrumb-section">
@@ -577,8 +575,8 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
+@section('scripts')
+<script>
         function markAsRead(emailId) {
             fetch(`/emails/${emailId}/mark-read`, {
                 method: 'POST',
@@ -667,5 +665,4 @@
             }, 5000);
         }
     </script>
-</body>
-</html>
+@endsection
