@@ -721,4 +721,58 @@ class EmailFetchController extends Controller
         }
     }
 
+    /**
+     * Show email in standalone view (no layout constraints)
+     */
+    public function showStandalone($id)
+    {
+        try {
+            $email = Email::findOrFail($id);
+
+            // Parse email body for better display
+            $parsedBody = null;
+            $parsedReplies = [];
+
+            if ($email->body) {
+                try {
+                    // Try to parse HTML content
+                    $dom = new \DOMDocument();
+                    libxml_use_internal_errors(true);
+                    $dom->loadHTML($email->body, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+                    libxml_clear_errors();
+
+                    $parsedBody = $dom->saveHTML();
+                } catch (\Exception $e) {
+                    // If parsing fails, use raw body
+                    $parsedBody = $email->body;
+                }
+            }
+
+            // Parse replies if any
+            if ($email->replies && $email->replies->count() > 0) {
+                foreach ($email->replies as $reply) {
+                    if ($reply->body) {
+                        try {
+                            $dom = new \DOMDocument();
+                            libxml_use_internal_errors(true);
+                            $dom->loadHTML($reply->body, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+                            libxml_clear_errors();
+                            $parsedReplies[$reply->id] = $dom->saveHTML();
+                        } catch (\Exception $e) {
+                            $parsedReplies[$reply->id] = $reply->body;
+                        }
+                    }
+                }
+            }
+
+            return view('emails.standalone-show', compact('email', 'parsedBody', 'parsedReplies'));
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error loading email: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
 }
