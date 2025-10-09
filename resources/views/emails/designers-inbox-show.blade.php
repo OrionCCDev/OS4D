@@ -3,42 +3,46 @@
 @section('title', 'Engineering Inbox Email')
 
 @section('head')
-<link rel="stylesheet" href="{{ asset('css/email-content.css') }}">
 <style>
-.email-content-container {
-    width: 100% !important;
-    max-width: 100% !important;
+/* Reset and base styles */
+.email-details-page {
+    width: 100%;
+    overflow-x: hidden;
+}
+
+.email-details-page .card {
+    background: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+}
+
+.email-details-page .card-body {
+    padding: 20px;
+}
+
+/* Email content container - simplified */
+.email-content-wrapper {
+    width: 100%;
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
     overflow-x: auto;
-    word-wrap: break-word;
+}
+
+.email-content-container {
+    width: 100%;
+    max-width: 100%;
+    background: #ffffff;
+    padding: 20px;
+    border-radius: 8px;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     line-height: 1.6;
-    margin: 0 !important;
-    padding: 0 !important;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
 }
 
-/* Make the email content use full width */
-.email-content-container .email-container {
-    width: 100% !important;
-    max-width: 100% !important;
-    margin: 0 !important;
-}
-
-.email-content-container .email-body {
-    width: 100% !important;
-    max-width: 100% !important;
-    padding: 20px !important;
-}
-
-.email-content-container .task-details {
-    width: 100% !important;
-    max-width: 100% !important;
-}
-
-.email-content-container table {
-    width: 100% !important;
-    max-width: 100% !important;
-}
-
+/* Email styling */
 .email-content-container img {
     max-width: 100%;
     height: auto;
@@ -46,9 +50,12 @@
 }
 
 .email-content-container table {
+    width: 100%;
     max-width: 100%;
     border-collapse: collapse;
     margin: 1rem 0;
+    overflow-x: auto;
+    display: block;
 }
 
 .email-content-container table td,
@@ -56,76 +63,6 @@
     padding: 8px 12px;
     border: 1px solid #dee2e6;
     text-align: left;
-}
-
-.email-content-container .email-container {
-    max-width: 100%;
-    margin: 0 auto;
-    background: #ffffff;
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.email-content-container .email-header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    padding: 30px;
-    text-align: center;
-}
-
-.email-content-container .email-body {
-    padding: 30px;
-}
-
-.email-content-container .email-footer {
-    background-color: #f8f9fa;
-    padding: 20px 30px;
-    border-top: 1px solid #e9ecef;
-    text-align: center;
-    font-size: 14px;
-    color: #6c757d;
-}
-
-.email-content-container .task-details {
-    background: white;
-    padding: 25px;
-    border-radius: 12px;
-    margin: 20px 0;
-    border-left: 4px solid #28a745;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-}
-
-.email-content-container .completion-section {
-    background: #d4edda;
-    border: 1px solid #c3e6cb;
-    border-radius: 8px;
-    padding: 20px;
-    margin: 20px 0;
-}
-
-.email-content-container .custom-body {
-    background: white;
-    padding: 20px;
-    border-radius: 8px;
-    margin: 20px 0;
-    border-left: 4px solid #007bff;
-}
-
-.email-content-container .btn {
-    display: inline-block;
-    padding: 12px 24px;
-    background: #28a745;
-    color: white;
-    text-decoration: none;
-    border-radius: 6px;
-    font-weight: bold;
-    margin: 10px 0;
-}
-
-.email-content-container .btn:hover {
-    background: #218838;
-    color: white;
 }
 
 .email-content-container pre {
@@ -136,39 +73,41 @@
     padding: 15px;
     border-radius: 4px;
     border: 1px solid #e9ecef;
+    overflow-x: auto;
 }
 
-/* Force full width for all email content */
+/* Remove any fixed widths from email HTML */
 .email-content-container * {
-    max-width: 100% !important;
+    max-width: 100%;
 }
 
-.email-content-container .header,
-.email-content-container .content,
-.email-content-container .footer {
-    width: 100% !important;
-    max-width: 100% !important;
-    box-sizing: border-box !important;
+/* Avatar styles */
+.avatar-sm {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    min-height: 40px;
 }
 
-/* Override any Bootstrap or theme constraints */
-.card-body .email-content-container {
-    width: 100% !important;
-    max-width: none !important;
-    margin: 0 !important;
-    padding: 0 !important;
-}
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .email-content-wrapper {
+        padding: 10px;
+    }
 
-/* Make sure the container uses full available width */
-.container-fluid .row .col-12 .card .card-body {
-    width: 100% !important;
-    max-width: 100% !important;
+    .email-content-container {
+        padding: 15px;
+    }
+
+    .email-details-page .card-body {
+        padding: 15px;
+    }
 }
 </style>
 @endsection
 
 @section('content')
-<div class="container-fluid">
+<div class="container-fluid email-details-page">
     <div class="row">
         <div class="col-12">
             <x-modern-breadcrumb
@@ -184,10 +123,11 @@
             />
         </div>
     </div>
+
     <div class="row">
         <div class="col-12">
             <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
+                <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
                     <h5 class="mb-0">
                         <i class="bx bx-envelope-open me-2"></i>
                         Email Details
@@ -197,7 +137,7 @@
                             <span class="badge bg-warning ms-2">Unread</span>
                         @endif
                     </h5>
-                    <div class="d-flex gap-2">
+                    <div class="d-flex gap-2 flex-wrap">
                         <a href="{{ route('emails.all') }}" class="btn btn-outline-secondary btn-sm">
                             <i class="bx bx-arrow-back me-1"></i>Back to Inbox
                         </a>
@@ -215,20 +155,21 @@
                         </button>
                     </div>
                 </div>
+
                 <div class="card-body">
                     <!-- Email Header -->
                     <div class="row mb-4">
-                        <div class="col-md-8">
+                        <div class="col-lg-8 mb-3 mb-lg-0">
                             <div class="d-flex align-items-start">
-                                <div class="avatar-sm bg-primary rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 48px; height: 48px;">
+                                <div class="avatar-sm bg-primary rounded-circle d-flex align-items-center justify-content-center me-3">
                                     <span class="text-white fw-bold fs-5">{{ substr($email->sender_name, 0, 1) }}</span>
                                 </div>
                                 <div class="flex-grow-1">
-                                    <h4 class="mb-1">{{ $email->subject }}</h4>
-                                    <div class="text-muted">
+                                    <h4 class="mb-2">{{ $email->subject }}</h4>
+                                    <div class="text-muted small">
                                         <div class="mb-1">
                                             <strong>From:</strong> {{ $email->from_email }}
-                                                <span class="badge bg-primary ms-2">Engineering Inbox</span>
+                                            <span class="badge bg-primary ms-2">Engineering Inbox</span>
                                         </div>
                                         <div class="mb-1">
                                             <strong>To:</strong> {{ $email->to_email }}
@@ -251,8 +192,8 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-4">
-                            <div class="text-end">
+                        <div class="col-lg-4">
+                            <div class="text-lg-end">
                                 @if($email->reply_to_email_id)
                                     <span class="badge bg-info fs-6 mb-2">
                                         <i class="bx bx-reply me-1"></i>Reply
@@ -271,7 +212,7 @@
 
                                 <div class="text-muted small mt-2">
                                     <div><strong>Source:</strong> engineering@orion-contracting.com</div>
-                                    <div><strong>Message ID:</strong> {{ $email->message_id }}</div>
+                                    <div class="text-break"><strong>Message ID:</strong> {{ Str::limit($email->message_id, 30) }}</div>
                                 </div>
                             </div>
                         </div>
@@ -279,12 +220,12 @@
 
                     <!-- Email Body -->
                     <div class="card mb-4">
-                        <div class="card-header">
+                        <div class="card-header bg-light">
                             <h6 class="mb-0">
                                 <i class="bx bx-file-text me-2"></i>Email Content
                             </h6>
                         </div>
-                        <div class="card-body" style="width: 100%; padding: 20px;">
+                        <div class="card-body p-0">
                             @php
                                 // Get the email body
                                 $emailBody = $email->body;
@@ -294,55 +235,20 @@
 
                                 // If that didn't work or we still have encoding artifacts, do manual decoding
                                 if (strpos($decodedBody, '=3D') !== false || strpos($decodedBody, '=20') !== false || strpos($decodedBody, '=3C') !== false) {
-                                    // Comprehensive quoted-printable decoding
                                     $replacements = [
-                                        '=3D' => '=',     // equals sign
-                                        '=20' => ' ',     // space
-                                        '=0A' => "\n",    // line feed
-                                        '=0D' => "\r",    // carriage return
-                                        '=3C' => '<',     // less than
-                                        '=3E' => '>',     // greater than
-                                        '=22' => '"',     // double quote
-                                        '=27' => "'",     // single quote
-                                        '=2C' => ',',     // comma
-                                        '=2E' => '.',     // period
-                                        '=2F' => '/',     // forward slash
-                                        '=3A' => ':',     // colon
-                                        '=3B' => ';',     // semicolon
-                                        '=40' => '@',     // at symbol
-                                        '=5B' => '[',     // left bracket
-                                        '=5D' => ']',     // right bracket
-                                        '=5F' => '_',     // underscore
-                                        '=60' => '`',     // backtick
-                                        '=7B' => '{',     // left brace
-                                        '=7D' => '}',     // right brace
-                                        '=7E' => '~',     // tilde
-                                        '=09' => "\t",    // tab
-                                        '=28' => '(',     // left parenthesis
-                                        '=29' => ')',     // right parenthesis
-                                        '=2B' => '+',     // plus
-                                        '=2D' => '-',     // minus
-                                        '=3F' => '?',     // question mark
-                                        '=21' => '!',     // exclamation
-                                        '=23' => '#',     // hash
-                                        '=24' => '$',     // dollar
-                                        '=25' => '%',     // percent
-                                        '=26' => '&',     // ampersand
-                                        '=2A' => '*',     // asterisk
+                                        '=3D' => '=', '=20' => ' ', '=0A' => "\n", '=0D' => "\r",
+                                        '=3C' => '<', '=3E' => '>', '=22' => '"', '=27' => "'",
+                                        '=2C' => ',', '=2E' => '.', '=2F' => '/', '=3A' => ':',
+                                        '=3B' => ';', '=40' => '@', '=5B' => '[', '=5D' => ']',
+                                        '=5F' => '_', '=60' => '`', '=7B' => '{', '=7D' => '}',
+                                        '=7E' => '~', '=09' => "\t", '=28' => '(', '=29' => ')',
+                                        '=2B' => '+', '=2D' => '-', '=3F' => '?', '=21' => '!',
+                                        '=23' => '#', '=24' => '$', '=25' => '%', '=26' => '&',
+                                        '=2A' => '*',
                                     ];
-
-                                    // Apply all replacements
                                     $decodedBody = str_replace(array_keys($replacements), array_values($replacements), $emailBody);
-
-                                    // Remove soft line breaks (= at end of lines)
                                     $decodedBody = preg_replace('/=\r?\n/', '', $decodedBody);
                                     $decodedBody = preg_replace('/=\s*$/', '', $decodedBody);
-
-                                    // Clean up multiple spaces
-                                    $decodedBody = preg_replace('/\s{2,}/', ' ', $decodedBody);
-
-                                    // Fix broken words that were split across lines
-                                    $decodedBody = preg_replace('/([a-zA-Z])\s+([a-zA-Z])/', '$1$2', $decodedBody);
                                 }
 
                                 // Use parsed body if available, otherwise use decoded body
@@ -350,27 +256,18 @@
 
                                 // Fix any character encoding issues
                                 $displayBody = mb_convert_encoding($displayBody, 'UTF-8', 'UTF-8');
-
-                                // Clean up any remaining character issues
-                                $displayBody = str_replace(['', '=', '=20', '=3D'], ['', '=', ' ', '='], $displayBody);
                             @endphp
 
                             @if($displayBody && strlen($displayBody) > 10)
-                                <div class="email-content-container custom-email-style">
-                                    @if(!str_contains($displayBody, '<!DOCTYPE html>'))
-                                        <!DOCTYPE html>
-                                        <html lang="en">
-                                    @endif
-                                    {!! $displayBody !!}
-                                    @if(!str_contains($displayBody, '</html>'))
-                                        </html>
-                                    @endif
+                                <div class="email-content-wrapper">
+                                    <div class="email-content-container">
+                                        {!! $displayBody !!}
+                                    </div>
                                 </div>
-
                             @else
-                                <div class="text-muted text-center py-4">
-                                    <i class="bx bx-file-blank fs-1 mb-3"></i>
-                                    <p>No content available</p>
+                                <div class="text-muted text-center py-5">
+                                    <i class="bx bx-file-blank" style="font-size: 48px;"></i>
+                                    <p class="mt-3">No content available</p>
                                 </div>
                             @endif
                         </div>
@@ -379,7 +276,7 @@
                     <!-- Attachments Section -->
                     @if(!empty($email->attachments))
                     <div class="card mb-4">
-                        <div class="card-header">
+                        <div class="card-header bg-light">
                             <h6 class="mb-0">
                                 <i class="bx bx-paperclip me-2"></i>
                                 Attachments ({{ count($email->attachments) }})
@@ -391,9 +288,9 @@
                                 <div class="col-md-6 mb-3">
                                     <div class="d-flex align-items-center p-3 border rounded">
                                         <div class="avatar-sm bg-light rounded-circle d-flex align-items-center justify-content-center me-3">
-                                            <i class="bx bx-file text-muted"></i>
+                                            <i class="bx bx-file text-muted fs-4"></i>
                                         </div>
-                                        <div class="flex-grow-1">
+                                        <div class="flex-grow-1 text-break">
                                             <div class="fw-semibold">{{ $attachment['filename'] ?? 'Unknown File' }}</div>
                                             <small class="text-muted">
                                                 {{ $attachment['mime_type'] ?? 'Unknown Type' }}
@@ -413,7 +310,7 @@
                     <!-- Replies Section -->
                     @if($email->replies && $email->replies->count() > 0)
                     <div class="card mb-4">
-                        <div class="card-header">
+                        <div class="card-header bg-light">
                             <h6 class="mb-0">
                                 <i class="bx bx-reply me-2"></i>
                                 Replies ({{ $email->replies->count() }})
@@ -427,7 +324,7 @@
                                         <span class="text-white fw-bold">{{ substr($reply->sender_name, 0, 1) }}</span>
                                     </div>
                                     <div class="flex-grow-1">
-                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <div class="d-flex justify-content-between align-items-start mb-2 flex-wrap gap-2">
                                             <div>
                                                 <strong>{{ $reply->from_email }}</strong>
                                                 <small class="text-muted ms-2">
@@ -441,10 +338,7 @@
                                             <span class="badge bg-info">Reply</span>
                                         </div>
                                         @php
-                                            // Decode reply content
                                             $replyContent = $reply->body;
-
-                                            // Handle quoted-printable decoding for replies
                                             if (strpos($replyContent, '=3D') !== false || strpos($replyContent, '=20') !== false) {
                                                 $replacements = [
                                                     '=3D' => '=', '=20' => ' ', '=0A' => "\n", '=0D' => "\r",
@@ -456,14 +350,13 @@
                                                 ];
                                                 $replyContent = str_replace(array_keys($replacements), array_values($replacements), $replyContent);
                                                 $replyContent = preg_replace('/=\r?\n/', '', $replyContent);
-                                                $replyContent = preg_replace('/=\s*$/', '', $replyContent);
-                                                $replyContent = preg_replace('/\s{2,}/', ' ', $replyContent);
                                             }
-
                                             $displayReplyContent = $parsedReplies[$reply->id] ?? $replyContent;
                                         @endphp
-                                        <div class="email-content-container custom-email-style">
-                                            {!! $displayReplyContent !!}
+                                        <div class="email-content-wrapper">
+                                            <div class="email-content-container">
+                                                {!! $displayReplyContent !!}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -491,9 +384,7 @@
         .then(data => {
             if (data.success) {
                 showAlert('success', 'Email marked as read');
-                setTimeout(() => {
-                    window.location.reload();
-                }, 1000);
+                setTimeout(() => window.location.reload(), 1000);
             } else {
                 showAlert('error', data.message || 'Error marking email as read');
             }
@@ -516,9 +407,7 @@
         .then(data => {
             if (data.success) {
                 showAlert('success', 'Email marked as unread');
-                setTimeout(() => {
-                    window.location.reload();
-                }, 1000);
+                setTimeout(() => window.location.reload(), 1000);
             } else {
                 showAlert('error', data.message || 'Error marking email as unread');
             }
@@ -542,9 +431,7 @@
             .then(data => {
                 if (data.success) {
                     showAlert('success', 'Email deleted successfully');
-                    setTimeout(() => {
-                        window.location.href = '{{ route("emails.all") }}';
-                    }, 1000);
+                    setTimeout(() => window.location.href = '{{ route("emails.all") }}', 1000);
                 } else {
                     showAlert('error', data.message || 'Error deleting email');
                 }
@@ -565,25 +452,11 @@
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
         `;
-
-        // Insert at top of card body
-        const cardBody = document.querySelector('.card-body');
-        cardBody.insertAdjacentHTML('afterbegin', alertHtml);
-
-        // Auto-dismiss after 5 seconds
+        document.querySelector('.card-body').insertAdjacentHTML('afterbegin', alertHtml);
         setTimeout(() => {
-            const alert = cardBody.querySelector('.alert');
-            if (alert) {
-                alert.remove();
-            }
+            const alert = document.querySelector('.alert');
+            if (alert) alert.remove();
         }, 5000);
     }
 </script>
-
-<style>
-.avatar-sm {
-    width: 32px;
-    height: 32px;
-}
-</style>
 @endsection
