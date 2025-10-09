@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use App\Jobs\SendTaskConfirmationEmailJob;
 
 class TaskController extends Controller
 {
@@ -644,7 +645,7 @@ class TaskController extends Controller
             'subject' => 'required|string|max:255',
             'body' => 'required|string',
             'attachments' => 'nullable|array',
-            'attachments.*' => 'file|max:51200', // 50MB max per file
+            'attachments.*' => 'file|max:102400', // 100MB max per file
         ]);
 
         try {
@@ -653,10 +654,14 @@ class TaskController extends Controller
             if ($request->hasFile('attachments')) {
                 Log::info('Processing file uploads - Count: ' . count($request->file('attachments')));
                 foreach ($request->file('attachments') as $file) {
+                    if (!$file) continue; // Skip empty files
+
                     $originalName = $file->getClientOriginalName();
                     $fileSize = $file->getSize();
                     Log::info('Uploading file: ' . $originalName . ' - Size: ' . $fileSize . ' bytes');
-                    $path = $file->store('email-attachments');
+
+                    // Store file with a unique name to avoid conflicts
+                    $path = $file->store('email-attachments', 'local');
                     $attachmentPaths[] = $path;
                     Log::info('File stored at: ' . $path);
                 }
@@ -707,16 +712,27 @@ class TaskController extends Controller
                 'subject' => 'required|string|max:255',
                 'body' => 'required|string',
                 'attachments' => 'nullable|array',
-                'attachments.*' => 'file|max:51200',
+                'attachments.*' => 'file|max:102400', // 100MB max per file
             ]);
 
             // Handle file uploads
             $attachmentPaths = [];
             if ($request->hasFile('attachments')) {
+                Log::info('Processing file uploads in sendConfirmationEmail - Count: ' . count($request->file('attachments')));
                 foreach ($request->file('attachments') as $file) {
-                    $path = $file->store('email-attachments');
+                    if (!$file) continue; // Skip empty files
+
+                    $originalName = $file->getClientOriginalName();
+                    $fileSize = $file->getSize();
+                    Log::info('Uploading file: ' . $originalName . ' - Size: ' . $fileSize . ' bytes');
+
+                    // Store file with a unique name to avoid conflicts
+                    $path = $file->store('email-attachments', 'local');
                     $attachmentPaths[] = $path;
+                    Log::info('File stored at: ' . $path);
                 }
+            } else {
+                Log::info('No files uploaded in sendConfirmationEmail request');
             }
 
             // Create or update email preparation with form data
@@ -745,177 +761,69 @@ class TaskController extends Controller
         try {
             $user = Auth::user();
 
-            // Check if user has Gmail connected and use Gmail OAuth if available
-            $useGmailOAuth = $user->hasGmailConnected();
-
-            Log::info('Email sending attempt - Current User: ' . $user->id . ' (' . $user->email . '), Gmail Only Mode: ' . ($useGmailOAuth ? 'Yes' : 'No'));
-
-            // Log email preparation details
+            Log::info('Email sending attempt - Current User: ' . $user->id . ' (' . $user->email . ')');
             Log::info('Email preparation - To: ' . $emailPreparation->to_emails . ', CC: ' . ($emailPreparation->cc_emails ?? 'none') . ', BCC: ' . ($emailPreparation->bcc_emails ?? 'none') . ', Subject: ' . $emailPreparation->subject);
 
-            // Parse email addresses
-            $toEmails = array_filter(array_map('trim', explode(',', $emailPreparation->to_emails)));
-            $ccEmails = $emailPreparation->cc_emails ? array_filter(array_map('trim', explode(',', $emailPreparation->cc_emails))) : [];
-            $bccEmails = $emailPreparation->bcc_emails ? array_filter(array_map('trim', explode(',', $emailPreparation->bcc_emails))) : [];
+            // Dispatch the email sending job to run in the background
+            SendTaskConfirmationEmailJob::dispatch($task, $user, $emailPreparation);
 
-            // Always add engineering@orion-contracting.com to CC
-            if (!in_array('engineering@orion-contracting.com', $ccEmails)) {
-                $ccEmails[] = 'engineering@orion-contracting.com';
-            }
-
-            // NEW: Add all users (role: 'user') to CC so they get notifications
-            $users = User::where('role', 'user')->get();
-            foreach ($users as $userToNotify) {
-                if (!in_array($userToNotify->email, $ccEmails)) {
-                    $ccEmails[] = $userToNotify->email;
-                }
-            }
-
-            // Prepare email data
-            $emailData = [
-                'from' => $user->email,
-                'from_name' => $user->name,
-                'to' => $toEmails,
-                'subject' => $emailPreparation->subject,
-                'body' => view('emails.task-confirmation', [
-                    'task' => $task,
-                    'emailPreparation' => $emailPreparation,
-                    'sender' => $user,
-                ])->render(),
-                'task_id' => $task->id,
-            ];
-
-            // Prepare attachments for Gmail OAuth service
-            if ($emailPreparation->attachments && is_array($emailPreparation->attachments)) {
-                Log::info('Processing attachments for email - Count: ' . count($emailPreparation->attachments));
-                $emailData['attachments'] = [];
-                foreach ($emailPreparation->attachments as $attachmentPath) {
-                    $fullPath = storage_path('app/' . $attachmentPath);
-                    Log::info('Checking attachment: ' . $fullPath . ' - Exists: ' . (file_exists($fullPath) ? 'Yes' : 'No'));
-                    if (file_exists($fullPath)) {
-                        $fileSize = filesize($fullPath);
-                        $mimeType = mime_content_type($fullPath) ?: 'application/octet-stream';
-                        Log::info('Adding attachment: ' . basename($attachmentPath) . ' - Size: ' . $fileSize . ' bytes - MIME: ' . $mimeType);
-                        $emailData['attachments'][] = [
-                            'filename' => basename($attachmentPath),
-                            'mime_type' => $mimeType,
-                            'content' => file_get_contents($fullPath)
-                        ];
-                    } else {
-                        Log::error('Attachment file not found: ' . $fullPath);
-                    }
-                }
-                Log::info('Total attachments prepared: ' . count($emailData['attachments']));
-            } else {
-                Log::info('No attachments found in email preparation');
-            }
-
-            if (!empty($ccEmails)) {
-                $emailData['cc'] = $ccEmails;
-            }
-
-            if (!empty($bccEmails)) {
-                $emailData['bcc'] = $bccEmails;
-            }
-
-            $success = false;
-            $trackedEmail = null;
-
-            if ($useGmailOAuth) {
-                // Use Gmail OAuth for sending email to main recipients
-                Log::info('Using Gmail OAuth for sending email - Gmail Only Mode');
-                $gmailOAuthService = app(\App\Services\GmailOAuthService::class);
-
-                // Remove engineering@orion-contracting.com from CC for Gmail OAuth
-                $gmailEmailData = $emailData;
-                if (isset($gmailEmailData['cc'])) {
-                    $gmailEmailData['cc'] = array_filter($gmailEmailData['cc'], function($email) {
-                        return $email !== 'engineering@orion-contracting.com';
-                    });
-                }
-
-                $success = $gmailOAuthService->sendEmail($user, $gmailEmailData);
-
-                if ($success) {
-                    Log::info('Confirmation email sent successfully for task: ' . $task->id . ' by user: ' . Auth::id() . ' via Gmail OAuth');
-
-                    // Send separate email to engineering@orion-contracting.com via SMTP
-                    $this->sendDesignersNotification($task, $emailPreparation, $user);
-
-                    // Notify managers about the sent confirmation email
-                    $this->notifyManagersAboutConfirmationEmail($task, $user);
-                } else {
-                    Log::error('Gmail OAuth failed for user: ' . $user->id . ' - Email not sent');
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Failed to send email via Gmail OAuth. Please check your Gmail connection.',
-                        'redirect_url' => route('tasks.show', $task->id)
-                    ], 400);
-                }
-            } else {
-                // Use Laravel Mail with simple tracking
-                Log::info('Using simple email tracking - CC to engineering@orion-contracting.com');
-
-                // Create the mail instance
-                $mail = new \App\Mail\TaskConfirmationMail($task, $emailPreparation, $user);
-
-                // Set CC and BCC on the mail instance
-                if (!empty($ccEmails)) {
-                    $mail->cc($ccEmails);
-                }
-                if (!empty($bccEmails)) {
-                    $mail->bcc($bccEmails);
-                }
-
-                // Send the email
-                Mail::send($mail);
-
-                // Notify managers about the sent confirmation email
-                $this->notifyManagersAboutConfirmationEmail($task, $user);
-
-                // Track the sent email
-                $simpleEmailTrackingService = app(\App\Services\SimpleEmailTrackingService::class);
-                $trackedEmail = $simpleEmailTrackingService->trackSentEmail($user, $emailData);
-                $success = $trackedEmail !== null;
-
-                if (!$success) {
-                    Log::error('Email tracking failed for user: ' . $user->id . ' - Email may have been sent but not tracked');
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Email may have been sent but tracking failed. Please check your email configuration.',
-                        'redirect_url' => route('tasks.show', $task->id)
-                    ], 400);
-                }
-
-                Log::info('Confirmation email sent successfully for task: ' . $task->id . ' by user: ' . Auth::id() . ' with CC to engineering@orion-contracting.com');
-            }
-
-            // Update email preparation status
+            // Update email preparation status to processing
             $emailPreparation->update([
-                'status' => 'sent',
-                'sent_at' => now(),
+                'status' => 'processing',
             ]);
 
-            // Update task status to completed
-            $task->update(['status' => 'completed']);
+            // Update task status to on client consultant review
+            $task->update(['status' => 'on client consultant review']);
 
-            $message = $useGmailOAuth ?
-                'Confirmation email sent successfully via Gmail OAuth!' :
-                'Confirmation email sent successfully with tracking enabled!';
+            Log::info('Email sending job dispatched for task: ' . $task->id . ' by user: ' . $user->id);
 
             return response()->json([
                 'success' => true,
-                'message' => $message,
+                'message' => 'Email is being sent in the background. You will receive a notification when it\'s completed.',
                 'redirect_url' => route('tasks.show', $task->id)
             ]);
         } catch (\Exception $e) {
-            Log::error('Failed to send confirmation email for task: ' . $task->id . ' - ' . $e->getMessage());
+            Log::error('Failed to dispatch email sending job for task: ' . $task->id . ' - ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to send email: ' . $e->getMessage(),
                 'redirect_url' => route('tasks.show', $task->id)
             ]);
         }
+    }
+
+    /**
+     * Debug endpoint to check email preparation attachments
+     */
+    public function debugEmailAttachments(Task $task)
+    {
+        $emailPreparation = $task->emailPreparations()->where('status', 'draft')->orderBy('id', 'desc')->first();
+
+        if (!$emailPreparation) {
+            return response()->json(['error' => 'No email preparation found']);
+        }
+
+        $debug = [
+            'email_preparation_id' => $emailPreparation->id,
+            'attachments_raw' => $emailPreparation->attachments,
+            'attachments_count' => is_array($emailPreparation->attachments) ? count($emailPreparation->attachments) : 0,
+            'file_checks' => []
+        ];
+
+        if ($emailPreparation->attachments && is_array($emailPreparation->attachments)) {
+            foreach ($emailPreparation->attachments as $attachmentPath) {
+                $fullPath = storage_path('app/' . $attachmentPath);
+                $debug['file_checks'][] = [
+                    'path' => $attachmentPath,
+                    'full_path' => $fullPath,
+                    'exists' => file_exists($fullPath),
+                    'size' => file_exists($fullPath) ? filesize($fullPath) : 0,
+                    'readable' => file_exists($fullPath) ? is_readable($fullPath) : false
+                ];
+            }
+        }
+
+        return response()->json($debug);
     }
 
     /**
@@ -933,7 +841,7 @@ class TaskController extends Controller
                       "Project Information:\n" .
                       "- Project: {$task->project->name}\n" .
                       "- Priority Level: " . ucfirst($task->priority) . "\n" .
-                      "- Original Due Date: " . ($task->due_date ? $task->due_date->format('M d, Y') : 'Not specified') . "\n" .
+                      "- Original Due Date: " . ($task->due_date ? (is_string($task->due_date) ? $task->due_date : $task->due_date->format('M d, Y')) : 'Not specified') . "\n" .
                       "- Completion Date: " . now()->format('M d, Y') . "\n\n" .
                       "The task has been completed according to the specifications and is ready for your review. Please let me know if you need any additional information or modifications.\n\n" .
                       "Thank you for your time and consideration.\n\n" .

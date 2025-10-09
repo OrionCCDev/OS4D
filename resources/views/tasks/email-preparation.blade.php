@@ -545,7 +545,7 @@
                                     </button>
                                 </div>
                                 <div class="attachment-preview" id="attachmentPreview"></div>
-                                <div class="form-text">Maximum 50MB per file. You can select multiple files.</div>
+                                <div class="form-text">Maximum 100MB per file. You can select multiple files.</div>
                                 @error('attachments')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -835,8 +835,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function handleFiles(files) {
         Array.from(files).forEach(file => {
-            if (file.size > 50 * 1024 * 1024) { // 50MB limit
-                alert(`File ${file.name} is too large. Maximum size is 50MB.`);
+            if (file.size > 100 * 1024 * 1024) { // 100MB limit
+                alert(`File ${file.name} is too large. Maximum size is 100MB.`);
                 return;
             }
 

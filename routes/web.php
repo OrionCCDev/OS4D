@@ -174,6 +174,7 @@ Route::middleware('auth')->group(function () {
         Route::get('tasks/{task}/prepare-email', [TaskController::class, 'showEmailPreparationForm'])->name('tasks.prepare-email');
         Route::post('tasks/{task}/prepare-email', [TaskController::class, 'storeEmailPreparation'])->name('tasks.store-email-preparation');
         Route::post('tasks/{task}/send-confirmation-email', [TaskController::class, 'sendConfirmationEmail'])->name('tasks.send-confirmation-email');
+        Route::get('tasks/{task}/debug-attachments', [TaskController::class, 'debugEmailAttachments'])->name('tasks.debug-attachments');
         Route::get('gmail-status', [TaskController::class, 'getGmailStatus'])->name('gmail.status');
 
         // Test Gmail connection
