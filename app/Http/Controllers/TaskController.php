@@ -772,8 +772,8 @@ class TaskController extends Controller
                 'status' => 'processing',
             ]);
 
-            // Update task status to on client consultant review
-            $task->update(['status' => 'on client consultant review']);
+            // Update task status to on_client_consultant_review
+            $task->update(['status' => 'on_client_consultant_review']);
 
             Log::info('Email sending job dispatched for task: ' . $task->id . ' by user: ' . $user->id);
 

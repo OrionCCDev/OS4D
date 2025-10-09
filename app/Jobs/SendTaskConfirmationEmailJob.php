@@ -165,7 +165,7 @@ class SendTaskConfirmationEmailJob implements ShouldQueue
                     'status' => 'sent',
                     'sent_at' => now(),
                 ]);
-                $this->task->update(['status' => 'on client consultant review']); // Update task status after sending email
+                $this->task->update(['status' => 'on_client_consultant_review']); // Update task status after sending email
 
                 // Notify managers about the sent confirmation email
                 // This method is in TaskController, need to refactor or pass necessary data
