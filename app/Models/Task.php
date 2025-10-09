@@ -269,8 +269,13 @@ class Task extends Model
             'assigned' => 'Task has been assigned',
             'in_progress' => 'Task is now in progress',
             'submitted_for_review' => 'Task has been submitted for review',
+            'in_review' => 'Task is in review',
             'approved' => 'Task has been approved',
             'rejected' => 'Task has been rejected',
+            'ready_for_email' => 'Task is ready for email',
+            'on_client_consultant_review' => 'Task is on client/consultant review',
+            'in_review_after_client_consultant_reply' => 'Task is in review after client/consultant reply',
+            're_submit_required' => 'Task requires resubmission',
             'waiting_sending_client_consultant_approve' => 'Waiting to send for client and consultant approval',
             'waiting_client_consultant_approve' => 'Waiting for client and consultant approval',
             'completed' => 'Task has been completed',
@@ -769,15 +774,21 @@ class Task extends Model
     {
         $this->updateCombinedResponseStatus();
 
+        // Change task status to in_review_after_client_consultant_reply
+        $this->update([
+            'status' => 'in_review_after_client_consultant_reply'
+        ]);
+
         // Create history record
         $this->histories()->create([
             'user_id' => auth()->id(),
             'action' => 'review_finished',
-            'description' => "Review finished with combined status: {$this->combined_response_status}",
+            'description' => "Review finished with combined status: {$this->combined_response_status}. Task transferred to manager for final review.",
             'metadata' => [
                 'combined_response_status' => $this->combined_response_status,
                 'client_status' => $this->client_response_status,
-                'consultant_status' => $this->consultant_response_status
+                'consultant_status' => $this->consultant_response_status,
+                'status_changed_to' => 'in_review_after_client_consultant_reply'
             ]
         ]);
 
@@ -817,6 +828,90 @@ class Task extends Model
         } elseif ($status === 'reset_for_review') {
             $this->changeStatus('in_review', 'Task reset for review by manager');
         }
+
+        return $this;
+    }
+
+    /**
+     * Manager marks task as completed after client/consultant review
+     */
+    public function markAsCompleted($notes = null)
+    {
+        $this->update([
+            'status' => 'completed',
+            'completed_at' => now(),
+        ]);
+
+        // Create history record
+        $this->histories()->create([
+            'user_id' => auth()->id(),
+            'action' => 'marked_completed',
+            'description' => 'Task marked as completed by manager after client/consultant review' . ($notes ? ". Notes: {$notes}" : ""),
+            'metadata' => [
+                'completed_at' => now(),
+                'notes' => $notes,
+                'combined_response_status' => $this->combined_response_status
+            ]
+        ]);
+
+        // Notify assigned user about completion
+        $this->notifyUserAboutCompletion();
+
+        return $this;
+    }
+
+    /**
+     * Manager requires task to be re-submitted by user
+     */
+    public function requireResubmit($notes = null)
+    {
+        $this->update([
+            'status' => 're_submit_required',
+            'manager_override_status' => 're_submit',
+            'manager_override_notes' => $notes,
+            'manager_override_updated_at' => now(),
+            'manager_override_by' => auth()->id(),
+        ]);
+
+        // Create history record
+        $this->histories()->create([
+            'user_id' => auth()->id(),
+            'action' => 'require_resubmit',
+            'description' => 'Task requires re-submission by user' . ($notes ? ". Notes: {$notes}" : ""),
+            'metadata' => [
+                'notes' => $notes,
+                'combined_response_status' => $this->combined_response_status
+            ]
+        ]);
+
+        // Notify assigned user about re-submission requirement
+        $this->notifyUserAboutResubmit($notes);
+
+        return $this;
+    }
+
+    /**
+     * User re-submits the task after manager requested changes
+     */
+    public function resubmitTask()
+    {
+        $this->update([
+            'status' => 'submitted_for_review',
+            'submitted_at' => now(),
+            'manager_override_status' => 'none',
+            'manager_override_notes' => null,
+        ]);
+
+        // Create history record
+        $this->histories()->create([
+            'user_id' => auth()->id(),
+            'action' => 'resubmitted',
+            'description' => 'Task re-submitted for review after manager requested changes',
+            'metadata' => ['submitted_at' => now()]
+        ]);
+
+        // Notify manager about re-submission
+        $this->notifyManagerAboutResubmit();
 
         return $this;
     }
@@ -885,6 +980,110 @@ class Task extends Model
             Log::info("User notified about task rejection for task: {$this->id} by manager: {$manager->id}");
         } catch (\Exception $e) {
             Log::error("Failed to notify user about task rejection: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Notify user when task is completed by manager
+     */
+    private function notifyUserAboutCompletion()
+    {
+        try {
+            $user = $this->assignee;
+            if (!$user) return;
+
+            $manager = auth()->user();
+            $notification = new \App\Models\UnifiedNotification([
+                'user_id' => $user->id,
+                'category' => 'task',
+                'type' => 'task_completed',
+                'title' => 'Task Completed',
+                'message' => "Your task '{$this->title}' has been marked as completed by {$manager->name} after client/consultant review.",
+                'task_id' => $this->id,
+                'data' => [
+                    'task_id' => $this->id,
+                    'task_title' => $this->title,
+                    'manager_id' => $manager->id,
+                    'manager_name' => $manager->name,
+                    'project_name' => $this->project->name ?? 'Unknown Project',
+                    'combined_response_status' => $this->combined_response_status
+                ],
+                'is_read' => false
+            ]);
+            $notification->save();
+
+            Log::info("User notified about task completion for task: {$this->id} by manager: {$manager->id}");
+        } catch (\Exception $e) {
+            Log::error("Failed to notify user about task completion: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Notify user when task needs resubmission
+     */
+    private function notifyUserAboutResubmit($notes = null)
+    {
+        try {
+            $user = $this->assignee;
+            if (!$user) return;
+
+            $manager = auth()->user();
+            $notification = new \App\Models\UnifiedNotification([
+                'user_id' => $user->id,
+                'category' => 'task',
+                'type' => 'task_resubmit_required',
+                'title' => 'Task Needs Resubmission',
+                'message' => "Your task '{$this->title}' needs to be resubmitted. Manager {$manager->name} requested changes." . ($notes ? " Notes: {$notes}" : ""),
+                'task_id' => $this->id,
+                'data' => [
+                    'task_id' => $this->id,
+                    'task_title' => $this->title,
+                    'manager_id' => $manager->id,
+                    'manager_name' => $manager->name,
+                    'project_name' => $this->project->name ?? 'Unknown Project',
+                    'notes' => $notes
+                ],
+                'is_read' => false
+            ]);
+            $notification->save();
+
+            Log::info("User notified about resubmit requirement for task: {$this->id} by manager: {$manager->id}");
+        } catch (\Exception $e) {
+            Log::error("Failed to notify user about resubmit requirement: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Notify manager when task is resubmitted by user
+     */
+    private function notifyManagerAboutResubmit()
+    {
+        try {
+            $manager = $this->creator;
+            if (!$manager) return;
+
+            $user = auth()->user();
+            $notification = new \App\Models\UnifiedNotification([
+                'user_id' => $manager->id,
+                'category' => 'task',
+                'type' => 'task_resubmitted',
+                'title' => 'Task Resubmitted',
+                'message' => "Task '{$this->title}' has been resubmitted for review by {$user->name}.",
+                'task_id' => $this->id,
+                'data' => [
+                    'task_id' => $this->id,
+                    'task_title' => $this->title,
+                    'user_id' => $user->id,
+                    'user_name' => $user->name,
+                    'project_name' => $this->project->name ?? 'Unknown Project'
+                ],
+                'is_read' => false
+            ]);
+            $notification->save();
+
+            Log::info("Manager notified about task resubmission for task: {$this->id} by user: {$user->id}");
+        } catch (\Exception $e) {
+            Log::error("Failed to notify manager about task resubmission: " . $e->getMessage());
         }
     }
 

@@ -1330,6 +1330,83 @@ private function sendApprovalEmailViaGmail(Task $task, User $approver)
     }
 
     /**
+     * Manager marks task as completed after client/consultant review
+     */
+    public function markAsCompleted(Request $request, Task $task)
+    {
+        // Only managers can mark as completed
+        if (!Auth::user()->isManager()) {
+            abort(403, 'Access denied. Only managers can mark tasks as completed.');
+        }
+
+        // Only tasks in review after client/consultant reply can be marked as completed
+        if ($task->status !== 'in_review_after_client_consultant_reply') {
+            abort(403, 'Task must be in review after client/consultant reply to be marked as completed.');
+        }
+
+        $request->validate([
+            'completion_notes' => 'nullable|string|max:2000'
+        ]);
+
+        try {
+            $task->markAsCompleted($request->completion_notes);
+            return redirect()->back()->with('success', 'Task marked as completed successfully.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
+    }
+
+    /**
+     * Manager requires task to be re-submitted by user
+     */
+    public function requireResubmit(Request $request, Task $task)
+    {
+        // Only managers can require resubmission
+        if (!Auth::user()->isManager()) {
+            abort(403, 'Access denied. Only managers can require task resubmission.');
+        }
+
+        // Only tasks in review after client/consultant reply can be sent for resubmission
+        if ($task->status !== 'in_review_after_client_consultant_reply') {
+            abort(403, 'Task must be in review after client/consultant reply to require resubmission.');
+        }
+
+        $request->validate([
+            'resubmit_notes' => 'required|string|max:2000'
+        ]);
+
+        try {
+            $task->requireResubmit($request->resubmit_notes);
+            return redirect()->back()->with('success', 'Task sent back for resubmission.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
+    }
+
+    /**
+     * User re-submits task after manager requested changes
+     */
+    public function resubmitTask(Request $request, Task $task)
+    {
+        // Only assigned user can resubmit
+        if ($task->assigned_to !== Auth::id()) {
+            abort(403, 'Access denied. Only the assigned user can resubmit this task.');
+        }
+
+        // Only tasks requiring resubmission can be resubmitted
+        if ($task->status !== 're_submit_required') {
+            abort(403, 'Task is not in resubmission required status.');
+        }
+
+        try {
+            $task->resubmitTask();
+            return redirect()->back()->with('success', 'Task resubmitted for review successfully.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
+    }
+
+    /**
      * Send notification email to engineering@orion-contracting.com via SMTP
      * (same as confirmation emails)
      */

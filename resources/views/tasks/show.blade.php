@@ -776,6 +776,54 @@
                                 </a>
                                 <small class="text-muted text-center mt-2 d-block">You can also assign contractors during email preparation</small>
 
+                            {{-- Status: Re-Submit Required - Manager requested changes --}}
+                            @elseif($task->status === 're_submit_required')
+                                <div class="alert alert-warning text-center mb-3">
+                                    <i class="bx bx-refresh me-2"></i>
+                                    <strong>Resubmission Required</strong><br>
+                                    <small>Manager has requested changes after client/consultant review</small>
+                                </div>
+
+                                @if($task->manager_override_notes)
+                                <div class="card mb-3">
+                                    <div class="card-body">
+                                        <h6 class="text-muted mb-2">Manager Notes:</h6>
+                                        <p class="mb-0">{{ $task->manager_override_notes }}</p>
+                                    </div>
+                                </div>
+                                @endif
+
+                                @if($task->combined_response_status)
+                                <div class="card mb-3">
+                                    <div class="card-body">
+                                        <h6 class="text-muted mb-2">Client/Consultant Feedback:</h6>
+                                        <span class="badge bg-info mb-2">{{ $task->combined_response_status }}</span>
+
+                                        @if($task->client_response_notes)
+                                        <div class="mt-2">
+                                            <strong>Client Notes:</strong>
+                                            <p class="mb-0 text-muted">{{ $task->client_response_notes }}</p>
+                                        </div>
+                                        @endif
+
+                                        @if($task->consultant_response_notes)
+                                        <div class="mt-2">
+                                            <strong>Consultant Notes:</strong>
+                                            <p class="mb-0 text-muted">{{ $task->consultant_response_notes }}</p>
+                                        </div>
+                                        @endif
+                                    </div>
+                                </div>
+                                @endif
+
+                                <form action="{{ route('tasks.resubmit', $task) }}" method="POST">
+                                    @csrf
+                                    <button type="submit" class="btn btn-primary w-100">
+                                        <i class="bx bx-send me-2"></i>Resubmit for Review
+                                    </button>
+                                </form>
+                                <small class="text-muted text-center mt-2 d-block">Make necessary changes and resubmit to continue the workflow</small>
+
                             {{-- Client/Consultant Response Tracking --}}
                             @else
                                 {{-- Show client/consultant response forms --}}
@@ -886,6 +934,53 @@
                                     <i class="bx bx-envelope me-2"></i>
                                     <strong>Ready for Email</strong><br>
                                     <small>Waiting for user to prepare and send confirmation email.</small>
+                                </div>
+
+                            {{-- Status: In Review After Client/Consultant Reply - Manager can complete or request resubmit --}}
+                            @elseif($task->status === 'in_review_after_client_consultant_reply')
+                                <div class="alert alert-info text-center mb-3">
+                                    <i class="bx bx-clipboard me-2"></i>
+                                    <strong>Client/Consultant Review Completed</strong><br>
+                                    <small>Review feedback collected from client and consultant</small>
+                                </div>
+
+                                @if($task->combined_response_status)
+                                <div class="card mb-3">
+                                    <div class="card-body">
+                                        <h6 class="text-muted mb-2">Combined Response Status:</h6>
+                                        <span class="badge bg-info mb-2">{{ $task->combined_response_status }}</span>
+
+                                        @if($task->client_response_notes)
+                                        <div class="mt-2">
+                                            <strong>Client Notes:</strong>
+                                            <p class="mb-0 text-muted">{{ $task->client_response_notes }}</p>
+                                        </div>
+                                        @endif
+
+                                        @if($task->consultant_response_notes)
+                                        <div class="mt-2">
+                                            <strong>Consultant Notes:</strong>
+                                            <p class="mb-0 text-muted">{{ $task->consultant_response_notes }}</p>
+                                        </div>
+                                        @endif
+                                    </div>
+                                </div>
+                                @endif
+
+                                <div class="d-grid gap-2">
+                                    <!-- Mark as Completed Button -->
+                                    <button class="btn btn-success w-100" onclick="markAsCompleted({{ $task->id }})">
+                                        <i class="bx bx-check-circle me-2"></i>Mark as Completed
+                                    </button>
+                                    <small class="text-muted text-center">Task meets requirements - mark as complete</small>
+
+                                    <hr>
+
+                                    <!-- Require Resubmit Button -->
+                                    <button class="btn btn-warning w-100" onclick="requireResubmit({{ $task->id }})">
+                                        <i class="bx bx-refresh me-2"></i>Request Resubmission
+                                    </button>
+                                    <small class="text-muted text-center">Task needs changes - send back to user</small>
                                 </div>
 
                             {{-- Manager Override Options --}}
@@ -1641,6 +1736,73 @@ function sendForClientConsultantApproval(taskId) {
             console.error('Error:', error);
             alert('Error sending task. Please try again.');
         });
+    }
+}
+
+// Mark task as completed (Manager action after client/consultant review)
+function markAsCompleted(taskId) {
+    // Prompt for optional completion notes
+    const notes = prompt('Optional completion notes:');
+
+    if (notes !== null) { // null means user clicked cancel
+        const formData = new FormData();
+        if (notes) {
+            formData.append('completion_notes', notes);
+        }
+
+        fetch(`/tasks/${taskId}/mark-completed`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Task marked as completed successfully!');
+                location.reload();
+            } else {
+                alert('Failed to mark task as completed: ' + (data.message || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error marking task as completed. Please try again.');
+        });
+    }
+}
+
+// Require task resubmission (Manager action after client/consultant review)
+function requireResubmit(taskId) {
+    const notes = prompt('Enter notes explaining what changes are needed:');
+
+    if (notes !== null && notes.trim() !== '') { // require notes
+        const formData = new FormData();
+        formData.append('resubmit_notes', notes);
+
+        fetch(`/tasks/${taskId}/require-resubmit`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Task sent back for resubmission successfully!');
+                location.reload();
+            } else {
+                alert('Failed to require resubmission: ' + (data.message || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error requiring resubmission. Please try again.');
+        });
+    } else if (notes !== null) {
+        alert('Please provide notes explaining what changes are needed.');
     }
 }
 

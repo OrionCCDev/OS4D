@@ -159,6 +159,13 @@ Route::middleware('auth')->group(function () {
         Route::post('tasks/{task}/consultant-response', [TaskController::class, 'updateConsultantResponse'])->name('tasks.consultant-response');
         Route::post('tasks/{task}/finish-review', [TaskController::class, 'finishReview'])->name('tasks.finish-review');
 
+        // Manager actions after client/consultant review
+        Route::post('tasks/{task}/mark-completed', [TaskController::class, 'markAsCompleted'])->name('tasks.mark-completed');
+        Route::post('tasks/{task}/require-resubmit', [TaskController::class, 'requireResubmit'])->name('tasks.require-resubmit');
+
+        // User resubmit action
+        Route::post('tasks/{task}/resubmit', [TaskController::class, 'resubmitTask'])->name('tasks.resubmit');
+
         // Manager override routes
         Route::post('tasks/{task}/manager-override', [TaskController::class, 'managerOverride'])->name('tasks.manager-override');
         Route::post('tasks/{task}/send-approval-email', [TaskController::class, 'sendApprovalEmail'])->name('tasks.send-approval-email');
