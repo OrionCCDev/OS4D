@@ -294,6 +294,12 @@
 
                                 // Use parsed body if available, otherwise use decoded body
                                 $displayBody = ($parsedBody && strlen($parsedBody) > 10) ? $parsedBody : $decodedBody;
+
+                                // Fix any character encoding issues
+                                $displayBody = mb_convert_encoding($displayBody, 'UTF-8', 'UTF-8');
+
+                                // Clean up any remaining character issues
+                                $displayBody = str_replace(['', '=', '=20', '=3D'], ['', '=', ' ', '='], $displayBody);
                             @endphp
 
                             @if($displayBody && strlen($displayBody) > 10)
@@ -317,7 +323,8 @@
                                         Has DOCTYPE: {{ str_contains($displayBody, '<!DOCTYPE html>') ? 'Yes' : 'No' }}<br>
                                         Has HTML tag: {{ str_contains($displayBody, '<html') ? 'Yes' : 'No' }}<br>
                                         Has encoding artifacts: {{ (strpos($displayBody, '=3D') !== false || strpos($displayBody, '=20') !== false) ? 'Yes' : 'No' }}<br>
-                                        First 100 chars: {{ substr($displayBody, 0, 100) }}...
+                                        Has broken characters: {{ strpos($displayBody, '') !== false ? 'Yes' : 'No' }}<br>
+                                        First 200 chars: {{ htmlspecialchars(substr($displayBody, 0, 200)) }}...
                                     </small>
                                 </div>
                             @else
