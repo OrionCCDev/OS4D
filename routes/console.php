@@ -8,6 +8,13 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
+// QUEUE WORKER - Process background jobs (email sending, etc.)
+// This command runs every minute and processes queued jobs
+Schedule::command('queue:work --stop-when-empty --max-time=50')
+    ->everyMinute()
+    ->withoutOverlapping()
+    ->runInBackground();
+
 // NEW EMAIL FETCH COMMAND - This handles everything with proper atomic locking
 // Uses a completely new lock key to avoid conflicts with old code
 Schedule::command('emails:new-fetch --max-results=50')
