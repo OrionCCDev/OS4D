@@ -2,7 +2,170 @@
 
 @section('title', 'Engineering Inbox Email')
 
+@section('head')
+<link rel="stylesheet" href="{{ asset('css/email-content.css') }}">
+<style>
+.email-content-container {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: auto;
+    word-wrap: break-word;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.6;
+    margin: 0 !important;
+    padding: 0 !important;
+}
 
+/* Make the email content use full width */
+.email-content-container .email-container {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+}
+
+.email-content-container .email-body {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 20px !important;
+}
+
+.email-content-container .task-details {
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
+.email-content-container table {
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
+.email-content-container img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 4px;
+}
+
+.email-content-container table {
+    max-width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+}
+
+.email-content-container table td,
+.email-content-container table th {
+    padding: 8px 12px;
+    border: 1px solid #dee2e6;
+    text-align: left;
+}
+
+.email-content-container .email-container {
+    max-width: 100%;
+    margin: 0 auto;
+    background: #ffffff;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.email-content-container .email-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 30px;
+    text-align: center;
+}
+
+.email-content-container .email-body {
+    padding: 30px;
+}
+
+.email-content-container .email-footer {
+    background-color: #f8f9fa;
+    padding: 20px 30px;
+    border-top: 1px solid #e9ecef;
+    text-align: center;
+    font-size: 14px;
+    color: #6c757d;
+}
+
+.email-content-container .task-details {
+    background: white;
+    padding: 25px;
+    border-radius: 12px;
+    margin: 20px 0;
+    border-left: 4px solid #28a745;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.email-content-container .completion-section {
+    background: #d4edda;
+    border: 1px solid #c3e6cb;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 20px 0;
+}
+
+.email-content-container .custom-body {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    margin: 20px 0;
+    border-left: 4px solid #007bff;
+}
+
+.email-content-container .btn {
+    display: inline-block;
+    padding: 12px 24px;
+    background: #28a745;
+    color: white;
+    text-decoration: none;
+    border-radius: 6px;
+    font-weight: bold;
+    margin: 10px 0;
+}
+
+.email-content-container .btn:hover {
+    background: #218838;
+    color: white;
+}
+
+.email-content-container pre {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    max-width: 100%;
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 4px;
+    border: 1px solid #e9ecef;
+}
+
+/* Force full width for all email content */
+.email-content-container * {
+    max-width: 100% !important;
+}
+
+.email-content-container .header,
+.email-content-container .content,
+.email-content-container .footer {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+/* Override any Bootstrap or theme constraints */
+.card-body .email-content-container {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+/* Make sure the container uses full available width */
+.container-fluid .row .col-12 .card .card-body {
+    width: 100% !important;
+    max-width: 100% !important;
+}
+</style>
+@endsection
 
 @section('content')
 <div class="container-fluid">
@@ -121,7 +284,7 @@
                                 <i class="bx bx-file-text me-2"></i>Email Content
                             </h6>
                         </div>
-                        <div class="card-body">
+                        <div class="card-body" style="width: 100%; padding: 20px;">
                             @php
                                 // Get the email body
                                 $emailBody = $email->body;
@@ -204,19 +367,6 @@
                                     @endif
                                 </div>
 
-                                <!-- Debug Info (remove in production) -->
-                                <div class="mt-3 p-3 bg-light border rounded">
-                                    <small class="text-muted">
-                                        <strong>Debug Info:</strong><br>
-                                        Original Body Length: {{ strlen($email->body) }} chars<br>
-                                        Decoded Body Length: {{ strlen($displayBody) }} chars<br>
-                                        Has DOCTYPE: {{ str_contains($displayBody, '<!DOCTYPE html>') ? 'Yes' : 'No' }}<br>
-                                        Has HTML tag: {{ str_contains($displayBody, '<html') ? 'Yes' : 'No' }}<br>
-                                        Has encoding artifacts: {{ (strpos($displayBody, '=3D') !== false || strpos($displayBody, '=20') !== false) ? 'Yes' : 'No' }}<br>
-                                        Has broken characters: {{ strpos($displayBody, '') !== false ? 'Yes' : 'No' }}<br>
-                                        First 200 chars: {{ htmlspecialchars(substr($displayBody, 0, 200)) }}...
-                                    </small>
-                                </div>
                             @else
                                 <div class="text-muted text-center py-4">
                                     <i class="bx bx-file-blank fs-1 mb-3"></i>
