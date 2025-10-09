@@ -1,26 +1,29 @@
-@extends('layouts.app')
-
-@section('title', 'Engineering Inbox Email - ' . Str::limit($email->subject, 50))
-
-@section('head')
-<link href="https://cdn.jsdelivr.net/npm/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Engineering Inbox Email - {{ $email->subject }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
     <style>
-        /* Override layout constraints for full-width email content */
-        .layout-page {
-            width: 100% !important;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
-        .content-wrapper {
-            width: 100% !important;
-            max-width: 100% !important;
-            padding: 0 !important;
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+            line-height: 1.6;
         }
 
         .email-page {
             width: 100%;
             min-height: 100vh;
             padding: 20px;
-            background-color: #f8f9fa;
         }
 
         .email-container {
@@ -28,24 +31,82 @@
             margin: 0 auto;
         }
 
-        .breadcrumb-section {
+        /* Navigation Bar Styles */
+        .navigation-bar {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 20px;
+            padding: 15px 20px;
             border-radius: 8px;
             margin-bottom: 20px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
 
-        .breadcrumb-section h1 {
+        .nav-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .nav-left {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .nav-right h1 {
             font-size: 24px;
             margin: 0;
             font-weight: 600;
+            color: white;
         }
 
-        .breadcrumb-section p {
-            margin: 5px 0 0 0;
-            opacity: 0.9;
+        .nav-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            text-decoration: none;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .nav-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            color: white;
+            text-decoration: none;
+        }
+
+        .nav-btn i {
+            font-size: 16px;
+        }
+
+        .nav-btn span {
+            font-size: 13px;
+        }
+
+        /* Special styling for different button types */
+        .home-btn:hover {
+            background: rgba(76, 175, 80, 0.3);
+        }
+
+        .back-btn:hover {
+            background: rgba(33, 150, 243, 0.3);
+        }
+
+        .prev-btn:hover {
+            background: rgba(255, 152, 0, 0.3);
         }
 
         .email-card {
@@ -276,6 +337,39 @@
                 padding: 10px;
             }
 
+            .nav-content {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 10px;
+            }
+
+            .nav-left {
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+
+            .nav-right {
+                text-align: center;
+            }
+
+            .nav-right h1 {
+                font-size: 20px;
+            }
+
+            .nav-btn {
+                flex: 1;
+                min-width: 120px;
+                justify-content: center;
+            }
+
+            .nav-btn span {
+                display: none;
+            }
+
+            .nav-btn i {
+                font-size: 18px;
+            }
+
             .email-meta {
                 flex-direction: column;
                 gap: 15px;
@@ -293,6 +387,21 @@
 
             .email-content {
                 padding: 20px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .nav-btn {
+                min-width: 80px;
+                padding: 8px 12px;
+            }
+
+            .nav-btn i {
+                font-size: 16px;
+            }
+
+            .nav-right h1 {
+                font-size: 18px;
             }
         }
 
@@ -366,15 +475,31 @@
             opacity: 0.5;
         }
     </style>
-@endsection
-
-@section('content')
-<div class="email-page">
+</head>
+<body>
+    <div class="email-page">
         <div class="email-container">
-            <!-- Breadcrumb Section -->
-            <div class="breadcrumb-section">
-                <h1><i class='bx bx-envelope-open'></i> Engineering Inbox Email</h1>
-                <p>View and manage email details from designers inbox</p>
+            <!-- Navigation Bar -->
+            <div class="navigation-bar">
+                <div class="nav-content">
+                    <div class="nav-left">
+                        <a href="{{ route('dashboard') }}" class="nav-btn home-btn">
+                            <i class='bx bx-home'></i>
+                            <span>Home</span>
+                        </a>
+                        <a href="{{ route('emails.all') }}" class="nav-btn back-btn">
+                            <i class='bx bx-arrow-back'></i>
+                            <span>Back to Inbox</span>
+                        </a>
+                        <button onclick="window.history.back()" class="nav-btn prev-btn">
+                            <i class='bx bx-left-arrow-alt'></i>
+                            <span>Previous Page</span>
+                        </button>
+                    </div>
+                    <div class="nav-right">
+                        <h1><i class='bx bx-envelope-open'></i> Engineering Inbox Email</h1>
+                    </div>
+                </div>
             </div>
 
             <!-- Main Email Card -->
@@ -390,9 +515,6 @@
                         @endif
                     </div>
                     <div class="action-buttons">
-                        <a href="{{ route('emails.all') }}" class="btn btn-secondary">
-                            <i class='bx bx-arrow-back'></i> Back to Inbox
-                        </a>
                         @if($email->status === 'received')
                             <button class="btn btn-success" onclick="markAsRead({{ $email->id }})">
                                 <i class='bx bx-check'></i> Mark as Read
@@ -575,8 +697,8 @@
         </div>
     </div>
 
-@section('scripts')
-<script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
         function markAsRead(emailId) {
             fetch(`/emails/${emailId}/mark-read`, {
                 method: 'POST',
@@ -665,4 +787,5 @@
             }, 5000);
         }
     </script>
-@endsection
+</body>
+</html>
