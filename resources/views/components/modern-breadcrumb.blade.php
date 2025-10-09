@@ -68,3 +68,12 @@
         </div>
     </div>
 </div>
+<style>
+    /* In your modern-breadcrumb component CSS */
+.modern-breadcrumb {
+    position: relative !important;
+    display: block !important;
+    width: 100% !important;
+    z-index: 1 !important;
+}
+</style>
