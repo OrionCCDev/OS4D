@@ -4,6 +4,114 @@
 
 @section('head')
 <link rel="stylesheet" href="{{ asset('css/email-content.css') }}">
+<style>
+.email-content-container {
+    max-width: 100%;
+    overflow-x: auto;
+    word-wrap: break-word;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.6;
+}
+
+.email-content-container img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 4px;
+}
+
+.email-content-container table {
+    max-width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+}
+
+.email-content-container table td,
+.email-content-container table th {
+    padding: 8px 12px;
+    border: 1px solid #dee2e6;
+    text-align: left;
+}
+
+.email-content-container .email-container {
+    max-width: 100%;
+    margin: 0 auto;
+    background: #ffffff;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.email-content-container .email-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 30px;
+    text-align: center;
+}
+
+.email-content-container .email-body {
+    padding: 30px;
+}
+
+.email-content-container .email-footer {
+    background-color: #f8f9fa;
+    padding: 20px 30px;
+    border-top: 1px solid #e9ecef;
+    text-align: center;
+    font-size: 14px;
+    color: #6c757d;
+}
+
+.email-content-container .task-details {
+    background: white;
+    padding: 25px;
+    border-radius: 12px;
+    margin: 20px 0;
+    border-left: 4px solid #28a745;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.email-content-container .completion-section {
+    background: #d4edda;
+    border: 1px solid #c3e6cb;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 20px 0;
+}
+
+.email-content-container .custom-body {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    margin: 20px 0;
+    border-left: 4px solid #007bff;
+}
+
+.email-content-container .btn {
+    display: inline-block;
+    padding: 12px 24px;
+    background: #28a745;
+    color: white;
+    text-decoration: none;
+    border-radius: 6px;
+    font-weight: bold;
+    margin: 10px 0;
+}
+
+.email-content-container .btn:hover {
+    background: #218838;
+    color: white;
+}
+
+.email-content-container pre {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    max-width: 100%;
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 4px;
+    border: 1px solid #e9ecef;
+}
+</style>
 @endsection
 
 @section('content')
@@ -124,13 +232,55 @@
                             </h6>
                         </div>
                         <div class="card-body">
-                            @if($parsedBody && strlen($parsedBody) > 10)
+                            @php
+                                // Decode quoted-printable content
+                                $decodedBody = $email->body;
+
+                                // Handle quoted-printable decoding
+                                if (strpos($decodedBody, '=3D') !== false || strpos($decodedBody, '=20') !== false) {
+                                    // Replace common quoted-printable sequences
+                                    $replacements = [
+                                        '=3D' => '=',
+                                        '=20' => ' ',
+                                        '=0A' => "\n",
+                                        '=0D' => "\r",
+                                        '=3C' => '<',
+                                        '=3E' => '>',
+                                        '=22' => '"',
+                                        '=27' => "'",
+                                        '=2C' => ',',
+                                        '=2E' => '.',
+                                        '=2F' => '/',
+                                        '=3A' => ':',
+                                        '=3B' => ';',
+                                        '=40' => '@',
+                                        '=5B' => '[',
+                                        '=5D' => ']',
+                                        '=5F' => '_',
+                                        '=60' => '`',
+                                        '=7B' => '{',
+                                        '=7D' => '}',
+                                        '=7E' => '~',
+                                    ];
+                                    $decodedBody = str_replace(array_keys($replacements), array_values($replacements), $decodedBody);
+
+                                    // Remove soft line breaks
+                                    $decodedBody = preg_replace('/=\r?\n/', '', $decodedBody);
+
+                                    // Clean up any remaining = at end of lines
+                                    $decodedBody = preg_replace('/=\s*$/', '', $decodedBody);
+
+                                    // Fix double spaces
+                                    $decodedBody = preg_replace('/\s{2,}/', ' ', $decodedBody);
+                                }
+
+                                // Check if we have parsed body or should use decoded body
+                                $displayBody = ($parsedBody && strlen($parsedBody) > 10) ? $parsedBody : $decodedBody;
+                            @endphp
+
+                            @if($displayBody && strlen($displayBody) > 10)
                                 <div class="email-content-container custom-email-style">
-                                    {!! $parsedBody !!}
-                                </div>
-                            @elseif($email->body && strlen($email->body) > 10)
-                                <div class="email-content-container custom-email-style">
-                                    {!! \App\Helpers\EmailHelper::decodeEmailContent($email->body) !!}
+                                    {!! $displayBody !!}
                                 </div>
                             @else
                                 <div class="text-muted text-center py-4">
@@ -205,8 +355,30 @@
                                             </div>
                                             <span class="badge bg-info">Reply</span>
                                         </div>
+                                        @php
+                                            // Decode reply content
+                                            $replyContent = $reply->body;
+
+                                            // Handle quoted-printable decoding for replies
+                                            if (strpos($replyContent, '=3D') !== false || strpos($replyContent, '=20') !== false) {
+                                                $replacements = [
+                                                    '=3D' => '=', '=20' => ' ', '=0A' => "\n", '=0D' => "\r",
+                                                    '=3C' => '<', '=3E' => '>', '=22' => '"', '=27' => "'",
+                                                    '=2C' => ',', '=2E' => '.', '=2F' => '/', '=3A' => ':',
+                                                    '=3B' => ';', '=40' => '@', '=5B' => '[', '=5D' => ']',
+                                                    '=5F' => '_', '=60' => '`', '=7B' => '{', '=7D' => '}',
+                                                    '=7E' => '~',
+                                                ];
+                                                $replyContent = str_replace(array_keys($replacements), array_values($replacements), $replyContent);
+                                                $replyContent = preg_replace('/=\r?\n/', '', $replyContent);
+                                                $replyContent = preg_replace('/=\s*$/', '', $replyContent);
+                                                $replyContent = preg_replace('/\s{2,}/', ' ', $replyContent);
+                                            }
+
+                                            $displayReplyContent = $parsedReplies[$reply->id] ?? $replyContent;
+                                        @endphp
                                         <div class="email-content-container custom-email-style">
-                                            {!! $parsedReplies[$reply->id] ?? \App\Helpers\EmailHelper::decodeEmailContent($reply->body) !!}
+                                            {!! $displayReplyContent !!}
                                         </div>
                                     </div>
                                 </div>
