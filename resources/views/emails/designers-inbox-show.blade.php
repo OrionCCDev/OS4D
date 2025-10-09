@@ -1,125 +1,15 @@
 @extends('layouts.app')
 
-@section('title', 'Designers Inbox Email')
+@section('title', 'Engineering Inbox Email')
 
-@section('head')
-<link rel="stylesheet" href="{{ asset('css/email-content.css') }}">
-<style>
-.email-content-container {
-    max-width: 100%;
-    overflow-x: auto;
-    word-wrap: break-word;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    line-height: 1.6;
-}
 
-.email-content-container img {
-    max-width: 100%;
-    height: auto;
-    border-radius: 4px;
-}
-
-.email-content-container table {
-    max-width: 100%;
-    border-collapse: collapse;
-    margin: 1rem 0;
-}
-
-.email-content-container table td,
-.email-content-container table th {
-    padding: 8px 12px;
-    border: 1px solid #dee2e6;
-    text-align: left;
-}
-
-.email-content-container .email-container {
-    max-width: 100%;
-    margin: 0 auto;
-    background: #ffffff;
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.email-content-container .email-header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    padding: 30px;
-    text-align: center;
-}
-
-.email-content-container .email-body {
-    padding: 30px;
-}
-
-.email-content-container .email-footer {
-    background-color: #f8f9fa;
-    padding: 20px 30px;
-    border-top: 1px solid #e9ecef;
-    text-align: center;
-    font-size: 14px;
-    color: #6c757d;
-}
-
-.email-content-container .task-details {
-    background: white;
-    padding: 25px;
-    border-radius: 12px;
-    margin: 20px 0;
-    border-left: 4px solid #28a745;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-}
-
-.email-content-container .completion-section {
-    background: #d4edda;
-    border: 1px solid #c3e6cb;
-    border-radius: 8px;
-    padding: 20px;
-    margin: 20px 0;
-}
-
-.email-content-container .custom-body {
-    background: white;
-    padding: 20px;
-    border-radius: 8px;
-    margin: 20px 0;
-    border-left: 4px solid #007bff;
-}
-
-.email-content-container .btn {
-    display: inline-block;
-    padding: 12px 24px;
-    background: #28a745;
-    color: white;
-    text-decoration: none;
-    border-radius: 6px;
-    font-weight: bold;
-    margin: 10px 0;
-}
-
-.email-content-container .btn:hover {
-    background: #218838;
-    color: white;
-}
-
-.email-content-container pre {
-    white-space: pre-wrap;
-    word-wrap: break-word;
-    max-width: 100%;
-    background: #f8f9fa;
-    padding: 15px;
-    border-radius: 4px;
-    border: 1px solid #e9ecef;
-}
-</style>
-@endsection
 
 @section('content')
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
             <x-modern-breadcrumb
-                title="Designers Inbox Email"
+                title="Engineering Inbox Email"
                 subtitle="View and manage email details from designers inbox"
                 icon="bx-envelope-open"
                 theme="emails"
@@ -175,7 +65,7 @@
                                     <div class="text-muted">
                                         <div class="mb-1">
                                             <strong>From:</strong> {{ $email->from_email }}
-                                            <span class="badge bg-primary ms-2">Designers Inbox</span>
+                                                <span class="badge bg-primary ms-2">Engineering Inbox</span>
                                         </div>
                                         <div class="mb-1">
                                             <strong>To:</strong> {{ $email->to_email }}
