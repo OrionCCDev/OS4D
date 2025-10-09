@@ -280,7 +280,14 @@
 
                             @if($displayBody && strlen($displayBody) > 10)
                                 <div class="email-content-container custom-email-style">
+                                    @if(!str_contains($displayBody, '<!DOCTYPE html>'))
+                                        <!DOCTYPE html>
+                                        <html lang="en">
+                                    @endif
                                     {!! $displayBody !!}
+                                    @if(!str_contains($displayBody, '</html>'))
+                                        </html>
+                                    @endif
                                 </div>
                             @else
                                 <div class="text-muted text-center py-4">
