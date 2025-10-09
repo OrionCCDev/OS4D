@@ -233,48 +233,66 @@
                         </div>
                         <div class="card-body">
                             @php
-                                // Decode quoted-printable content
-                                $decodedBody = $email->body;
+                                // Get the email body
+                                $emailBody = $email->body;
 
-                                // Handle quoted-printable decoding
-                                if (strpos($decodedBody, '=3D') !== false || strpos($decodedBody, '=20') !== false) {
-                                    // Replace common quoted-printable sequences
+                                // First, try PHP's built-in quoted-printable decode
+                                $decodedBody = quoted_printable_decode($emailBody);
+
+                                // If that didn't work or we still have encoding artifacts, do manual decoding
+                                if (strpos($decodedBody, '=3D') !== false || strpos($decodedBody, '=20') !== false || strpos($decodedBody, '=3C') !== false) {
+                                    // Comprehensive quoted-printable decoding
                                     $replacements = [
-                                        '=3D' => '=',
-                                        '=20' => ' ',
-                                        '=0A' => "\n",
-                                        '=0D' => "\r",
-                                        '=3C' => '<',
-                                        '=3E' => '>',
-                                        '=22' => '"',
-                                        '=27' => "'",
-                                        '=2C' => ',',
-                                        '=2E' => '.',
-                                        '=2F' => '/',
-                                        '=3A' => ':',
-                                        '=3B' => ';',
-                                        '=40' => '@',
-                                        '=5B' => '[',
-                                        '=5D' => ']',
-                                        '=5F' => '_',
-                                        '=60' => '`',
-                                        '=7B' => '{',
-                                        '=7D' => '}',
-                                        '=7E' => '~',
+                                        '=3D' => '=',     // equals sign
+                                        '=20' => ' ',     // space
+                                        '=0A' => "\n",    // line feed
+                                        '=0D' => "\r",    // carriage return
+                                        '=3C' => '<',     // less than
+                                        '=3E' => '>',     // greater than
+                                        '=22' => '"',     // double quote
+                                        '=27' => "'",     // single quote
+                                        '=2C' => ',',     // comma
+                                        '=2E' => '.',     // period
+                                        '=2F' => '/',     // forward slash
+                                        '=3A' => ':',     // colon
+                                        '=3B' => ';',     // semicolon
+                                        '=40' => '@',     // at symbol
+                                        '=5B' => '[',     // left bracket
+                                        '=5D' => ']',     // right bracket
+                                        '=5F' => '_',     // underscore
+                                        '=60' => '`',     // backtick
+                                        '=7B' => '{',     // left brace
+                                        '=7D' => '}',     // right brace
+                                        '=7E' => '~',     // tilde
+                                        '=09' => "\t",    // tab
+                                        '=28' => '(',     // left parenthesis
+                                        '=29' => ')',     // right parenthesis
+                                        '=2B' => '+',     // plus
+                                        '=2D' => '-',     // minus
+                                        '=3F' => '?',     // question mark
+                                        '=21' => '!',     // exclamation
+                                        '=23' => '#',     // hash
+                                        '=24' => '$',     // dollar
+                                        '=25' => '%',     // percent
+                                        '=26' => '&',     // ampersand
+                                        '=2A' => '*',     // asterisk
                                     ];
-                                    $decodedBody = str_replace(array_keys($replacements), array_values($replacements), $decodedBody);
 
-                                    // Remove soft line breaks
+                                    // Apply all replacements
+                                    $decodedBody = str_replace(array_keys($replacements), array_values($replacements), $emailBody);
+
+                                    // Remove soft line breaks (= at end of lines)
                                     $decodedBody = preg_replace('/=\r?\n/', '', $decodedBody);
-
-                                    // Clean up any remaining = at end of lines
                                     $decodedBody = preg_replace('/=\s*$/', '', $decodedBody);
 
-                                    // Fix double spaces
+                                    // Clean up multiple spaces
                                     $decodedBody = preg_replace('/\s{2,}/', ' ', $decodedBody);
+
+                                    // Fix broken words that were split across lines
+                                    $decodedBody = preg_replace('/([a-zA-Z])\s+([a-zA-Z])/', '$1$2', $decodedBody);
                                 }
 
-                                // Check if we have parsed body or should use decoded body
+                                // Use parsed body if available, otherwise use decoded body
                                 $displayBody = ($parsedBody && strlen($parsedBody) > 10) ? $parsedBody : $decodedBody;
                             @endphp
 
@@ -288,6 +306,19 @@
                                     @if(!str_contains($displayBody, '</html>'))
                                         </html>
                                     @endif
+                                </div>
+
+                                <!-- Debug Info (remove in production) -->
+                                <div class="mt-3 p-3 bg-light border rounded">
+                                    <small class="text-muted">
+                                        <strong>Debug Info:</strong><br>
+                                        Original Body Length: {{ strlen($email->body) }} chars<br>
+                                        Decoded Body Length: {{ strlen($displayBody) }} chars<br>
+                                        Has DOCTYPE: {{ str_contains($displayBody, '<!DOCTYPE html>') ? 'Yes' : 'No' }}<br>
+                                        Has HTML tag: {{ str_contains($displayBody, '<html') ? 'Yes' : 'No' }}<br>
+                                        Has encoding artifacts: {{ (strpos($displayBody, '=3D') !== false || strpos($displayBody, '=20') !== false) ? 'Yes' : 'No' }}<br>
+                                        First 100 chars: {{ substr($displayBody, 0, 100) }}...
+                                    </small>
                                 </div>
                             @else
                                 <div class="text-muted text-center py-4">
