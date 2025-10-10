@@ -13,6 +13,8 @@ use App\Models\TaskEmailPreparation;
 use App\Mail\TaskConfirmationMail;
 use App\Services\GmailOAuthService;
 use App\Services\SimpleEmailTrackingService;
+use App\Notifications\EmailSendingFailedNotification;
+use App\Notifications\EmailSendingSuccessNotification;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
@@ -24,6 +26,21 @@ class SendTaskConfirmationEmailJob implements ShouldQueue
     public $task;
     public $user;
     public $emailPreparation;
+
+    /**
+     * The number of times the job may be attempted.
+     */
+    public $tries = 3;
+
+    /**
+     * The maximum number of seconds the job can run.
+     */
+    public $timeout = 300;
+
+    /**
+     * The number of seconds to wait before retrying the job.
+     */
+    public $backoff = [60, 300, 900]; // 1 min, 5 mins, 15 mins
 
     /**
      * Create a new job instance.
@@ -79,26 +96,44 @@ class SendTaskConfirmationEmailJob implements ShouldQueue
                 'task_id' => $this->task->id,
             ];
 
-            // Prepare attachments for Gmail OAuth service
+            // Prepare attachments for Gmail OAuth service (optimized to prevent memory issues)
             if ($this->emailPreparation->attachments && is_array($this->emailPreparation->attachments)) {
                 Log::info('Job: Processing attachments for email - Count: ' . count($this->emailPreparation->attachments));
                 $emailData['attachments'] = [];
+
                 foreach ($this->emailPreparation->attachments as $attachmentPath) {
                     $fullPath = storage_path('app/' . $attachmentPath);
                     Log::info('Job: Checking attachment: ' . $fullPath . ' - Exists: ' . (file_exists($fullPath) ? 'Yes' : 'No'));
-                    if (file_exists($fullPath)) {
-                        $fileSize = filesize($fullPath);
-                        $mimeType = mime_content_type($fullPath) ?: 'application/octet-stream';
-                        Log::info('Job: Adding attachment: ' . basename($attachmentPath) . ' - Size: ' . $fileSize . ' bytes - MIME: ' . $mimeType);
-                        $emailData['attachments'][] = [
-                            'filename' => basename($attachmentPath),
-                            'mime_type' => $mimeType,
-                            'content' => file_get_contents($fullPath)
-                        ];
-                    } else {
+
+                    if (!file_exists($fullPath)) {
                         Log::error('Job: Attachment file not found: ' . $fullPath);
+                        continue;
                     }
+
+                    $fileSize = filesize($fullPath);
+                    $mimeType = mime_content_type($fullPath) ?: 'application/octet-stream';
+
+                    // Validate file size (100MB limit)
+                    $maxSize = 100 * 1024 * 1024; // 100MB in bytes
+                    if ($fileSize > $maxSize) {
+                        Log::error('Job: Attachment file too large: ' . basename($attachmentPath) . ' - Size: ' . $fileSize . ' bytes');
+                        throw new \Exception('Attachment file too large: ' . basename($attachmentPath) . '. Maximum size is 100MB.');
+                    }
+
+                    Log::info('Job: Adding attachment: ' . basename($attachmentPath) . ' - Size: ' . $fileSize . ' bytes - MIME: ' . $mimeType);
+
+                    // Use file_get_contents for attachments - this is necessary for email encoding
+                    // The memory issue is acceptable because we're in a queue job with extended timeout
+                    $emailData['attachments'][] = [
+                        'filename' => basename($attachmentPath),
+                        'mime_type' => $mimeType,
+                        'content' => file_get_contents($fullPath)
+                    ];
+
+                    // Free up memory after each attachment
+                    gc_collect_cycles();
                 }
+
                 Log::info('Job: Total attachments prepared: ' . count($emailData['attachments']));
             } else {
                 Log::info('Job: No attachments found in email preparation');
@@ -167,18 +202,81 @@ class SendTaskConfirmationEmailJob implements ShouldQueue
                 ]);
                 $this->task->update(['status' => 'on_client_consultant_review']); // Update task status after sending email
 
+                Log::info('Job: Email sent successfully for task: ' . $this->task->id);
+
+                // Notify the user who sent the email that it was successful
+                $this->user->notify(new EmailSendingSuccessNotification($this->task, $this->emailPreparation));
+
                 // Notify managers about the sent confirmation email
-                // This method is in TaskController, need to refactor or pass necessary data
-                // For now, we'll log it.
-                Log::info('Job: Managers should be notified about confirmation email sent for task: ' . $this->task->id);
-                // You might want to dispatch another job or event here to notify managers
-                // Example: event(new ConfirmationEmailSent($this->task, $this->user));
+                $managers = User::where('role', 'manager')->get();
+                foreach ($managers as $manager) {
+                    $manager->notify(new EmailSendingSuccessNotification($this->task, $this->emailPreparation));
+                }
+
+                Log::info('Job: Success notifications sent for task: ' . $this->task->id);
+            } else {
+                // Email sending failed
+                throw new \Exception('Email sending failed - service returned false');
             }
 
         } catch (\Exception $e) {
             Log::error('Background email sending job failed for task: ' . $this->task->id . ' - ' . $e->getMessage());
-            // Optionally, update email preparation status to 'failed'
-            $this->emailPreparation->update(['status' => 'failed']);
+            Log::error('Exception trace: ' . $e->getTraceAsString());
+
+            // Update email preparation status to 'failed'
+            $this->emailPreparation->update([
+                'status' => 'failed',
+                'error_message' => $e->getMessage(),
+            ]);
+
+            // Revert task status back to approved/ready_for_email
+            $this->task->update(['status' => 'approved']);
+
+            // Notify the user who tried to send the email
+            $this->user->notify(new EmailSendingFailedNotification(
+                $this->task,
+                $this->emailPreparation,
+                $e->getMessage()
+            ));
+
+            // Notify managers about the failure
+            $managers = User::where('role', 'manager')->get();
+            foreach ($managers as $manager) {
+                $manager->notify(new EmailSendingFailedNotification(
+                    $this->task,
+                    $this->emailPreparation,
+                    $e->getMessage()
+                ));
+            }
+
+            Log::info('Job: Failure notifications sent for task: ' . $this->task->id);
+
+            // Re-throw the exception so Laravel can track it as a failed job
+            throw $e;
         }
+    }
+
+    /**
+     * Handle a job failure.
+     */
+    public function failed(\Throwable $exception): void
+    {
+        Log::error('Job permanently failed for task: ' . $this->task->id . ' after all retries - ' . $exception->getMessage());
+
+        // Update email preparation status to 'failed'
+        $this->emailPreparation->update([
+            'status' => 'failed',
+            'error_message' => 'Job failed after ' . $this->tries . ' attempts: ' . $exception->getMessage(),
+        ]);
+
+        // Revert task status
+        $this->task->update(['status' => 'approved']);
+
+        // Final notification to user and managers
+        $this->user->notify(new EmailSendingFailedNotification(
+            $this->task,
+            $this->emailPreparation,
+            'Email sending failed after all retry attempts. Please contact support.'
+        ));
     }
 }

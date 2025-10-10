@@ -125,6 +125,16 @@ Route::middleware('auth')->group(function () {
     // Admin: Users CRUD
     Route::middleware('admin')->prefix('admin')->name('admin.')->group(function () {
         Route::resource('users', UsersController::class)->except(['show']);
+
+        // Queue Monitor Routes (managers only)
+        Route::get('/queue-monitor', [App\Http\Controllers\QueueMonitorController::class, 'index'])->name('queue.monitor');
+        Route::get('/queue-monitor/stats', [App\Http\Controllers\QueueMonitorController::class, 'getStats'])->name('queue.stats');
+        Route::post('/queue-monitor/retry/{jobId}', [App\Http\Controllers\QueueMonitorController::class, 'retryJob'])->name('queue.retry');
+        Route::post('/queue-monitor/retry-all', [App\Http\Controllers\QueueMonitorController::class, 'retryAllJobs'])->name('queue.retry-all');
+        Route::post('/queue-monitor/delete/{jobId}', [App\Http\Controllers\QueueMonitorController::class, 'deleteJob'])->name('queue.delete');
+        Route::post('/queue-monitor/flush', [App\Http\Controllers\QueueMonitorController::class, 'flushFailedJobs'])->name('queue.flush');
+        Route::post('/queue-monitor/reset-stuck-emails', [App\Http\Controllers\QueueMonitorController::class, 'resetStuckEmails'])->name('queue.reset-stuck-emails');
+        Route::post('/queue-monitor/retry-email/{emailId}', [App\Http\Controllers\QueueMonitorController::class, 'retryEmail'])->name('queue.retry-email');
     });
 
     // Project workflow resources - Manager onlyst
