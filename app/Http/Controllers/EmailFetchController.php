@@ -842,13 +842,24 @@ class EmailFetchController extends Controller
                 ], 501);
             }
 
-            // For local attachments, check if file exists in storage
-            $storagePath = storage_path('app/email-attachments/' . $filename);
+            // Check different storage locations for the file
+            $storagePaths = [
+                storage_path('app/email-attachments/' . $filename),
+                storage_path('app/' . $filename),
+            ];
 
-            if (file_exists($storagePath)) {
-                return response()->download($storagePath, $filename, [
-                    'Content-Type' => $mimeType,
-                ]);
+            // If attachment has file_path, use that
+            if (isset($attachment['file_path'])) {
+                $storagePaths[] = storage_path('app/' . $attachment['file_path']);
+            }
+
+            // Try each path
+            foreach ($storagePaths as $storagePath) {
+                if (file_exists($storagePath)) {
+                    return response()->download($storagePath, $filename, [
+                        'Content-Type' => $mimeType,
+                    ]);
+                }
             }
 
             // If file doesn't exist locally, return error

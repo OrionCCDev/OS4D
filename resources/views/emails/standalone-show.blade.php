@@ -685,11 +685,39 @@
                 </div>
 
                 <!-- Attachments Section -->
-                @if(!empty($email->attachments))
+                @php
+                    // Check for attachments in email record or task email preparation
+                    $attachments = $email->attachments ?? [];
+
+                    // If this is a sent email and no attachments in email record, check task email preparation
+                    if (empty($attachments) && $email->task_id) {
+                        $taskEmailPrep = \App\Models\TaskEmailPreparation::where('task_id', $email->task_id)
+                            ->where('status', 'sent')
+                            ->first();
+                        if ($taskEmailPrep && !empty($taskEmailPrep->attachments)) {
+                            // Convert file paths to attachment format
+                            $attachments = [];
+                            foreach ($taskEmailPrep->attachments as $index => $filePath) {
+                                $fullPath = storage_path('app/' . $filePath);
+                                if (file_exists($fullPath)) {
+                                    $attachments[] = [
+                                        'filename' => basename($filePath),
+                                        'mime_type' => mime_content_type($fullPath) ?: 'application/octet-stream',
+                                        'size' => filesize($fullPath),
+                                        'file_path' => $filePath,
+                                        'source' => 'task_preparation'
+                                    ];
+                                }
+                            }
+                        }
+                    }
+                @endphp
+
+                @if(!empty($attachments))
                 <div class="attachments-section">
-                    <h4><i class='bx bx-paperclip'></i> Attachments ({{ count($email->attachments) }})</h4>
+                    <h4><i class='bx bx-paperclip'></i> Attachments ({{ count($attachments) }})</h4>
                     <div class="attachments-grid">
-                        @foreach($email->attachments as $index => $attachment)
+                        @foreach($attachments as $index => $attachment)
                         <div class="attachment-item">
                             <div class="attachment-icon">
                                 @php

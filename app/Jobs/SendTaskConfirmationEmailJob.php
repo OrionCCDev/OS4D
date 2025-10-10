@@ -58,8 +58,8 @@ class SendTaskConfirmationEmailJob implements ShouldQueue
                 $ccEmails[] = 'engineering@orion-contracting.com';
             }
 
-            // Add all users (role: 'user') to CC so they get notifications
-            $usersToNotify = User::where('role', 'user')->get();
+            // Add all users (role: 'user') to CC so they get notifications, EXCEPT the sender
+            $usersToNotify = User::where('role', 'user')->where('id', '!=', $this->user->id)->get();
             foreach ($usersToNotify as $userToNotify) {
                 if (!in_array($userToNotify->email, $ccEmails)) {
                     $ccEmails[] = $userToNotify->email;
