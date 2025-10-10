@@ -409,29 +409,86 @@
         .attachments-section,
         .replies-section {
             padding: 20px;
-            border-top: 1px solid #dee2e6;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .attachments-section h4,
+        .replies-section h4 {
+            color: #495057;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+
+        .attachments-grid {
+            display: grid;
+            gap: 15px;
         }
 
         .attachment-item {
             display: flex;
             align-items: center;
-            padding: 10px;
-            border: 1px solid #dee2e6;
-            border-radius: 4px;
-            margin-bottom: 10px;
-            background: #f8f9fa;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .attachment-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border-color: #007bff;
         }
 
         .attachment-icon {
-            width: 40px;
-            height: 40px;
-            background: #e9ecef;
-            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
             margin-right: 15px;
+            color: white;
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+
+        .attachment-details {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .attachment-name {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 4px;
+            word-break: break-word;
+        }
+
+        .attachment-meta {
+            font-size: 12px;
             color: #6c757d;
+        }
+
+        .attachment-actions {
+            display: flex;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .attachment-actions .btn {
+            padding: 6px 12px;
+            font-size: 12px;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+
+        .attachment-actions .btn:hover {
+            transform: translateY(-1px);
         }
 
         .reply-item {
@@ -545,9 +602,13 @@
                             <div class="meta-row">
                                 <strong>To:</strong> {{ $email->to_email }}
                             </div>
-                            @if(!empty($email->cc_emails))
+                            @if(!empty($email->cc_emails) && is_array($email->cc_emails))
                             <div class="meta-row">
-                                <strong>CC:</strong> {{ implode(', ', $email->cc_emails) }}
+                                <strong>CC:</strong> {{ implode(', ', array_filter($email->cc_emails)) }}
+                            </div>
+                            @elseif(!empty($email->cc))
+                            <div class="meta-row">
+                                <strong>CC:</strong> {{ $email->cc }}
                             </div>
                             @endif
                             <div class="meta-row">
@@ -627,22 +688,55 @@
                 @if(!empty($email->attachments))
                 <div class="attachments-section">
                     <h4><i class='bx bx-paperclip'></i> Attachments ({{ count($email->attachments) }})</h4>
-                    @foreach($email->attachments as $attachment)
-                    <div class="attachment-item">
-                        <div class="attachment-icon">
-                            <i class='bx bx-file'></i>
-                        </div>
-                        <div>
-                            <div style="font-weight: 600;">{{ $attachment['filename'] ?? 'Unknown File' }}</div>
-                            <small style="color: #6c757d;">
-                                {{ $attachment['mime_type'] ?? 'Unknown Type' }}
-                                @if(isset($attachment['size']))
-                                    • {{ number_format($attachment['size'] / 1024, 1) }} KB
+                    <div class="attachments-grid">
+                        @foreach($email->attachments as $index => $attachment)
+                        <div class="attachment-item">
+                            <div class="attachment-icon">
+                                @php
+                                    $filename = $attachment['filename'] ?? 'Unknown File';
+                                    $extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+                                    $mimeType = $attachment['mime_type'] ?? '';
+
+                                    // Determine icon based on file type
+                                    $icon = 'bx-file';
+                                    if (in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'])) {
+                                        $icon = 'bx-image';
+                                    } elseif (in_array($extension, ['pdf'])) {
+                                        $icon = 'bx-file-blank';
+                                    } elseif (in_array($extension, ['doc', 'docx'])) {
+                                        $icon = 'bx-file-doc';
+                                    } elseif (in_array($extension, ['xls', 'xlsx'])) {
+                                        $icon = 'bx-file-blank';
+                                    } elseif (in_array($extension, ['zip', 'rar', '7z'])) {
+                                        $icon = 'bx-archive';
+                                    } elseif (in_array($extension, ['txt', 'log'])) {
+                                        $icon = 'bx-file-blank';
+                                    }
+                                @endphp
+                                <i class='bx {{ $icon }}'></i>
+                            </div>
+                            <div class="attachment-details">
+                                <div class="attachment-name">{{ $filename }}</div>
+                                <div class="attachment-meta">
+                                    {{ $mimeType ?: 'Unknown Type' }}
+                                    @if(isset($attachment['size']))
+                                        • {{ number_format($attachment['size'] / 1024, 1) }} KB
+                                    @endif
+                                </div>
+                            </div>
+                            <div class="attachment-actions">
+                                @if(in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'pdf', 'txt']))
+                                <button class="btn btn-sm btn-outline-primary" onclick="previewAttachment({{ $email->id }}, {{ $index }}, '{{ $filename }}', '{{ $mimeType }}')">
+                                    <i class='bx bx-show'></i> Preview
+                                </button>
                                 @endif
-                            </small>
+                                <button class="btn btn-sm btn-primary" onclick="downloadAttachment({{ $email->id }}, {{ $index }}, '{{ $filename }}')">
+                                    <i class='bx bx-download'></i> Download
+                                </button>
+                            </div>
                         </div>
+                        @endforeach
                     </div>
-                    @endforeach
                 </div>
                 @endif
 
@@ -785,6 +879,98 @@
                 const alert = document.querySelector('.alert');
                 if (alert) alert.remove();
             }, 5000);
+        }
+
+        // Attachment preview function
+        function previewAttachment(emailId, attachmentIndex, filename, mimeType) {
+            // Create preview modal
+            const modalHtml = `
+                <div class="modal fade" id="attachmentPreviewModal" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">
+                                    <i class='bx bx-show'></i> Preview: ${filename}
+                                </h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body text-center">
+                                <div class="preview-loading">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                    <p class="mt-2">Loading preview...</p>
+                                </div>
+                                <div class="preview-content" style="display: none;">
+                                    <iframe id="previewFrame" style="width: 100%; height: 500px; border: none;"></iframe>
+                                </div>
+                                <div class="preview-error" style="display: none;">
+                                    <i class='bx bx-error-circle' style="font-size: 48px; color: #dc3545;"></i>
+                                    <p class="mt-2">Preview not available for this file type</p>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                <button type="button" class="btn btn-primary" onclick="downloadAttachment(${emailId}, ${attachmentIndex}, '${filename}')">
+                                    <i class='bx bx-download'></i> Download
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Remove existing modal if any
+            const existingModal = document.getElementById('attachmentPreviewModal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+
+            // Add modal to page
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('attachmentPreviewModal'));
+            modal.show();
+
+            // Load preview content
+            const previewUrl = `/emails/${emailId}/attachment/${attachmentIndex}/preview`;
+            const previewFrame = document.getElementById('previewFrame');
+            const loadingDiv = document.querySelector('.preview-loading');
+            const contentDiv = document.querySelector('.preview-content');
+            const errorDiv = document.querySelector('.preview-error');
+
+            previewFrame.onload = function() {
+                loadingDiv.style.display = 'none';
+                contentDiv.style.display = 'block';
+            };
+
+            previewFrame.onerror = function() {
+                loadingDiv.style.display = 'none';
+                errorDiv.style.display = 'block';
+            };
+
+            // Set preview source
+            previewFrame.src = previewUrl;
+        }
+
+        // Attachment download function
+        function downloadAttachment(emailId, attachmentIndex, filename) {
+            // Create download link
+            const downloadUrl = `/emails/${emailId}/attachment/${attachmentIndex}/download`;
+
+            // Create temporary link element
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            link.download = filename;
+            link.style.display = 'none';
+
+            // Add to page and click
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            showAlert('success', `Download started for ${filename}`);
         }
     </script>
 </body>

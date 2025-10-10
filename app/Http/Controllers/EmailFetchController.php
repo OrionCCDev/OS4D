@@ -757,4 +757,112 @@ class EmailFetchController extends Controller
         }
     }
 
+    /**
+     * Preview email attachment
+     */
+    public function previewAttachment($emailId, $attachmentIndex)
+    {
+        $user = Auth::user();
+
+        if (!$user->isManager()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Access denied. Only managers can view attachments.'
+            ], 403);
+        }
+
+        try {
+            $email = Email::findOrFail($emailId);
+            $attachments = $email->attachments ?? [];
+
+            if (!isset($attachments[$attachmentIndex])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Attachment not found.'
+                ], 404);
+            }
+
+            $attachment = $attachments[$attachmentIndex];
+            $filename = $attachment['filename'] ?? 'unknown';
+            $mimeType = $attachment['mime_type'] ?? 'application/octet-stream';
+            $attachmentId = $attachment['attachment_id'] ?? null;
+
+            // For Gmail attachments, we need to fetch from Gmail API
+            if ($attachmentId && $email->email_source === 'gmail') {
+                // This would require Gmail API integration
+                // For now, return a placeholder
+                return response('<div style="padding: 50px; text-align: center;"><h4>Gmail Attachment Preview</h4><p>Preview not available for Gmail attachments.</p><p>Please download the file to view it.</p></div>');
+            }
+
+            // For local attachments or if no attachment_id
+            return response('<div style="padding: 50px; text-align: center;"><h4>Attachment Preview</h4><p>Preview not available for this file type.</p><p>Please download the file to view it.</p></div>');
+
+        } catch (\Exception $e) {
+            return response('<div style="padding: 50px; text-align: center;"><h4>Error</h4><p>Unable to load attachment preview.</p></div>');
+        }
+    }
+
+    /**
+     * Download email attachment
+     */
+    public function downloadAttachment($emailId, $attachmentIndex)
+    {
+        $user = Auth::user();
+
+        if (!$user->isManager()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Access denied. Only managers can download attachments.'
+            ], 403);
+        }
+
+        try {
+            $email = Email::findOrFail($emailId);
+            $attachments = $email->attachments ?? [];
+
+            if (!isset($attachments[$attachmentIndex])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Attachment not found.'
+                ], 404);
+            }
+
+            $attachment = $attachments[$attachmentIndex];
+            $filename = $attachment['filename'] ?? 'unknown';
+            $mimeType = $attachment['mime_type'] ?? 'application/octet-stream';
+            $attachmentId = $attachment['attachment_id'] ?? null;
+
+            // For Gmail attachments, we need to fetch from Gmail API
+            if ($attachmentId && $email->email_source === 'gmail') {
+                // This would require Gmail API integration to fetch the actual file
+                // For now, return a placeholder response
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Gmail attachment download not yet implemented. Please contact administrator.'
+                ], 501);
+            }
+
+            // For local attachments, check if file exists in storage
+            $storagePath = storage_path('app/email-attachments/' . $filename);
+
+            if (file_exists($storagePath)) {
+                return response()->download($storagePath, $filename, [
+                    'Content-Type' => $mimeType,
+                ]);
+            }
+
+            // If file doesn't exist locally, return error
+            return response()->json([
+                'success' => false,
+                'message' => 'Attachment file not found on server.'
+            ], 404);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error downloading attachment: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
 }
