@@ -1294,13 +1294,41 @@ private function sendApprovalEmailViaGmail(Task $task, User $approver)
     }
 
     /**
-     * Finish review
+     * Finish review - Auto-saves client and consultant responses
      */
-    public function finishReview(Task $task)
+    public function finishReview(Request $request, Task $task)
     {
         try {
+            // First, save client response if provided
+            if ($request->has('client_response_status')) {
+                $request->validate([
+                    'client_response_status' => 'required|in:pending,approved,rejected',
+                    'client_response_notes' => 'nullable|string|max:2000'
+                ]);
+
+                $task->updateClientResponse(
+                    $request->client_response_status,
+                    $request->client_response_notes
+                );
+            }
+
+            // Then, save consultant response if provided
+            if ($request->has('consultant_response_status')) {
+                $request->validate([
+                    'consultant_response_status' => 'required|in:pending,approved,rejected',
+                    'consultant_response_notes' => 'nullable|string|max:2000'
+                ]);
+
+                $task->updateConsultantResponse(
+                    $request->consultant_response_status,
+                    $request->consultant_response_notes
+                );
+            }
+
+            // Finally, finish the review and notify manager
             $task->finishReview();
-            return redirect()->back()->with('success', 'Review finished successfully. Manager has been notified.');
+
+            return redirect()->back()->with('success', 'Client and consultant responses saved. Review finished successfully. Manager has been notified.');
         } catch (\Exception $e) {
             return redirect()->back()->with('error', $e->getMessage());
         }

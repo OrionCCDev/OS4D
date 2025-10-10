@@ -867,14 +867,14 @@
                                         </div>
                                         @endif
 
-                                        <!-- Finish Review Button -->
-                                        <form action="{{ route('tasks.finish-review', $task) }}" method="POST">
+                                        <!-- Finish Review Button - Will save both responses automatically -->
+                                        <form id="finishReviewForm" action="{{ route('tasks.finish-review', $task) }}" method="POST">
                                             @csrf
                                             <button type="submit" class="btn btn-warning w-100">
                                                 <i class="bx bx-check-double me-2"></i>Finish Review & Notify Manager
                                             </button>
                                         </form>
-                                        <small class="text-muted text-center mt-2 d-block">Click when you've recorded all responses</small>
+                                        <small class="text-muted text-center mt-2 d-block">Will automatically save current client & consultant responses</small>
                                     </div>
                                 </div>
                             @endif
@@ -1928,4 +1928,59 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
     </div>
 </div>
+
+<script>
+// Auto-save client and consultant responses when finishing review
+document.addEventListener('DOMContentLoaded', function() {
+    const finishReviewForm = document.getElementById('finishReviewForm');
+
+    if (finishReviewForm) {
+        finishReviewForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            // Get current values from the dropdowns and textareas
+            const clientStatusSelect = document.querySelector('select[name="client_response_status"]');
+            const clientNotesTextarea = document.querySelector('textarea[name="client_response_notes"]');
+            const consultantStatusSelect = document.querySelector('select[name="consultant_response_status"]');
+            const consultantNotesTextarea = document.querySelector('textarea[name="consultant_response_notes"]');
+
+            // Create hidden inputs to send with the finish review form
+            if (clientStatusSelect) {
+                const hiddenClientStatus = document.createElement('input');
+                hiddenClientStatus.type = 'hidden';
+                hiddenClientStatus.name = 'client_response_status';
+                hiddenClientStatus.value = clientStatusSelect.value;
+                finishReviewForm.appendChild(hiddenClientStatus);
+            }
+
+            if (clientNotesTextarea) {
+                const hiddenClientNotes = document.createElement('input');
+                hiddenClientNotes.type = 'hidden';
+                hiddenClientNotes.name = 'client_response_notes';
+                hiddenClientNotes.value = clientNotesTextarea.value;
+                finishReviewForm.appendChild(hiddenClientNotes);
+            }
+
+            if (consultantStatusSelect) {
+                const hiddenConsultantStatus = document.createElement('input');
+                hiddenConsultantStatus.type = 'hidden';
+                hiddenConsultantStatus.name = 'consultant_response_status';
+                hiddenConsultantStatus.value = consultantStatusSelect.value;
+                finishReviewForm.appendChild(hiddenConsultantStatus);
+            }
+
+            if (consultantNotesTextarea) {
+                const hiddenConsultantNotes = document.createElement('input');
+                hiddenConsultantNotes.type = 'hidden';
+                hiddenConsultantNotes.name = 'consultant_response_notes';
+                hiddenConsultantNotes.value = consultantNotesTextarea.value;
+                finishReviewForm.appendChild(hiddenConsultantNotes);
+            }
+
+            // Now submit the form
+            finishReviewForm.submit();
+        });
+    }
+});
+</script>
 @endsection

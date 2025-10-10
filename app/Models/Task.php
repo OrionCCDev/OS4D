@@ -919,7 +919,7 @@ class Task extends Model
     /**
      * Notify manager about review finish
      */
-    private function notifyManagerAboutReviewFinish()
+private function notifyManagerAboutReviewFinish()
     {
         try {
             $manager = $this->creator;
@@ -928,16 +928,20 @@ class Task extends Model
             $notification = new \App\Models\UnifiedNotification([
                 'user_id' => $manager->id,
                 'type' => 'review_finished',
-                'title' => 'Review Finished',
-                'message' => "Task review finished with status: {$this->combined_response_status}",
+                'title' => 'Client/Consultant Review Completed',
+                'message' => "Task '{$this->title}' review has been finished. Status: {$this->combined_response_status}. Click to review and complete the task.",
                 'data' => [
                     'task_id' => $this->id,
                     'task_title' => $this->title,
                     'project_name' => $this->project->name ?? 'Unknown Project',
                     'combined_response_status' => $this->combined_response_status,
                     'client_status' => $this->client_response_status,
-                    'consultant_status' => $this->consultant_response_status
+                    'consultant_status' => $this->consultant_response_status,
+                    'client_notes' => $this->client_response_notes,
+                    'consultant_notes' => $this->consultant_response_notes,
+                    'action_url' => route('tasks.show', $this->id)
                 ],
+                'action_url' => route('tasks.show', $this->id),
                 'is_read' => false
             ]);
             $notification->save();
