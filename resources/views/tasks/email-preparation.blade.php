@@ -501,21 +501,26 @@
                                 Select Email Template
                                         </div>
                             <div class="template-options">
+                                <div class="template-option" data-template="none">
+                                    <div class="template-icon">📄</div>
+                                    <div class="template-title">None (Plain Text)</div>
+                                    <div class="template-description">Start with a blank email template</div>
+                                    </div>
                                 <div class="template-option" data-template="project_completion">
                                     <div class="template-icon">✅</div>
                                     <div class="template-title">Project Completion</div>
                                     <div class="template-description">Notify client of successful project completion</div>
-                                    </div>
+                                </div>
                                 <div class="template-option" data-template="task_update">
                                     <div class="template-icon">📝</div>
                                     <div class="template-title">Task Update</div>
                                     <div class="template-description">Provide progress update to client</div>
-                                </div>
+                                        </div>
                                 <div class="template-option" data-template="approval_request">
                                     <div class="template-icon">✋</div>
                                     <div class="template-title">Approval Request</div>
                                     <div class="template-description">Request client approval for completed work</div>
-                                        </div>
+                                </div>
                                 <div class="template-option" data-template="design_ready">
                                     <div class="template-icon">🎨</div>
                                     <div class="template-title">Design Ready</div>
@@ -553,10 +558,12 @@
                                        class="form-control"
                                        id="cc_emails"
                                        name="cc_emails"
-                                       value="{{ old('cc_emails', 'engineering@orion-contracting.com') }}"
+                                       value="{{ old('cc_emails', 'engineering@orion-contracting.com' . ($task->creator?->email ? ', ' . $task->creator->email : '')) }}"
                                        placeholder="Enter CC email addresses (comma-separated)">
                                 <div id="cc_suggestions" class="suggestion-list" style="display: none;"></div>
-                                <small class="text-muted">engineering@orion-contracting.com is automatically added to track all emails</small>
+                                <small class="text-muted">
+                                    engineering@orion-contracting.com and {{ $task->creator?->name ?? 'task creator' }} are automatically added to track all emails
+                                </small>
                             </div>
 
                             <div class="form-group">
@@ -708,6 +715,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const logoUrl = '{{ asset("uploads/logo-blue.webp") }}';
 
     const emailTemplates = {
+        none: {
+            subject: '',
+            plainTextBody: '',
+            body: ''
+        },
         project_completion: {
             subject: '✅ Project Completed: ' + taskTitle,
             plainTextBody: '✅ PROJECT COMPLETED SUCCESSFULLY!\n\n' +
@@ -814,6 +826,21 @@ document.addEventListener('DOMContentLoaded', function() {
         },
         approval_request: {
             subject: '✋ Approval Required: ' + taskTitle,
+            plainTextBody: '✋ YOUR APPROVAL IS NEEDED\n\n' +
+                'Dear Valued Client,\n\n' +
+                'Your approval is required for the project "' + taskTitle + '".\n\n' +
+                '⚠️ ACTION REQUIRED:\n' +
+                '• Project: ' + taskTitle + '\n' +
+                '• Task ID: #' + taskId + '\n' +
+                '• Request Date: ' + new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) + '\n\n' +
+                '📋 WHAT WE NEED FROM YOU:\n' +
+                '• Review the completed work\n' +
+                '• Provide your approval or feedback\n' +
+                '• Notify us of any required changes\n\n' +
+                'Please review and respond at your earliest convenience.\n\n' +
+                'Thank you,\n' +
+                'The ' + companyName + ' Team\n\n' +
+                '📧 engineering@orion-contracting.com | 🌐 www.orion-contracting.com',
             body: '<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f4f6f9; padding: 20px;">' +
                 '<div style="background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%); padding: 40px 20px; text-align: center; border-radius: 12px 12px 0 0;">' +
                     '<img src="' + logoUrl + '" alt="' + companyName + '" style="max-width: 200px; height: auto; margin-bottom: 20px;">' +
@@ -846,6 +873,22 @@ document.addEventListener('DOMContentLoaded', function() {
         },
         design_ready: {
             subject: '🎨 Design Ready for Review: ' + taskTitle,
+            plainTextBody: '🎨 DESIGN READY FOR YOUR REVIEW\n\n' +
+                'Dear Valued Client,\n\n' +
+                'Great news! The design for "' + taskTitle + '" is ready for your review!\n\n' +
+                '🎯 DESIGN DETAILS:\n' +
+                '• Project: ' + taskTitle + '\n' +
+                '• Task ID: #' + taskId + '\n' +
+                '• Completion Date: ' + new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) + '\n\n' +
+                '✨ WHAT\'S INCLUDED:\n' +
+                '• Final design files and assets\n' +
+                '• All requested variations\n' +
+                '• Ready for your feedback\n\n' +
+                '📝 NEXT STEPS:\n' +
+                'Please review the attached designs and let us know your thoughts. We\'re happy to make any adjustments you need!\n\n' +
+                'Looking forward to your feedback,\n' +
+                'The ' + companyName + ' Design Team\n\n' +
+                '📧 engineering@orion-contracting.com | 🌐 www.orion-contracting.com',
             body: '<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f4f6f9; padding: 20px;">' +
                 '<div style="background: linear-gradient(135deg, #9f7aea 0%, #805ad5 100%); padding: 40px 20px; text-align: center; border-radius: 12px 12px 0 0;">' +
                     '<img src="' + logoUrl + '" alt="' + companyName + '" style="max-width: 200px; height: auto; margin-bottom: 20px;">' +
@@ -888,7 +931,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const templateType = this.dataset.template;
             if (emailTemplates[templateType]) {
                 subject.value = emailTemplates[templateType].subject;
-                // Use HTML version for display, plain text will be used for Gmail
                 body.value = emailTemplates[templateType].body;
                 updateProgress();
             }
@@ -957,7 +999,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Check if we have a plain text version available
             const selectedTemplate = document.querySelector('.template-option.selected');
-            if (selectedTemplate && emailTemplates[selectedTemplate.dataset.template] && emailTemplates[selectedTemplate.dataset.template].plainTextBody) {
+            if (selectedTemplate && emailTemplates[selectedTemplate.dataset.template] && emailTemplates[selectedTemplate.dataset.template].plainTextBody && selectedTemplate.dataset.template !== 'none') {
                 plainBody = emailTemplates[selectedTemplate.dataset.template].plainTextBody;
             } else {
                 // Fallback to converting HTML to plain text
