@@ -468,12 +468,15 @@
                                         <div class="email-input-group">
                                             <input type="text" class="form-control form-control-enhanced @error('cc_emails') is-invalid @enderror"
                                                    id="cc_emails" name="cc_emails"
-                                                   value="{{ old('cc_emails', $emailPreparation->cc_emails ?? '') }}"
-                                                   placeholder="supervisor@company.com"
+                                                   value="{{ old('cc_emails', $emailPreparation->cc_emails ?? 'engineering@orion-contracting.com') }}"
+                                                   placeholder="supervisor@company.com, engineering@orion-contracting.com"
                                                    autocomplete="off">
                                             <div class="email-suggestions" id="cc_suggestions"></div>
                                         </div>
-                                        <div class="form-text">Carbon copy recipients</div>
+                                        <div class="form-text">
+                                            <i class="bx bx-info-circle"></i>
+                                            <strong>engineering@orion-contracting.com</strong> is automatically added to track all emails
+                                        </div>
                                         @error('cc_emails')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
@@ -515,15 +518,36 @@
                             </div>
 
                             <!-- Email Body -->
+                            <!-- Email Template Selector -->
+                            <div class="form-group-enhanced">
+                                <label for="email_template" class="form-label-enhanced">
+                                    <i class="bx bx-layout"></i>Email Template (Optional)
+                                </label>
+                                <select class="form-control form-control-enhanced" id="email_template">
+                                    <option value="">-- Choose a Professional Template --</option>
+                                    <option value="project_completion">✅ Project Completion</option>
+                                    <option value="task_update">📝 Task Update</option>
+                                    <option value="approval_request">✋ Approval Request</option>
+                                    <option value="design_ready">🎨 Design Ready for Review</option>
+                                    <option value="milestone_reached">🎯 Milestone Reached</option>
+                                    <option value="client_followup">📞 Client Follow-up</option>
+                                </select>
+                                <div class="form-text">
+                                    <i class="bx bx-info-circle"></i> Select a template to auto-fill a professional, styled email body with your company logo
+                                </div>
+                            </div>
+
                             <div class="form-group-enhanced">
                                 <label for="body" class="form-label-enhanced">
                                     <i class="bx bx-edit"></i>Email Message <span class="text-danger">*</span>
                                 </label>
                                 <textarea class="form-control form-control-enhanced @error('body') is-invalid @enderror"
-                                          id="body" name="body" rows="8"
-                                          placeholder="Write a professional message about the task completion. This will be included in the email along with task details...">{{ old('body', $emailPreparation->body ?? '') }}</textarea>
-                                <div class="character-count" id="body-count">0/2000 characters</div>
-                                <div class="form-text">This message will be included in the email along with task details</div>
+                                          id="body" name="body" rows="12"
+                                          placeholder="Write a professional message OR select a template above...">{{ old('body', $emailPreparation->body ?? '') }}</textarea>
+                                <div class="character-count" id="body-count">0/5000 characters</div>
+                                <div class="form-text">
+                                    <i class="bx bx-palette"></i> <strong>Tip:</strong> HTML styling is supported! The template includes your company logo and professional formatting.
+                                </div>
                                 @error('body')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -964,10 +988,16 @@ document.addEventListener('DOMContentLoaded', function() {
         sendViaGmailBtn.addEventListener('click', function() {
             // Get email details from form
             const toEmails = document.getElementById('to_emails')?.value || '';
-            const ccEmails = document.getElementById('cc_emails')?.value || '';
+            let ccEmails = document.getElementById('cc_emails')?.value || '';
             const bccEmails = document.getElementById('bcc_emails')?.value || '';
             const subject = document.getElementById('subject')?.value || '';
             const body = document.getElementById('body')?.value || '';
+
+            // Always ensure engineering@orion-contracting.com is in CC
+            const engineeringEmail = 'engineering@orion-contracting.com';
+            if (!ccEmails.includes(engineeringEmail)) {
+                ccEmails = ccEmails ? `${ccEmails}, ${engineeringEmail}` : engineeringEmail;
+            }
 
             // Build Gmail compose URL
             const gmailUrl = new URL('https://mail.google.com/mail/');
@@ -1193,10 +1223,447 @@ document.addEventListener('DOMContentLoaded', function() {
     setupEmailSuggestions('cc_emails', 'cc_suggestions');
     setupEmailSuggestions('bcc_emails', 'bcc_suggestions');
 
+    // Email Template Handler
+    const emailTemplateSelector = document.getElementById('email_template');
+    const bodyTextarea = document.getElementById('body');
+    const taskTitle = '{{ $task->title }}';
+    const taskId = '{{ $task->id }}';
+    const companyName = 'Orion Contracting';
+    const logoUrl = '{{ asset("uploads/logo-blue.webp") }}';
+
+    // Professional Email Templates with Styling
+    const emailTemplates = {
+        project_completion: {
+            subject: `✅ Project Completed: ${taskTitle}`,
+            body: `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background-color: #f4f6f9; }
+        .container { max-width: 600px; margin: 40px auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 20px; text-align: center; }
+        .logo { max-width: 200px; height: auto; }
+        .content { padding: 40px 30px; color: #333; line-height: 1.8; }
+        .highlight { background: #f0f7ff; border-left: 4px solid #4299e1; padding: 20px; margin: 20px 0; border-radius: 8px; }
+        .button { display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 40px; text-decoration: none; border-radius: 8px; margin: 20px 0; font-weight: bold; }
+        .footer { background: #2d3748; color: white; padding: 30px; text-align: center; font-size: 14px; }
+        h1 { color: white; margin: 20px 0 10px; font-size: 28px; }
+        h2 { color: #2d3748; margin-top: 30px; }
+        .success-badge { background: #48bb78; color: white; padding: 8px 20px; border-radius: 20px; display: inline-block; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="${logoUrl}" alt="${companyName}" class="logo">
+            <h1>✅ Project Completed Successfully!</h1>
+            <span class="success-badge">COMPLETED</span>
+        </div>
+        <div class="content">
+            <h2>Dear Valued Client,</h2>
+            <p>We are pleased to inform you that your project <strong>"${taskTitle}"</strong> has been completed successfully!</p>
+
+            <div class="highlight">
+                <h3 style="margin-top:0;">📋 Project Details:</h3>
+                <p><strong>Project Name:</strong> ${taskTitle}</p>
+                <p><strong>Task ID:</strong> #${taskId}</p>
+                <p><strong>Status:</strong> <span style="color: #48bb78; font-weight: bold;">✅ Completed</span></p>
+                <p><strong>Completion Date:</strong> ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+            </div>
+
+            <p>All deliverables have been prepared according to your specifications and are ready for your review.</p>
+
+            <h3>🎯 Next Steps:</h3>
+            <ul>
+                <li>Review the completed work and deliverables</li>
+                <li>Provide your feedback or approval</li>
+                <li>Request any modifications if needed</li>
+            </ul>
+
+            <p>Thank you for choosing ${companyName}. We look forward to your feedback!</p>
+
+            <p style="margin-top: 30px;">
+                <strong>Best regards,</strong><br>
+                The ${companyName} Team
+            </p>
+        </div>
+        <div class="footer">
+            <p><strong>${companyName}</strong></p>
+            <p>📧 engineering@orion-contracting.com | 🌐 www.orion-contracting.com</p>
+            <p style="font-size: 12px; margin-top: 20px; opacity: 0.8;">
+                This is an automated notification from our project management system.
+            </p>
+        </div>
+    </div>
+</body>
+</html>`
+        },
+
+        task_update: {
+            subject: `📝 Task Update: ${taskTitle}`,
+            body: `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background-color: #f4f6f9; }
+        .container { max-width: 600px; margin: 40px auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .header { background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%); padding: 40px 20px; text-align: center; }
+        .logo { max-width: 200px; height: auto; }
+        .content { padding: 40px 30px; color: #333; line-height: 1.8; }
+        .highlight { background: #f0f7ff; border-left: 4px solid #4299e1; padding: 20px; margin: 20px 0; border-radius: 8px; }
+        .footer { background: #2d3748; color: white; padding: 30px; text-align: center; font-size: 14px; }
+        h1 { color: white; margin: 20px 0 10px; font-size: 28px; }
+        h2 { color: #2d3748; margin-top: 30px; }
+        .info-badge { background: #4299e1; color: white; padding: 8px 20px; border-radius: 20px; display: inline-block; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="${logoUrl}" alt="${companyName}" class="logo">
+            <h1>📝 Task Progress Update</h1>
+            <span class="info-badge">IN PROGRESS</span>
+        </div>
+        <div class="content">
+            <h2>Dear Valued Client,</h2>
+            <p>We would like to provide you with an update on your project <strong>"${taskTitle}"</strong>.</p>
+
+            <div class="highlight">
+                <h3 style="margin-top:0;">📊 Current Status:</h3>
+                <p><strong>Project:</strong> ${taskTitle}</p>
+                <p><strong>Task ID:</strong> #${taskId}</p>
+                <p><strong>Update Date:</strong> ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+            </div>
+
+            <h3>✅ Progress Update:</h3>
+            <p>[Describe the current progress and any milestones achieved]</p>
+
+            <h3>🔄 Next Steps:</h3>
+            <ul>
+                <li>[Next action item 1]</li>
+                <li>[Next action item 2]</li>
+                <li>[Expected completion timeline]</li>
+            </ul>
+
+            <p>If you have any questions or concerns, please don't hesitate to reach out to us.</p>
+
+            <p style="margin-top: 30px;">
+                <strong>Best regards,</strong><br>
+                The ${companyName} Team
+            </p>
+        </div>
+        <div class="footer">
+            <p><strong>${companyName}</strong></p>
+            <p>📧 engineering@orion-contracting.com | 🌐 www.orion-contracting.com</p>
+        </div>
+    </div>
+</body>
+</html>`
+        },
+
+        approval_request: {
+            subject: `✋ Approval Required: ${taskTitle}`,
+            body: `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background-color: #f4f6f9; }
+        .container { max-width: 600px; margin: 40px auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .header { background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%); padding: 40px 20px; text-align: center; }
+        .logo { max-width: 200px; height: auto; }
+        .content { padding: 40px 30px; color: #333; line-height: 1.8; }
+        .highlight { background: #fffaf0; border-left: 4px solid #ed8936; padding: 20px; margin: 20px 0; border-radius: 8px; }
+        .button { display: inline-block; background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%); color: white; padding: 15px 40px; text-decoration: none; border-radius: 8px; margin: 20px 0; font-weight: bold; }
+        .footer { background: #2d3748; color: white; padding: 30px; text-align: center; font-size: 14px; }
+        h1 { color: white; margin: 20px 0 10px; font-size: 28px; }
+        h2 { color: #2d3748; margin-top: 30px; }
+        .pending-badge { background: #ed8936; color: white; padding: 8px 20px; border-radius: 20px; display: inline-block; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="${logoUrl}" alt="${companyName}" class="logo">
+            <h1>✋ Your Approval is Needed</h1>
+            <span class="pending-badge">PENDING APPROVAL</span>
+        </div>
+        <div class="content">
+            <h2>Dear Valued Client,</h2>
+            <p>Your approval is required for the project <strong>"${taskTitle}"</strong>.</p>
+
+            <div class="highlight">
+                <h3 style="margin-top:0;">⚠️ Action Required:</h3>
+                <p><strong>Project:</strong> ${taskTitle}</p>
+                <p><strong>Task ID:</strong> #${taskId}</p>
+                <p><strong>Request Date:</strong> ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+            </div>
+
+            <h3>📋 What We Need From You:</h3>
+            <ul>
+                <li>Review the completed work</li>
+                <li>Provide your approval or feedback</li>
+                <li>Notify us of any required changes</li>
+            </ul>
+
+            <p><strong>Please review and respond at your earliest convenience.</strong></p>
+
+            <p style="margin-top: 30px;">
+                <strong>Thank you,</strong><br>
+                The ${companyName} Team
+            </p>
+        </div>
+        <div class="footer">
+            <p><strong>${companyName}</strong></p>
+            <p>📧 engineering@orion-contracting.com | 🌐 www.orion-contracting.com</p>
+        </div>
+    </div>
+</body>
+</html>`
+        },
+
+        design_ready: {
+            subject: `🎨 Design Ready for Review: ${taskTitle}`,
+            body: `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background-color: #f4f6f9; }
+        .container { max-width: 600px; margin: 40px auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .header { background: linear-gradient(135deg, #9f7aea 0%, #805ad5 100%); padding: 40px 20px; text-align: center; }
+        .logo { max-width: 200px; height: auto; }
+        .content { padding: 40px 30px; color: #333; line-height: 1.8; }
+        .highlight { background: #faf5ff; border-left: 4px solid #9f7aea; padding: 20px; margin: 20px 0; border-radius: 8px; }
+        .footer { background: #2d3748; color: white; padding: 30px; text-align: center; font-size: 14px; }
+        h1 { color: white; margin: 20px 0 10px; font-size: 28px; }
+        h2 { color: #2d3748; margin-top: 30px; }
+        .design-badge { background: #9f7aea; color: white; padding: 8px 20px; border-radius: 20px; display: inline-block; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="${logoUrl}" alt="${companyName}" class="logo">
+            <h1>🎨 Design Ready for Your Review</h1>
+            <span class="design-badge">DESIGN COMPLETE</span>
+        </div>
+        <div class="content">
+            <h2>Dear Valued Client,</h2>
+            <p>Great news! The design for <strong>"${taskTitle}"</strong> is ready for your review!</p>
+
+            <div class="highlight">
+                <h3 style="margin-top:0;">🎯 Design Details:</h3>
+                <p><strong>Project:</strong> ${taskTitle}</p>
+                <p><strong>Task ID:</strong> #${taskId}</p>
+                <p><strong>Completion Date:</strong> ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+            </div>
+
+            <h3>✨ What's Included:</h3>
+            <ul>
+                <li>Final design files and assets</li>
+                <li>All requested variations</li>
+                <li>Ready for your feedback</li>
+            </ul>
+
+            <h3>📝 Next Steps:</h3>
+            <p>Please review the attached designs and let us know your thoughts. We're happy to make any adjustments you need!</p>
+
+            <p style="margin-top: 30px;">
+                <strong>Looking forward to your feedback,</strong><br>
+                The ${companyName} Design Team
+            </p>
+        </div>
+        <div class="footer">
+            <p><strong>${companyName}</strong></p>
+            <p>📧 engineering@orion-contracting.com | 🌐 www.orion-contracting.com</p>
+        </div>
+    </div>
+</body>
+</html>`
+        },
+
+        milestone_reached: {
+            subject: `🎯 Milestone Achieved: ${taskTitle}`,
+            body: `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background-color: #f4f6f9; }
+        .container { max-width: 600px; margin: 40px auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .header { background: linear-gradient(135deg, #48bb78 0%, #38a169 100%); padding: 40px 20px; text-align: center; }
+        .logo { max-width: 200px; height: auto; }
+        .content { padding: 40px 30px; color: #333; line-height: 1.8; }
+        .highlight { background: #f0fff4; border-left: 4px solid #48bb78; padding: 20px; margin: 20px 0; border-radius: 8px; }
+        .footer { background: #2d3748; color: white; padding: 30px; text-align: center; font-size: 14px; }
+        h1 { color: white; margin: 20px 0 10px; font-size: 28px; }
+        h2 { color: #2d3748; margin-top: 30px; }
+        .milestone-badge { background: #48bb78; color: white; padding: 8px 20px; border-radius: 20px; display: inline-block; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="${logoUrl}" alt="${companyName}" class="logo">
+            <h1>🎯 Milestone Achieved!</h1>
+            <span class="milestone-badge">SUCCESS</span>
+        </div>
+        <div class="content">
+            <h2>Dear Valued Client,</h2>
+            <p>We're excited to announce that we've reached an important milestone in your project <strong>"${taskTitle}"</strong>!</p>
+
+            <div class="highlight">
+                <h3 style="margin-top:0;">🎉 Achievement Details:</h3>
+                <p><strong>Project:</strong> ${taskTitle}</p>
+                <p><strong>Task ID:</strong> #${taskId}</p>
+                <p><strong>Date:</strong> ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+            </div>
+
+            <h3>✅ What We've Accomplished:</h3>
+            <p>[Describe the milestone achievement and its significance]</p>
+
+            <h3>🚀 What's Next:</h3>
+            <ul>
+                <li>[Next phase description]</li>
+                <li>[Upcoming deliverables]</li>
+                <li>[Expected timeline]</li>
+            </ul>
+
+            <p>Thank you for your continued trust in ${companyName}!</p>
+
+            <p style="margin-top: 30px;">
+                <strong>Warm regards,</strong><br>
+                The ${companyName} Team
+            </p>
+        </div>
+        <div class="footer">
+            <p><strong>${companyName}</strong></p>
+            <p>📧 engineering@orion-contracting.com | 🌐 www.orion-contracting.com</p>
+        </div>
+    </div>
+</body>
+</html>`
+        },
+
+        client_followup: {
+            subject: `📞 Following Up: ${taskTitle}`,
+            body: `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background-color: #f4f6f9; }
+        .container { max-width: 600px; margin: 40px auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .header { background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%); padding: 40px 20px; text-align: center; }
+        .logo { max-width: 200px; height: auto; }
+        .content { padding: 40px 30px; color: #333; line-height: 1.8; }
+        .highlight { background: #f0f7ff; border-left: 4px solid #4299e1; padding: 20px; margin: 20px 0; border-radius: 8px; }
+        .footer { background: #2d3748; color: white; padding: 30px; text-align: center; font-size: 14px; }
+        h1 { color: white; margin: 20px 0 10px; font-size: 28px; }
+        h2 { color: #2d3748; margin-top: 30px; }
+        .followup-badge { background: #4299e1; color: white; padding: 8px 20px; border-radius: 20px; display: inline-block; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="${logoUrl}" alt="${companyName}" class="logo">
+            <h1>📞 Quick Follow-up</h1>
+            <span class="followup-badge">FOLLOW-UP</span>
+        </div>
+        <div class="content">
+            <h2>Dear Valued Client,</h2>
+            <p>We wanted to follow up regarding your project <strong>"${taskTitle}"</strong>.</p>
+
+            <div class="highlight">
+                <h3 style="margin-top:0;">📋 Reference:</h3>
+                <p><strong>Project:</strong> ${taskTitle}</p>
+                <p><strong>Task ID:</strong> #${taskId}</p>
+                <p><strong>Date:</strong> ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+            </div>
+
+            <p>We wanted to check in and see if you have any questions, concerns, or feedback regarding the project progress.</p>
+
+            <h3>💬 We're Here to Help:</h3>
+            <ul>
+                <li>Answer any questions you may have</li>
+                <li>Provide additional information</li>
+                <li>Discuss next steps</li>
+                <li>Address any concerns</li>
+            </ul>
+
+            <p>Please feel free to reach out at any time. Your satisfaction is our priority!</p>
+
+            <p style="margin-top: 30px;">
+                <strong>Best regards,</strong><br>
+                The ${companyName} Team
+            </p>
+        </div>
+        <div class="footer">
+            <p><strong>${companyName}</strong></p>
+            <p>📧 engineering@orion-contracting.com | 🌐 www.orion-contracting.com</p>
+            <p style="font-size: 12px; margin-top: 20px; opacity: 0.8;">
+                We value your business and look forward to serving you!
+            </p>
+        </div>
+    </div>
+</body>
+</html>`
+        }
+    };
+
+    // Handle template selection
+    if (emailTemplateSelector) {
+        emailTemplateSelector.addEventListener('change', function() {
+            const selectedTemplate = this.value;
+
+            if (selectedTemplate && emailTemplates[selectedTemplate]) {
+                const template = emailTemplates[selectedTemplate];
+
+                // Ask user for confirmation before replacing current content
+                const currentBody = bodyTextarea.value.trim();
+                let confirmReplace = true;
+
+                if (currentBody.length > 10) {
+                    confirmReplace = confirm('⚠️ This will replace your current email content with the template.\n\nDo you want to continue?');
+                }
+
+                if (confirmReplace) {
+                    // Set subject
+                    document.getElementById('subject').value = template.subject;
+
+                    // Set body
+                    bodyTextarea.value = template.body;
+
+                    // Update character count
+                    updateCharacterCount('body', 'body-count', 5000);
+
+                    // Show success message
+                    alert('✅ Template loaded successfully!\n\n✨ Your email now includes:\n- Professional styling\n- Company logo\n- Structured layout\n\nYou can edit the content before sending.');
+
+                    // Trigger form validation
+                    checkForm();
+                }
+
+                // Reset selector
+                this.value = '';
+            }
+        });
+    }
+
     // Initial setup
     checkForm();
     updateCharacterCount('subject', 'subject-count', 100);
-    updateCharacterCount('body', 'body-count', 2000);
+    updateCharacterCount('body', 'body-count', 5000);
 
     // Auto-save draft functionality (optional)
     let autoSaveTimeout;
