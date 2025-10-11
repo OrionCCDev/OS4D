@@ -1027,11 +1027,43 @@ document.addEventListener('DOMContentLoaded', function() {
             setTimeout(() => {
                 alert('✅ Gmail opened!\n\n📌 Next Steps:\n1. Attach any required files in Gmail\n2. Review and send the email\n3. Come back here and click "Mark as Sent" button');
                 if (confirm('Would you like to save this draft before continuing?')) {
-                    emailForm.submit();
+                    // Save draft and then redirect to task view
+                    saveDraftAndRedirect();
                 }
             }, 500);
         }
     });
+
+    // Save draft and redirect function
+    function saveDraftAndRedirect() {
+        const formData = new FormData(emailForm);
+        formData.append('save_draft', '1');
+
+        fetch('{{ route("tasks.store-email-preparation", $task) }}', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Accept': 'application/json'
+            },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Show success message and redirect
+                showSuccessMessage('Draft saved successfully! Task status updated to "On Client/Consultant Review".');
+                setTimeout(() => {
+                    window.location.href = '{{ route("tasks.show", $task) }}';
+                }, 2000);
+            } else {
+                alert('❌ Failed to save draft: ' + (data.message || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('❌ Error saving draft. Please try again.');
+        });
+    }
 
     // Mark as sent functionality
     markAsSentBtn.addEventListener('click', function() {
@@ -1053,9 +1085,11 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    alert('✅ ' + (data.message || 'Email marked as sent successfully!'));
-                    window.location.href = data.redirect_url || '{{ route("tasks.show", $task) }}';
-                    } else {
+                    showSuccessMessage(data.message || 'Email marked as sent successfully! Task status updated to "On Client/Consultant Review".');
+                    setTimeout(() => {
+                        window.location.href = data.redirect_url || '{{ route("tasks.show", $task) }}';
+                    }, 2000);
+                } else {
                     alert('❌ ' + (data.message || 'Failed to mark email as sent'));
                     markAsSentBtn.disabled = false;
                     markAsSentBtn.innerHTML = '<i class="bx bx-check-double me-2"></i>Mark as Sent (After Gmail)';
@@ -1067,6 +1101,78 @@ document.addEventListener('DOMContentLoaded', function() {
                 markAsSentBtn.disabled = false;
                 markAsSentBtn.innerHTML = '<i class="bx bx-check-double me-2"></i>Mark as Sent (After Gmail)';
             });
+        }
+    });
+
+    // Success message function
+    function showSuccessMessage(message) {
+        // Create a success notification
+        const notification = document.createElement('div');
+        notification.className = 'alert alert-success position-fixed';
+        notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);';
+        notification.innerHTML = `
+            <div class="d-flex align-items-center">
+                <i class="bx bx-check-circle me-2" style="font-size: 1.5rem;"></i>
+                <div>
+                    <strong>Success!</strong><br>
+                    <small>${message}</small>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(notification);
+
+        // Auto-remove after 5 seconds
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 5000);
+    }
+
+    // Handle form submission for server sending
+    emailForm.addEventListener('submit', function(e) {
+        const sendEmailBtn = document.querySelector('button[name="send_email"][value="1"]');
+        if (sendEmailBtn && e.submitter === sendEmailBtn) {
+            e.preventDefault();
+
+            if (confirm('Send this email via server?\n\nThis will automatically update the task status to "On Client/Consultant Review".')) {
+                // Show loading state
+                sendEmailBtn.disabled = true;
+                sendEmailBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+
+                // Submit the form via fetch
+                const formData = new FormData(emailForm);
+                formData.append('send_email', '1');
+
+                fetch(emailForm.action, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                        'Accept': 'application/json'
+                    },
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showSuccessMessage(data.message || 'Email sent successfully! Task status updated to "On Client/Consultant Review".');
+                        setTimeout(() => {
+                            window.location.href = data.redirect_url || '{{ route("tasks.show", $task) }}';
+                        }, 2000);
+                    } else {
+                        alert('❌ ' + (data.message || 'Failed to send email'));
+                        sendEmailBtn.disabled = false;
+                        sendEmailBtn.innerHTML = '<i class="bx bx-send me-2"></i>Send via Server';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('❌ Error sending email. Please try again.');
+                    sendEmailBtn.disabled = false;
+                    sendEmailBtn.innerHTML = '<i class="bx bx-send me-2"></i>Send via Server';
+                });
+            }
         }
     });
 

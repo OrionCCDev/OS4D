@@ -686,8 +686,25 @@ class TaskController extends Controller
 
             Log::info('Email preparation saved with attachments: ' . json_encode($attachmentPaths));
 
+            // Check if this is an AJAX request
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Email preparation saved successfully!',
+                    'redirect_url' => route('tasks.show', $task)
+                ]);
+            }
+
             return redirect()->back()->with('success', 'Email preparation saved successfully!');
         } catch (\Exception $e) {
+            // Check if this is an AJAX request
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to save email preparation: ' . $e->getMessage()
+                ]);
+            }
+
             return redirect()->back()->with('error', 'Failed to save email preparation: ' . $e->getMessage());
         }
     }
