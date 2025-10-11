@@ -635,7 +635,11 @@
                                 <a href="{{ route('tasks.show', $task) }}" class="btn btn-enhanced btn-outline-secondary">
                                     <i class="bx bx-arrow-back me-2"></i>Back to Task
                                 </a>
-                            </div>
+
+                                <button type="button" class="btn btn-enhanced btn-success" id="continueToNextStepBtn" style="display: none;">
+                                    <i class="bx bx-check-double me-2"></i>Continue to Next Step
+                                </button>
+                    </div>
                         </form>
 
                         <!-- Email Preview Modal -->
@@ -649,15 +653,15 @@
                                 <div class="preview-body" id="previewBody"></div>
                     </div>
                     </div>
-                    </div>
-                    </div>
+    </div>
+</div>
 
                 <!-- Task Information Card -->
                 <div class="task-info-card">
                     <div class="task-info-header">
                         <i class="bx bx-info-circle me-2"></i>
                         Task Information
-                    </div>
+            </div>
                     <div class="info-row">
                         <span class="info-label">Title</span>
                         <span class="info-value">{{ $task->title }}</span>
@@ -665,7 +669,7 @@
                     <div class="info-row">
                         <span class="info-label">Project</span>
                         <span class="info-value">{{ $task->project->name ?? 'N/A' }}</span>
-                </div>
+                        </div>
                     <div class="info-row">
                         <span class="info-label">Assigned To</span>
                         <span class="info-value">{{ $task->assignedUser->name ?? 'Unassigned' }}</span>
@@ -673,20 +677,20 @@
                     <div class="info-row">
                         <span class="info-label">Status</span>
                         <span class="status-badge status-ready">{{ ucfirst(str_replace('_', ' ', $task->status)) }}</span>
-                </div>
+                        </div>
                     <div class="info-row">
                         <span class="info-label">Priority</span>
                         <span class="status-badge status-{{ $task->priority === 'high' ? 'high' : ($task->priority === 'urgent' ? 'urgent' : 'normal') }}">
                             {{ strtoupper($task->priority) }}
                         </span>
-            </div>
+                    </div>
                     <div class="info-row">
                         <span class="info-label">Due Date</span>
                         <span class="info-value">{{ $task->due_date ? $task->due_date->format('M d, Y') : 'No due date' }}</span>
-        </div>
-    </div>
-</div>
+                </div>
             </div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -704,6 +708,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const sendViaGmailBtn = document.getElementById('sendViaGmailBtn');
     const sendViaServerBtn = document.getElementById('sendViaServerBtn');
     const markAsSentBtn = document.getElementById('markAsSentBtn');
+    const continueToNextStepBtn = document.getElementById('continueToNextStepBtn');
     const emailPreview = document.getElementById('emailPreview');
     const previewSubject = document.getElementById('previewSubject');
     const previewBody = document.getElementById('previewBody');
@@ -1082,13 +1087,23 @@ document.addEventListener('DOMContentLoaded', function() {
                     sent_via: 'gmail_manual'
                 })
             })
-            .then(response => response.json())
+            .then(response => {
+                console.log('Mark as sent response status:', response.status);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
+                console.log('Mark as sent response data:', data);
                 if (data.success) {
                     showSuccessMessage(data.message || 'Email marked as sent successfully! Task status updated to "On Client/Consultant Review".');
+                    // Show continue button as backup
+                    continueToNextStepBtn.style.display = 'inline-flex';
+                    // Immediate redirect without delay
                     setTimeout(() => {
                         window.location.href = data.redirect_url || '{{ route("tasks.show", $task) }}';
-                    }, 2000);
+                    }, 1000);
                 } else {
                     alert('❌ ' + (data.message || 'Failed to mark email as sent'));
                     markAsSentBtn.disabled = false;
@@ -1104,6 +1119,45 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    // Continue to next step functionality
+    continueToNextStepBtn.addEventListener('click', function() {
+        if (confirm('Mark this email as sent and update task status to "On Client/Consultant Review"?\n\nThis will progress the task to the next workflow step.')) {
+            continueToNextStepBtn.disabled = true;
+            continueToNextStepBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+
+            fetch('{{ route("tasks.mark-email-sent", $task) }}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    sent_via: 'manual_continue'
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showSuccessMessage(data.message || 'Task status updated successfully! Moving to "On Client/Consultant Review".');
+                    setTimeout(() => {
+                        window.location.href = data.redirect_url || '{{ route("tasks.show", $task) }}';
+                    }, 1000);
+                } else {
+                    alert('❌ ' + (data.message || 'Failed to update task status'));
+                    continueToNextStepBtn.disabled = false;
+                    continueToNextStepBtn.innerHTML = '<i class="bx bx-check-double me-2"></i>Continue to Next Step';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('❌ Error updating task status. Please try again.');
+                continueToNextStepBtn.disabled = false;
+                continueToNextStepBtn.innerHTML = '<i class="bx bx-check-double me-2"></i>Continue to Next Step';
+            });
+        }
+    });
+
     // Success message function
     function showSuccessMessage(message) {
         // Create a success notification
@@ -1111,7 +1165,7 @@ document.addEventListener('DOMContentLoaded', function() {
         notification.className = 'alert alert-success position-fixed';
         notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);';
         notification.innerHTML = `
-            <div class="d-flex align-items-center">
+                <div class="d-flex align-items-center">
                 <i class="bx bx-check-circle me-2" style="font-size: 1.5rem;"></i>
                 <div>
                     <strong>Success!</strong><br>
@@ -1138,38 +1192,48 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (confirm('Send this email via server?\n\nThis will automatically update the task status to "On Client/Consultant Review".')) {
                 // Show loading state
-                sendEmailBtn.disabled = true;
-                sendEmailBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+            sendEmailBtn.disabled = true;
+            sendEmailBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
 
                 // Submit the form via fetch
-                const formData = new FormData(emailForm);
+            const formData = new FormData(emailForm);
                 formData.append('send_email', '1');
 
                 fetch(emailForm.action, {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                        'Accept': 'application/json'
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'Accept': 'application/json'
                     },
                     body: formData
                 })
-                .then(response => response.json())
-                .then(data => {
+                .then(response => {
+                    console.log('Response status:', response.status);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+            .then(data => {
+                    console.log('Response data:', data);
                     if (data.success) {
                         showSuccessMessage(data.message || 'Email sent successfully! Task status updated to "On Client/Consultant Review".');
+                        // Show continue button as backup
+                        continueToNextStepBtn.style.display = 'inline-flex';
+                        // Immediate redirect without delay
                         setTimeout(() => {
                             window.location.href = data.redirect_url || '{{ route("tasks.show", $task) }}';
-                        }, 2000);
+                        }, 1000);
                     } else {
                         alert('❌ ' + (data.message || 'Failed to send email'));
                         sendEmailBtn.disabled = false;
                         sendEmailBtn.innerHTML = '<i class="bx bx-send me-2"></i>Send via Server';
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
                     alert('❌ Error sending email. Please try again.');
-                    sendEmailBtn.disabled = false;
+                sendEmailBtn.disabled = false;
                     sendEmailBtn.innerHTML = '<i class="bx bx-send me-2"></i>Send via Server';
                 });
             }
