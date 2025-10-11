@@ -612,24 +612,8 @@
 
                             <!-- Action Buttons -->
                             <div class="d-flex flex-wrap gap-3 justify-content-center mt-4">
-                                <button type="button" class="btn btn-enhanced btn-secondary" id="previewBtn">
-                                    <i class="bx bx-show me-2"></i>Preview Email
-                                </button>
-
-                                <button type="submit" class="btn btn-enhanced btn-primary" id="saveDraftBtn">
-                                    <i class="bx bx-save me-2"></i>Save Draft
-                                </button>
-
                                 <button type="button" class="btn btn-enhanced btn-warning" id="sendViaGmailBtn">
                                     <i class="bx bxl-gmail me-2"></i>Send via Gmail (Recommended)
-                                </button>
-
-                                <button type="submit" class="btn btn-enhanced btn-success" id="sendViaServerBtn" name="send_email" value="1">
-                                    <i class="bx bx-send me-2"></i>Send via Server
-                                </button>
-
-                                <button type="button" class="btn btn-enhanced btn-warning" id="directSendBtn">
-                                    <i class="bx bx-send me-2"></i>Send & Continue (Direct)
                                 </button>
 
                                 <button type="button" class="btn btn-enhanced btn-info" id="markAsSentBtn">

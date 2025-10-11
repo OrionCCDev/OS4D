@@ -794,6 +794,44 @@ class TaskController extends Controller
             // Update task status to on_client_consultant_review
             $task->update(['status' => 'on_client_consultant_review']);
 
+            // Notify managers immediately about email sending
+            $managers = User::where('role', 'manager')->get();
+
+            foreach ($managers as $manager) {
+                // Skip if the sender is also a manager
+                if ($manager->id === $user->id) {
+                    continue;
+                }
+
+                // Create notification about email being sent
+                $notification = new \App\Models\UnifiedNotification([
+                    'user_id' => $manager->id,
+                    'category' => 'task',
+                    'type' => 'task_email_sending',
+                    'title' => 'Email Being Sent by Team Member',
+                    'message' => "User {$user->name} is sending an email for task: {$task->title}",
+                    'task_id' => $task->id,
+                    'data' => [
+                        'task_id' => $task->id,
+                        'sender_id' => $user->id,
+                        'sender_name' => $user->name,
+                        'sender_email' => $user->email,
+                        'task_title' => $task->title,
+                        'project_name' => $task->project->name ?? 'Unknown Project',
+                        'email_subject' => $emailPreparation->subject,
+                        'recipients_to' => $emailPreparation->to_emails,
+                        'recipients_cc' => $emailPreparation->cc_emails,
+                        'recipients_bcc' => $emailPreparation->bcc_emails,
+                        'sent_via' => 'server',
+                        'status' => 'processing'
+                    ],
+                    'is_read' => false
+                ]);
+                $notification->save();
+
+                Log::info("Manager notification created for email sending by user: {$user->id} to manager: {$manager->id}");
+            }
+
             Log::info('Email sending job dispatched for task: ' . $task->id . ' by user: ' . $user->id);
 
             return response()->json([
@@ -850,11 +888,43 @@ class TaskController extends Controller
 
             Log::info('Email marked as sent manually for task: ' . $task->id . ' by user: ' . Auth::id());
 
-            // Optionally notify managers
+            // Notify managers with recipient details
             $user = Auth::user();
             $managers = User::where('role', 'manager')->get();
+
             foreach ($managers as $manager) {
-                $manager->notify(new \App\Notifications\EmailSendingSuccessNotification($task, $emailPreparation));
+                // Skip if the sender is also a manager
+                if ($manager->id === $user->id) {
+                    continue;
+                }
+
+                // Create detailed notification
+                $notification = new \App\Models\UnifiedNotification([
+                    'user_id' => $manager->id,
+                    'category' => 'task',
+                    'type' => 'task_email_sent',
+                    'title' => 'Email Sent by Team Member',
+                    'message' => "User {$user->name} has sent an email for task: {$task->title}",
+                    'task_id' => $task->id,
+                    'data' => [
+                        'task_id' => $task->id,
+                        'sender_id' => $user->id,
+                        'sender_name' => $user->name,
+                        'sender_email' => $user->email,
+                        'task_title' => $task->title,
+                        'project_name' => $task->project->name ?? 'Unknown Project',
+                        'email_subject' => $emailPreparation->subject,
+                        'recipients_to' => $emailPreparation->to_emails,
+                        'recipients_cc' => $emailPreparation->cc_emails,
+                        'recipients_bcc' => $emailPreparation->bcc_emails,
+                        'sent_via' => $request->input('sent_via', 'gmail_manual'),
+                        'sent_at' => $emailPreparation->sent_at
+                    ],
+                    'is_read' => false
+                ]);
+                $notification->save();
+
+                Log::info("Manager notification created for email sent by user: {$user->id} to manager: {$manager->id}");
             }
 
             return response()->json([
