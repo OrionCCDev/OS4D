@@ -34,6 +34,20 @@ class EmailTrackingService
             // Generate tracking pixel URL
             $trackingPixelUrl = $this->generateTrackingPixelUrl($gmailMessageId);
 
+            // Process attachments for storage
+            $attachments = [];
+            if (isset($emailData['attachments']) && is_array($emailData['attachments'])) {
+                foreach ($emailData['attachments'] as $attachment) {
+                    $attachments[] = [
+                        'filename' => $attachment['filename'],
+                        'mime_type' => $attachment['mime_type'],
+                        'size' => strlen($attachment['content']),
+                        'file_path' => 'email-attachments/' . $attachment['filename'],
+                        'attachment_id' => null, // Not a Gmail API attachment
+                    ];
+                }
+            }
+
             // Create email record
             $email = Email::create([
                 'from_email' => $emailData['from'],
@@ -51,6 +65,8 @@ class EmailTrackingService
                 'is_tracked' => true,
                 'user_id' => $user->id,
                 'task_id' => $emailData['task_id'] ?? null,
+                'attachments' => $attachments,
+                'email_source' => 'gmail',
             ]);
 
             Log::info('Email tracked successfully - ID: ' . $email->id . ', Gmail Message ID: ' . $gmailMessageId);
