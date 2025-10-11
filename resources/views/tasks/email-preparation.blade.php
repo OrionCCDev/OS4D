@@ -606,17 +606,14 @@
                                     <i class="bx bx-show me-2"></i>Preview Email
                                 </button>
                                 <button type="button" class="btn btn-enhanced btn-warning" id="sendViaGmailBtn"
-                                        style="background: linear-gradient(135deg, #e53e3e 0%, #c53030 100%); color: white; font-weight: 600; font-size: 1.05rem; padding: 0.75rem 2rem;"
-                                        {{ !$emailPreparation ? 'disabled' : '' }}>
+                                        style="background: linear-gradient(135deg, #e53e3e 0%, #c53030 100%); color: white; font-weight: 600; font-size: 1.05rem; padding: 0.75rem 2rem;">
                                     <i class="bx bxl-gmail me-2"></i>Send via Gmail (Recommended)
                                 </button>
-                                <button type="button" class="btn btn-enhanced btn-success-enhanced" id="sendEmailBtn"
-                                        {{ !$emailPreparation ? 'disabled' : '' }}>
+                                <button type="button" class="btn btn-enhanced btn-success-enhanced" id="sendEmailBtn">
                                     <i class="bx bx-send me-2"></i>Send via Server
                                 </button>
                                 <button type="button" class="btn btn-enhanced btn-info" id="markAsSentBtn"
-                                        style="background: linear-gradient(135deg, #38b2ac 0%, #319795 100%); color: white;"
-                                        {{ !$emailPreparation ? 'disabled' : '' }}>
+                                        style="background: linear-gradient(135deg, #38b2ac 0%, #319795 100%); color: white;">
                                     <i class="bx bx-check-double me-2"></i>Mark as Sent (After Gmail)
                                 </button>
                                 <a href="{{ route('tasks.show', $task) }}" class="btn btn-enhanced btn-secondary-enhanced">
@@ -1148,14 +1145,22 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Form validation and enable/disable send button
+    // Form validation and enable/disable send buttons
     const requiredFields = ['to_emails', 'subject', 'body'];
     const checkForm = () => {
         const hasRequiredData = requiredFields.every(field => {
             const input = document.getElementById(field);
             return input && input.value.trim() !== '';
         });
+
+        // Enable/disable all send-related buttons based on form data
         sendEmailBtn.disabled = !hasRequiredData;
+        if (sendViaGmailBtn) {
+            sendViaGmailBtn.disabled = !hasRequiredData;
+        }
+        if (markAsSentBtn) {
+            markAsSentBtn.disabled = !hasRequiredData;
+        }
 
         // Update progress indicator
         const progressSteps = document.querySelectorAll('.progress-step');
