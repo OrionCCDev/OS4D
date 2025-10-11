@@ -1037,17 +1037,50 @@ document.addEventListener('DOMContentLoaded', function() {
             gmailUrl.searchParams.append('body', plainBody);
         }
 
-        if (confirm('This will open Gmail in a new tab with your email pre-filled.\n\n⚠️ Note: You will need to manually attach any files.\n\nClick OK to continue.')) {
-            window.open(gmailUrl.toString(), '_blank');
-            setTimeout(() => {
-                alert('✅ Gmail opened!\n\n📌 Next Steps:\n1. Attach any required files in Gmail\n2. Review and send the email\n3. Come back here and click "Mark as Sent" button');
-                if (confirm('Would you like to save this draft before continuing?')) {
-                    // Save draft and then redirect to task view
-                    saveDraftAndRedirect();
-                }
-            }, 500);
+        if (confirm('This will open Gmail in a new tab with your email pre-filled.\n\n⚠️ Note: You will need to manually attach any required files.\n\nClick OK to continue.')) {
+            // First save a draft automatically
+            saveDraftForGmail().then(() => {
+                // Then open Gmail
+                window.open(gmailUrl.toString(), '_blank');
+                setTimeout(() => {
+                    alert('✅ Gmail opened!\n\n📌 Next Steps:\n1. Attach any required files in Gmail\n2. Review and send the email\n3. Come back here and click "Mark as Sent" button');
+                }, 500);
+            }).catch(error => {
+                console.error('Failed to save draft:', error);
+                alert('❌ Failed to save draft. Please try again.');
+            });
         }
     });
+
+    // Save draft for Gmail workflow
+    function saveDraftForGmail() {
+        return new Promise((resolve, reject) => {
+            const formData = new FormData(emailForm);
+            formData.append('save_draft', '1');
+
+            fetch('{{ route("tasks.store-email-preparation", $task) }}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'Accept': 'application/json'
+                },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log('Draft saved successfully for Gmail workflow');
+                    resolve(data);
+                } else {
+                    reject(new Error(data.message || 'Failed to save draft'));
+                }
+            })
+            .catch(error => {
+                console.error('Error saving draft:', error);
+                reject(error);
+            });
+        });
+    }
 
     // Save draft and redirect function
     function saveDraftAndRedirect() {
@@ -1086,19 +1119,40 @@ document.addEventListener('DOMContentLoaded', function() {
             markAsSentBtn.disabled = true;
             markAsSentBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
 
-            fetch('{{ route("tasks.mark-email-sent", $task) }}', {
+            // First ensure we have an email preparation
+            const formData = new FormData(emailForm);
+            formData.append('save_draft', '1');
+
+            // Save draft first if needed
+            fetch('{{ route("tasks.store-email-preparation", $task) }}', {
                 method: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                    'Content-Type': 'application/json',
                     'Accept': 'application/json'
                 },
-                body: JSON.stringify({
-                    sent_via: 'gmail_manual'
-                })
+                body: formData
+            })
+            .then(response => response.json())
+            .then(draftData => {
+                if (draftData.success) {
+                    console.log('Draft ensured for mark as sent');
+                    // Now mark as sent
+                    return fetch('{{ route("tasks.mark-email-sent", $task) }}', {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            sent_via: 'gmail_manual'
+                        })
+                    });
+                } else {
+                    throw new Error(draftData.message || 'Failed to save draft');
+                }
             })
             .then(response => {
-                console.log('Mark as sent response status:', response.status);
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
