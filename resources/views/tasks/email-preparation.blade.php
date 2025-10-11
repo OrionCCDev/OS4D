@@ -456,25 +456,25 @@
     <div class="container">
         <div class="row justify-content-center">
             <div class="col-12 col-lg-10 col-xl-8">
-                <!-- Progress Indicator -->
+        <!-- Progress Indicator -->
                 <div class="progress-container">
                     <div class="progress-steps">
                         <div class="progress-step active">
                             <div class="step-circle">1</div>
                             <div class="step-label">Task Info</div>
-                        </div>
-                        <div class="progress-line active"></div>
-                        <div class="progress-step active">
+            </div>
+            <div class="progress-line active"></div>
+            <div class="progress-step active">
                             <div class="step-circle">2</div>
                             <div class="step-label">Email Details</div>
-                        </div>
-                        <div class="progress-line"></div>
-                        <div class="progress-step">
+            </div>
+            <div class="progress-line"></div>
+            <div class="progress-step">
                             <div class="step-circle">3</div>
                             <div class="step-label">Send Email</div>
                         </div>
-                    </div>
-                </div>
+            </div>
+        </div>
 
                 <!-- Main Email Card -->
                 <div class="email-card">
@@ -492,20 +492,20 @@
                                 <strong>Task:</strong> {{ $task->title }}<br>
                                 <small>Project: {{ $task->project->name ?? 'N/A' }} | Due: {{ $task->due_date ? $task->due_date->format('M d, Y') : 'No due date' }}</small>
                             </div>
-                        </div>
+                            </div>
 
                         <!-- Email Template Selector -->
                         <div class="template-selector">
                             <div class="template-header">
                                 <i class="bx bx-template"></i>
                                 Select Email Template
-                            </div>
+                                        </div>
                             <div class="template-options">
                                 <div class="template-option" data-template="project_completion">
                                     <div class="template-icon">✅</div>
                                     <div class="template-title">Project Completion</div>
                                     <div class="template-description">Notify client of successful project completion</div>
-                                </div>
+                                    </div>
                                 <div class="template-option" data-template="task_update">
                                     <div class="template-icon">📝</div>
                                     <div class="template-title">Task Update</div>
@@ -515,14 +515,14 @@
                                     <div class="template-icon">✋</div>
                                     <div class="template-title">Approval Request</div>
                                     <div class="template-description">Request client approval for completed work</div>
-                                </div>
+                                        </div>
                                 <div class="template-option" data-template="design_ready">
                                     <div class="template-icon">🎨</div>
                                     <div class="template-title">Design Ready</div>
                                     <div class="template-description">Notify client that design is ready for review</div>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
 
                         <!-- Email Form -->
                         <form id="emailForm" method="POST" action="{{ route('tasks.store-email-preparation', $task) }}">
@@ -593,7 +593,7 @@
                                 <label for="body" class="form-label">
                                     <i class="bx bx-edit"></i>
                                     Email Body *
-                                </label>
+                                        </label>
                                 <textarea class="form-control"
                                           id="body"
                                           name="body"
@@ -601,7 +601,7 @@
                                           placeholder="Enter your email message here..."
                                           required>{{ old('body') }}</textarea>
                                 <small class="text-muted">HTML styling is supported! The template includes your company logo and professional formatting.</small>
-                            </div>
+                                    </div>
 
                             <!-- Action Buttons -->
                             <div class="d-flex flex-wrap gap-3 justify-content-center mt-4">
@@ -636,14 +636,14 @@
                             <div class="preview-header">
                                 <i class="bx bx-show"></i>
                                 Email Preview
-                            </div>
+                    </div>
                             <div class="preview-content">
                                 <div class="preview-subject" id="previewSubject"></div>
                                 <div class="preview-body" id="previewBody"></div>
-                            </div>
-                        </div>
                     </div>
-                </div>
+                    </div>
+                    </div>
+                    </div>
 
                 <!-- Task Information Card -->
                 <div class="task-info-card">
@@ -658,28 +658,28 @@
                     <div class="info-row">
                         <span class="info-label">Project</span>
                         <span class="info-value">{{ $task->project->name ?? 'N/A' }}</span>
-                    </div>
+                </div>
                     <div class="info-row">
                         <span class="info-label">Assigned To</span>
                         <span class="info-value">{{ $task->assignedUser->name ?? 'Unassigned' }}</span>
-                    </div>
+                        </div>
                     <div class="info-row">
                         <span class="info-label">Status</span>
                         <span class="status-badge status-ready">{{ ucfirst(str_replace('_', ' ', $task->status)) }}</span>
-                    </div>
+                </div>
                     <div class="info-row">
                         <span class="info-label">Priority</span>
                         <span class="status-badge status-{{ $task->priority === 'high' ? 'high' : ($task->priority === 'urgent' ? 'urgent' : 'normal') }}">
                             {{ strtoupper($task->priority) }}
                         </span>
-                    </div>
+            </div>
                     <div class="info-row">
                         <span class="info-label">Due Date</span>
                         <span class="info-value">{{ $task->due_date ? $task->due_date->format('M d, Y') : 'No due date' }}</span>
-                    </div>
-                </div>
-            </div>
         </div>
+    </div>
+</div>
+            </div>
     </div>
 </div>
 
@@ -710,6 +710,24 @@ document.addEventListener('DOMContentLoaded', function() {
     const emailTemplates = {
         project_completion: {
             subject: '✅ Project Completed: ' + taskTitle,
+            plainTextBody: '✅ PROJECT COMPLETED SUCCESSFULLY!\n\n' +
+                'Dear Valued Client,\n\n' +
+                'We are pleased to inform you that your project "' + taskTitle + '" has been completed successfully!\n\n' +
+                '📋 PROJECT DETAILS:\n' +
+                '• Project Name: ' + taskTitle + '\n' +
+                '• Task ID: #' + taskId + '\n' +
+                '• Status: ✅ Completed\n' +
+                '• Completion Date: ' + new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) + '\n\n' +
+                'All deliverables have been prepared according to your specifications and are ready for your review.\n\n' +
+                '🎯 NEXT STEPS:\n' +
+                '• Review the completed work and deliverables\n' +
+                '• Provide your feedback or approval\n' +
+                '• Request any modifications if needed\n\n' +
+                'Thank you for choosing ' + companyName + '. We look forward to your feedback!\n\n' +
+                'Best regards,\n' +
+                'The ' + companyName + ' Team\n\n' +
+                '📧 engineering@orion-contracting.com | 🌐 www.orion-contracting.com\n' +
+                'This is an automated notification from our project management system.',
             body: '<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f4f6f9; padding: 20px;">' +
                 '<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 20px; text-align: center; border-radius: 12px 12px 0 0;">' +
                     '<img src="' + logoUrl + '" alt="' + companyName + '" style="max-width: 200px; height: auto; margin-bottom: 20px;">' +
@@ -745,6 +763,23 @@ document.addEventListener('DOMContentLoaded', function() {
         },
         task_update: {
             subject: '📝 Task Update: ' + taskTitle,
+            plainTextBody: '📝 TASK PROGRESS UPDATE\n\n' +
+                'Dear Valued Client,\n\n' +
+                'We would like to provide you with an update on your project "' + taskTitle + '".\n\n' +
+                '📊 CURRENT STATUS:\n' +
+                '• Project: ' + taskTitle + '\n' +
+                '• Task ID: #' + taskId + '\n' +
+                '• Update Date: ' + new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) + '\n\n' +
+                '✅ PROGRESS UPDATE:\n' +
+                '[Describe the current progress and any milestones achieved]\n\n' +
+                '🔄 NEXT STEPS:\n' +
+                '• [Next action item 1]\n' +
+                '• [Next action item 2]\n' +
+                '• [Expected completion timeline]\n\n' +
+                'If you have any questions or concerns, please don\'t hesitate to reach out to us.\n\n' +
+                'Best regards,\n' +
+                'The ' + companyName + ' Team\n\n' +
+                '📧 engineering@orion-contracting.com | 🌐 www.orion-contracting.com',
             body: '<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f4f6f9; padding: 20px;">' +
                 '<div style="background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%); padding: 40px 20px; text-align: center; border-radius: 12px 12px 0 0;">' +
                     '<img src="' + logoUrl + '" alt="' + companyName + '" style="max-width: 200px; height: auto; margin-bottom: 20px;">' +
@@ -853,6 +888,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const templateType = this.dataset.template;
             if (emailTemplates[templateType]) {
                 subject.value = emailTemplates[templateType].subject;
+                // Use HTML version for display, plain text will be used for Gmail
                 body.value = emailTemplates[templateType].body;
                 updateProgress();
             }
@@ -876,7 +912,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (hasRequiredData) {
             progressSteps[2].classList.add('active');
             document.querySelectorAll('.progress-line')[1].classList.add('active');
-        } else {
+            } else {
             progressSteps[2].classList.remove('active');
             document.querySelectorAll('.progress-line')[1].classList.remove('active');
         }
@@ -917,9 +953,30 @@ document.addEventListener('DOMContentLoaded', function() {
             gmailUrl.searchParams.append('su', subjectValue);
         }
         if (bodyValue) {
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = bodyValue;
-            const plainBody = tempDiv.textContent || tempDiv.innerText || '';
+            let plainBody;
+
+            // Check if we have a plain text version available
+            const selectedTemplate = document.querySelector('.template-option.selected');
+            if (selectedTemplate && emailTemplates[selectedTemplate.dataset.template] && emailTemplates[selectedTemplate.dataset.template].plainTextBody) {
+                plainBody = emailTemplates[selectedTemplate.dataset.template].plainTextBody;
+            } else {
+                // Fallback to converting HTML to plain text
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = bodyValue;
+                plainBody = tempDiv.textContent || tempDiv.innerText || '';
+
+                // Enhanced plain text formatting
+                plainBody = plainBody
+                    .replace(/\s+/g, ' ')  // Replace multiple spaces with single space
+                    .replace(/ ([.!?])/g, '$1')  // Fix spacing before punctuation
+                    .replace(/([.!?])([A-Z])/g, '$1\n\n$2')  // Add line breaks after sentences
+                    .replace(/([a-z])([A-Z])/g, '$1 $2')  // Add space between camelCase
+                    .replace(/([a-z])(\d)/g, '$1 $2')  // Add space between letters and numbers
+                    .replace(/(\d)([A-Z])/g, '$1 $2')  // Add space between numbers and letters
+                    .replace(/\n\s*\n/g, '\n\n')  // Clean up multiple line breaks
+                    .trim();
+            }
+
             gmailUrl.searchParams.append('body', plainBody);
         }
 
@@ -956,7 +1013,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (data.success) {
                     alert('✅ ' + (data.message || 'Email marked as sent successfully!'));
                     window.location.href = data.redirect_url || '{{ route("tasks.show", $task) }}';
-                } else {
+                    } else {
                     alert('❌ ' + (data.message || 'Failed to mark email as sent'));
                     markAsSentBtn.disabled = false;
                     markAsSentBtn.innerHTML = '<i class="bx bx-check-double me-2"></i>Mark as Sent (After Gmail)';
