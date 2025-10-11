@@ -525,7 +525,7 @@
                         </div>
 
                         <!-- Email Form -->
-                        <form id="emailForm" method="POST" action="{{ route('tasks.email-preparation.store', $task) }}">
+                        <form id="emailForm" method="POST" action="{{ route('tasks.store-email-preparation', $task) }}">
                             @csrf
 
                             <!-- Recipients -->
