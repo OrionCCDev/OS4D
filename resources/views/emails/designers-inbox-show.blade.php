@@ -330,11 +330,32 @@
                             </div>
                             <div class="card-body">
                                 <div class="row">
-                                    @foreach($email->attachments as $attachment)
+                                    @foreach($email->attachments as $index => $attachment)
                                     <div class="col-md-6 mb-3">
                                         <div class="d-flex align-items-center p-3 border rounded">
                                             <div class="avatar-sm bg-light rounded-circle d-flex align-items-center justify-content-center me-3">
-                                                <i class="bx bx-file text-muted fs-4"></i>
+                                                @php
+                                                    $ext = strtolower(pathinfo($attachment['filename'] ?? '', PATHINFO_EXTENSION));
+                                                    $iconClass = 'bx-file';
+                                                    $iconColor = 'text-muted';
+                                                    if (in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp'])) {
+                                                        $iconClass = 'bx-image';
+                                                        $iconColor = 'text-success';
+                                                    } elseif (in_array($ext, ['pdf'])) {
+                                                        $iconClass = 'bx-file-pdf';
+                                                        $iconColor = 'text-danger';
+                                                    } elseif (in_array($ext, ['doc', 'docx'])) {
+                                                        $iconClass = 'bx-file-doc';
+                                                        $iconColor = 'text-primary';
+                                                    } elseif (in_array($ext, ['xls', 'xlsx'])) {
+                                                        $iconClass = 'bx-file-excel';
+                                                        $iconColor = 'text-success';
+                                                    } elseif (in_array($ext, ['zip', 'rar', '7z'])) {
+                                                        $iconClass = 'bx-archive';
+                                                        $iconColor = 'text-warning';
+                                                    }
+                                                @endphp
+                                                <i class="bx {{ $iconClass }} {{ $iconColor }} fs-4"></i>
                                             </div>
                                             <div class="flex-grow-1 text-break">
                                                 <div class="fw-semibold">{{ $attachment['filename'] ?? 'Unknown File' }}</div>
@@ -344,6 +365,26 @@
                                                         • {{ number_format($attachment['size'] / 1024, 1) }} KB
                                                     @endif
                                                 </small>
+                                                <div class="mt-2">
+                                                    <a href="{{ route('emails.attachment.download', ['email' => $email->id, 'index' => $index]) }}"
+                                                       class="btn btn-sm btn-primary me-2"
+                                                       title="Download attachment">
+                                                        <i class="bx bx-download me-1"></i>Download
+                                                    </a>
+                                                    @if(in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'pdf']))
+                                                    <a href="{{ route('emails.attachment.view', ['email' => $email->id, 'index' => $index]) }}"
+                                                       target="_blank"
+                                                       class="btn btn-sm btn-outline-secondary"
+                                                       title="Open in new tab">
+                                                        <i class="bx bx-show me-1"></i>View
+                                                    </a>
+                                                    @endif
+                                                    <button class="btn btn-sm btn-outline-info"
+                                                            onclick="copyAttachmentLink('{{ route('emails.attachment.download', ['email' => $email->id, 'index' => $index]) }}')"
+                                                            title="Copy download link">
+                                                        <i class="bx bx-link me-1"></i>Copy Link
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -508,6 +549,31 @@
                 if (alert) alert.remove();
             }, 5000);
         }
+    }
+
+    function copyAttachmentLink(url) {
+        // Create full URL with domain
+        const fullUrl = window.location.origin + url;
+
+        // Copy to clipboard
+        navigator.clipboard.writeText(fullUrl).then(() => {
+            showAlert('success', 'Download link copied to clipboard!');
+        }).catch(err => {
+            // Fallback for older browsers
+            const textArea = document.createElement('textarea');
+            textArea.value = fullUrl;
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-999999px';
+            document.body.appendChild(textArea);
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                showAlert('success', 'Download link copied to clipboard!');
+            } catch (err) {
+                showAlert('error', 'Failed to copy link');
+            }
+            document.body.removeChild(textArea);
+        });
     }
 </script>
 @endsection

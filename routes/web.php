@@ -425,6 +425,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/emails/{id}/standalone', [App\Http\Controllers\EmailFetchController::class, 'showStandalone'])->name('emails.show-standalone');
     Route::get('/emails/{emailId}/attachment/{attachmentIndex}/preview', [App\Http\Controllers\EmailFetchController::class, 'previewAttachment'])->name('emails.attachment.preview');
     Route::get('/emails/{emailId}/attachment/{attachmentIndex}/download', [App\Http\Controllers\EmailFetchController::class, 'downloadAttachment'])->name('emails.attachment.download');
+    Route::get('/emails/{emailId}/attachment/{attachmentIndex}/view', [App\Http\Controllers\EmailFetchController::class, 'viewAttachment'])->name('emails.attachment.view');
     Route::get('/email/{id}', [App\Http\Controllers\EmailController::class, 'show'])->name('email.show');
     Route::post('/emails/{id}/mark-read', [App\Http\Controllers\EmailFetchController::class, 'markAsRead'])->name('emails.mark-read');
     Route::post('/emails/{id}/mark-unread', [App\Http\Controllers\EmailFetchController::class, 'markAsUnread'])->name('emails.mark-unread');

@@ -761,6 +761,9 @@
                                 <button class="btn btn-sm btn-primary" onclick="downloadAttachment({{ $email->id }}, {{ $index }}, '{{ $filename }}')">
                                     <i class='bx bx-download'></i> Download
                                 </button>
+                                <button class="btn btn-sm btn-outline-info" onclick="copyAttachmentLink({{ $email->id }}, {{ $index }})">
+                                    <i class='bx bx-link'></i> Copy Link
+                                </button>
                             </div>
                         </div>
                         @endforeach
@@ -999,6 +1002,31 @@
             document.body.removeChild(link);
 
             showAlert('success', `Download started for ${filename}`);
+        }
+
+        // Copy attachment link to clipboard
+        function copyAttachmentLink(emailId, attachmentIndex) {
+            const downloadUrl = window.location.origin + `/emails/${emailId}/attachment/${attachmentIndex}/download`;
+
+            // Copy to clipboard
+            navigator.clipboard.writeText(downloadUrl).then(() => {
+                showAlert('success', 'Download link copied to clipboard!');
+            }).catch(err => {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = downloadUrl;
+                textArea.style.position = 'fixed';
+                textArea.style.left = '-999999px';
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    showAlert('success', 'Download link copied to clipboard!');
+                } catch (err) {
+                    showAlert('error', 'Failed to copy link');
+                }
+                document.body.removeChild(textArea);
+            });
         }
     </script>
 </body>

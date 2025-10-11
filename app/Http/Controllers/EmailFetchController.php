@@ -876,4 +876,79 @@ class EmailFetchController extends Controller
         }
     }
 
+    /**
+     * View email attachment in browser (inline)
+     */
+    public function viewAttachment($emailId, $attachmentIndex)
+    {
+        $user = Auth::user();
+
+        if (!$user->isManager()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Access denied. Only managers can view attachments.'
+            ], 403);
+        }
+
+        try {
+            $email = Email::findOrFail($emailId);
+            $attachments = $email->attachments ?? [];
+
+            if (!isset($attachments[$attachmentIndex])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Attachment not found.'
+                ], 404);
+            }
+
+            $attachment = $attachments[$attachmentIndex];
+            $filename = $attachment['filename'] ?? 'unknown';
+            $mimeType = $attachment['mime_type'] ?? 'application/octet-stream';
+            $attachmentId = $attachment['attachment_id'] ?? null;
+
+            // For Gmail attachments, we need to fetch from Gmail API
+            if ($attachmentId && $email->email_source === 'gmail') {
+                // This would require Gmail API integration to fetch the actual file
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Gmail attachment viewing not yet implemented. Please download the file instead.'
+                ], 501);
+            }
+
+            // Check different storage locations for the file
+            $storagePaths = [
+                storage_path('app/email-attachments/' . $filename),
+                storage_path('app/' . $filename),
+            ];
+
+            // If attachment has file_path, use that
+            if (isset($attachment['file_path'])) {
+                $storagePaths[] = storage_path('app/' . $attachment['file_path']);
+            }
+
+            // Try each path
+            foreach ($storagePaths as $storagePath) {
+                if (file_exists($storagePath)) {
+                    // Return file for inline viewing (not download)
+                    return response()->file($storagePath, [
+                        'Content-Type' => $mimeType,
+                        'Content-Disposition' => 'inline; filename="' . $filename . '"',
+                    ]);
+                }
+            }
+
+            // If file doesn't exist locally, return error
+            return response()->json([
+                'success' => false,
+                'message' => 'Attachment file not found on server.'
+            ], 404);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error viewing attachment: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
 }
