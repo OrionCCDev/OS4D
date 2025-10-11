@@ -795,6 +795,66 @@ class TaskController extends Controller
     }
 
     /**
+     * Mark email as sent (for manual Gmail sending)
+     */
+    public function markEmailAsSent(Request $request, Task $task)
+    {
+        // Allow assigned user or managers to mark emails as sent
+        if ($task->assigned_to !== Auth::id() && !Auth::user()->isManager()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Access denied. Only the assigned user or managers can mark emails as sent.'
+            ], 403);
+        }
+
+        try {
+            // Get the latest email preparation
+            $emailPreparation = $task->emailPreparations()
+                ->whereIn('status', ['draft', 'processing'])
+                ->orderBy('id', 'desc')
+                ->first();
+
+            if (!$emailPreparation) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No email preparation found. Please save a draft first.'
+                ]);
+            }
+
+            // Update email preparation status
+            $emailPreparation->update([
+                'status' => 'sent',
+                'sent_at' => now(),
+                'sent_via' => $request->input('sent_via', 'gmail_manual'),
+            ]);
+
+            // Update task status to on_client_consultant_review
+            $task->update(['status' => 'on_client_consultant_review']);
+
+            Log::info('Email marked as sent manually for task: ' . $task->id . ' by user: ' . Auth::id());
+
+            // Optionally notify managers
+            $user = Auth::user();
+            $managers = User::where('role', 'manager')->get();
+            foreach ($managers as $manager) {
+                $manager->notify(new \App\Notifications\EmailSendingSuccessNotification($task, $emailPreparation));
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Email marked as sent successfully! Task status updated to "On Client/Consultant Review".',
+                'redirect_url' => route('tasks.show', $task->id)
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to mark email as sent for task: ' . $task->id . ' - ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to mark email as sent: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
      * Debug endpoint to check email preparation attachments
      */
     public function debugEmailAttachments(Task $task)

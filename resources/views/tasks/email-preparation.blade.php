@@ -583,6 +583,20 @@
                                 </div>
                             @endif
 
+                            <!-- Recommended Method Notice -->
+                            <div class="alert alert-info" style="background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%); color: white; border: none; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem;">
+                                <div class="d-flex align-items-center">
+                                    <i class="bx bx-info-circle" style="font-size: 2rem; margin-right: 1rem;"></i>
+                                    <div>
+                                        <h5 class="mb-1" style="color: white;">✨ Recommended: Send via Your Gmail</h5>
+                                        <p class="mb-0" style="font-size: 0.95rem; opacity: 0.95;">
+                                            Click "Send via Gmail" to open Gmail with everything pre-filled.
+                                            This is more reliable and attachments are sent directly from your Gmail account.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
                             <!-- Action Buttons -->
                             <div class="d-flex flex-wrap gap-3 justify-content-center mt-4">
                                 <button type="submit" class="btn btn-enhanced btn-primary-enhanced">
@@ -591,9 +605,19 @@
                                 <button type="button" class="btn btn-enhanced btn-success-enhanced" id="previewEmailBtn">
                                     <i class="bx bx-show me-2"></i>Preview Email
                                 </button>
+                                <button type="button" class="btn btn-enhanced btn-warning" id="sendViaGmailBtn"
+                                        style="background: linear-gradient(135deg, #e53e3e 0%, #c53030 100%); color: white; font-weight: 600; font-size: 1.05rem; padding: 0.75rem 2rem;"
+                                        {{ !$emailPreparation ? 'disabled' : '' }}>
+                                    <i class="bx bxl-gmail me-2"></i>Send via Gmail (Recommended)
+                                </button>
                                 <button type="button" class="btn btn-enhanced btn-success-enhanced" id="sendEmailBtn"
                                         {{ !$emailPreparation ? 'disabled' : '' }}>
-                                    <i class="bx bx-send me-2"></i>Send Email
+                                    <i class="bx bx-send me-2"></i>Send via Server
+                                </button>
+                                <button type="button" class="btn btn-enhanced btn-info" id="markAsSentBtn"
+                                        style="background: linear-gradient(135deg, #38b2ac 0%, #319795 100%); color: white;"
+                                        {{ !$emailPreparation ? 'disabled' : '' }}>
+                                    <i class="bx bx-check-double me-2"></i>Mark as Sent (After Gmail)
                                 </button>
                                 <a href="{{ route('tasks.show', $task) }}" class="btn btn-enhanced btn-secondary-enhanced">
                                     <i class="bx bx-arrow-back me-2"></i>Back to Task
@@ -937,7 +961,125 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     };
 
-    // Send email functionality
+    // Send via Gmail functionality (RECOMMENDED)
+    const sendViaGmailBtn = document.getElementById('sendViaGmailBtn');
+    if (sendViaGmailBtn) {
+        sendViaGmailBtn.addEventListener('click', function() {
+            // Get email details from form
+            const toEmails = document.getElementById('to_emails')?.value || '';
+            const ccEmails = document.getElementById('cc_emails')?.value || '';
+            const bccEmails = document.getElementById('bcc_emails')?.value || '';
+            const subject = document.getElementById('subject')?.value || '';
+            const body = document.getElementById('body')?.value || '';
+
+            // Build Gmail compose URL
+            const gmailUrl = new URL('https://mail.google.com/mail/');
+            gmailUrl.searchParams.append('view', 'cm');
+            gmailUrl.searchParams.append('fs', '1');
+            gmailUrl.searchParams.append('to', toEmails);
+
+            if (ccEmails) {
+                gmailUrl.searchParams.append('cc', ccEmails);
+            }
+            if (bccEmails) {
+                gmailUrl.searchParams.append('bcc', bccEmails);
+            }
+            if (subject) {
+                gmailUrl.searchParams.append('su', subject);
+            }
+            if (body) {
+                // Strip HTML tags and decode entities for plain text
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = body;
+                const plainBody = tempDiv.textContent || tempDiv.innerText || '';
+                gmailUrl.searchParams.append('body', plainBody);
+            }
+
+            // Show instructions to user
+            const instructionsHtml = `
+                <div style="text-align: left; padding: 20px;">
+                    <h4 style="color: #2d3748; margin-bottom: 15px;">
+                        <i class="bx bx-info-circle" style="color: #4299e1;"></i> Opening Gmail...
+                    </h4>
+                    <p style="color: #4a5568; margin-bottom: 15px;">Your Gmail compose window will open with all details pre-filled.</p>
+                    <div style="background: #f7fafc; padding: 15px; border-radius: 8px; border-left: 4px solid #4299e1;">
+                        <p style="margin: 0; font-weight: 600; color: #2d3748; margin-bottom: 10px;">📝 Important Instructions:</p>
+                        <ol style="margin: 0; padding-left: 20px; color: #4a5568;">
+                            <li style="margin-bottom: 8px;"><strong>Attachments:</strong> You'll need to manually attach files from your computer</li>
+                            <li style="margin-bottom: 8px;"><strong>Review:</strong> Check all details before sending</li>
+                            <li style="margin-bottom: 8px;"><strong>Send:</strong> Click the Send button in Gmail when ready</li>
+                            <li><strong>After sending:</strong> Come back here and click "Mark as Sent" button</li>
+                        </ol>
+                    </div>
+                    <p style="color: #718096; margin-top: 15px; font-size: 0.9rem;">
+                        <i class="bx bx-check-circle" style="color: #48bb78;"></i>
+                        This method is more reliable and sent emails will appear in your Gmail Sent folder.
+                    </p>
+                </div>
+            `;
+
+            // Show instructions in a modal or alert
+            if (confirm('This will open Gmail in a new tab with your email pre-filled.\n\n⚠️ Note: You will need to manually attach any files.\n\nClick OK to continue.')) {
+                // Open Gmail compose in new tab
+                window.open(gmailUrl.toString(), '_blank');
+
+                // Show success message with next steps
+                setTimeout(() => {
+                    alert('✅ Gmail opened!\n\n📌 Next Steps:\n1. Attach any required files in Gmail\n2. Review and send the email\n3. Come back here and click "Mark as Sent" button');
+
+                    // Optionally auto-save the draft before opening Gmail
+                    const emailForm = document.getElementById('emailForm');
+                    if (emailForm && confirm('Would you like to save this draft before continuing?')) {
+                        emailForm.submit();
+                    }
+                }, 500);
+            }
+        });
+    }
+
+    // Mark as Sent functionality (for Gmail method)
+    const markAsSentBtn = document.getElementById('markAsSentBtn');
+    if (markAsSentBtn) {
+        markAsSentBtn.addEventListener('click', function() {
+            if (confirm('Have you successfully sent the email via Gmail?\n\nThis will mark the task as "On Client/Consultant Review".')) {
+                // Disable button and show loading
+                markAsSentBtn.disabled = true;
+                markAsSentBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+
+                // Send request to mark as sent
+                fetch('{{ route("tasks.mark-email-sent", $task) }}', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        sent_via: 'gmail_manual'
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('✅ ' + (data.message || 'Email marked as sent successfully!'));
+                        window.location.href = data.redirect_url || '{{ route("tasks.show", $task) }}';
+                    } else {
+                        alert('❌ ' + (data.message || 'Failed to mark email as sent'));
+                        markAsSentBtn.disabled = false;
+                        markAsSentBtn.innerHTML = '<i class="bx bx-check-double me-2"></i>Mark as Sent (After Gmail)';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('❌ Error marking email as sent. Please try again.');
+                    markAsSentBtn.disabled = false;
+                    markAsSentBtn.innerHTML = '<i class="bx bx-check-double me-2"></i>Mark as Sent (After Gmail)';
+                });
+            }
+        });
+    }
+
+    // Send email functionality (Server-side method)
     sendEmailBtn.addEventListener('click', function() {
         const useGmail = document.getElementById('use_gmail') && document.getElementById('use_gmail').checked;
         const confirmMessage = useGmail ?
