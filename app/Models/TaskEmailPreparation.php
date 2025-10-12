@@ -20,6 +20,7 @@ class TaskEmailPreparation extends Model
         'attachments',
         'status',
         'sent_at',
+        'sent_via',
     ];
 
     protected $casts = [
