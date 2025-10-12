@@ -227,4 +227,40 @@
         </div>
     </div>
 </div>
+
+@push('scripts')
+<script>
+    // Ensure handleNotificationClick function is available on dashboard
+    if (typeof window.handleNotificationClick === 'undefined') {
+        window.handleNotificationClick = function(notificationId, viewUrl) {
+            console.log('handleNotificationClick called with:', notificationId, viewUrl);
+
+            // Mark as read using unified notification system
+            fetch(`{{ url('notifications') }}/${notificationId}/mark-read`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Content-Type': 'application/json',
+                }
+            }).then(() => {
+                console.log('Notification marked as read:', notificationId);
+                // Refresh notification counts if functions are available
+                if (typeof fetchEmailCount === 'function') fetchEmailCount();
+                if (typeof fetchTaskCount === 'function') fetchTaskCount();
+                if (typeof fetchBottomNotifications === 'function') fetchBottomNotifications();
+            }).catch(error => {
+                console.error('Error marking notification as read:', error);
+            });
+
+            // Navigate to URL if provided
+            if (viewUrl && viewUrl.trim() !== '' && viewUrl !== '#') {
+                console.log('Navigating to:', viewUrl);
+                window.location.href = viewUrl;
+            } else {
+                console.log('No valid URL provided for navigation');
+            }
+        };
+    }
+</script>
+@endpush
 @endsection
