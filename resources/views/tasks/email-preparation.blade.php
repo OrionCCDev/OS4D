@@ -704,6 +704,8 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM Content Loaded - initializing email preparation functionality');
+
     // Get form elements
     const emailForm = document.getElementById('emailForm');
     const toEmails = document.getElementById('to_emails');
@@ -722,6 +724,15 @@ document.addEventListener('DOMContentLoaded', function() {
     const emailPreview = document.getElementById('emailPreview');
     const previewSubject = document.getElementById('previewSubject');
     const previewBody = document.getElementById('previewBody');
+
+    console.log('DOM Elements found:', {
+        emailForm: !!emailForm,
+        toEmails: !!toEmails,
+        subject: !!subject,
+        body: !!body,
+        sendViaGmailBtn: !!sendViaGmailBtn,
+        markAsSentBtn: !!markAsSentBtn
+    });
 
     // Email templates
     const taskTitle = '{{ addslashes($task->title) }}';
@@ -989,11 +1000,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Send via Gmail functionality
     sendViaGmailBtn.addEventListener('click', function() {
+        console.log('Send via Gmail button clicked!');
         const toEmailsValue = toEmails.value || '';
         const ccEmailsValue = ccEmails.value || '';
         const bccEmailsValue = bccEmails.value || '';
         const subjectValue = subject.value || '';
         const bodyValue = body.value || '';
+
+        console.log('Form values:', { toEmailsValue, subjectValue, bodyValue });
 
         const gmailUrl = new URL('https://mail.google.com/mail/');
         gmailUrl.searchParams.append('view', 'cm');
