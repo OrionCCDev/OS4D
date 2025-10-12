@@ -850,7 +850,7 @@ class TaskController extends Controller
 
             Log::info('Email marked as sent manually for task: ' . $task->id . ' by user: ' . Auth::id());
 
-            // Optionally notify managers
+            // Notify managers about the email being sent
             $user = Auth::user();
             $managers = User::where('role', 'manager')->get();
             foreach ($managers as $manager) {
@@ -868,6 +868,111 @@ class TaskController extends Controller
                 'success' => false,
                 'message' => 'Failed to mark email as sent: ' . $e->getMessage()
             ]);
+        }
+    }
+
+    /**
+     * Show free mail form for users and managers
+     */
+    public function showFreeMailForm(Task $task)
+    {
+        // Allow assigned user or managers to send free mail
+        if ($task->assigned_to !== Auth::id() && !Auth::user()->isManager()) {
+            abort(403, 'Access denied. Only the assigned user or managers can send free mail.');
+        }
+
+        return view('tasks.free-mail', compact('task'));
+    }
+
+    /**
+     * Send free mail via Gmail
+     */
+    public function sendFreeMail(Request $request, Task $task)
+    {
+        // Allow assigned user or managers to send free mail
+        if ($task->assigned_to !== Auth::id() && !Auth::user()->isManager()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Access denied. Only the assigned user or managers can send free mail.'
+            ], 403);
+        }
+
+        $request->validate([
+            'to_emails' => 'required|string',
+            'subject' => 'required|string|max:255',
+            'body' => 'required|string',
+            'cc_emails' => 'nullable|string',
+            'bcc_emails' => 'nullable|string',
+        ]);
+
+        try {
+            // Create email preparation record for tracking
+            $emailPreparation = $task->emailPreparations()->create([
+                'prepared_by' => Auth::id(),
+                'to_emails' => $request->to_emails,
+                'cc_emails' => $request->cc_emails . (empty($request->cc_emails) ? '' : ',') . 'engineering@orion-contracting.com',
+                'bcc_emails' => $request->bcc_emails,
+                'subject' => $request->subject,
+                'body' => $request->body,
+                'status' => 'draft',
+                'sent_via' => 'gmail_free_mail',
+            ]);
+
+            // Notify managers about the free mail
+            $this->notifyManagersAboutFreeMail($task, $emailPreparation);
+
+            Log::info('Free mail prepared for task: ' . $task->id . ' by user: ' . Auth::id());
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Free mail prepared successfully! Opening Gmail...',
+                'gmail_url' => $this->generateGmailUrl($request),
+                'email_preparation_id' => $emailPreparation->id
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to prepare free mail for task: ' . $task->id . ' - ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to prepare free mail: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Generate Gmail compose URL for free mail
+     */
+    private function generateGmailUrl(Request $request)
+    {
+        $gmailUrl = new \GuzzleHttp\Psr7\Uri('https://mail.google.com/mail/');
+        $gmailUrl = $gmailUrl->withQuery(http_build_query([
+            'view' => 'cm',
+            'fs' => '1',
+            'to' => $request->to_emails,
+            'cc' => $request->cc_emails . (empty($request->cc_emails) ? '' : ',') . 'engineering@orion-contracting.com',
+            'bcc' => $request->bcc_emails,
+            'su' => $request->subject,
+            'body' => strip_tags($request->body), // Convert HTML to plain text for Gmail
+        ]));
+
+        return $gmailUrl->__toString();
+    }
+
+    /**
+     * Notify managers about free mail
+     */
+    private function notifyManagersAboutFreeMail(Task $task, $emailPreparation)
+    {
+        $managers = User::where('role', 'manager')->get();
+        $sender = Auth::user();
+
+        foreach ($managers as $manager) {
+            $manager->notify(new \App\Notifications\FreeMailSentNotification(
+                $task,
+                $emailPreparation,
+                $sender,
+                $emailPreparation->to_emails
+            ));
         }
     }
 

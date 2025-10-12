@@ -73,6 +73,11 @@
                             </button>
                         </form>
                     @endif
+                    @if(Auth::user()->id === $task->assigned_to || Auth::user()->isManager())
+                        <a href="{{ route('tasks.free-mail', $task) }}" class="btn btn-outline-primary">
+                            <i class="bx bx-mail-send me-1"></i>Send Free Mail
+                        </a>
+                    @endif
                 </div>
             </div>
         </div>
@@ -771,9 +776,16 @@
                                     <strong>Internally Approved!</strong><br>
                                     <small>Manager approved. Now send confirmation email to clients/consultants.</small>
                                 </div>
-                                <a href="{{ route('tasks.prepare-email', $task) }}" class="btn btn-primary w-100">
-                                    <i class="bx bx-envelope me-2"></i>Prepare Confirmation Email
-                                </a>
+                                <div class="d-grid gap-2">
+                                    <a href="{{ route('tasks.prepare-email', $task) }}" class="btn btn-primary">
+                                        <i class="bx bx-envelope me-2"></i>Prepare Confirmation Email
+                                    </a>
+                                    @if(Auth::user()->id === $task->assigned_to || Auth::user()->isManager())
+                                    <a href="{{ route('tasks.free-mail', $task) }}" class="btn btn-outline-primary">
+                                        <i class="bx bx-mail-send me-2"></i>Send Free Mail
+                                    </a>
+                                    @endif
+                                </div>
                                 <small class="text-muted text-center mt-2 d-block">You can also assign contractors during email preparation</small>
 
                             {{-- Status: Re-Submit Required - Manager requested changes --}}

@@ -195,6 +195,10 @@ Route::middleware('auth')->group(function () {
         Route::get('tasks/{task}/debug-attachments', [TaskController::class, 'debugEmailAttachments'])->name('tasks.debug-attachments');
         Route::get('gmail-status', [TaskController::class, 'getGmailStatus'])->name('gmail.status');
 
+        // Free mail sending feature
+        Route::get('tasks/{task}/free-mail', [TaskController::class, 'showFreeMailForm'])->name('tasks.free-mail');
+        Route::post('tasks/{task}/free-mail', [TaskController::class, 'sendFreeMail'])->name('tasks.send-free-mail');
+
         // Test Gmail connection
         Route::get('test-gmail-config', function () {
             $user = auth()->user();

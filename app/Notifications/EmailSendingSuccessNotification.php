@@ -45,7 +45,7 @@ class EmailSendingSuccessNotification extends Notification
             'email_preparation_id' => $this->emailPreparation->id,
             'to_emails' => $this->emailPreparation->to_emails,
             'subject' => $this->emailPreparation->subject,
-            'message' => "Email sent successfully for task: {$this->task->title}",
+            'message' => "Email sent successfully for task: {$this->task->title} to: {$this->emailPreparation->to_emails}",
             'action_url' => route('tasks.show', $this->task->id),
             'action_text' => 'View Task',
         ];
