@@ -1389,6 +1389,8 @@
 
                   // Global function for handling notification clicks
                   window.handleNotificationClick = function(notificationId, viewUrl) {
+                    console.log('handleNotificationClick called with:', notificationId, viewUrl);
+
                     // Mark as read using unified notification system
                     fetch(`{{ url('notifications') }}/${notificationId}/mark-read`, {
                       method: 'POST',
@@ -1397,14 +1399,25 @@
                         'Content-Type': 'application/json',
                       }
                     }).then(() => {
-                      // Refresh count and list
-                      fetchDesignersCount();
-                      fetchDesignersNotifications();
+                      console.log('Notification marked as read:', notificationId);
+                      // Refresh all notification areas
+                      if (typeof fetchDesignersCount === 'function') fetchDesignersCount();
+                      if (typeof fetchDesignersNotifications === 'function') fetchDesignersNotifications();
+                      if (typeof fetchBottomNotifications === 'function') fetchBottomNotifications();
+                      if (typeof fetchEmailCount === 'function') fetchEmailCount();
+                      if (typeof fetchEmailNotifications === 'function') fetchEmailNotifications();
+                      if (typeof fetchTaskCount === 'function') fetchTaskCount();
+                      if (typeof fetchTaskNotifications === 'function') fetchTaskNotifications();
+                    }).catch(error => {
+                      console.error('Error marking notification as read:', error);
                     });
 
-                    // Navigate to email if URL provided
-                    if (viewUrl) {
+                    // Navigate to URL if provided
+                    if (viewUrl && viewUrl.trim() !== '' && viewUrl !== '#') {
+                      console.log('Navigating to:', viewUrl);
                       window.location.href = viewUrl;
+                    } else {
+                      console.log('No valid URL provided for navigation');
                     }
                   };
 
@@ -1731,7 +1744,7 @@
                 }
 
                 // Fetch notifications for bottom chat
-                async function fetchBottomNotifications() {
+                window.fetchBottomNotifications = async function() {
                   try {
                     // Use new unified notification system
                     const r = await fetch('{{ route('notifications.index') }}', { credentials: 'same-origin' });
@@ -1802,7 +1815,7 @@
                         <small class="text-muted">Please try again later</small>
                       </div>`;
                   }
-                }
+                };
 
                 // Fetch notification count for bottom chat
                 async function fetchBottomCount() {
