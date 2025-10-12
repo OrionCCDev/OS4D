@@ -1056,18 +1056,30 @@ document.addEventListener('DOMContentLoaded', function() {
             gmailUrl.searchParams.append('body', plainBody);
         }
 
+        console.log('Gmail URL constructed:', gmailUrl.toString());
+
         if (confirm('This will open Gmail in a new tab with your email pre-filled.\n\n⚠️ Note: You will need to manually attach any required files.\n\nClick OK to continue.')) {
+            console.log('User confirmed - proceeding with Gmail workflow');
             // First save a draft automatically
             saveDraftForGmail().then(() => {
+                console.log('Draft saved - opening Gmail now');
                 // Then open Gmail
-                window.open(gmailUrl.toString(), '_blank');
-                setTimeout(() => {
-                    alert('✅ Gmail opened!\n\n📌 Next Steps:\n1. Attach any required files in Gmail\n2. Review and send the email\n3. Come back here and click "Mark as Sent" button');
-                }, 500);
+                const gmailWindow = window.open(gmailUrl.toString(), '_blank');
+                console.log('Gmail window opened:', gmailWindow);
+
+                if (gmailWindow) {
+                    setTimeout(() => {
+                        alert('✅ Gmail opened!\n\n📌 Next Steps:\n1. Attach any required files in Gmail\n2. Review and send the email\n3. Come back here and click "Mark as Sent" button');
+                    }, 500);
+                } else {
+                    alert('❌ Gmail window was blocked by popup blocker!\n\nPlease allow popups for this site and try again.');
+                }
             }).catch(error => {
                 console.error('Failed to save draft:', error);
                 alert('❌ Failed to save draft. Please try again.');
             });
+        } else {
+            console.log('User cancelled Gmail opening');
         }
         });
     }
