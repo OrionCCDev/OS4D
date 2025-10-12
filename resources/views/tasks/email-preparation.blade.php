@@ -1212,7 +1212,12 @@ document.addEventListener('DOMContentLoaded', function() {
                         window.location.href = data.redirect_url || '{{ route("tasks.show", $task) }}';
                     }, 1000);
                 } else {
-                    alert('❌ ' + (data.message || 'Failed to mark email as sent'));
+                    let errorMessage = data.message || 'Failed to mark email as sent';
+                    if (data.debug) {
+                        console.error('Debug info:', data.debug);
+                        errorMessage += '\n\nDebug info: ' + JSON.stringify(data.debug, null, 2);
+                    }
+                    alert('❌ ' + errorMessage);
                     markAsSentBtn.disabled = false;
                     markAsSentBtn.innerHTML = '<i class="bx bx-check-double me-2"></i>Mark as Sent (After Gmail)';
                 }

@@ -864,10 +864,18 @@ class TaskController extends Controller
             ]);
         } catch (\Exception $e) {
             Log::error('Failed to mark email as sent for task: ' . $task->id . ' - ' . $e->getMessage());
+            Log::error('Exception trace: ' . $e->getTraceAsString());
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to mark email as sent: ' . $e->getMessage()
-            ]);
+                'message' => 'Failed to mark email as sent: ' . $e->getMessage(),
+                'debug' => [
+                    'error' => $e->getMessage(),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
+                    'task_id' => $task->id,
+                    'user_id' => Auth::id()
+                ]
+            ], 500);
         }
     }
 
