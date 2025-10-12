@@ -14,6 +14,10 @@
                         <span class="text-muted">- Task: {{ $task->title }}</span>
                     </h4>
                     <p class="text-muted mb-0">Send any email related to this task via Gmail</p>
+                    <div class="alert alert-info mt-2 mb-0">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>Email Account:</strong> This email will be sent from your Gmail account: <strong>{{ Auth::user()->email }}</strong>
+                    </div>
                 </div>
 
                 <div class="card-body">
@@ -317,7 +321,7 @@ document.addEventListener('DOMContentLoaded', function() {
         freeMailForm.addEventListener('submit', function(e) {
             e.preventDefault();
 
-            if (confirm('This will open Gmail in a new tab with your email pre-filled.\n\n⚠️ Note: You will need to manually attach any required files.\n\nClick OK to continue.')) {
+                        if (confirm('This will open Gmail in a new tab with your email pre-filled.\n\n⚠️ Important Notes:\n• Make sure you are logged into Gmail with your account: {{ Auth::user()->email }}\n• You will need to manually attach any required files\n• The email will be sent from your Gmail account\n\nClick OK to continue.')) {
                 sendViaGmailBtn.disabled = true;
                 sendViaGmailBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Opening Gmail...';
 
@@ -339,7 +343,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                         if (gmailWindow) {
                             setTimeout(() => {
-                                alert('✅ Gmail opened!\n\n📌 Next Steps:\n1. Attach any required files in Gmail\n2. Review and send the email\n3. The managers have been notified about this email');
+                                alert('✅ Gmail opened!\n\n📌 Next Steps:\n1. Verify you are logged in as: {{ Auth::user()->email }}\n2. Attach any required files in Gmail\n3. Review and send the email\n4. The managers have been notified about this email');
                             }, 500);
 
                             // Redirect to task after a delay

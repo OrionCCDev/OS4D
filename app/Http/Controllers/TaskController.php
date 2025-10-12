@@ -952,8 +952,11 @@ class TaskController extends Controller
      */
     private function generateGmailUrl(Request $request)
     {
+        $user = Auth::user();
         $gmailUrl = new \GuzzleHttp\Psr7\Uri('https://mail.google.com/mail/');
-        $gmailUrl = $gmailUrl->withQuery(http_build_query([
+        
+        // Build query parameters
+        $queryParams = [
             'view' => 'cm',
             'fs' => '1',
             'to' => $request->to_emails,
@@ -961,7 +964,14 @@ class TaskController extends Controller
             'bcc' => $request->bcc_emails,
             'su' => $request->subject,
             'body' => strip_tags($request->body), // Convert HTML to plain text for Gmail
-        ]));
+        ];
+
+        // Add from parameter to ensure Gmail uses the correct sender account
+        if ($user && $user->email) {
+            $queryParams['from'] = $user->email;
+        }
+
+        $gmailUrl = $gmailUrl->withQuery(http_build_query($queryParams));
 
         return $gmailUrl->__toString();
     }
