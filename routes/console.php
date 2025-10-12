@@ -34,3 +34,10 @@ Schedule::command('emails:new-fetch --max-results=50')
 //
 // All email processing is now handled by the single emails:new-fetch command
 // which includes fetching, storing, and creating notifications for new emails.
+
+// LOG CLEANUP - Clean up and rotate Laravel logs daily at 2 AM
+// This prevents log files from growing too large and causing server issues
+Schedule::command('logs:cleanup')
+    ->dailyAt('02:00')
+    ->withoutOverlapping()
+    ->runInBackground();
