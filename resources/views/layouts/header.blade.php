@@ -1656,6 +1656,7 @@
                   });
                 }
 
+                const markAllBtn = document.getElementById('bottom-mark-all-read');
                 if(markAllBtn){
                   markAllBtn.addEventListener('click', async function(){
                     try{

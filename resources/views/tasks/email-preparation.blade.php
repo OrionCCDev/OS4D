@@ -965,15 +965,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Form validation and progress update
     function updateProgress() {
-        const hasRequiredData = toEmails.value.trim() !== '' &&
-                               subject.value.trim() !== '' &&
-                               body.value.trim() !== '';
+        const hasRequiredData = toEmails && toEmails.value.trim() !== '' &&
+                               subject && subject.value.trim() !== '' &&
+                               body && body.value.trim() !== '';
 
-        // Enable/disable buttons based on form data
-        saveDraftBtn.disabled = !hasRequiredData;
-        sendViaGmailBtn.disabled = !hasRequiredData;
-        sendViaServerBtn.disabled = !hasRequiredData;
-        markAsSentBtn.disabled = !hasRequiredData;
+        // Enable/disable buttons based on form data (with null checks)
+        if (saveDraftBtn) saveDraftBtn.disabled = !hasRequiredData;
+        if (sendViaGmailBtn) sendViaGmailBtn.disabled = !hasRequiredData;
+        if (sendViaServerBtn) sendViaServerBtn.disabled = !hasRequiredData;
+        if (markAsSentBtn) markAsSentBtn.disabled = !hasRequiredData;
 
         // Update progress indicator
         const progressSteps = document.querySelectorAll('.progress-step');
@@ -988,7 +988,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Add event listeners for form fields
     [toEmails, ccEmails, bccEmails, subject, body].forEach(field => {
-        field.addEventListener('input', updateProgress);
+        if (field) {
+            field.addEventListener('input', updateProgress);
+        }
     });
 
     // Preview functionality
