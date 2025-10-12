@@ -63,11 +63,33 @@ class GmailOAuthService
 
     /**
      * Handle the OAuth callback and store tokens
+     * CRITICAL FIX: Use fresh client for each callback to prevent token mixing
      */
     public function handleCallback(string $code, User $user): bool
     {
         try {
-            $token = $this->client->fetchAccessTokenWithAuthCode($code);
+            // CRITICAL FIX: Create a fresh client for this callback to prevent conflicts
+            $callbackClient = new Client();
+            $callbackClient->setClientId(config('services.gmail.client_id'));
+            $callbackClient->setClientSecret(config('services.gmail.client_secret'));
+            $callbackClient->setRedirectUri(config('services.gmail.redirect_uri'));
+            $callbackClient->setScopes([
+                Gmail::GMAIL_SEND,
+                Gmail::GMAIL_READONLY,
+                'https://www.googleapis.com/auth/userinfo.email',
+                'https://www.googleapis.com/auth/userinfo.profile'
+            ]);
+            $callbackClient->setAccessType('offline');
+            $callbackClient->setApprovalPrompt('force');
+
+            // Fix SSL certificate issue for development
+            if (config('app.env') === 'local' || config('app.debug')) {
+                $callbackClient->setHttpClient(new \GuzzleHttp\Client([
+                    'verify' => false, // Only for development
+                ]));
+            }
+
+            $token = $callbackClient->fetchAccessTokenWithAuthCode($code);
 
             if (isset($token['error'])) {
                 Log::error('Gmail OAuth error: ' . $token['error']);
@@ -75,8 +97,8 @@ class GmailOAuthService
             }
 
             // Get user info to get the Gmail email address
-            $this->client->setAccessToken($token);
-            $oauth2 = new Oauth2($this->client);
+            $callbackClient->setAccessToken($token);
+            $oauth2 = new Oauth2($callbackClient);
             $userInfo = $oauth2->userinfo->get();
             $gmailEmail = $userInfo->getEmail();
 
@@ -112,6 +134,7 @@ class GmailOAuthService
 
     /**
      * Get authenticated Gmail service for user
+     * CRITICAL FIX: Create fresh client for each user to prevent token mixing
      */
     public function getGmailService(User $user): ?Gmail
     {
@@ -129,15 +152,38 @@ class GmailOAuthService
                 return null;
             }
 
-            $this->client->setAccessToken($token);
-            Log::info('Gmail token set for user: ' . $user->id);
+            // CRITICAL FIX: Create a fresh client instance for THIS user only
+            // This prevents token mixing between different users
+            $userClient = new Client();
+            $userClient->setClientId(config('services.gmail.client_id'));
+            $userClient->setClientSecret(config('services.gmail.client_secret'));
+            $userClient->setRedirectUri(config('services.gmail.redirect_uri'));
+            $userClient->setScopes([
+                Gmail::GMAIL_SEND,
+                Gmail::GMAIL_READONLY,
+                'https://www.googleapis.com/auth/userinfo.email',
+                'https://www.googleapis.com/auth/userinfo.profile'
+            ]);
+            $userClient->setAccessType('offline');
+            $userClient->setApprovalPrompt('force');
+
+            // Fix SSL certificate issue for development
+            if (config('app.env') === 'local' || config('app.debug')) {
+                $userClient->setHttpClient(new \GuzzleHttp\Client([
+                    'verify' => false, // Only for development
+                ]));
+            }
+
+            // Set this user's specific token on their own client
+            $userClient->setAccessToken($token);
+            Log::info('Gmail token set for user: ' . $user->id . ' on fresh client instance');
 
             // Refresh token if needed
-            if ($this->client->isAccessTokenExpired()) {
+            if ($userClient->isAccessTokenExpired()) {
                 Log::info('Gmail access token expired for user: ' . $user->id . ', attempting refresh');
                 if ($user->gmail_refresh_token) {
-                    $this->client->refreshToken($user->gmail_refresh_token);
-                    $newToken = $this->client->getAccessToken();
+                    $userClient->refreshToken($user->gmail_refresh_token);
+                    $newToken = $userClient->getAccessToken();
 
                     // Update stored token
                     $user->update([
@@ -153,8 +199,9 @@ class GmailOAuthService
                 }
             }
 
-            $gmailService = new Gmail($this->client);
-            Log::info('Gmail service created successfully for user: ' . $user->id);
+            // Create Gmail service with this user's dedicated client
+            $gmailService = new Gmail($userClient);
+            Log::info('Gmail service created successfully for user: ' . $user->id . ' with isolated client');
             return $gmailService;
         } catch (\Exception $e) {
             Log::error('Gmail service error for user ' . $user->id . ': ' . $e->getMessage());
