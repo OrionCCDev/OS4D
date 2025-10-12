@@ -655,12 +655,12 @@
                             <div class="preview-header">
                                 <i class="bx bx-show"></i>
                                 Email Preview
-                    </div>
+                        </div>
                             <div class="preview-content">
                                 <div class="preview-subject" id="previewSubject"></div>
                                 <div class="preview-body" id="previewBody"></div>
-                    </div>
-                </div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -994,14 +994,17 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Preview functionality
-    previewBtn.addEventListener('click', function() {
-        previewSubject.textContent = subject.value;
-        previewBody.innerHTML = body.value;
-        emailPreview.style.display = emailPreview.style.display === 'none' ? 'block' : 'none';
-    });
+    if (previewBtn) {
+        previewBtn.addEventListener('click', function() {
+            if (previewSubject) previewSubject.textContent = subject ? subject.value : '';
+            if (previewBody) previewBody.innerHTML = body ? body.value : '';
+            if (emailPreview) emailPreview.style.display = emailPreview.style.display === 'none' ? 'block' : 'none';
+        });
+    }
 
     // Send via Gmail functionality
-    sendViaGmailBtn.addEventListener('click', function() {
+    if (sendViaGmailBtn) {
+        sendViaGmailBtn.addEventListener('click', function() {
         console.log('Send via Gmail button clicked!');
         const toEmailsValue = toEmails.value || '';
         const ccEmailsValue = ccEmails.value || '';
@@ -1066,7 +1069,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 alert('❌ Failed to save draft. Please try again.');
             });
         }
-    });
+        });
+    }
 
     // Save draft for Gmail workflow
     function saveDraftForGmail() {
@@ -1087,7 +1091,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (data.success) {
                     console.log('Draft saved successfully for Gmail workflow');
                     resolve(data);
-                } else {
+        } else {
                     reject(new Error(data.message || 'Failed to save draft'));
                 }
             })
@@ -1130,7 +1134,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Mark as sent functionality
-    markAsSentBtn.addEventListener('click', function() {
+    if (markAsSentBtn) {
+        markAsSentBtn.addEventListener('click', function() {
         if (confirm('Have you successfully sent the email via Gmail?\n\nThis will mark the task as "On Client/Consultant Review".')) {
             markAsSentBtn.disabled = true;
             markAsSentBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
@@ -1164,7 +1169,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             sent_via: 'gmail_manual'
                         })
                     });
-                } else {
+                    } else {
                     throw new Error(draftData.message || 'Failed to save draft');
                 }
             })
@@ -1199,9 +1204,11 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
     });
+    }
 
     // Direct send functionality - bypasses AJAX completely
-    directSendBtn.addEventListener('click', function() {
+    if (directSendBtn) {
+        directSendBtn.addEventListener('click', function() {
         if (confirm('Send this email and automatically continue to the next step?\n\nThis will send the email via server and update the task status.')) {
             // Show loading state
             directSendBtn.disabled = true;
@@ -1236,10 +1243,12 @@ document.addEventListener('DOMContentLoaded', function() {
             document.body.appendChild(form);
             form.submit();
         }
-    });
+        });
+    }
 
     // Continue to next step functionality
-    continueToNextStepBtn.addEventListener('click', function() {
+    if (continueToNextStepBtn) {
+        continueToNextStepBtn.addEventListener('click', function() {
         if (confirm('Mark this email as sent and update task status to "On Client/Consultant Review"?\n\nThis will progress the task to the next workflow step.')) {
             continueToNextStepBtn.disabled = true;
             continueToNextStepBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
@@ -1275,7 +1284,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 continueToNextStepBtn.innerHTML = '<i class="bx bx-check-double me-2"></i>Continue to Next Step';
             });
         }
-    });
+        });
+    }
 
     // Success message function
     function showSuccessMessage(message) {
@@ -1304,7 +1314,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Handle form submission for server sending
-    emailForm.addEventListener('submit', function(e) {
+    if (emailForm) {
+        emailForm.addEventListener('submit', function(e) {
         const sendEmailBtn = document.querySelector('button[name="send_email"][value="1"]');
         if (sendEmailBtn && e.submitter === sendEmailBtn) {
             e.preventDefault();
@@ -1374,7 +1385,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
             }
         }
-    });
+        });
+    }
 
     // Initialize form state
     updateProgress();
