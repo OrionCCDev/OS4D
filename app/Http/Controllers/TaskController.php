@@ -954,7 +954,7 @@ class TaskController extends Controller
     {
         $user = Auth::user();
         $gmailUrl = new \GuzzleHttp\Psr7\Uri('https://mail.google.com/mail/');
-        
+
         // Build query parameters
         $queryParams = [
             'view' => 'cm',
