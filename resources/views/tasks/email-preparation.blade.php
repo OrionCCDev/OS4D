@@ -612,25 +612,25 @@
 
                             <!-- Action Buttons -->
                             <div class="d-flex flex-wrap gap-3 justify-content-center mt-4">
-                                <button type="button" class="btn btn-enhanced btn-secondary" id="previewBtn">
+                                {{--  <button type="button" class="btn btn-enhanced btn-secondary" id="previewBtn">
                                     <i class="bx bx-show me-2"></i>Preview Email
                                 </button>
 
                                 <button type="submit" class="btn btn-enhanced btn-primary" id="saveDraftBtn">
                                     <i class="bx bx-save me-2"></i>Save Draft
-                                </button>
+                                </button>  --}}
 
                                 <button type="button" class="btn btn-enhanced btn-warning" id="sendViaGmailBtn">
                                     <i class="bx bxl-gmail me-2"></i>Send via Gmail (Recommended)
                                 </button>
 
-                                <button type="submit" class="btn btn-enhanced btn-success" id="sendViaServerBtn" name="send_email" value="1">
+                                {{--  <button type="submit" class="btn btn-enhanced btn-success" id="sendViaServerBtn" name="send_email" value="1">
                                     <i class="bx bx-send me-2"></i>Send via Server
-                                </button>
+                                </button>  --}}
 
-                                <button type="button" class="btn btn-enhanced btn-warning" id="directSendBtn">
+                                {{--  <button type="button" class="btn btn-enhanced btn-warning" id="directSendBtn">
                                     <i class="bx bx-send me-2"></i>Send & Continue (Direct)
-                                </button>
+                                </button>  --}}
 
                                 <button type="button" class="btn btn-enhanced btn-info" id="markAsSentBtn">
                                     <i class="bx bx-check-double me-2"></i>Mark as Sent (After Gmail)
@@ -640,13 +640,13 @@
                                     <i class="bx bx-arrow-back me-2"></i>Back to Task
                                 </a>
 
-                                <button type="button" class="btn btn-enhanced btn-success" id="continueToNextStepBtn" style="display: none;">
+                                {{--  <button type="button" class="btn btn-enhanced btn-success" id="continueToNextStepBtn" style="display: none;">
                                     <i class="bx bx-check-double me-2"></i>Continue to Next Step
                                 </button>
 
                                 <a href="{{ route('tasks.show', $task) }}" class="btn btn-enhanced btn-warning" style="display: none;" id="directNavBtn">
                                     <i class="bx bx-skip-next me-2"></i>Go to Task (Direct)
-                                </a>
+                                </a>  --}}
                     </div>
                         </form>
 
