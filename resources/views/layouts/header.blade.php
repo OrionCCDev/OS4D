@@ -826,6 +826,41 @@
           <!-- Content wrapper -->
           <div class="content-wrapper">
             <script>
+              // CRITICAL: Define handleNotificationClick function immediately to prevent ReferenceError
+              window.handleNotificationClick = window.handleNotificationClick || function(notificationId, viewUrl) {
+                console.log('Global handleNotificationClick called with:', notificationId, viewUrl);
+
+                // Mark as read using unified notification system
+                fetch(`{{ url('notifications') }}/${notificationId}/mark-read`, {
+                  method: 'POST',
+                  headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Content-Type': 'application/json',
+                  }
+                }).then(() => {
+                  console.log('Notification marked as read:', notificationId);
+                  // Refresh notification counts if functions are available
+                  if (typeof fetchEmailCount === 'function') fetchEmailCount();
+                  if (typeof fetchTaskCount === 'function') fetchTaskCount();
+                  if (typeof fetchBottomNotifications === 'function') fetchBottomNotifications();
+                  if (typeof fetchDesignersCount === 'function') fetchDesignersCount();
+                  if (typeof fetchDesignersNotifications === 'function') fetchDesignersNotifications();
+                  if (typeof fetchEmailNotifications === 'function') fetchEmailNotifications();
+                  if (typeof fetchTaskNotifications === 'function') fetchTaskNotifications();
+                }).catch(error => {
+                  console.error('Error marking notification as read:', error);
+                });
+
+                // Navigate to URL if provided
+                if (viewUrl && viewUrl.trim() !== '' && viewUrl !== '#') {
+                  console.log('Navigating to:', viewUrl);
+                  window.location.href = viewUrl;
+                } else {
+                  console.log('No valid URL provided for navigation');
+                }
+              };
+            </script>
+            <script>
               (function(){
                 // Email notification elements
                 const emailCountEl = document.getElementById('nav-email-notification-count');
@@ -1420,6 +1455,38 @@
                       console.log('No valid URL provided for navigation');
                     }
                   };
+
+                  // Ensure the function is always available globally (fallback)
+                  if (typeof window.handleNotificationClick === 'undefined') {
+                    window.handleNotificationClick = function(notificationId, viewUrl) {
+                      console.log('Fallback handleNotificationClick called with:', notificationId, viewUrl);
+
+                      // Mark as read using unified notification system
+                      fetch(`{{ url('notifications') }}/${notificationId}/mark-read`, {
+                        method: 'POST',
+                        headers: {
+                          'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                          'Content-Type': 'application/json',
+                        }
+                      }).then(() => {
+                        console.log('Notification marked as read:', notificationId);
+                        // Refresh notification counts if functions are available
+                        if (typeof fetchEmailCount === 'function') fetchEmailCount();
+                        if (typeof fetchTaskCount === 'function') fetchTaskCount();
+                        if (typeof fetchBottomNotifications === 'function') fetchBottomNotifications();
+                      }).catch(error => {
+                        console.error('Error marking notification as read:', error);
+                      });
+
+                      // Navigate to URL if provided
+                      if (viewUrl && viewUrl.trim() !== '' && viewUrl !== '#') {
+                        console.log('Navigating to:', viewUrl);
+                        window.location.href = viewUrl;
+                      } else {
+                        console.log('No valid URL provided for navigation');
+                      }
+                    };
+                  }
 
                   // Mark all designers notifications as read
                   if (designersMarkAllBtn) {
