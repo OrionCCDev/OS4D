@@ -1148,7 +1148,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Mark as sent functionality
     if (markAsSentBtn) {
         markAsSentBtn.addEventListener('click', function() {
+        console.log('Mark as Sent button clicked!');
         if (confirm('Have you successfully sent the email via Gmail?\n\nThis will mark the task as "On Client/Consultant Review".')) {
+            console.log('User confirmed - proceeding with mark as sent');
             markAsSentBtn.disabled = true;
             markAsSentBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
 
@@ -1157,6 +1159,7 @@ document.addEventListener('DOMContentLoaded', function() {
             formData.append('save_draft', '1');
 
             // Save draft first if needed
+            console.log('Saving draft before marking as sent...');
             fetch('{{ route("tasks.store-email-preparation", $task) }}', {
                 method: 'POST',
                 headers: {
@@ -1165,11 +1168,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 },
                 body: formData
             })
-            .then(response => response.json())
+            .then(response => {
+                console.log('Draft save response status:', response.status);
+                return response.json();
+            })
             .then(draftData => {
+                console.log('Draft save response data:', draftData);
                 if (draftData.success) {
-                    console.log('Draft ensured for mark as sent');
+                    console.log('Draft ensured for mark as sent - now calling mark as sent API');
                     // Now mark as sent
+                    console.log('Calling mark as sent API:', '{{ route("tasks.mark-email-sent", $task) }}');
                     return fetch('{{ route("tasks.mark-email-sent", $task) }}', {
                         method: 'POST',
                         headers: {
@@ -1186,6 +1194,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             })
             .then(response => {
+                console.log('Mark as sent response status:', response.status);
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
