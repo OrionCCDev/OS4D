@@ -1204,9 +1204,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.log('Mark as sent response data:', data);
                 if (data.success) {
                     showSuccessMessage(data.message || 'Email marked as sent successfully! Task status updated to "On Client/Consultant Review".');
-                    // Show continue button as backup
-                    continueToNextStepBtn.style.display = 'inline-flex';
-                    directNavBtn.style.display = 'inline-flex';
+                    // Show continue button as backup (with null checks)
+                    if (continueToNextStepBtn) continueToNextStepBtn.style.display = 'inline-flex';
+                    if (directNavBtn) directNavBtn.style.display = 'inline-flex';
                     // Immediate redirect without delay
                     setTimeout(() => {
                         window.location.href = data.redirect_url || '{{ route("tasks.show", $task) }}';
@@ -1386,9 +1386,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (data && data.success) {
                         console.log('Response data:', data);
                         showSuccessMessage(data.message || 'Email sent successfully! Task status updated to "On Client/Consultant Review".');
-                        // Show continue button as backup
-                        continueToNextStepBtn.style.display = 'inline-flex';
-                        directNavBtn.style.display = 'inline-flex';
+                        // Show continue button as backup (with null checks)
+                        if (continueToNextStepBtn) continueToNextStepBtn.style.display = 'inline-flex';
+                        if (directNavBtn) directNavBtn.style.display = 'inline-flex';
                         // Immediate redirect without delay
                         setTimeout(() => {
                             window.location.href = data.redirect_url || '{{ route("tasks.show", $task) }}';
@@ -1403,8 +1403,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     console.error('Error:', error);
                     // Fallback: show success message and redirect anyway
                     showSuccessMessage('Email processing completed. Redirecting to task view...');
-                    continueToNextStepBtn.style.display = 'inline-flex';
-                    directNavBtn.style.display = 'inline-flex';
+                    if (continueToNextStepBtn) continueToNextStepBtn.style.display = 'inline-flex';
+                    if (directNavBtn) directNavBtn.style.display = 'inline-flex';
                     setTimeout(() => {
                         window.location.href = '{{ route("tasks.show", $task) }}';
                     }, 2000);
