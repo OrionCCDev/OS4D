@@ -626,8 +626,8 @@ class Task extends Model
         $this->histories()->create([
             'user_id' => auth()->id(),
             'action' => 'client_approval_updated',
-            'description' => "Client approval updated to: {$status}" . ($notes ? ". Notes: {$notes}" : ""),
-            'metadata' => ['client_status' => $status, 'notes' => $notes, 'updated_at' => now()]
+            'description' => "Client approval updated to: {$status}",
+            'metadata' => ['client_status' => $status, 'client_response_notes' => $notes, 'updated_at' => now()]
         ]);
 
         // Check if both approvals are complete
@@ -655,8 +655,8 @@ class Task extends Model
         $this->histories()->create([
             'user_id' => auth()->id(),
             'action' => 'consultant_approval_updated',
-            'description' => "Consultant approval updated to: {$status}" . ($notes ? ". Notes: {$notes}" : ""),
-            'metadata' => ['consultant_status' => $status, 'notes' => $notes, 'updated_at' => now()]
+            'description' => "Consultant approval updated to: {$status}",
+            'metadata' => ['consultant_status' => $status, 'consultant_response_notes' => $notes, 'updated_at' => now()]
         ]);
 
         // Check if both approvals are complete
@@ -683,8 +683,8 @@ class Task extends Model
         $this->histories()->create([
             'user_id' => auth()->id(),
             'action' => 'internal_approval_updated',
-            'description' => "Internal approval updated to: {$status}" . ($notes ? ". Notes: {$notes}" : ""),
-            'metadata' => ['internal_status' => $status, 'notes' => $notes, 'updated_at' => now()]
+            'description' => "Internal approval updated to: {$status}",
+            'metadata' => ['internal_status' => $status, 'internal_notes' => $notes, 'updated_at' => now()]
         ]);
 
         // If internal approval is given, change status to ready_for_email

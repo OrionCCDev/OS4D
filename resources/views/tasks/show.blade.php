@@ -648,7 +648,7 @@
                                                             <i class="bx bx-user me-1"></i>{{ $history->user->name ?? 'System' }}
                                                         </small>
                                                         <small>
-                                                            <i class="bx bx-time me-1"></i>{{ $history->created_at->format('M d, Y H:i') }}
+                                                            <i class="bx bx-time me-1"></i>{{ $history->created_at->format('M d, Y g:i A') }}
                                                         </small>
                                                     </div>
                                                 </div>
@@ -671,8 +671,8 @@
                                                     </div>
                                                 @endif
                                                 @if(isset($history->metadata['internal_notes']) && $history->metadata['internal_notes'])
-                                                    <div class="mt-2 p-2 bg-warning bg-opacity-10 rounded border border-warning">
-                                                        <strong class="text-warning"><i class="bx bx-shield me-1"></i>Internal Notes:</strong>
+                                                    <div class="mt-2 p-2 bg-light rounded">
+                                                        <strong class="text-primary"><i class="bx bx-message-detail me-1"></i>Internal Notes:</strong>
                                                         <p class="mb-0 mt-1">{{ $history->metadata['internal_notes'] }}</p>
                                                     </div>
                                                 @endif
@@ -683,8 +683,8 @@
                                                     </div>
                                                 @endif
                                                 @if(isset($history->metadata['consultant_response_notes']) && $history->metadata['consultant_response_notes'] && !str_contains($history->description, $history->metadata['consultant_response_notes']))
-                                                    <div class="mt-2 p-2 bg-success bg-opacity-10 rounded border border-success">
-                                                        <strong class="text-success"><i class="bx bx-user-check me-1"></i>Consultant Response:</strong>
+                                                    <div class="mt-2 p-2 bg-info bg-opacity-10 rounded border border-info">
+                                                        <strong class="text-info"><i class="bx bx-user-check me-1"></i>Consultant Response:</strong>
                                                         <p class="mb-0 mt-1">{{ $history->metadata['consultant_response_notes'] }}</p>
                                                     </div>
                                                 @endif
