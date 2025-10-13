@@ -12,18 +12,11 @@ use App\Mail\EngineeringInboxReceivedMail;
 class EngineeringInboxNotificationService
 {
     /**
-     * Notify managers when an email is received in engineering@orion-contracting.com inbox
+     * Notify managers and users when an email is received in engineering@orion-contracting.com inbox
      */
     public function notifyManagersAboutReceivedEmail(array $emailData): void
     {
         try {
-            $managers = User::where('role', 'admin')->orWhere('role', 'manager')->get();
-
-            if ($managers->isEmpty()) {
-                Log::warning('No managers found to notify about received email');
-                return;
-            }
-
             // Extract email details
             $fromEmail = $emailData['from_email'] ?? 'Unknown';
             $subject = $emailData['subject'] ?? 'No Subject';
@@ -33,15 +26,41 @@ class EngineeringInboxNotificationService
             // Try to find related task from subject or content
             $relatedTask = $this->findRelatedTask($subject, $emailData['body'] ?? '');
 
-            foreach ($managers as $manager) {
-                // Create in-app notification
-                $this->createInAppNotification($manager, $emailData, $relatedTask);
+            // Notify managers (ALL emails to engineering@orion-contracting.com)
+            $this->notifyManagers($emailData, $relatedTask);
 
-                // Send email notification
-                $this->sendEmailNotification($manager, $emailData, $relatedTask);
+            // Notify users (only if their email is involved)
+            $this->notifyRelevantUsers($emailData, $relatedTask);
+
+            Log::info('Engineering inbox notifications processed for email: ' . $messageId);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to notify about received email: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Notify all managers about received email
+     */
+    private function notifyManagers(array $emailData, ?Task $relatedTask): void
+    {
+        try {
+            $managers = User::whereIn('role', ['admin', 'manager', 'sub-admin'])->get();
+
+            if ($managers->isEmpty()) {
+                Log::warning('No managers found to notify about received email');
+                return;
             }
 
-            Log::info('Engineering inbox notifications sent to ' . $managers->count() . ' managers for email: ' . $messageId);
+            foreach ($managers as $manager) {
+                // Create in-app notification
+                $this->createManagerInAppNotification($manager, $emailData, $relatedTask);
+
+                // Send email notification
+                $this->sendManagerEmailNotification($manager, $emailData, $relatedTask);
+            }
+
+            Log::info('Engineering inbox notifications sent to ' . $managers->count() . ' managers');
 
         } catch (\Exception $e) {
             Log::error('Failed to notify managers about received email: ' . $e->getMessage());
@@ -49,9 +68,72 @@ class EngineeringInboxNotificationService
     }
 
     /**
+     * Notify users whose email is involved in the received email
+     */
+    private function notifyRelevantUsers(array $emailData, ?Task $relatedTask): void
+    {
+        try {
+            // Get all users
+            $users = User::where('role', 'user')->get();
+            $involvedUsers = [];
+
+            foreach ($users as $user) {
+                if ($this->isUserInvolvedInEmail($emailData, $user)) {
+                    $involvedUsers[] = $user;
+                }
+            }
+
+            if (empty($involvedUsers)) {
+                Log::info('No users involved in the received email');
+                return;
+            }
+
+            foreach ($involvedUsers as $user) {
+                // Create in-app notification
+                $this->createUserInAppNotification($user, $emailData, $relatedTask);
+            }
+
+            Log::info('Engineering inbox notifications sent to ' . count($involvedUsers) . ' involved users');
+
+        } catch (\Exception $e) {
+            Log::error('Failed to notify users about received email: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Check if a user's email is involved in the received email
+     */
+    private function isUserInvolvedInEmail(array $emailData, User $user): bool
+    {
+        $userEmail = strtolower(trim($user->email));
+
+        // Check if user's email is in FROM field
+        if (isset($emailData['from_email']) && strpos(strtolower($emailData['from_email']), $userEmail) !== false) {
+            return true;
+        }
+
+        // Check if user's email is in TO field
+        if (isset($emailData['to_email']) && strpos(strtolower($emailData['to_email']), $userEmail) !== false) {
+            return true;
+        }
+
+        // Check if user's email is in CC field
+        if (isset($emailData['cc']) && strpos(strtolower($emailData['cc']), $userEmail) !== false) {
+            return true;
+        }
+
+        // Check if user's email is in BCC field
+        if (isset($emailData['bcc']) && strpos(strtolower($emailData['bcc']), $userEmail) !== false) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
      * Create in-app notification for manager
      */
-    private function createInAppNotification(User $manager, array $emailData, ?Task $relatedTask): void
+    private function createManagerInAppNotification(User $manager, array $emailData, ?Task $relatedTask): void
     {
         try {
             $fromEmail = $emailData['from_email'] ?? 'Unknown';
@@ -76,20 +158,94 @@ class EngineeringInboxNotificationService
                     'task_id' => $relatedTask?->id,
                     'task_title' => $relatedTask?->title,
                 ],
+                'action_url' => $relatedTask ? route('tasks.show', $relatedTask->id) : null,
                 'is_read' => false
             ]);
 
             Log::info('In-app notification created for manager: ' . $manager->email);
 
         } catch (\Exception $e) {
-            Log::error('Failed to create in-app notification: ' . $e->getMessage());
+            Log::error('Failed to create manager in-app notification: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Create in-app notification for user
+     */
+    private function createUserInAppNotification(User $user, array $emailData, ?Task $relatedTask): void
+    {
+        try {
+            $fromEmail = $emailData['from_email'] ?? 'Unknown';
+            $subject = $emailData['subject'] ?? 'No Subject';
+            $userEmail = strtolower(trim($user->email));
+
+            // Determine involvement type
+            $involvementType = $this->getUserInvolvementType($emailData, $userEmail);
+
+            $message = "Email involving you received in engineering inbox from {$fromEmail}";
+            if ($relatedTask) {
+                $message .= " (Related to Task #{$relatedTask->id}: {$relatedTask->title})";
+            }
+
+            UnifiedNotification::create([
+                'user_id' => $user->id,
+                'category' => 'email',
+                'type' => 'engineering_inbox_user_involved',
+                'title' => 'Email Involving You Received',
+                'message' => $message,
+                'data' => [
+                    'from_email' => $fromEmail,
+                    'subject' => $subject,
+                    'received_at' => $emailData['date'] ?? now(),
+                    'message_id' => $emailData['message_id'] ?? null,
+                    'task_id' => $relatedTask?->id,
+                    'task_title' => $relatedTask?->title,
+                    'involvement_type' => $involvementType,
+                    'user_email' => $user->email,
+                ],
+                'action_url' => $relatedTask ? route('tasks.show', $relatedTask->id) : null,
+                'is_read' => false
+            ]);
+
+            Log::info('In-app notification created for user: ' . $user->email . ' (involvement: ' . $involvementType . ')');
+
+        } catch (\Exception $e) {
+            Log::error('Failed to create user in-app notification: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Get the type of user involvement in the email
+     */
+    private function getUserInvolvementType(array $emailData, string $userEmail): string
+    {
+        // Check if user's email is in FROM field
+        if (isset($emailData['from_email']) && strpos(strtolower($emailData['from_email']), $userEmail) !== false) {
+            return 'sent_by_you';
+        }
+
+        // Check if user's email is in TO field
+        if (isset($emailData['to_email']) && strpos(strtolower($emailData['to_email']), $userEmail) !== false) {
+            return 'addressed_to_you';
+        }
+
+        // Check if user's email is in CC field
+        if (isset($emailData['cc']) && strpos(strtolower($emailData['cc']), $userEmail) !== false) {
+            return 'cc_to_you';
+        }
+
+        // Check if user's email is in BCC field
+        if (isset($emailData['bcc']) && strpos(strtolower($emailData['bcc']), $userEmail) !== false) {
+            return 'bcc_to_you';
+        }
+
+        return 'involved';
     }
 
     /**
      * Send email notification to manager
      */
-    private function sendEmailNotification(User $manager, array $emailData, ?Task $relatedTask): void
+    private function sendManagerEmailNotification(User $manager, array $emailData, ?Task $relatedTask): void
     {
         try {
             $mail = new EngineeringInboxReceivedMail($emailData, $manager, $relatedTask);

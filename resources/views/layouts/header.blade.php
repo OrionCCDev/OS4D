@@ -1369,12 +1369,14 @@
                         const timeAgo = getTimeAgo(n.created_at);
                         const viewUrl = n.action_url ||
                                        (n.category === 'task' && n.task_id ? `{{ url('tasks') }}/${n.task_id}` :
-                                       n.category === 'email' && n.email_id ? `{{ route('emails.show', ':id') }}`.replace(':id', n.email_id) : '');
-                        const typeIcon = n.icon || 'bx-bell';
+                                       n.category === 'email' && n.email_id ? `{{ route('emails.show', ':id') }}`.replace(':id', n.email_id) :
+                                       n.category === 'email' && n.task_id ? `{{ url('tasks') }}/${n.task_id}` : '');
+                        const typeIcon = n.icon || (n.type === 'engineering_inbox_user_involved' ? 'bx-user-check' : 'bx-bell');
                         const typeColor = n.color === 'danger' ? '#dc3545' :
                                          n.color === 'warning' ? '#ffc107' :
                                          n.color === 'success' ? '#10b981' :
-                                         n.color === 'info' ? '#3b82f6' : '#6c757d';
+                                         n.color === 'info' ? '#3b82f6' :
+                                         n.type === 'engineering_inbox_user_involved' ? '#8b5cf6' : '#6c757d';
 
                         return `
                           <div class="notification-message p-3 border-bottom" style="transition: all 0.2s ease; cursor: pointer; background: ${n.is_read ? '#f8f9fa' : '#e3f2fd'}; border-left: 3px solid ${n.is_read ? '#e0e0e0' : '#2196f3'};" onclick="handleNotificationClick(${n.id}, '${viewUrl}')">
@@ -1842,12 +1844,14 @@
                       const timeAgo = getTimeAgo(n.created_at);
                       const viewUrl = n.action_url ||
                                      (n.category === 'task' && n.task_id ? `{{ url('tasks') }}/${n.task_id}` :
-                                     n.category === 'email' && n.email_id ? `{{ route('emails.show', ':id') }}`.replace(':id', n.email_id) : '');
-                      const typeIcon = n.icon || 'bx-bell';
+                                     n.category === 'email' && n.email_id ? `{{ route('emails.show', ':id') }}`.replace(':id', n.email_id) :
+                                     n.category === 'email' && n.task_id ? `{{ url('tasks') }}/${n.task_id}` : '');
+                      const typeIcon = n.icon || (n.type === 'engineering_inbox_user_involved' ? 'bx-user-check' : 'bx-bell');
                       const typeColor = n.color === 'danger' ? '#dc3545' :
                                        n.color === 'warning' ? '#ffc107' :
                                        n.color === 'success' ? '#198754' :
-                                       n.color === 'info' ? '#0dcaf0' : '#6c757d';
+                                       n.color === 'info' ? '#0dcaf0' :
+                                       n.type === 'engineering_inbox_user_involved' ? '#8b5cf6' : '#6c757d';
 
                       return `
                         <div class="chat-message p-3 border-bottom" style="transition: all 0.2s ease; cursor: pointer; background: ${n.is_read ? '#ffffff' : '#e3f2fd'}; margin: 4px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-left: 3px solid ${n.is_read ? '#e0e0e0' : '#2196f3'};" onclick="handleNotificationClick(${n.id}, '${viewUrl}')">
