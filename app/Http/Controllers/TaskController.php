@@ -854,8 +854,14 @@ class TaskController extends Controller
             // Add task history entry for email sent
             $this->addEmailSentHistory($task, $emailPreparation, $user, $sentVia);
 
-            // Send email notification to managers
+            // Add task history entry for status change to waiting for review
+            $this->addWaitingForReviewHistory($task, $user);
+
+            // Send email notification to managers about email being marked as sent
             $this->notifyManagersAboutEmailSent($task, $emailPreparation, $user);
+
+            // Send notification to managers about task waiting for client/consultant review
+            $this->notifyManagersAboutWaitingForReview($task, $emailPreparation, $user);
 
             Log::info('Email marked as sent manually for task: ' . $task->id . ' by user: ' . Auth::id());
 
@@ -915,6 +921,33 @@ class TaskController extends Controller
     }
 
     /**
+     * Add task history entry for status change to waiting for review
+     */
+    private function addWaitingForReviewHistory(Task $task, $user)
+    {
+        try {
+            $task->histories()->create([
+                'user_id' => $user->id,
+                'action' => 'status_changed',
+                'description' => "Task status changed to 'On Client/Consultant Review' - waiting for client and consultant responses",
+                'old_value' => 'ready_for_email',
+                'new_value' => 'on_client_consultant_review',
+                'metadata' => [
+                    'status_change_reason' => 'email_marked_sent',
+                    'email_marked_sent_by' => $user->name,
+                    'status_changed_at' => now()->toISOString(),
+                    'waiting_for' => ['client_response', 'consultant_response'],
+                    'next_action' => 'monitor_responses'
+                ]
+            ]);
+
+            Log::info('Task history entry created for waiting for review status - Task: ' . $task->id);
+        } catch (\Exception $e) {
+            Log::error('Failed to create task history for waiting for review status: ' . $e->getMessage());
+        }
+    }
+
+    /**
      * Notify managers when email is marked as sent
      */
     private function notifyManagersAboutEmailSent(Task $task, $emailPreparation, $user)
@@ -931,6 +964,7 @@ class TaskController extends Controller
             $ccEmails = $emailPreparation->cc_emails ? array_filter(array_map('trim', explode(',', $emailPreparation->cc_emails))) : [];
 
             foreach ($managers as $manager) {
+                // Send email notification
                 $mail = new \App\Mail\ManagerEmailMarkedSentNotificationMail(
                     $task,
                     $emailPreparation,
@@ -941,10 +975,53 @@ class TaskController extends Controller
                 );
                 $mail->from('engineering@orion-contracting.com', 'Orion Engineering System');
                 Mail::send($mail);
-                Log::info('Manager email notification sent for email marked as sent to: ' . $manager->email . ' for task: ' . $task->id);
+
+                // Send in-app notification
+                $manager->notify(new \App\Notifications\EmailSendingSuccessNotification($task, $emailPreparation));
+
+                Log::info('Manager email and in-app notification sent for email marked as sent to: ' . $manager->email . ' for task: ' . $task->id);
             }
         } catch (\Exception $e) {
             Log::error('Failed to send manager email notification for email marked as sent: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Notify managers when task is waiting for client/consultant review
+     */
+    private function notifyManagersAboutWaitingForReview(Task $task, $emailPreparation, $user)
+    {
+        try {
+            $managers = User::where('role', 'admin')->orWhere('role', 'manager')->get();
+
+            if ($managers->isEmpty()) {
+                Log::warning('No managers found to notify about task waiting for review');
+                return;
+            }
+
+            $toEmails = array_filter(array_map('trim', explode(',', $emailPreparation->to_emails)));
+            $ccEmails = $emailPreparation->cc_emails ? array_filter(array_map('trim', explode(',', $emailPreparation->cc_emails))) : [];
+
+            foreach ($managers as $manager) {
+                // Send email notification
+                $mail = new \App\Mail\ManagerTaskWaitingForReviewNotificationMail(
+                    $task,
+                    $emailPreparation,
+                    $user,
+                    $manager,
+                    $toEmails,
+                    $ccEmails
+                );
+                $mail->from('engineering@orion-contracting.com', 'Orion Engineering System');
+                Mail::send($mail);
+
+                // Send in-app notification
+                $manager->notify(new \App\Notifications\EmailSendingSuccessNotification($task, $emailPreparation));
+
+                Log::info('Manager waiting for review email and in-app notification sent to: ' . $manager->email . ' for task: ' . $task->id);
+            }
+        } catch (\Exception $e) {
+            Log::error('Failed to send manager waiting for review notification: ' . $e->getMessage());
         }
     }
 
