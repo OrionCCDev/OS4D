@@ -964,10 +964,44 @@ class TaskController extends Controller
 
             foreach ($managers as $manager) {
                 // Send notification about email being marked as sent
-                $manager->notify(new \App\Notifications\EmailMarkedAsSentNotification($task, $emailPreparation, $user));
+                \App\Models\UnifiedNotification::createTaskNotification(
+                    $manager->id,
+                    'email_marked_sent',
+                    'Email Marked as Sent',
+                    $user->name . ' marked confirmation email as sent for task "' . $task->title . '" to: ' . implode(', ', array_filter(array_map('trim', explode(',', $emailPreparation->to_emails)))),
+                    [
+                        'task_id' => $task->id,
+                        'task_title' => $task->title,
+                        'sender_id' => $user->id,
+                        'sender_name' => $user->name,
+                        'email_preparation_id' => $emailPreparation->id,
+                        'to_emails' => implode(', ', array_filter(array_map('trim', explode(',', $emailPreparation->to_emails)))),
+                        'subject' => $emailPreparation->subject,
+                        'action_url' => route('tasks.show', $task->id)
+                    ],
+                    $task->id,
+                    'normal'
+                );
 
                 // Send notification about task waiting for review
-                $manager->notify(new \App\Notifications\TaskWaitingForReviewNotification($task, $emailPreparation, $user));
+                \App\Models\UnifiedNotification::createTaskNotification(
+                    $manager->id,
+                    'task_waiting_for_review',
+                    'Task Waiting for Review',
+                    'Task "' . $task->title . '" is now waiting for client/consultant review after email was sent to: ' . implode(', ', array_filter(array_map('trim', explode(',', $emailPreparation->to_emails)))),
+                    [
+                        'task_id' => $task->id,
+                        'task_title' => $task->title,
+                        'sender_id' => $user->id,
+                        'sender_name' => $user->name,
+                        'email_preparation_id' => $emailPreparation->id,
+                        'to_emails' => implode(', ', array_filter(array_map('trim', explode(',', $emailPreparation->to_emails)))),
+                        'subject' => $emailPreparation->subject,
+                        'action_url' => route('tasks.show', $task->id)
+                    ],
+                    $task->id,
+                    'normal'
+                );
 
                 Log::info('In-app notifications sent to manager: ' . $manager->email . ' for task: ' . $task->id);
             }

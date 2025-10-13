@@ -330,10 +330,44 @@ class SendTaskConfirmationEmailJob implements ShouldQueue
 
             foreach ($managers as $manager) {
                 // Send notification about email being sent
-                $manager->notify(new \App\Notifications\EmailSendingSuccessNotification($this->task, $this->emailPreparation));
+                \App\Models\UnifiedNotification::createTaskNotification(
+                    $manager->id,
+                    'email_sent_success',
+                    'Confirmation Email Sent',
+                    $this->user->name . ' sent confirmation email for task "' . $this->task->title . '" to: ' . implode(', ', array_filter(array_map('trim', explode(',', $this->emailPreparation->to_emails)))),
+                    [
+                        'task_id' => $this->task->id,
+                        'task_title' => $this->task->title,
+                        'sender_id' => $this->user->id,
+                        'sender_name' => $this->user->name,
+                        'email_preparation_id' => $this->emailPreparation->id,
+                        'to_emails' => implode(', ', array_filter(array_map('trim', explode(',', $this->emailPreparation->to_emails)))),
+                        'subject' => $this->emailPreparation->subject,
+                        'action_url' => route('tasks.show', $this->task->id)
+                    ],
+                    $this->task->id,
+                    'normal'
+                );
 
                 // Send notification about task waiting for review
-                $manager->notify(new \App\Notifications\TaskWaitingForReviewNotification($this->task, $this->emailPreparation, $this->user));
+                \App\Models\UnifiedNotification::createTaskNotification(
+                    $manager->id,
+                    'task_waiting_for_review',
+                    'Task Waiting for Review',
+                    'Task "' . $this->task->title . '" is now waiting for client/consultant review after email was sent to: ' . implode(', ', array_filter(array_map('trim', explode(',', $this->emailPreparation->to_emails)))),
+                    [
+                        'task_id' => $this->task->id,
+                        'task_title' => $this->task->title,
+                        'sender_id' => $this->user->id,
+                        'sender_name' => $this->user->name,
+                        'email_preparation_id' => $this->emailPreparation->id,
+                        'to_emails' => implode(', ', array_filter(array_map('trim', explode(',', $this->emailPreparation->to_emails)))),
+                        'subject' => $this->emailPreparation->subject,
+                        'action_url' => route('tasks.show', $this->task->id)
+                    ],
+                    $this->task->id,
+                    'normal'
+                );
 
                 Log::info('In-app notifications sent to manager: ' . $manager->email . ' for task: ' . $this->task->id);
             }
