@@ -207,11 +207,17 @@ class SendTaskConfirmationEmailJob implements ShouldQueue
                 // Add task history entry for email sending
                 $this->addEmailSendingHistory();
 
+                // Add task history entry for status change to waiting for review
+                $this->addWaitingForReviewHistory();
+
                 // Notify the user who sent the email that it was successful
                 $this->user->notify(new EmailSendingSuccessNotification($this->task, $this->emailPreparation));
 
                 // Send manager email notification about the sent confirmation email
                 $this->sendManagerEmailNotification();
+
+                // Send manager notification about task waiting for client/consultant review
+                $this->sendWaitingForReviewNotification();
 
                 // Notify managers about the sent confirmation email
                 $managers = User::where('role', 'admin')->orWhere('role', 'manager')->get();
@@ -290,6 +296,33 @@ class SendTaskConfirmationEmailJob implements ShouldQueue
     }
 
     /**
+     * Add task history entry for status change to waiting for review
+     */
+    private function addWaitingForReviewHistory(): void
+    {
+        try {
+            $this->task->histories()->create([
+                'user_id' => $this->user->id,
+                'action' => 'status_changed',
+                'description' => "Task status changed to 'On Client/Consultant Review' - waiting for client and consultant responses",
+                'old_value' => 'ready_for_email',
+                'new_value' => 'on_client_consultant_review',
+                'metadata' => [
+                    'status_change_reason' => 'confirmation_email_sent',
+                    'email_sent_by' => $this->user->name,
+                    'email_sent_at' => now()->toISOString(),
+                    'waiting_for' => ['client_response', 'consultant_response'],
+                    'next_action' => 'monitor_responses'
+                ]
+            ]);
+
+            Log::info('Task history entry created for waiting for review status - Task: ' . $this->task->id);
+        } catch (\Exception $e) {
+            Log::error('Failed to create task history for waiting for review status: ' . $e->getMessage());
+        }
+    }
+
+    /**
      * Send email notification to managers about the sent confirmation email
      */
     private function sendManagerEmailNotification(): void
@@ -340,6 +373,40 @@ class SendTaskConfirmationEmailJob implements ShouldQueue
 
         } catch (\Exception $e) {
             Log::error('Failed to send manager email notification: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Send manager notification about task waiting for client/consultant review
+     */
+    private function sendWaitingForReviewNotification(): void
+    {
+        try {
+            $managers = User::where('role', 'admin')->orWhere('role', 'manager')->get();
+
+            if ($managers->isEmpty()) {
+                Log::warning('No managers found to notify about task waiting for review');
+                return;
+            }
+
+            $toEmails = array_filter(array_map('trim', explode(',', $this->emailPreparation->to_emails)));
+            $ccEmails = $this->emailPreparation->cc_emails ? array_filter(array_map('trim', explode(',', $this->emailPreparation->cc_emails))) : [];
+
+            foreach ($managers as $manager) {
+                $mail = new \App\Mail\ManagerTaskWaitingForReviewNotificationMail(
+                    $this->task,
+                    $this->emailPreparation,
+                    $this->user,
+                    $manager,
+                    $toEmails,
+                    $ccEmails
+                );
+                $mail->from('engineering@orion-contracting.com', 'Orion Engineering System');
+                Mail::send($mail);
+                Log::info('Manager waiting for review notification sent to: ' . $manager->email . ' for task: ' . $this->task->id);
+            }
+        } catch (\Exception $e) {
+            Log::error('Failed to send manager waiting for review notification: ' . $e->getMessage());
         }
     }
 
