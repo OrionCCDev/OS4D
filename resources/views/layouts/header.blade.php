@@ -1096,7 +1096,7 @@
                       const title = n.title || 'Task Notification';
                       const message = n.message || '';
                       const timeAgo = getTimeAgo(n.created_at);
-                      const viewUrl = n.task_id ? `{{ url('tasks') }}/${n.task_id}` : '';
+                      const viewUrl = n.action_url || (n.task_id ? `{{ url('tasks') }}/${n.task_id}` : '');
                       const typeIcon = 'bx-task';
                       const typeColor = '#10b981';
 
@@ -1367,8 +1367,9 @@
                         const title = n.title || 'Notification';
                         const message = n.message || '';
                         const timeAgo = getTimeAgo(n.created_at);
-                        const viewUrl = n.category === 'task' && n.task_id ? `{{ url('tasks') }}/${n.task_id}` :
-                                       n.category === 'email' && n.email_id ? `{{ route('emails.show', ':id') }}`.replace(':id', n.email_id) : '';
+                        const viewUrl = n.action_url ||
+                                       (n.category === 'task' && n.task_id ? `{{ url('tasks') }}/${n.task_id}` :
+                                       n.category === 'email' && n.email_id ? `{{ route('emails.show', ':id') }}`.replace(':id', n.email_id) : '');
                         const typeIcon = n.icon || 'bx-bell';
                         const typeColor = n.color === 'danger' ? '#dc3545' :
                                          n.color === 'warning' ? '#ffc107' :
@@ -1839,8 +1840,9 @@
                       const title = n.title || 'Notification';
                       const message = n.message || '';
                       const timeAgo = getTimeAgo(n.created_at);
-                      const viewUrl = n.category === 'task' && n.task_id ? `{{ url('tasks') }}/${n.task_id}` :
-                                     n.category === 'email' && n.email_id ? `{{ route('emails.show', ':id') }}`.replace(':id', n.email_id) : '';
+                      const viewUrl = n.action_url ||
+                                     (n.category === 'task' && n.task_id ? `{{ url('tasks') }}/${n.task_id}` :
+                                     n.category === 'email' && n.email_id ? `{{ route('emails.show', ':id') }}`.replace(':id', n.email_id) : '');
                       const typeIcon = n.icon || 'bx-bell';
                       const typeColor = n.color === 'danger' ? '#dc3545' :
                                        n.color === 'warning' ? '#ffc107' :

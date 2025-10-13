@@ -23,6 +23,7 @@ class UnifiedNotification extends Model
         'read_at',
         'priority',
         'status',
+        'action_url',
     ];
 
     protected $casts = [
