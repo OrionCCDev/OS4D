@@ -758,6 +758,7 @@
                                                     </div>
                                                 </div>
                                             @endif
+                                            @endif
 
                                             @if($history->old_value || $history->new_value)
                                                 <div class="mt-2">
