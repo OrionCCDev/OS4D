@@ -213,17 +213,8 @@ class SendTaskConfirmationEmailJob implements ShouldQueue
                 // Notify the user who sent the email that it was successful
                 $this->user->notify(new EmailSendingSuccessNotification($this->task, $this->emailPreparation));
 
-                // Send manager email notification about the sent confirmation email
-                $this->sendManagerEmailNotification();
-
-                // Send manager notification about task waiting for client/consultant review
-                $this->sendWaitingForReviewNotification();
-
-                // Notify managers about the sent confirmation email
-                $managers = User::where('role', 'admin')->orWhere('role', 'manager')->get();
-                foreach ($managers as $manager) {
-                    $manager->notify(new EmailSendingSuccessNotification($this->task, $this->emailPreparation));
-                }
+                // Send in-app notifications to managers
+                $this->sendInAppNotificationsToManagers();
 
                 Log::info('Job: Success notifications sent for task: ' . $this->task->id);
             } else {
@@ -323,90 +314,29 @@ class SendTaskConfirmationEmailJob implements ShouldQueue
     }
 
     /**
-     * Send email notification to managers about the sent confirmation email
+     * Send in-app notifications to managers when email is sent
      */
-    private function sendManagerEmailNotification(): void
+    private function sendInAppNotificationsToManagers(): void
     {
         try {
             $managers = User::where('role', 'admin')->orWhere('role', 'manager')->get();
 
             if ($managers->isEmpty()) {
-                Log::warning('No managers found to notify about email sending');
+                Log::warning('No managers found to notify about email sent');
                 return;
             }
 
-            $toEmails = array_filter(array_map('trim', explode(',', $this->emailPreparation->to_emails)));
-            $ccEmails = $this->emailPreparation->cc_emails ? array_filter(array_map('trim', explode(',', $this->emailPreparation->cc_emails))) : [];
-
             foreach ($managers as $manager) {
-                // Send email notification to manager
-                $managerEmailData = [
-                    'from' => 'engineering@orion-contracting.com',
-                    'from_name' => 'Orion Engineering System',
-                    'to' => [$manager->email],
-                    'subject' => '[NOTIFICATION] Confirmation Email Sent - Task #' . $this->task->id . ': ' . $this->task->title,
-                    'body' => view('emails.manager-email-notification', [
-                        'task' => $this->task,
-                        'emailPreparation' => $this->emailPreparation,
-                        'sender' => $this->user,
-                        'manager' => $manager,
-                        'toEmails' => $toEmails,
-                        'ccEmails' => $ccEmails,
-                    ])->render(),
-                ];
+                // Send notification about email being sent
+                $manager->notify(new \App\Notifications\EmailSendingSuccessNotification($this->task, $this->emailPreparation));
 
-                // Send via Laravel Mail (SMTP)
-                $mail = new \App\Mail\ManagerEmailNotificationMail(
-                    $this->task,
-                    $this->emailPreparation,
-                    $this->user,
-                    $manager,
-                    $toEmails,
-                    $ccEmails
-                );
-                $mail->from('engineering@orion-contracting.com', 'Orion Engineering System');
+                // Send notification about task waiting for review
+                $manager->notify(new \App\Notifications\TaskWaitingForReviewNotification($this->task, $this->emailPreparation, $this->user));
 
-                Mail::send($mail);
-
-                Log::info('Manager email notification sent to: ' . $manager->email . ' for task: ' . $this->task->id);
-            }
-
-        } catch (\Exception $e) {
-            Log::error('Failed to send manager email notification: ' . $e->getMessage());
-        }
-    }
-
-    /**
-     * Send manager notification about task waiting for client/consultant review
-     */
-    private function sendWaitingForReviewNotification(): void
-    {
-        try {
-            $managers = User::where('role', 'admin')->orWhere('role', 'manager')->get();
-
-            if ($managers->isEmpty()) {
-                Log::warning('No managers found to notify about task waiting for review');
-                return;
-            }
-
-            $toEmails = array_filter(array_map('trim', explode(',', $this->emailPreparation->to_emails)));
-            $ccEmails = $this->emailPreparation->cc_emails ? array_filter(array_map('trim', explode(',', $this->emailPreparation->cc_emails))) : [];
-
-            foreach ($managers as $manager) {
-                $mail = new \App\Mail\ManagerTaskWaitingForReviewNotificationMail(
-                    $this->task,
-                    $this->emailPreparation,
-                    $this->user,
-                    $manager,
-                    $toEmails,
-                    $ccEmails
-                );
-                $mail->from('engineering@orion-contracting.com', 'Orion Engineering System');
-                Mail::send($mail);
-                Log::info('Manager waiting for review notification sent to: ' . $manager->email . ' for task: ' . $this->task->id);
+                Log::info('In-app notifications sent to manager: ' . $manager->email . ' for task: ' . $this->task->id);
             }
         } catch (\Exception $e) {
-            Log::error('Failed to send manager waiting for review notification: ' . $e->getMessage());
+            Log::error('Failed to send in-app notifications to managers: ' . $e->getMessage());
         }
     }
 
