@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\EmailFetchLog;
 use App\Services\DesignersInboxNotificationService;
 use App\Services\NotificationService;
+use App\Services\EngineeringInboxNotificationService;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 
@@ -355,6 +356,9 @@ class DesignersInboxEmailService
                 // Check if this is a reply and process it
                 Log::info("Processing email for reply detection: {$emailData['subject']} from {$emailData['from_email']}");
                 $this->processReplyIfApplicable($email, $emailData);
+
+                // Notify managers about the received email
+                $this->notifyManagersAboutReceivedEmail($emailData);
 
                 Log::info("Stored new email: {$emailData['subject']} from {$emailData['from_email']}");
                 $result['stored']++;
@@ -722,6 +726,21 @@ class DesignersInboxEmailService
         } catch (\Exception $e) {
             Log::error('Error getting recent emails count: ' . $e->getMessage());
             return 0;
+        }
+    }
+
+    /**
+     * Notify managers about received email in engineering inbox
+     */
+    private function notifyManagersAboutReceivedEmail(array $emailData): void
+    {
+        try {
+            $notificationService = app(EngineeringInboxNotificationService::class);
+            $notificationService->notifyManagersAboutReceivedEmail($emailData);
+
+            Log::info('Manager notifications triggered for received email: ' . ($emailData['message_id'] ?? 'Unknown'));
+        } catch (\Exception $e) {
+            Log::error('Failed to notify managers about received email: ' . $e->getMessage());
         }
     }
 }

@@ -204,11 +204,17 @@ class SendTaskConfirmationEmailJob implements ShouldQueue
 
                 Log::info('Job: Email sent successfully for task: ' . $this->task->id);
 
+                // Add task history entry for email sending
+                $this->addEmailSendingHistory();
+
                 // Notify the user who sent the email that it was successful
                 $this->user->notify(new EmailSendingSuccessNotification($this->task, $this->emailPreparation));
 
+                // Send manager email notification about the sent confirmation email
+                $this->sendManagerEmailNotification();
+
                 // Notify managers about the sent confirmation email
-                $managers = User::where('role', 'manager')->get();
+                $managers = User::where('role', 'admin')->orWhere('role', 'manager')->get();
                 foreach ($managers as $manager) {
                     $manager->notify(new EmailSendingSuccessNotification($this->task, $this->emailPreparation));
                 }
@@ -253,6 +259,87 @@ class SendTaskConfirmationEmailJob implements ShouldQueue
 
             // Re-throw the exception so Laravel can track it as a failed job
             throw $e;
+        }
+    }
+
+    /**
+     * Add task history entry for email sending
+     */
+    private function addEmailSendingHistory(): void
+    {
+        try {
+            $this->task->histories()->create([
+                'user_id' => $this->user->id,
+                'action' => 'email_sent',
+                'description' => "Confirmation email sent by {$this->user->name} to: {$this->emailPreparation->to_emails}",
+                'metadata' => [
+                    'email_subject' => $this->emailPreparation->subject,
+                    'email_to' => $this->emailPreparation->to_emails,
+                    'email_cc' => $this->emailPreparation->cc_emails,
+                    'email_bcc' => $this->emailPreparation->bcc_emails,
+                    'has_attachments' => !empty($this->emailPreparation->attachments),
+                    'attachment_count' => is_array($this->emailPreparation->attachments) ? count($this->emailPreparation->attachments) : 0,
+                    'sent_at' => now()->toISOString()
+                ]
+            ]);
+
+            Log::info('Task history entry created for email sending - Task: ' . $this->task->id);
+        } catch (\Exception $e) {
+            Log::error('Failed to create task history for email sending: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Send email notification to managers about the sent confirmation email
+     */
+    private function sendManagerEmailNotification(): void
+    {
+        try {
+            $managers = User::where('role', 'admin')->orWhere('role', 'manager')->get();
+
+            if ($managers->isEmpty()) {
+                Log::warning('No managers found to notify about email sending');
+                return;
+            }
+
+            $toEmails = array_filter(array_map('trim', explode(',', $this->emailPreparation->to_emails)));
+            $ccEmails = $this->emailPreparation->cc_emails ? array_filter(array_map('trim', explode(',', $this->emailPreparation->cc_emails))) : [];
+
+            foreach ($managers as $manager) {
+                // Send email notification to manager
+                $managerEmailData = [
+                    'from' => 'engineering@orion-contracting.com',
+                    'from_name' => 'Orion Engineering System',
+                    'to' => [$manager->email],
+                    'subject' => '[NOTIFICATION] Confirmation Email Sent - Task #' . $this->task->id . ': ' . $this->task->title,
+                    'body' => view('emails.manager-email-notification', [
+                        'task' => $this->task,
+                        'emailPreparation' => $this->emailPreparation,
+                        'sender' => $this->user,
+                        'manager' => $manager,
+                        'toEmails' => $toEmails,
+                        'ccEmails' => $ccEmails,
+                    ])->render(),
+                ];
+
+                // Send via Laravel Mail (SMTP)
+                $mail = new \App\Mail\ManagerEmailNotificationMail(
+                    $this->task,
+                    $this->emailPreparation,
+                    $this->user,
+                    $manager,
+                    $toEmails,
+                    $ccEmails
+                );
+                $mail->from('engineering@orion-contracting.com', 'Orion Engineering System');
+
+                Mail::send($mail);
+
+                Log::info('Manager email notification sent to: ' . $manager->email . ' for task: ' . $this->task->id);
+            }
+
+        } catch (\Exception $e) {
+            Log::error('Failed to send manager email notification: ' . $e->getMessage());
         }
     }
 
