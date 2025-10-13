@@ -18,7 +18,7 @@ Schedule::command('queue:work --stop-when-empty --max-time=50')
 // NEW EMAIL FETCH COMMAND - This handles everything with proper atomic locking
 // Uses a completely new lock key to avoid conflicts with old code
 Schedule::command('emails:new-fetch --max-results=50')
-    ->everyFiveMinutes()
+    ->everyMinute()  // Changed from everyFiveMinutes to everyMinute for faster notifications
     ->withoutOverlapping()
     ->runInBackground();
 
