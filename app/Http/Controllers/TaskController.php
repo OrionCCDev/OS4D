@@ -838,24 +838,26 @@ class TaskController extends Controller
                 ]);
             }
 
+            $user = Auth::user();
+            $sentVia = $request->input('sent_via', 'gmail_manual');
+
             // Update email preparation status
             $emailPreparation->update([
                 'status' => 'sent',
                 'sent_at' => now(),
-                'sent_via' => $request->input('sent_via', 'gmail_manual'),
+                'sent_via' => $sentVia,
             ]);
 
             // Update task status to on_client_consultant_review
             $task->update(['status' => 'on_client_consultant_review']);
 
-            Log::info('Email marked as sent manually for task: ' . $task->id . ' by user: ' . Auth::id());
+            // Add task history entry for email sent
+            $this->addEmailSentHistory($task, $emailPreparation, $user, $sentVia);
 
-            // Notify managers about the email being sent
-            $user = Auth::user();
-            $managers = User::where('role', 'manager')->get();
-            foreach ($managers as $manager) {
-                $manager->notify(new \App\Notifications\EmailSendingSuccessNotification($task, $emailPreparation));
-            }
+            // Send email notification to managers
+            $this->notifyManagersAboutEmailSent($task, $emailPreparation, $user);
+
+            Log::info('Email marked as sent manually for task: ' . $task->id . ' by user: ' . Auth::id());
 
             return response()->json([
                 'success' => true,
@@ -876,6 +878,73 @@ class TaskController extends Controller
                     'user_id' => Auth::id()
                 ]
             ], 500);
+        }
+    }
+
+    /**
+     * Add task history entry when email is marked as sent
+     */
+    private function addEmailSentHistory(Task $task, $emailPreparation, $user, $sentVia)
+    {
+        try {
+            $toEmails = array_filter(array_map('trim', explode(',', $emailPreparation->to_emails)));
+            $ccEmails = $emailPreparation->cc_emails ? array_filter(array_map('trim', explode(',', $emailPreparation->cc_emails))) : [];
+            $bccEmails = $emailPreparation->bcc_emails ? array_filter(array_map('trim', explode(',', $emailPreparation->bcc_emails))) : [];
+
+            $task->histories()->create([
+                'user_id' => $user->id,
+                'action' => 'email_marked_sent',
+                'description' => "Email marked as sent by {$user->name} via {$sentVia}",
+                'metadata' => [
+                    'email_subject' => $emailPreparation->subject,
+                    'email_to' => $toEmails,
+                    'email_cc' => $ccEmails,
+                    'email_bcc' => $bccEmails,
+                    'sent_via' => $sentVia,
+                    'sent_at' => now()->toISOString(),
+                    'has_attachments' => !empty($emailPreparation->attachments),
+                    'attachment_count' => is_array($emailPreparation->attachments) ? count($emailPreparation->attachments) : 0,
+                    'email_preparation_id' => $emailPreparation->id
+                ]
+            ]);
+
+            Log::info('Task history entry created for email marked as sent - Task: ' . $task->id);
+        } catch (\Exception $e) {
+            Log::error('Failed to create task history for email marked as sent: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Notify managers when email is marked as sent
+     */
+    private function notifyManagersAboutEmailSent(Task $task, $emailPreparation, $user)
+    {
+        try {
+            $managers = User::where('role', 'admin')->orWhere('role', 'manager')->get();
+
+            if ($managers->isEmpty()) {
+                Log::warning('No managers found to notify about email marked as sent');
+                return;
+            }
+
+            $toEmails = array_filter(array_map('trim', explode(',', $emailPreparation->to_emails)));
+            $ccEmails = $emailPreparation->cc_emails ? array_filter(array_map('trim', explode(',', $emailPreparation->cc_emails))) : [];
+
+            foreach ($managers as $manager) {
+                $mail = new \App\Mail\ManagerEmailMarkedSentNotificationMail(
+                    $task,
+                    $emailPreparation,
+                    $user,
+                    $manager,
+                    $toEmails,
+                    $ccEmails
+                );
+                $mail->from('engineering@orion-contracting.com', 'Orion Engineering System');
+                Mail::send($mail);
+                Log::info('Manager email notification sent for email marked as sent to: ' . $manager->email . ' for task: ' . $task->id);
+            }
+        } catch (\Exception $e) {
+            Log::error('Failed to send manager email notification for email marked as sent: ' . $e->getMessage());
         }
     }
 

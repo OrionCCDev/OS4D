@@ -663,7 +663,8 @@
                                                         <p class="mb-0 mt-1">{{ $history->metadata['completion_notes'] }}</p>
                                                     </div>
                                                 @endif
-                                                @if(isset($history->metadata['notes']) && $history->metadata['notes'])
+                                                {{-- Only show notes in metadata if they're not already included in the description --}}
+                                                @if(isset($history->metadata['notes']) && $history->metadata['notes'] && !str_contains($history->description, $history->metadata['notes']))
                                                     <div class="mt-2 p-2 bg-light rounded">
                                                         <strong class="text-info"><i class="bx bx-comment-detail me-1"></i>Notes:</strong>
                                                         <p class="mb-0 mt-1">{{ $history->metadata['notes'] }}</p>
@@ -675,19 +676,19 @@
                                                         <p class="mb-0 mt-1">{{ $history->metadata['internal_notes'] }}</p>
                                                     </div>
                                                 @endif
-                                                @if(isset($history->metadata['client_response_notes']) && $history->metadata['client_response_notes'])
+                                                @if(isset($history->metadata['client_response_notes']) && $history->metadata['client_response_notes'] && !str_contains($history->description, $history->metadata['client_response_notes']))
                                                     <div class="mt-2 p-2 bg-primary bg-opacity-10 rounded border border-primary">
                                                         <strong class="text-primary"><i class="bx bx-user me-1"></i>Client Response:</strong>
                                                         <p class="mb-0 mt-1">{{ $history->metadata['client_response_notes'] }}</p>
                                                     </div>
                                                 @endif
-                                                @if(isset($history->metadata['consultant_response_notes']) && $history->metadata['consultant_response_notes'])
+                                                @if(isset($history->metadata['consultant_response_notes']) && $history->metadata['consultant_response_notes'] && !str_contains($history->description, $history->metadata['consultant_response_notes']))
                                                     <div class="mt-2 p-2 bg-success bg-opacity-10 rounded border border-success">
                                                         <strong class="text-success"><i class="bx bx-user-check me-1"></i>Consultant Response:</strong>
                                                         <p class="mb-0 mt-1">{{ $history->metadata['consultant_response_notes'] }}</p>
                                                     </div>
                                                 @endif
-                                                @if(isset($history->metadata['manager_override_notes']) && $history->metadata['manager_override_notes'])
+                                                @if(isset($history->metadata['manager_override_notes']) && $history->metadata['manager_override_notes'] && !str_contains($history->description, $history->metadata['manager_override_notes']))
                                                     <div class="mt-2 p-2 bg-danger bg-opacity-10 rounded border border-danger">
                                                         <strong class="text-danger"><i class="bx bx-shield-x me-1"></i>Manager Override:</strong>
                                                         <p class="mb-0 mt-1">{{ $history->metadata['manager_override_notes'] }}</p>
@@ -697,6 +698,27 @@
                                                     <div class="mt-2">
                                                         <strong>Combined Status:</strong>
                                                         <span class="badge bg-info">{{ $history->metadata['combined_response_status'] }}</span>
+                                                    </div>
+                                                @endif
+
+                                                {{-- Special display for email marked sent actions --}}
+                                                @if($history->action === 'email_marked_sent' && isset($history->metadata['email_subject']))
+                                                    <div class="mt-2 p-2 bg-success bg-opacity-10 rounded border border-success">
+                                                        <strong class="text-success"><i class="bx bx-check-double me-1"></i>Email Details:</strong>
+                                                        <div class="mt-1">
+                                                            <small><strong>Subject:</strong> {{ $history->metadata['email_subject'] }}</small><br>
+                                                            <small><strong>To:</strong> {{ implode(', ', $history->metadata['email_to'] ?? []) }}</small><br>
+                                                            @if(!empty($history->metadata['email_cc']))
+                                                                <small><strong>Cc:</strong> {{ implode(', ', $history->metadata['email_cc']) }}</small><br>
+                                                            @endif
+                                                            @if(!empty($history->metadata['email_bcc']))
+                                                                <small><strong>Bcc:</strong> {{ implode(', ', $history->metadata['email_bcc']) }}</small><br>
+                                                            @endif
+                                                            <small><strong>Sent Via:</strong> {{ ucfirst(str_replace('_', ' ', $history->metadata['sent_via'] ?? 'Unknown')) }}</small><br>
+                                                            @if($history->metadata['has_attachments'] ?? false)
+                                                                <small><strong>Attachments:</strong> {{ $history->metadata['attachment_count'] ?? 0 }} file(s)</small>
+                                                            @endif
+                                                        </div>
                                                     </div>
                                                 @endif
                                             @endif
