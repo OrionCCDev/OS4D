@@ -210,9 +210,6 @@ class SendTaskConfirmationEmailJob implements ShouldQueue
                 // Add task history entry for status change to waiting for review
                 $this->addWaitingForReviewHistory();
 
-                // Notify the user who sent the email that it was successful
-                $this->user->notify(new EmailSendingSuccessNotification($this->task, $this->emailPreparation));
-
                 // Send in-app notifications to managers
                 $this->sendInAppNotificationsToManagers();
 
@@ -319,7 +316,12 @@ class SendTaskConfirmationEmailJob implements ShouldQueue
     private function sendInAppNotificationsToManagers(): void
     {
         try {
-            $managers = User::where('role', 'admin')->orWhere('role', 'manager')->get();
+            $managers = User::whereIn('role', ['admin', 'manager', 'sub-admin'])->get();
+
+            Log::info('Found ' . $managers->count() . ' managers to notify about email sent for task: ' . $this->task->id);
+            foreach ($managers as $manager) {
+                Log::info('Manager: ' . $manager->name . ' (' . $manager->email . ') - Role: ' . $manager->role);
+            }
 
             if ($managers->isEmpty()) {
                 Log::warning('No managers found to notify about email sent');

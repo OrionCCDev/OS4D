@@ -950,7 +950,12 @@ class TaskController extends Controller
     private function sendInAppNotificationsToManagers(Task $task, $emailPreparation, $user)
     {
         try {
-            $managers = User::where('role', 'admin')->orWhere('role', 'manager')->get();
+            $managers = User::whereIn('role', ['admin', 'manager', 'sub-admin'])->get();
+
+            Log::info('Found ' . $managers->count() . ' managers to notify about email marked as sent for task: ' . $task->id);
+            foreach ($managers as $manager) {
+                Log::info('Manager: ' . $manager->name . ' (' . $manager->email . ') - Role: ' . $manager->role);
+            }
 
             if ($managers->isEmpty()) {
                 Log::warning('No managers found to notify about email marked as sent');
