@@ -1722,23 +1722,65 @@ private function sendApprovalEmailViaGmail(Task $task, User $approver)
     {
         // Only managers can require resubmission
         if (!Auth::user()->isManager()) {
-            abort(403, 'Access denied. Only managers can require task resubmission.');
+            return response()->json([
+                'success' => false,
+                'message' => 'Access denied. Only managers can require task resubmission.'
+            ], 403);
         }
 
         // Only tasks in review after client/consultant reply can be sent for resubmission
         if ($task->status !== 'in_review_after_client_consultant_reply') {
-            abort(403, 'Task must be in review after client/consultant reply to require resubmission.');
+            return response()->json([
+                'success' => false,
+                'message' => 'Task must be in review after client/consultant reply to require resubmission.'
+            ], 403);
         }
 
         $request->validate([
-            'resubmit_notes' => 'required|string|max:2000'
+            'resubmit_notes' => 'required|string|max:2000',
+            'resubmit_attachments.*' => 'nullable|file|max:10240|mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,txt,jpg,jpeg,png,gif,zip,rar',
+            'resubmit_priority' => 'nullable|in:normal,high,urgent',
+            'resubmit_due_date' => 'nullable|date|after_or_equal:today'
         ]);
 
         try {
-            $task->requireResubmit($request->resubmit_notes);
-            return redirect()->back()->with('success', 'Task sent back for resubmission.');
+            // Handle file uploads
+            $uploadedFiles = [];
+            if ($request->hasFile('resubmit_attachments')) {
+                foreach ($request->file('resubmit_attachments') as $file) {
+                    $filename = time() . '_' . $file->getClientOriginalName();
+                    $path = $file->storeAs('task-attachments', $filename, 'public');
+
+                    $uploadedFiles[] = [
+                        'original_name' => $file->getClientOriginalName(),
+                        'filename' => $filename,
+                        'path' => $path,
+                        'size' => $file->getSize(),
+                        'mime_type' => $file->getMimeType(),
+                        'uploaded_by' => Auth::id(),
+                        'upload_type' => 'resubmit_request'
+                    ];
+                }
+            }
+
+            // Enhanced resubmission with additional data
+            $task->requireResubmitEnhanced(
+                $request->resubmit_notes,
+                $request->resubmit_priority ?? 'normal',
+                $request->resubmit_due_date,
+                $uploadedFiles
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Task sent back for resubmission successfully.'
+            ]);
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', $e->getMessage());
+            Log::error('Error requiring resubmission: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to require resubmission: ' . $e->getMessage()
+            ], 500);
         }
     }
 

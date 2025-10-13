@@ -891,6 +891,69 @@ class Task extends Model
     }
 
     /**
+     * Enhanced manager resubmission request with file uploads and additional data
+     */
+    public function requireResubmitEnhanced($notes, $priority = 'normal', $dueDate = null, $uploadedFiles = [])
+    {
+        $this->update([
+            'status' => 're_submit_required',
+            'manager_override_status' => 're_submit',
+            'manager_override_notes' => $notes,
+            'manager_override_updated_at' => now(),
+            'manager_override_by' => auth()->id(),
+            'priority' => $priority,
+            'due_date' => $dueDate ? \Carbon\Carbon::parse($dueDate) : $this->due_date,
+        ]);
+
+        // Handle file uploads
+        if (!empty($uploadedFiles)) {
+            foreach ($uploadedFiles as $fileData) {
+                $this->attachments()->create([
+                    'original_name' => $fileData['original_name'],
+                    'filename' => $fileData['filename'],
+                    'path' => $fileData['path'],
+                    'size' => $fileData['size'],
+                    'mime_type' => $fileData['mime_type'],
+                    'disk' => 'public',
+                    'uploaded_by' => $fileData['uploaded_by'],
+                    'upload_type' => $fileData['upload_type'],
+                ]);
+            }
+        }
+
+        // Create comprehensive history record
+        $this->histories()->create([
+            'user_id' => auth()->id(),
+            'action' => 'require_resubmit_enhanced',
+            'description' => 'Task requires re-submission by user with enhanced instructions',
+            'metadata' => [
+                'resubmit_notes' => $notes,
+                'priority' => $priority,
+                'due_date' => $dueDate,
+                'file_count' => count($uploadedFiles),
+                'uploaded_files' => $uploadedFiles,
+                'combined_response_status' => $this->combined_response_status,
+                'client_notes' => $this->client_response_notes,
+                'consultant_notes' => $this->consultant_response_notes,
+                'manager_override_by' => auth()->user()->name,
+                'resubmit_reason' => 'client_consultant_feedback'
+            ]
+        ]);
+
+        // Enhanced notification to user
+        $this->notifyUserAboutEnhancedResubmit($notes, $priority, $dueDate, $uploadedFiles);
+
+        // Notify managers about the resubmission request
+        $this->notifyManagers(
+            'task_resubmit_required',
+            'Task Resubmission Required',
+            "Task '{$this->title}' has been sent back for resubmission with enhanced instructions. Priority: " . ucfirst($priority)
+        );
+
+        return $this;
+    }
+
+    /**
      * User re-submits the task after manager requested changes
      */
     public function resubmitTask()
@@ -1054,6 +1117,54 @@ private function notifyManagerAboutReviewFinish()
             Log::info("User notified about resubmit requirement for task: {$this->id} by manager: {$manager->id}");
         } catch (\Exception $e) {
             Log::error("Failed to notify user about resubmit requirement: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Enhanced notification for user about resubmission requirement
+     */
+    private function notifyUserAboutEnhancedResubmit($notes, $priority, $dueDate, $uploadedFiles)
+    {
+        try {
+            $user = $this->assignee;
+            if (!$user) return;
+
+            $manager = auth()->user();
+            $priorityText = ucfirst($priority);
+            $dueDateText = $dueDate ? " (Due: " . \Carbon\Carbon::parse($dueDate)->format('M d, Y') . ")" : "";
+            $fileText = count($uploadedFiles) > 0 ? " " . count($uploadedFiles) . " reference file(s) attached." : "";
+
+            $message = "Your task '{$this->title}' needs to be resubmitted with enhanced instructions. Priority: {$priorityText}{$dueDateText}.{$fileText} Manager {$manager->name} provided detailed feedback.";
+
+            $notification = new \App\Models\UnifiedNotification([
+                'user_id' => $user->id,
+                'category' => 'task',
+                'type' => 'task_resubmit_enhanced',
+                'title' => 'Task Resubmission Required - Enhanced',
+                'message' => $message,
+                'task_id' => $this->id,
+                'data' => [
+                    'task_id' => $this->id,
+                    'task_title' => $this->title,
+                    'manager_id' => $manager->id,
+                    'manager_name' => $manager->name,
+                    'project_name' => $this->project->name ?? 'Unknown Project',
+                    'resubmit_notes' => $notes,
+                    'priority' => $priority,
+                    'due_date' => $dueDate,
+                    'file_count' => count($uploadedFiles),
+                    'uploaded_files' => $uploadedFiles,
+                    'client_notes' => $this->client_response_notes,
+                    'consultant_notes' => $this->consultant_response_notes,
+                    'action_url' => route('tasks.show', $this->id)
+                ],
+                'is_read' => false
+            ]);
+            $notification->save();
+
+            Log::info("User notified about enhanced resubmit requirement for task: {$this->id} by manager: {$manager->id}");
+        } catch (\Exception $e) {
+            Log::error("Failed to notify user about enhanced resubmit requirement: " . $e->getMessage());
         }
     }
 

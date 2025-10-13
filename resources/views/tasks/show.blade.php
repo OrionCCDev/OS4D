@@ -702,25 +702,61 @@
                                                 @endif
 
                                                 {{-- Special display for email marked sent actions --}}
-                                                @if($history->action === 'email_marked_sent' && isset($history->metadata['email_subject']))
-                                                    <div class="mt-2 p-2 bg-success bg-opacity-10 rounded border border-success">
-                                                        <strong class="text-success"><i class="bx bx-check-double me-1"></i>Email Details:</strong>
-                                                        <div class="mt-1">
-                                                            <small><strong>Subject:</strong> {{ $history->metadata['email_subject'] }}</small><br>
-                                                            <small><strong>To:</strong> {{ implode(', ', $history->metadata['email_to'] ?? []) }}</small><br>
-                                                            @if(!empty($history->metadata['email_cc']))
-                                                                <small><strong>Cc:</strong> {{ implode(', ', $history->metadata['email_cc']) }}</small><br>
-                                                            @endif
-                                                            @if(!empty($history->metadata['email_bcc']))
-                                                                <small><strong>Bcc:</strong> {{ implode(', ', $history->metadata['email_bcc']) }}</small><br>
-                                                            @endif
-                                                            <small><strong>Sent Via:</strong> {{ ucfirst(str_replace('_', ' ', $history->metadata['sent_via'] ?? 'Unknown')) }}</small><br>
-                                                            @if($history->metadata['has_attachments'] ?? false)
-                                                                <small><strong>Attachments:</strong> {{ $history->metadata['attachment_count'] ?? 0 }} file(s)</small>
-                                                            @endif
-                                                        </div>
+                                            @if($history->action === 'email_marked_sent' && isset($history->metadata['email_subject']))
+                                                <div class="mt-2 p-2 bg-success bg-opacity-10 rounded border border-success">
+                                                    <strong class="text-success"><i class="bx bx-check-double me-1"></i>Email Details:</strong>
+                                                    <div class="mt-1">
+                                                        <small><strong>Subject:</strong> {{ $history->metadata['email_subject'] }}</small><br>
+                                                        <small><strong>To:</strong> {{ implode(', ', $history->metadata['email_to'] ?? []) }}</small><br>
+                                                        @if(!empty($history->metadata['email_cc']))
+                                                            <small><strong>Cc:</strong> {{ implode(', ', $history->metadata['email_cc']) }}</small><br>
+                                                        @endif
+                                                        @if(!empty($history->metadata['email_bcc']))
+                                                            <small><strong>Bcc:</strong> {{ implode(', ', $history->metadata['email_bcc']) }}</small><br>
+                                                        @endif
+                                                        <small><strong>Sent Via:</strong> {{ ucfirst(str_replace('_', ' ', $history->metadata['sent_via'] ?? 'Unknown')) }}</small><br>
+                                                        @if($history->metadata['has_attachments'] ?? false)
+                                                            <small><strong>Attachments:</strong> {{ $history->metadata['attachment_count'] ?? 0 }} file(s)</small>
+                                                        @endif
                                                     </div>
-                                                @endif
+                                                </div>
+                                            @endif
+
+                                            @if($history->action === 'require_resubmit_enhanced' && isset($history->metadata['resubmit_notes']))
+                                                <div class="mt-2 p-2 bg-warning bg-opacity-10 rounded border border-warning">
+                                                    <strong class="text-warning"><i class="bx bx-refresh me-1"></i>Resubmission Instructions:</strong>
+                                                    <div class="mt-1">
+                                                        <p class="mb-2">{{ $history->metadata['resubmit_notes'] }}</p>
+                                                        <div class="row">
+                                                            <div class="col-md-6">
+                                                                <small><strong>Priority:</strong> {{ ucfirst($history->metadata['priority'] ?? 'Normal') }}</small><br>
+                                                                @if($history->metadata['due_date'])
+                                                                    <small><strong>Due Date:</strong> {{ \Carbon\Carbon::parse($history->metadata['due_date'])->format('M d, Y') }}</small><br>
+                                                                @endif
+                                                            </div>
+                                                            <div class="col-md-6">
+                                                                @if($history->metadata['file_count'] > 0)
+                                                                    <small><strong>Reference Files:</strong> {{ $history->metadata['file_count'] }} file(s) attached</small><br>
+                                                                @endif
+                                                                <small><strong>Manager:</strong> {{ $history->metadata['manager_override_by'] ?? 'Unknown' }}</small>
+                                                            </div>
+                                                        </div>
+                                                        @if(isset($history->metadata['client_notes']) || isset($history->metadata['consultant_notes']))
+                                                            <div class="mt-2 pt-2 border-top">
+                                                                <small class="text-muted">
+                                                                    <strong>Based on feedback:</strong>
+                                                                    @if($history->metadata['client_notes'])
+                                                                        Client: {{ $history->metadata['client_notes'] }}
+                                                                    @endif
+                                                                    @if($history->metadata['consultant_notes'])
+                                                                        @if($history->metadata['client_notes']) | @endif
+                                                                        Consultant: {{ $history->metadata['consultant_notes'] }}
+                                                                    @endif
+                                                                </small>
+                                                            </div>
+                                                        @endif
+                                                    </div>
+                                                </div>
                                             @endif
 
                                             @if($history->old_value || $history->new_value)
@@ -1011,7 +1047,7 @@
                                     <hr>
 
                                     <!-- Require Resubmit Button -->
-                                    <button class="btn btn-warning w-100" onclick="requireResubmit({{ $task->id }})">
+                                    <button class="btn btn-warning w-100" data-bs-toggle="modal" data-bs-target="#requireResubmitModal">
                                         <i class="bx bx-refresh me-2"></i>Request Resubmission
                                     </button>
                                     <small class="text-muted text-center">Task needs changes - send back to user</small>
@@ -1236,6 +1272,142 @@
         </div>
     </div>
 </div>
+</div>
+
+<!-- Require Resubmission Modal -->
+<div class="modal fade" id="requireResubmitModal" tabindex="-1" aria-labelledby="requireResubmitModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-white">
+                <h5 class="modal-title" id="requireResubmitModalLabel">
+                    <i class="bx bx-refresh me-2"></i>Request Task Resubmission
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="requireResubmitForm" enctype="multipart/form-data">
+                @csrf
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="bx bx-info-circle me-2"></i>
+                        <strong>Task Control:</strong> You are taking control of this task to request changes from the user. The task will be returned to the user for resubmission.
+                    </div>
+
+                    <!-- Task Information -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Task Title:</label>
+                            <p class="form-control-plaintext">{{ $task->title }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Assigned To:</label>
+                            <p class="form-control-plaintext">{{ $task->assignee->name ?? 'Unassigned' }}</p>
+                        </div>
+                    </div>
+
+                    <!-- Current Status -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Current Status:</label>
+                        <div class="d-flex align-items-center">
+                            <span class="badge bg-info me-2">{{ ucfirst(str_replace('_', ' ', $task->status)) }}</span>
+                            @if($task->combined_response_status)
+                                <span class="badge bg-secondary">{{ $task->combined_response_status }}</span>
+                            @endif
+                        </div>
+                    </div>
+
+                    <!-- Client/Consultant Feedback -->
+                    @if($task->combined_response_status)
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Client/Consultant Feedback:</label>
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <div class="row">
+                                    @if($task->client_response_notes)
+                                    <div class="col-md-6">
+                                        <strong class="text-primary">Client Notes:</strong>
+                                        <p class="mb-0 text-muted">{{ $task->client_response_notes }}</p>
+                                    </div>
+                                    @endif
+                                    @if($task->consultant_response_notes)
+                                    <div class="col-md-6">
+                                        <strong class="text-info">Consultant Notes:</strong>
+                                        <p class="mb-0 text-muted">{{ $task->consultant_response_notes }}</p>
+                                    </div>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    @endif
+
+                    <!-- Resubmission Notes -->
+                    <div class="mb-3">
+                        <label for="resubmit_notes" class="form-label fw-semibold">
+                            <i class="bx bx-message-detail me-1"></i>Resubmission Instructions <span class="text-danger">*</span>
+                        </label>
+                        <textarea class="form-control" id="resubmit_notes" name="resubmit_notes" rows="4"
+                                  placeholder="Explain what changes are needed. Be specific about requirements, corrections, or improvements..." required></textarea>
+                        <div class="form-text">Provide clear instructions for the user on what needs to be changed or improved.</div>
+                    </div>
+
+                    <!-- File Uploads -->
+                    <div class="mb-3">
+                        <label for="resubmit_attachments" class="form-label fw-semibold">
+                            <i class="bx bx-paperclip me-1"></i>Attach Files (Optional)
+                        </label>
+                        <input type="file" class="form-control" id="resubmit_attachments" name="resubmit_attachments[]" multiple
+                               accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.jpg,.jpeg,.png,.gif,.zip,.rar">
+                        <div class="form-text">Upload reference files, examples, or documents that will help the user understand the requirements.</div>
+                    </div>
+
+                    <!-- Priority Level -->
+                    <div class="mb-3">
+                        <label for="resubmit_priority" class="form-label fw-semibold">
+                            <i class="bx bx-flag me-1"></i>Priority Level
+                        </label>
+                        <select class="form-select" id="resubmit_priority" name="resubmit_priority">
+                            <option value="normal">Normal Priority</option>
+                            <option value="high">High Priority</option>
+                            <option value="urgent">Urgent Priority</option>
+                        </select>
+                        <div class="form-text">Set the priority level for this resubmission request.</div>
+                    </div>
+
+                    <!-- Due Date for Resubmission -->
+                    <div class="mb-3">
+                        <label for="resubmit_due_date" class="form-label fw-semibold">
+                            <i class="bx bx-calendar me-1"></i>Resubmission Due Date (Optional)
+                        </label>
+                        <input type="date" class="form-control" id="resubmit_due_date" name="resubmit_due_date"
+                               min="{{ date('Y-m-d') }}">
+                        <div class="form-text">Set a specific due date for the resubmission. Leave empty for no specific deadline.</div>
+                    </div>
+
+                    <!-- Action Summary -->
+                    <div class="alert alert-warning">
+                        <h6 class="alert-heading">
+                            <i class="bx bx-info-circle me-1"></i>What will happen:
+                        </h6>
+                        <ul class="mb-0">
+                            <li>Task status will change to <strong>"Re-submit Required"</strong></li>
+                            <li>User will be notified to make the requested changes</li>
+                            <li>User will be able to upload new files and resubmit</li>
+                            <li>Task will return to <strong>"Submitted for Review"</strong> status after resubmission</li>
+                            <li>All actions will be recorded in task history</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bx bx-x me-1"></i>Cancel
+                    </button>
+                    <button type="submit" class="btn btn-warning">
+                        <i class="bx bx-refresh me-1"></i>Request Resubmission
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
 
 <!-- Task Assignment Modal -->
@@ -1807,37 +1979,74 @@ function markAsCompleted(taskId) {
     }
 }
 
-// Require task resubmission (Manager action after client/consultant review)
-function requireResubmit(taskId) {
-    const notes = prompt('Enter notes explaining what changes are needed:');
+// Handle require resubmission form submission
+document.getElementById('requireResubmitForm').addEventListener('submit', function(e) {
+    e.preventDefault();
 
-    if (notes !== null && notes.trim() !== '') { // require notes
-        const formData = new FormData();
-        formData.append('resubmit_notes', notes);
+    const formData = new FormData(this);
+    const taskId = {{ $task->id }};
 
-        fetch(`/tasks/${taskId}/require-resubmit`, {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-            },
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert('Task sent back for resubmission successfully!');
+    // Show loading state
+    const submitBtn = this.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<i class="bx bx-loader-alt bx-spin me-1"></i>Processing...';
+    submitBtn.disabled = true;
+
+    fetch(`/tasks/${taskId}/require-resubmit`, {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('requireResubmitModal'));
+            modal.hide();
+
+            // Show success message
+            showNotification('Task sent back for resubmission successfully!', 'success');
+
+            // Reload page after a short delay
+            setTimeout(() => {
                 location.reload();
-            } else {
-                alert('Failed to require resubmission: ' + (data.message || 'Unknown error'));
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Error requiring resubmission. Please try again.');
-        });
-    } else if (notes !== null) {
-        alert('Please provide notes explaining what changes are needed.');
-    }
+            }, 1500);
+        } else {
+            showNotification('Failed to require resubmission: ' + (data.message || 'Unknown error'), 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Error requiring resubmission. Please try again.', 'error');
+    })
+    .finally(() => {
+        // Reset button state
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+    });
+});
+
+// Notification helper function
+function showNotification(message, type = 'info') {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type === 'error' ? 'danger' : type} alert-dismissible fade show position-fixed`;
+    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    notification.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+
+    document.body.appendChild(notification);
+
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 5000);
 }
 
 // File search functionality
