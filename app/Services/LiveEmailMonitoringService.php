@@ -291,20 +291,20 @@ class LiveEmailMonitoringService
         $users = [];
 
         if ($isReply) {
-            // For replies, notify original sender and manager
+            // For replies, notify original sender and ALL managers
             $originalEmail = $this->findOriginalEmail($emailData);
             if ($originalEmail) {
                 $users[] = User::find($originalEmail->user_id);
             }
 
-            // Always notify manager
-            $manager = User::find(1);
-            if ($manager) {
+            // Notify ALL managers and admins (not just User 1)
+            $managers = User::whereIn('role', ['admin', 'manager', 'sub-admin'])->get();
+            foreach ($managers as $manager) {
                 $users[] = $manager;
             }
         } else {
             // For new emails, notify users based on TO and CC
-            $allRecipients = array_merge([$emailData['to']], $emailData['cc']);
+            $allRecipients = array_merge([$emailData['to']], $emailData['cc'] ?? []);
 
             foreach ($allRecipients as $recipient) {
                 $user = User::where('email', $recipient)->first();
@@ -313,9 +313,9 @@ class LiveEmailMonitoringService
                 }
             }
 
-            // Always notify manager for new emails
-            $manager = User::find(1);
-            if ($manager) {
+            // Always notify ALL managers and admins for new emails (not just User 1)
+            $managers = User::whereIn('role', ['admin', 'manager', 'sub-admin'])->get();
+            foreach ($managers as $manager) {
                 $users[] = $manager;
             }
         }
