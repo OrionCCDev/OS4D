@@ -85,7 +85,7 @@ class TaskController extends Controller
             'folder_id' => 'nullable|exists:project_folders,id',
             'assigned_to' => 'nullable|exists:users,id',
             'contractors' => 'nullable|array',
-            'contractors.*' => 'exists:contractors,id',
+            'contractors.*' => 'nullable|exists:contractors,id',
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'due_date' => 'nullable|date',
