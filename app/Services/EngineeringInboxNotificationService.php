@@ -56,8 +56,8 @@ class EngineeringInboxNotificationService
                 // Create in-app notification
                 $this->createManagerInAppNotification($manager, $emailData, $relatedTask);
 
-                // Send email notification
-                $this->sendManagerEmailNotification($manager, $emailData, $relatedTask);
+                // Send email notification - DISABLED (only in-app notifications needed)
+                // $this->sendManagerEmailNotification($manager, $emailData, $relatedTask);
             }
 
             Log::info('Engineering inbox notifications sent to ' . $managers->count() . ' managers');
