@@ -44,17 +44,36 @@ class NewEmailFetch extends Command
     {
         $this->info('🚀 Starting NEW email fetch process...');
 
+        $lockKey = 'new-email-fetch:running';
+
         try {
             $maxResults = (int) $this->option('max-results');
 
-            // Use a completely new lock key
-            $lockKey = 'new-email-fetch:running';
-            $lockValue = time() . '-' . uniqid();
+            // Check for existing lock
+            $existingLock = Cache::get($lockKey);
+            if ($existingLock) {
+                // Check if lock is stale (older than 2 minutes)
+                $lockTime = explode('-', $existingLock)[0] ?? 0;
+                $currentTime = time();
 
-            // Try to acquire lock atomically
-            if (!Cache::add($lockKey, $lockValue, 300)) {
+                if ($currentTime - $lockTime > 120) {
+                    // Lock is stale, force clear it
+                    Cache::forget($lockKey);
+                    $this->info('⚠️  Cleared stale lock');
+                    Log::warning('NewEmailFetch: Cleared stale lock');
+                } else {
+                    // Lock is fresh, skip this run
+                    $this->info('Another email fetch process is already running. Skipping...');
+                    Log::info('NewEmailFetch: Skipped - another instance is running');
+                    return 0;
+                }
+            }
+
+            // Try to acquire lock atomically with 2 minute timeout
+            $lockValue = time() . '-' . uniqid();
+            if (!Cache::add($lockKey, $lockValue, 120)) {
                 $this->info('Another email fetch process is already running. Skipping...');
-                Log::info('NewEmailFetch: Skipped - another instance is running');
+                Log::info('NewEmailFetch: Skipped - failed to acquire lock');
                 return 0;
             }
 
@@ -116,6 +135,7 @@ class NewEmailFetch extends Command
             } finally {
                 // Always release the lock
                 Cache::forget($lockKey);
+                $this->info('🔓 Lock released');
             }
 
         } catch (\Exception $e) {
@@ -124,6 +144,10 @@ class NewEmailFetch extends Command
                 'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
+
+            // Ensure lock is released even on exception
+            Cache::forget($lockKey);
+
             return 1;
         }
     }
