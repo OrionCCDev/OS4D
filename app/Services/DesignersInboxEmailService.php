@@ -206,7 +206,7 @@ class DesignersInboxEmailService
                 'from_email' => $fromEmail,
                 'to_email' => $toEmail,
                 'cc_emails' => $ccEmails,
-                'subject' => $header->subject ?? 'No Subject',
+                'subject' => $this->decodeEmailSubject($header->subject ?? 'No Subject'),
                 'date' => $this->parseImapDate($header->date ?? ''),
                 'body' => $this->cleanEmailBody($body ?? ''),
                 'attachments' => $attachments,
@@ -265,6 +265,32 @@ class DesignersInboxEmailService
         $body = preg_replace('/\s+/', ' ', $body);
 
         return trim($body);
+    }
+
+    /**
+     * Decode email subject from MIME encoding
+     */
+    protected function decodeEmailSubject(string $subject): string
+    {
+        try {
+            // If subject is already decoded or doesn't contain MIME encoding, return as is
+            if (!preg_match('/=\?[^?]+\?[QB]\?[^?]+\?=/i', $subject)) {
+                return $subject;
+            }
+
+            // Decode MIME header encoding
+            $decoded = mb_decode_mimeheader($subject);
+
+            // If decoding failed, try alternative method
+            if ($decoded === $subject) {
+                $decoded = iconv_mime_decode($subject, ICONV_MIME_DECODE_CONTINUE_ON_ERROR, 'UTF-8');
+            }
+
+            return $decoded ?: $subject;
+        } catch (\Exception $e) {
+            Log::warning('Failed to decode email subject: ' . $e->getMessage());
+            return $subject;
+        }
     }
 
     /**
