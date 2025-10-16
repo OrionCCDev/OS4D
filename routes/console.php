@@ -12,7 +12,6 @@ Artisan::command('inspire', function () {
 // This command runs every minute and processes queued jobs
 Schedule::command('queue:work --stop-when-empty --max-time=50')
     ->everyMinute()
-    ->withoutOverlapping()
     ->runInBackground();
 
 // NEW EMAIL FETCH COMMAND - This handles everything with proper atomic locking
@@ -38,5 +37,4 @@ Schedule::command('emails:new-fetch --max-results=50')
 // This prevents log files from growing too large and causing server issues
 Schedule::command('logs:cleanup')
     ->dailyAt('02:00')
-    ->withoutOverlapping()
     ->runInBackground();
