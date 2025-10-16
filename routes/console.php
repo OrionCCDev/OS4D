@@ -11,7 +11,7 @@ Artisan::command('inspire', function () {
 // RELIABLE EMAIL MONITOR - More robust email monitoring system
 // Uses Laravel Mailbox package with better error handling
 Schedule::command('emails:reliable-monitor --max-results=50')
-    ->everyMinute()
+    ->everyFiveMinutes()
     ->runInBackground();
 
 // QUEUE WORKER - Process background jobs (email sending, etc.)
