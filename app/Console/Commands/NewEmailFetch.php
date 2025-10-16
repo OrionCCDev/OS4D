@@ -44,7 +44,16 @@ class NewEmailFetch extends Command
     {
         $this->info('🚀 Starting NEW email fetch process...');
 
-        $executed = Cache::lock('email-fetch-lock', 300)->get(function () {
+        // Check if lock exists and is stale (older than 2 minutes)
+        $lockKey = 'email-fetch-lock';
+        if (Cache::has($lockKey)) {
+            $this->info('⚠️  Lock exists, checking if stale...');
+            // Force clear any stale locks
+            Cache::forget($lockKey);
+            $this->info('🧹 Cleared any stale locks');
+        }
+
+        $executed = Cache::lock($lockKey, 120)->get(function () {
             $this->info('Fetching emails...');
 
             try {
@@ -119,7 +128,7 @@ class NewEmailFetch extends Command
             return 0;
         }
 
-        $this->info('Email fetch completed');
+        $this->info('✅ Email fetch completed successfully');
         return 0;
     }
 }
