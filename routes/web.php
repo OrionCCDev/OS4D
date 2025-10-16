@@ -18,8 +18,12 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ExternalStakeholderController;
 use App\Http\Controllers\EmailController;
 use App\Http\Controllers\GmailOAuthController;
+use App\Http\Controllers\MailboxWebhookController;
 use App\Http\Controllers\EmailNotificationController;
 use App\Services\EmailTrackingService;
+
+// Mailbox webhook routes (no auth required for webhooks)
+Route::post('/mailbox/webhook', [MailboxWebhookController::class, 'handle']);
 
 // Simple email tracking routes (no auth required for webhooks)
 Route::post('/email/webhook/incoming', [App\Http\Controllers\SimpleEmailController::class, 'handleIncomingEmail'])
