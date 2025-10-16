@@ -17,11 +17,11 @@ class ReliableEmailService
 
     public function __construct()
     {
-        $this->imapHost = config('mailbox.imap.host');
-        $this->imapPort = config('mailbox.imap.port');
-        $this->imapUsername = config('mailbox.imap.username');
-        $this->imapPassword = config('mailbox.imap.password');
-        $this->imapFolder = config('mailbox.imap.folder');
+        $this->imapHost = env('IMAP_HOST', 'mail.orion-contracting.com');
+        $this->imapPort = env('IMAP_PORT', 993);
+        $this->imapUsername = env('IMAP_USERNAME', 'engineering@orion-contracting.com');
+        $this->imapPassword = env('IMAP_PASSWORD', '');
+        $this->imapFolder = env('IMAP_FOLDER', 'INBOX');
     }
 
     /**
