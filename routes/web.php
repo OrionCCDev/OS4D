@@ -26,7 +26,8 @@ use App\Services\EmailTrackingService;
 Route::post('/mailbox/webhook', [MailboxWebhookController::class, 'handle']);
 
 // Email fetch webhook routes (no auth required for webhooks)
-Route::post('/email/fetch', [App\Http\Controllers\EmailWebhookController::class, 'triggerEmailFetch']);
+Route::post('/email/fetch', [App\Http\Controllers\EmailWebhookController::class, 'triggerEmailFetch'])
+    ->withoutMiddleware(['web']); // Exclude CSRF protection for webhooks
 Route::get('/email/status', [App\Http\Controllers\EmailWebhookController::class, 'status']);
 
 // Simple email tracking routes (no auth required for webhooks)
