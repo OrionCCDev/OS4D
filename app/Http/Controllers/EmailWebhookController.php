@@ -16,7 +16,8 @@ class EmailWebhookController extends Controller
         try {
             // Verify the request (add your own security)
             $secret = $request->input('secret');
-            if ($secret !== 'your-secret-key-123') {
+            $expectedSecret = env('EMAIL_WEBHOOK_SECRET', 'orion-email-2025');
+            if ($secret !== $expectedSecret) {
                 return response()->json(['error' => 'Unauthorized'], 401);
             }
 
