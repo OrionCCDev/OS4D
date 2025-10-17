@@ -69,6 +69,38 @@ Route::middleware('auth')->group(function () {
     Route::get('/email-notifications/stats', [EmailNotificationController::class, 'getEmailStats'])->name('email-notifications.stats');
     Route::get('/emails/sent', [App\Http\Controllers\SimpleEmailController::class, 'listSentEmails'])->name('emails.sent');
 
+    // Reports routes
+    Route::prefix('reports')->name('reports.')->group(function () {
+        Route::get('/', [App\Http\Controllers\ReportController::class, 'index'])->name('index');
+
+        // Project reports
+        Route::get('/projects', [App\Http\Controllers\ReportController::class, 'projects'])->name('projects');
+        Route::get('/projects/progress', [App\Http\Controllers\ReportController::class, 'projectProgress'])->name('projects.progress');
+
+        // Task reports
+        Route::get('/tasks', [App\Http\Controllers\ReportController::class, 'tasks'])->name('tasks');
+
+        // User reports
+        Route::get('/users', [App\Http\Controllers\ReportController::class, 'users'])->name('users');
+        Route::get('/users/{user}', [App\Http\Controllers\ReportController::class, 'userPerformance'])->name('users.performance');
+
+        // Evaluation reports
+        Route::get('/evaluations', [App\Http\Controllers\ReportController::class, 'evaluations'])->name('evaluations');
+        Route::post('/evaluations/monthly', [App\Http\Controllers\ReportController::class, 'generateMonthlyEvaluation'])->name('evaluations.monthly');
+        Route::post('/evaluations/quarterly', [App\Http\Controllers\ReportController::class, 'generateQuarterlyEvaluation'])->name('evaluations.quarterly');
+        Route::post('/evaluations/annual', [App\Http\Controllers\ReportController::class, 'generateAnnualEvaluation'])->name('evaluations.annual');
+        Route::post('/evaluations/rankings', [App\Http\Controllers\ReportController::class, 'calculateRankings'])->name('evaluations.rankings');
+
+        // Export routes
+        Route::get('/export/pdf/{type}', [App\Http\Controllers\ReportController::class, 'exportPdf'])->name('export.pdf');
+        Route::get('/export/excel/{type}', [App\Http\Controllers\ReportController::class, 'exportExcel'])->name('export.excel');
+
+        // API routes for filters
+        Route::get('/api/users', [App\Http\Controllers\ReportController::class, 'getUsers'])->name('api.users');
+        Route::get('/api/projects', [App\Http\Controllers\ReportController::class, 'getProjects'])->name('api.projects');
+        Route::get('/api/users/{user}/metrics', [App\Http\Controllers\ReportController::class, 'getUserMetrics'])->name('api.user.metrics');
+    });
+
     // Email monitoring routes
     Route::get('/email-monitoring', [App\Http\Controllers\EmailMonitoringController::class, 'index'])->name('email-monitoring.index');
     Route::get('/email-monitoring/stats', [App\Http\Controllers\EmailMonitoringController::class, 'getStats'])->name('email-monitoring.stats');

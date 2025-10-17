@@ -1,0 +1,294 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Services\ReportService;
+use App\Services\PerformanceCalculator;
+use App\Models\Project;
+use App\Models\User;
+use App\Models\EmployeeEvaluation;
+use App\Models\PerformanceMetric;
+use Illuminate\Http\Request;
+use Illuminate\View\View;
+use Carbon\Carbon;
+
+class ReportController extends Controller
+{
+    protected $reportService;
+    protected $performanceCalculator;
+
+    public function __construct(ReportService $reportService, PerformanceCalculator $performanceCalculator)
+    {
+        $this->reportService = $reportService;
+        $this->performanceCalculator = $performanceCalculator;
+    }
+
+    /**
+     * Display the main reports dashboard
+     */
+    public function index(Request $request): View
+    {
+        $filters = $this->getFiltersFromRequest($request);
+
+        // Get summary data for dashboard
+        $summaryData = [
+            'total_projects' => Project::count(),
+            'active_projects' => Project::where('status', 'active')->count(),
+            'total_tasks' => \App\Models\Task::count(),
+            'completed_tasks' => \App\Models\Task::where('status', 'completed')->count(),
+            'total_users' => User::where('role', '!=', 'admin')->count(),
+            'overdue_tasks' => \App\Models\Task::where('is_overdue', true)->count(),
+        ];
+
+        // Get recent evaluations
+        $recentEvaluations = EmployeeEvaluation::with(['user', 'evaluator'])
+            ->orderBy('created_at', 'desc')
+            ->limit(5)
+            ->get();
+
+        // Get top performers this month
+        $topPerformers = $this->reportService->getEmployeeRankings([
+            'date_from' => Carbon::now()->startOfMonth(),
+            'date_to' => Carbon::now()->endOfMonth(),
+        ])->take(5);
+
+        return view('reports.index', compact('summaryData', 'recentEvaluations', 'topPerformers', 'filters'));
+    }
+
+    /**
+     * Display project reports
+     */
+    public function projects(Request $request): View
+    {
+        $filters = $this->getFiltersFromRequest($request);
+        $projects = $this->reportService->getProjectOverviewReport($filters);
+
+        return view('reports.projects.overview', compact('projects', 'filters'));
+    }
+
+    /**
+     * Display project progress report
+     */
+    public function projectProgress(Request $request): View
+    {
+        $filters = $this->getFiltersFromRequest($request);
+        $projects = $this->reportService->getProjectOverviewReport($filters);
+
+        return view('reports.projects.progress', compact('projects', 'filters'));
+    }
+
+    /**
+     * Display task reports
+     */
+    public function tasks(Request $request): View
+    {
+        $filters = $this->getFiltersFromRequest($request);
+        $taskReport = $this->reportService->getTaskCompletionReport($filters);
+
+        return view('reports.tasks.completion', compact('taskReport', 'filters'));
+    }
+
+    /**
+     * Display user performance reports
+     */
+    public function users(Request $request): View
+    {
+        $filters = $this->getFiltersFromRequest($request);
+        $rankings = $this->reportService->getEmployeeRankings($filters);
+
+        return view('reports.users.performance', compact('rankings', 'filters'));
+    }
+
+    /**
+     * Display individual user performance
+     */
+    public function userPerformance(Request $request, $userId): View
+    {
+        $filters = $this->getFiltersFromRequest($request);
+        $userReport = $this->reportService->getUserPerformanceReport($userId, $filters);
+
+        return view('reports.users.individual', compact('userReport', 'filters'));
+    }
+
+    /**
+     * Display evaluations
+     */
+    public function evaluations(Request $request): View
+    {
+        $filters = $this->getFiltersFromRequest($request);
+        $evaluationType = $request->get('type', 'monthly');
+
+        $evaluations = EmployeeEvaluation::with(['user', 'evaluator'])
+            ->when($evaluationType, function ($query) use ($evaluationType) {
+                return $query->where('evaluation_type', $evaluationType);
+            })
+            ->when($filters['date_from'], function ($query) use ($filters) {
+                return $query->where('evaluation_period_start', '>=', $filters['date_from']);
+            })
+            ->when($filters['date_to'], function ($query) use ($filters) {
+                return $query->where('evaluation_period_start', '<=', $filters['date_to']);
+            })
+            ->orderBy('performance_score', 'desc')
+            ->paginate(20);
+
+        return view('reports.evaluations.index', compact('evaluations', 'filters', 'evaluationType'));
+    }
+
+    /**
+     * Generate monthly evaluation
+     */
+    public function generateMonthlyEvaluation(Request $request)
+    {
+        $request->validate([
+            'user_id' => 'required|exists:users,id',
+            'year' => 'required|integer|min:2020|max:2030',
+            'month' => 'required|integer|min:1|max:12',
+        ]);
+
+        $evaluation = $this->performanceCalculator->generateMonthlyEvaluation(
+            $request->user_id,
+            $request->year,
+            $request->month
+        );
+
+        return redirect()->route('reports.evaluations')
+            ->with('success', 'Monthly evaluation generated successfully.');
+    }
+
+    /**
+     * Generate quarterly evaluation
+     */
+    public function generateQuarterlyEvaluation(Request $request)
+    {
+        $request->validate([
+            'user_id' => 'required|exists:users,id',
+            'year' => 'required|integer|min:2020|max:2030',
+            'quarter' => 'required|integer|min:1|max:4',
+        ]);
+
+        $evaluation = $this->performanceCalculator->generateQuarterlyEvaluation(
+            $request->user_id,
+            $request->year,
+            $request->quarter
+        );
+
+        return redirect()->route('reports.evaluations')
+            ->with('success', 'Quarterly evaluation generated successfully.');
+    }
+
+    /**
+     * Generate annual evaluation
+     */
+    public function generateAnnualEvaluation(Request $request)
+    {
+        $request->validate([
+            'user_id' => 'required|exists:users,id',
+            'year' => 'required|integer|min:2020|max:2030',
+        ]);
+
+        $evaluation = $this->performanceCalculator->generateAnnualEvaluation(
+            $request->user_id,
+            $request->year
+        );
+
+        return redirect()->route('reports.evaluations')
+            ->with('success', 'Annual evaluation generated successfully.');
+    }
+
+    /**
+     * Calculate rankings for a period
+     */
+    public function calculateRankings(Request $request)
+    {
+        $request->validate([
+            'evaluation_type' => 'required|in:monthly,quarterly,annual',
+            'period_start' => 'required|date',
+            'period_end' => 'required|date|after:period_start',
+        ]);
+
+        $rankings = $this->performanceCalculator->calculateRankings(
+            $request->evaluation_type,
+            $request->period_start,
+            $request->period_end
+        );
+
+        return redirect()->route('reports.evaluations')
+            ->with('success', 'Rankings calculated successfully.');
+    }
+
+    /**
+     * Export report to PDF
+     */
+    public function exportPdf(Request $request, $reportType)
+    {
+        // This would implement PDF export functionality
+        // For now, return a placeholder response
+        return response()->json(['message' => 'PDF export not implemented yet']);
+    }
+
+    /**
+     * Export report to Excel
+     */
+    public function exportExcel(Request $request, $reportType)
+    {
+        // This would implement Excel export functionality
+        // For now, return a placeholder response
+        return response()->json(['message' => 'Excel export not implemented yet']);
+    }
+
+    /**
+     * Get available users for filters
+     */
+    public function getUsers(Request $request)
+    {
+        $users = User::where('role', '!=', 'admin')
+            ->select('id', 'name', 'email')
+            ->get();
+
+        return response()->json($users);
+    }
+
+    /**
+     * Get available projects for filters
+     */
+    public function getProjects(Request $request)
+    {
+        $projects = Project::select('id', 'name', 'status')
+            ->get();
+
+        return response()->json($projects);
+    }
+
+    /**
+     * Get performance metrics for a user
+     */
+    public function getUserMetrics(Request $request, $userId)
+    {
+        $periodType = $request->get('period_type', 'monthly');
+        $date = $request->get('date', Carbon::now()->toDateString());
+
+        $metrics = PerformanceMetric::where('user_id', $userId)
+            ->where('period_type', $periodType)
+            ->where('metric_date', '<=', $date)
+            ->orderBy('metric_date', 'desc')
+            ->limit(12)
+            ->get();
+
+        return response()->json($metrics);
+    }
+
+    /**
+     * Extract filters from request
+     */
+    private function getFiltersFromRequest(Request $request): array
+    {
+        return [
+            'date_from' => $request->get('date_from'),
+            'date_to' => $request->get('date_to'),
+            'user_id' => $request->get('user_id'),
+            'project_id' => $request->get('project_id'),
+            'status' => $request->get('status', []),
+            'priority' => $request->get('priority', []),
+        ];
+    }
+}

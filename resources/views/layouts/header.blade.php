@@ -116,6 +116,13 @@
                 <div data-i18n="Projects">Projects</div>
               </a>
             </li>
+            <!-- Reports - Manager and Sub-Admin -->
+            <li class="menu-item {{ request()->routeIs('reports.*') ? 'active' : '' }}">
+              <a href="{{ route('reports.index') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-bar-chart-alt-2"></i>
+                <div data-i18n="Reports">Reports</div>
+              </a>
+            </li>
             <!-- Folders - Manager only -->
             {{--  <li class="menu-item {{ request()->routeIs('folders.*') ? 'active' : '' }}">
               <a href="{{ route('folders.index') }}" class="menu-link">
