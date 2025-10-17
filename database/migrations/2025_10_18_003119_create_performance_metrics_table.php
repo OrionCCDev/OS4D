@@ -34,10 +34,10 @@ return new class extends Migration
             $table->integer('rank')->nullable();
             $table->timestamps();
 
-            $table->index(['user_id', 'metric_date', 'period_type']);
-            $table->index(['project_id', 'metric_date', 'period_type']);
-            $table->index(['period_type', 'metric_date']);
-            $table->unique(['user_id', 'project_id', 'metric_date', 'period_type']);
+            $table->index(['user_id', 'metric_date', 'period_type'], 'perf_metric_user_date_type_idx');
+            $table->index(['project_id', 'metric_date', 'period_type'], 'perf_metric_proj_date_type_idx');
+            $table->index(['period_type', 'metric_date'], 'perf_metric_type_date_idx');
+            $table->unique(['user_id', 'project_id', 'metric_date', 'period_type'], 'perf_metric_user_proj_date_type_unq');
         });
     }
 

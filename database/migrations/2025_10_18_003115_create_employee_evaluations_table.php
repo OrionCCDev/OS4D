@@ -33,9 +33,9 @@ return new class extends Migration
             $table->timestamp('approved_at')->nullable();
             $table->timestamps();
 
-            $table->index(['user_id', 'evaluation_type', 'evaluation_period_start']);
-            $table->index(['evaluation_type', 'evaluation_period_start']);
-            $table->unique(['user_id', 'evaluation_type', 'evaluation_period_start']);
+            $table->index(['user_id', 'evaluation_type', 'evaluation_period_start'], 'emp_eval_user_type_period_idx');
+            $table->index(['evaluation_type', 'evaluation_period_start'], 'emp_eval_type_period_idx');
+            $table->unique(['user_id', 'evaluation_type', 'evaluation_period_start'], 'emp_eval_user_type_period_unq');
         });
     }
 
