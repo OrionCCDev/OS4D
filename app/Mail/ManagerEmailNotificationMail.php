@@ -5,6 +5,7 @@ namespace App\Mail;
 use App\Models\Task;
 use App\Models\TaskEmailPreparation;
 use App\Models\User;
+use App\Services\EmailSignatureService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
@@ -22,6 +23,7 @@ class ManagerEmailNotificationMail extends Mailable
     public $manager;
     public $toEmails;
     public $ccEmails;
+    public $signatureService;
 
     /**
      * Create a new message instance.
@@ -40,6 +42,7 @@ class ManagerEmailNotificationMail extends Mailable
         $this->manager = $manager;
         $this->toEmails = $toEmails;
         $this->ccEmails = $ccEmails;
+        $this->signatureService = app(EmailSignatureService::class);
     }
 
     /**
@@ -68,6 +71,7 @@ class ManagerEmailNotificationMail extends Mailable
                 'manager' => $this->manager,
                 'toEmails' => $this->toEmails,
                 'ccEmails' => $this->ccEmails,
+                'signature' => $this->signatureService->getSignatureForEmail($this->manager, 'html'),
             ]
         );
     }

@@ -842,6 +842,19 @@ class EmailFetchController extends Controller
                 ], 501);
             }
 
+            // Check if attachment has content (base64 encoded)
+            if (isset($attachment['content']) && !empty($attachment['content'])) {
+                // Decode base64 content and serve it
+                $fileContent = base64_decode($attachment['content']);
+                if ($fileContent !== false) {
+                    return response($fileContent, 200, [
+                        'Content-Type' => $mimeType,
+                        'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+                        'Content-Length' => strlen($fileContent),
+                    ]);
+                }
+            }
+
             // Check different storage locations for the file
             $storagePaths = [
                 storage_path('app/email-attachments/' . $filename),
@@ -865,7 +878,7 @@ class EmailFetchController extends Controller
             // If file doesn't exist locally, return error
             return response()->json([
                 'success' => false,
-                'message' => 'Attachment file not found on server.'
+                'message' => 'Attachment file not found on server. The attachment may not have been properly saved during email processing.'
             ], 404);
 
         } catch (\Exception $e) {
@@ -913,6 +926,19 @@ class EmailFetchController extends Controller
                     'success' => false,
                     'message' => 'Gmail attachment viewing not yet implemented. Please download the file instead.'
                 ], 501);
+            }
+
+            // Check if attachment has content (base64 encoded)
+            if (isset($attachment['content']) && !empty($attachment['content'])) {
+                // Decode base64 content and serve it
+                $fileContent = base64_decode($attachment['content']);
+                if ($fileContent !== false) {
+                    return response($fileContent, 200, [
+                        'Content-Type' => $mimeType,
+                        'Content-Disposition' => 'inline; filename="' . $filename . '"',
+                        'Content-Length' => strlen($fileContent),
+                    ]);
+                }
             }
 
             // Check different storage locations for the file

@@ -158,6 +158,9 @@
             <p>This is an automated notification. The confirmation email has been successfully sent to the client/consultant.</p>
             <p>You will receive another notification when they reply to the email.</p>
             <p>For support, contact: engineering@orion-contracting.com</p>
+
+            <!-- Professional Signature -->
+            {!! $signature !!}
         </div>
     </div>
 </body>

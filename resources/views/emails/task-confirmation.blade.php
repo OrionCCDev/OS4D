@@ -192,9 +192,10 @@
 
         <p>Thank you for your attention to this matter. If you have any questions or need further information, please don't hesitate to contact me.</p>
 
-        <p>Best regards,<br>
-        <strong>{{ $sender->name }}</strong><br>
-        <em>{{ $sender->email }}</em></p>
+        <p>Best regards,</p>
+
+        <!-- Professional Signature -->
+        {!! $signature !!}
     </div>
 
     <div class="footer" style="background: #f8f9fa; padding: 20px; text-align: center; border-top: 1px solid #dee2e6; margin-top: 30px;">

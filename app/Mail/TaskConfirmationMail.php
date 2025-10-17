@@ -4,6 +4,7 @@ namespace App\Mail;
 
 use App\Models\Task;
 use App\Models\TaskEmailPreparation;
+use App\Services\EmailSignatureService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
@@ -19,6 +20,7 @@ class TaskConfirmationMail extends Mailable
     public $task;
     public $emailPreparation;
     public $sender;
+    public $signatureService;
 
     /**
      * Create a new message instance.
@@ -28,6 +30,7 @@ class TaskConfirmationMail extends Mailable
         $this->task = $task;
         $this->emailPreparation = $emailPreparation;
         $this->sender = $sender;
+        $this->signatureService = app(EmailSignatureService::class);
     }
 
     /**
@@ -53,6 +56,7 @@ class TaskConfirmationMail extends Mailable
                 'task' => $this->task,
                 'emailPreparation' => $this->emailPreparation,
                 'sender' => $this->sender,
+                'signature' => $this->signatureService->getSignatureForEmail($this->sender, 'html'),
             ]
         );
     }

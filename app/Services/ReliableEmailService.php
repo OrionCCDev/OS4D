@@ -226,12 +226,74 @@ class ReliableEmailService
         $body = preg_replace('/Content-Transfer-Encoding:.*?\r?\n/', '', $body);
         $body = preg_replace('/charset=.*?\r?\n/', '', $body);
 
+        // Fix character encoding issues
+        $body = $this->fixCharacterEncoding($body);
+
         // Remove excessive whitespace and clean up
         $body = preg_replace('/\r?\n\s*\r?\n/', "\n\n", $body);
         $body = preg_replace('/[ \t]+/', ' ', $body);
         $body = trim($body);
 
         return $body;
+    }
+
+    /**
+     * Fix character encoding issues in email content
+     */
+    protected function fixCharacterEncoding(string $text): string
+    {
+        // First, try to detect if this is already UTF-8 but with double encoding
+        if (mb_check_encoding($text, 'UTF-8')) {
+            // Check for common double-encoding patterns
+            if (strpos($text, 'Ã') !== false || strpos($text, 'â€') !== false) {
+                // This looks like double-encoded UTF-8, try to fix it
+                $text = mb_convert_encoding($text, 'UTF-8', 'UTF-8');
+            }
+        }
+
+        // Try to fix common encoding issues
+        $text = mb_convert_encoding($text, 'UTF-8', 'auto');
+
+        // Fix specific character issues with more comprehensive patterns
+        $replacements = [
+            // Emojis and special characters
+            'ðŸ""' => '📝',
+            'ðŸ"Š' => '📊',
+            'ðŸ"„' => '📋',
+            'ðŸ"§' => '📧',
+            'ðŸŒ' => '🌐',
+            'âœ…' => '✅',
+            'â€¢' => '•',
+
+            // Quotes and punctuation
+            'â€™' => "'",
+            'â€œ' => '"',
+            'â€' => '"',
+            'â€"' => '–',
+            'â€"' => '—',
+
+            // Common encoding artifacts
+            'Ã°Å¸' => 'ðŸ',
+            'Ã¢â' => 'â',
+            'Ã¢' => 'â',
+            'Ã°' => 'ð',
+            'ÃŸ' => 'Ÿ',
+            'Ã¢â¬' => 'â€',
+            'Ã¢â¬Â' => 'â€',
+            'Ã¢Å' => 'â',
+            'Ã¢Åâ' => 'â',
+            'Ã¢Åâ¦' => 'â',
+            'Ã¢Åâ¦' => 'â',
+        ];
+
+        foreach ($replacements as $search => $replace) {
+            $text = str_replace($search, $replace, $text);
+        }
+
+        // Final cleanup - remove any remaining invalid UTF-8 sequences
+        $text = mb_convert_encoding($text, 'UTF-8', 'UTF-8');
+
+        return $text;
     }
 
     /**
