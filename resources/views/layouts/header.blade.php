@@ -711,8 +711,11 @@
                 <!-- User -->
                 <li class="nav-item navbar-dropdown dropdown-user dropdown">
                   <a class="nav-link dropdown-toggle hide-arrow" href="javascript:void(0);" data-bs-toggle="dropdown">
-                    <div class="avatar avatar-online">
-                      <img src="{{ asset('uploads/users/' . Auth::user()->img) }}" alt class="w-px-40 h-auto rounded-circle" />
+                    <div class="avatar avatar-online nav-profile-avatar">
+                      <img src="{{ Auth::user()->img && !in_array(Auth::user()->img, ['default.png', 'default.jpg', '1.png']) ? asset('uploads/users/' . Auth::user()->img) : asset('DAssets/img/avatars/1.png') }}"
+                           alt="{{ Auth::user()->name }}"
+                           class="w-px-40 h-px-40 rounded-circle object-fit-cover"
+                           style="width: 40px; height: 40px; object-fit: cover;" />
                     </div>
                   </a>
                   <ul class="dropdown-menu dropdown-menu-end">
@@ -721,7 +724,10 @@
                         <div class="d-flex">
                           <div class="flex-shrink-0 me-3">
                             <div class="avatar avatar-online">
-                              <img src="{{ asset('uploads/users/' . Auth::user()->img) }}" alt class="w-px-40 h-auto rounded-circle" />
+                              <img src="{{ Auth::user()->img && !in_array(Auth::user()->img, ['default.png', 'default.jpg', '1.png']) ? asset('uploads/users/' . Auth::user()->img) : asset('DAssets/img/avatars/1.png') }}"
+                                   alt="{{ Auth::user()->name }}"
+                                   class="w-px-40 h-px-40 rounded-circle object-fit-cover"
+                                   style="width: 40px; height: 40px; object-fit: cover;" />
                             </div>
                           </div>
                           <div class="flex-grow-1">
@@ -2231,6 +2237,60 @@
 
               .chat-window.show {
                 animation: slideInUp 0.3s ease-out;
+              }
+
+              /* Responsive Navigation Profile Image */
+              .nav-profile-avatar {
+                position: relative;
+                display: inline-block;
+              }
+
+              .nav-profile-avatar img {
+                transition: all 0.3s ease;
+                border: 2px solid transparent;
+              }
+
+              .nav-profile-avatar:hover img {
+                transform: scale(1.05);
+                border-color: #696cff;
+                box-shadow: 0 2px 8px rgba(105, 108, 255, 0.3);
+              }
+
+              /* Responsive sizing for different screen sizes */
+              @media (max-width: 768px) {
+                .nav-profile-avatar img {
+                  width: 35px !important;
+                  height: 35px !important;
+                }
+              }
+
+              @media (max-width: 576px) {
+                .nav-profile-avatar img {
+                  width: 32px !important;
+                  height: 32px !important;
+                }
+              }
+
+              @media (max-width: 480px) {
+                .nav-profile-avatar img {
+                  width: 30px !important;
+                  height: 30px !important;
+                }
+              }
+
+              /* Ensure proper object-fit for all images */
+              .nav-profile-avatar img,
+              .avatar img {
+                object-fit: cover !important;
+                object-position: center !important;
+              }
+
+              /* Fix for very small screens */
+              @media (max-width: 360px) {
+                .nav-profile-avatar img {
+                  width: 28px !important;
+                  height: 28px !important;
+                }
               }
             </style>
 
