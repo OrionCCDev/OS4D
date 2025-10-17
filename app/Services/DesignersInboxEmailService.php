@@ -293,6 +293,14 @@ class DesignersInboxEmailService
      */
     protected function fixCharacterEncoding(string $text): string
     {
+        return self::fixCharacterEncodingStatic($text);
+    }
+
+    /**
+     * Static method to fix character encoding issues in email content
+     */
+    public static function fixCharacterEncodingStatic(string $text): string
+    {
         // First, try to detect if this is already UTF-8 but with double encoding
         if (mb_check_encoding($text, 'UTF-8')) {
             // Check for common double-encoding patterns
@@ -315,6 +323,9 @@ class DesignersInboxEmailService
             'ðŸŒ' => '🌐',
             'âœ…' => '✅',
             'â€¢' => '•',
+            'âœ‹' => '✋',
+            'âš ï¸' => '⚠️',
+            'ðŸ"‹' => '📋',
 
             // Quotes and punctuation
             'â€™' => "'",
@@ -335,6 +346,12 @@ class DesignersInboxEmailService
             'Ã¢Åâ' => 'â',
             'Ã¢Åâ¦' => 'â',
             'Ã¢Åâ¦' => 'â',
+
+            // Additional patterns for better coverage
+            'âœ‹' => '✋',
+            'âš' => '⚠',
+            'ï¸' => '️',
+            'âš ï¸' => '⚠️',
         ];
 
         foreach ($replacements as $search => $replace) {

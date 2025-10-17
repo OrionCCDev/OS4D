@@ -665,8 +665,8 @@
                             // Use parsed body if available, otherwise use decoded body
                             $displayBody = ($parsedBody && strlen($parsedBody) > 10) ? $parsedBody : $decodedBody;
 
-                            // Fix any character encoding issues
-                            $displayBody = mb_convert_encoding($displayBody, 'UTF-8', 'UTF-8');
+                            // Apply comprehensive character encoding fix
+                            $displayBody = \App\Services\DesignersInboxEmailService::fixCharacterEncodingStatic($displayBody);
                         @endphp
 
                         @if($displayBody && strlen($displayBody) > 10)
@@ -807,6 +807,10 @@
                                 $replyContent = str_replace(array_keys($replacements), array_values($replacements), $replyContent);
                                 $replyContent = preg_replace('/=\r?\n/', '', $replyContent);
                             }
+
+                            // Apply character encoding fix to reply content
+                            $replyContent = \App\Services\DesignersInboxEmailService::fixCharacterEncodingStatic($replyContent);
+
                             $displayReplyContent = $parsedReplies[$reply->id] ?? $replyContent;
                         @endphp
                         <div class="email-wrapper">
