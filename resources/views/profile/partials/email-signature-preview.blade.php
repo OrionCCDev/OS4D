@@ -64,6 +64,10 @@
                     <li>Task updates and notifications</li>
                     <li>General emails sent via Gmail integration</li>
                 </ul>
+                <p class="mb-0 small mt-2">
+                    <strong>Note:</strong> Your profile image will appear in the signature if you have uploaded a custom image (not the default avatar).
+                    Update your mobile number and position above to customize your signature further.
+                </p>
             </div>
         </div>
     </div>

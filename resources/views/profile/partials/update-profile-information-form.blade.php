@@ -40,6 +40,24 @@
             @endif
         </div>
 
+        <div class="mb-3">
+            <label for="mobile" class="form-label">{{ __('Mobile Number') }}</label>
+            <input id="mobile" name="mobile" type="tel" class="form-control @error('mobile') is-invalid @enderror" value="{{ old('mobile', $user->mobile) }}" placeholder="+1 (555) 123-4567">
+            @error('mobile')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+            <div class="form-text">{{ __('This will be included in your email signature.') }}</div>
+        </div>
+
+        <div class="mb-3">
+            <label for="position" class="form-label">{{ __('Position/Title') }}</label>
+            <input id="position" name="position" type="text" class="form-control @error('position') is-invalid @enderror" value="{{ old('position', $user->position) }}" placeholder="e.g., Senior Engineer, Project Manager">
+            @error('position')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+            <div class="form-text">{{ __('This will be displayed in your email signature. Leave empty to use role-based title.') }}</div>
+        </div>
+
         <div class="d-flex align-items-center gap-3">
             <button type="submit" class="btn btn-primary">{{ __('Save') }}</button>
             @if (session('status') === 'profile-updated')

@@ -21,20 +21,26 @@ class EmailSignatureService
         $mobile = $user->mobile ?? $user->phone ?? '';
         $position = $this->getUserPosition($user);
         $department = $this->getUserDepartment($user);
+        $userImage = $this->getUserImage($user);
 
         // Generate signature HTML
-        $signature = $this->buildSignatureHTML($name, $email, $mobile, $position, $department, $logoUrl, $logoColor);
+        $signature = $this->buildSignatureHTML($name, $email, $mobile, $position, $department, $logoUrl, $logoColor, $userImage);
 
         return $signature;
     }
 
     /**
-     * Get user position based on role
+     * Get user position from database or fallback to role-based position
      */
     protected function getUserPosition(User $user)
     {
-        $role = $user->role ?? 'user';
+        // Use actual position from database if available
+        if (!empty($user->position)) {
+            return $user->position;
+        }
 
+        // Fallback to role-based position
+        $role = $user->role ?? 'user';
         $positions = [
             'admin' => 'Administrator',
             'manager' => 'Manager',
@@ -62,9 +68,25 @@ class EmailSignatureService
     }
 
     /**
+     * Get user image URL if available
+     */
+    protected function getUserImage(User $user)
+    {
+        // Check if user has a custom image (not default)
+        if (!empty($user->img) && $user->img !== 'default.png' && $user->img !== 'default.jpg') {
+            $imagePath = public_path('uploads/users/' . $user->img);
+            if (file_exists($imagePath)) {
+                return asset('uploads/users/' . $user->img);
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Build the HTML signature
      */
-    protected function buildSignatureHTML($name, $email, $mobile, $position, $department, $logoUrl, $logoColor)
+    protected function buildSignatureHTML($name, $email, $mobile, $position, $department, $logoUrl, $logoColor, $userImage = null)
     {
         $textColor = $logoColor === 'white' ? '#ffffff' : '#333333';
         $accentColor = '#2563eb'; // Blue accent
@@ -78,8 +100,23 @@ class EmailSignatureService
                         <img src='{$logoUrl}' alt='Orion Contracting' style='width: 80px; height: auto; max-height: 60px;' />
                     </td>
                     <td style='vertical-align: top;'>
-                        <div style='margin-bottom: 8px;'>
-                            <strong style='color: {$accentColor}; font-size: 14px;'>{$name}</strong>
+                        <div style='margin-bottom: 8px;'>";
+
+        // Add user image if available
+        if ($userImage) {
+            $signature .= "
+                            <div style='display: flex; align-items: center; margin-bottom: 8px;'>
+                                <img src='{$userImage}' alt='{$name}' style='width: 40px; height: 40px; border-radius: 50%; margin-right: 10px; object-fit: cover;' />
+                                <div>
+                                    <strong style='color: {$accentColor}; font-size: 14px;'>{$name}</strong>
+                                </div>
+                            </div>";
+        } else {
+            $signature .= "
+                            <strong style='color: {$accentColor}; font-size: 14px;'>{$name}</strong>";
+        }
+
+        $signature .= "
                         </div>
                         <div style='margin-bottom: 4px; color: {$lightGray};'>
                             <strong>{$position}</strong> | {$department}
