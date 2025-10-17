@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\Blade;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -20,8 +21,12 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         // Register Blade helper function for cleaning email body
-        \Blade::directive('cleanEmailBody', function ($expression) {
+        \Illuminate\Support\Facades\Blade::directive('cleanEmailBody', function ($expression) {
             return "<?php echo cleanEmailBody($expression); ?>";
         });
+
+        // Set default pagination view to Bootstrap 5
+        \Illuminate\Pagination\Paginator::defaultView('vendor.pagination.bootstrap-5');
+        \Illuminate\Pagination\Paginator::defaultSimpleView('vendor.pagination.simple-bootstrap-5');
     }
 }

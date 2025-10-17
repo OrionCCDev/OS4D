@@ -43,6 +43,18 @@
         </div>
       </div>
     </div>
+
+    <div class="col-12">
+      <div class="card h-100">
+        <div class="card-header">
+          <h5 class="card-title mb-0">{{ __('Email Signature Preview') }}</h5>
+          <small class="text-muted">{{ __('Preview how your email signature will appear in sent emails') }}</small>
+        </div>
+        <div class="card-body">
+          @include('profile.partials.email-signature-preview')
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 <!-- / Content -->

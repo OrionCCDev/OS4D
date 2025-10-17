@@ -12,6 +12,7 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
 
 class TaskConfirmationMail extends Mailable
 {
@@ -50,15 +51,50 @@ class TaskConfirmationMail extends Mailable
      */
     public function content(): Content
     {
+        // Process email preparation body to replace signature placeholder
+        $processedEmailPreparation = $this->processEmailPreparationBody();
+
         return new Content(
             view: 'emails.task-confirmation',
             with: [
                 'task' => $this->task,
-                'emailPreparation' => $this->emailPreparation,
+                'emailPreparation' => $processedEmailPreparation,
                 'sender' => $this->sender,
                 'signature' => $this->signatureService->getSignatureForEmail($this->sender, 'html'),
             ]
         );
+    }
+
+    /**
+     * Process email preparation body to replace signature placeholder
+     */
+    private function processEmailPreparationBody()
+    {
+        $signature = $this->signatureService->getSignatureForEmail($this->sender, 'html');
+        $plainTextSignature = $this->signatureService->getSignatureForEmail($this->sender, 'plain');
+
+        // Clone the email preparation to avoid modifying the original
+        $processedPreparation = clone $this->emailPreparation;
+
+        // Replace signature placeholder in HTML body
+        if ($processedPreparation->body) {
+            $processedPreparation->body = str_replace(
+                '<!-- Professional Signature will be added here by EmailSignatureService -->',
+                $signature,
+                $processedPreparation->body
+            );
+        }
+
+        // Replace signature placeholder in plain text body (if it exists)
+        if (property_exists($processedPreparation, 'plain_text_body') && $processedPreparation->plain_text_body) {
+            $processedPreparation->plain_text_body = str_replace(
+                '<!-- Professional Signature will be added here by EmailSignatureService -->',
+                $plainTextSignature,
+                $processedPreparation->plain_text_body
+            );
+        }
+
+        return $processedPreparation;
     }
 
     /**

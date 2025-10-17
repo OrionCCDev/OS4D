@@ -299,7 +299,7 @@
                 </div>
                     <div class="card-footer d-flex justify-content-between align-items-center">
                         <div>
-                    {{ $tasks->withQueryString()->links() }}
+                    {{ $tasks->withQueryString()->links('vendor.pagination.bootstrap-5') }}
                 </div>
                         @if(Auth::user()->isManager())
                         <a href="{{ route('tasks.create', ['project_id' => $project->id, 'folder_id' => $selectedFolder?->id]) }}" class="btn btn-primary">
@@ -413,6 +413,28 @@
     .table td {
         padding: 0.5rem 0.25rem;
     }
+}
+
+/* Pagination fixes */
+.pagination .page-link {
+    font-size: 14px !important;
+    padding: 0.5rem 0.75rem !important;
+}
+
+.pagination .page-link i {
+    font-size: 14px !important;
+    line-height: 1 !important;
+}
+
+.pagination .page-item.active .page-link {
+    background-color: #696cff !important;
+    border-color: #696cff !important;
+    color: white !important;
+}
+
+.pagination .page-link:hover {
+    background-color: #e1e4e8 !important;
+    border-color: rgba(67, 89, 113, 0.3) !important;
 }
 </style>
 

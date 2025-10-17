@@ -311,7 +311,7 @@
 
     <!-- Pagination -->
     <div class="d-flex justify-content-center mt-4">
-        {{ $projects->links() }}
+        {{ $projects->links('vendor.pagination.bootstrap-5') }}
     </div>
 </div>
 
@@ -380,6 +380,29 @@
 .project-title-text {
     display: block;
     white-space: nowrap;
+}
+
+/* Pagination fixes */
+.pagination .page-link {
+    font-size: 14px !important;
+    padding: 0.5rem 0.75rem !important;
+}
+
+.pagination .page-link i {
+    font-size: 14px !important;
+    line-height: 1 !important;
+}
+
+.pagination .page-item.active .page-link {
+    background-color: #696cff !important;
+    border-color: #696cff !important;
+    color: white !important;
+}
+
+.pagination .page-link:hover {
+    background-color: #e1e4e8 !important;
+    border-color: rgba(67, 89, 113, 0.3) !important;
+}
     overflow: hidden;
     text-overflow: ellipsis;
     max-width: 100%;

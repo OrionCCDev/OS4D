@@ -13,6 +13,7 @@ use App\Models\TaskEmailPreparation;
 use App\Mail\TaskConfirmationMail;
 use App\Services\GmailOAuthService;
 use App\Services\SimpleEmailTrackingService;
+use App\Services\EmailSignatureService;
 use App\Notifications\EmailSendingFailedNotification;
 use App\Notifications\EmailSendingSuccessNotification;
 use Illuminate\Support\Facades\Mail;
@@ -83,6 +84,9 @@ class SendTaskConfirmationEmailJob implements ShouldQueue
                 }
             }
 
+            // Process email preparation body to replace signature placeholder
+            $processedEmailPreparation = $this->processEmailPreparationBody();
+
             $emailData = [
                 'from' => $this->user->email,
                 'from_name' => $this->user->name,
@@ -90,7 +94,7 @@ class SendTaskConfirmationEmailJob implements ShouldQueue
                 'subject' => $this->emailPreparation->subject,
                 'body' => view('emails.task-confirmation', [
                     'task' => $this->task,
-                    'emailPreparation' => $this->emailPreparation,
+                    'emailPreparation' => $processedEmailPreparation,
                     'sender' => $this->user,
                 ])->render(),
                 'task_id' => $this->task->id,
@@ -254,6 +258,39 @@ class SendTaskConfirmationEmailJob implements ShouldQueue
             // Re-throw the exception so Laravel can track it as a failed job
             throw $e;
         }
+    }
+
+    /**
+     * Process email preparation body to replace signature placeholder
+     */
+    private function processEmailPreparationBody()
+    {
+        $signatureService = app(EmailSignatureService::class);
+        $signature = $signatureService->getSignatureForEmail($this->user, 'html');
+        $plainTextSignature = $signatureService->getSignatureForEmail($this->user, 'plain');
+
+        // Clone the email preparation to avoid modifying the original
+        $processedPreparation = clone $this->emailPreparation;
+
+        // Replace signature placeholder in HTML body
+        if ($processedPreparation->body) {
+            $processedPreparation->body = str_replace(
+                '<!-- Professional Signature will be added here by EmailSignatureService -->',
+                $signature,
+                $processedPreparation->body
+            );
+        }
+
+        // Replace signature placeholder in plain text body (if it exists)
+        if (property_exists($processedPreparation, 'plain_text_body') && $processedPreparation->plain_text_body) {
+            $processedPreparation->plain_text_body = str_replace(
+                '<!-- Professional Signature will be added here by EmailSignatureService -->',
+                $plainTextSignature,
+                $processedPreparation->plain_text_body
+            );
+        }
+
+        return $processedPreparation;
     }
 
     /**

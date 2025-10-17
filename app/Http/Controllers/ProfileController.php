@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Services\EmailSignatureService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -16,8 +17,11 @@ class ProfileController extends Controller
      */
     public function edit(Request $request): View
     {
+        $signatureService = app(EmailSignatureService::class);
+
         return view('profile.edit', [
             'user' => $request->user(),
+            'signatureService' => $signatureService,
         ]);
     }
 
@@ -51,6 +55,20 @@ class ProfileController extends Controller
         $user->save();
 
         return Redirect::route('profile.edit')->with('status', 'notification-preferences-updated');
+    }
+
+    /**
+     * Get signature preview data for AJAX requests
+     */
+    public function getSignaturePreview(Request $request)
+    {
+        $user = $request->user();
+        $signatureService = app(EmailSignatureService::class);
+
+        return response()->json([
+            'html_signature' => $signatureService->getSignatureForEmail($user, 'html'),
+            'plain_text_signature' => $signatureService->getSignatureForEmail($user, 'plain'),
+        ]);
     }
 
     /**
