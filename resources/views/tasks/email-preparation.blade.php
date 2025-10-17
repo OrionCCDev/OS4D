@@ -762,10 +762,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 '• Provide your feedback or approval\n' +
                 '• Request any modifications if needed\n\n' +
                 'Thank you for choosing ' + companyName + '. We look forward to your feedback!\n\n' +
-                'Best regards,\n' +
-                'The ' + companyName + ' Team\n\n' +
-                '📧 engineering@orion-contracting.com | 🌐 www.orion-contracting.com\n' +
-                'This is an automated notification from our project management system.',
+                '<!-- Professional Signature will be added here by EmailSignatureService -->',
             body: '<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f4f6f9; padding: 20px;">' +
                 '<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 20px; text-align: center; border-radius: 12px 12px 0 0;">' +
                     '<img src="' + logoUrl + '" alt="' + companyName + '" style="max-width: 200px; height: auto; margin-bottom: 20px;">' +
@@ -790,11 +787,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         '<li>Request any modifications if needed</li>' +
                     '</ul>' +
                     '<p>Thank you for choosing ' + companyName + '. We look forward to your feedback!</p>' +
-                    '<p style="margin-top: 30px;"><strong>Best regards,</strong><br>The ' + companyName + ' Team</p>' +
-                    '<div style="background: #2d3748; color: white; padding: 30px; text-align: center; margin-top: 30px; border-radius: 8px;">' +
-                        '<p><strong>' + companyName + '</strong></p>' +
-                        '<p>📧 engineering@orion-contracting.com | 🌐 www.orion-contracting.com</p>' +
-                        '<p style="font-size: 12px; margin-top: 20px; opacity: 0.8;">This is an automated notification from our project management system.</p>' +
+                    '<div style="margin-top: 30px;">' +
+                        '<!-- Professional Signature will be added here by EmailSignatureService -->' +
                     '</div>' +
                 '</div>' +
             '</div>'

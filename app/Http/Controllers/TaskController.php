@@ -670,6 +670,14 @@ class TaskController extends Controller
                 Log::info('No files uploaded in request');
             }
 
+            // Add professional signature to email body
+            $signatureService = app(\App\Services\EmailSignatureService::class);
+            $user = Auth::user();
+            $signature = $signatureService->getSignatureForEmail($user, 'html');
+
+            // Append signature to body
+            $bodyWithSignature = $validated['body'] . '<br><br>' . $signature;
+
             // Create or update email preparation
             $emailPreparation = $task->emailPreparations()->updateOrCreate(
                 ['prepared_by' => Auth::id()],
@@ -678,7 +686,7 @@ class TaskController extends Controller
                     'cc_emails' => $validated['cc_emails'],
                     'bcc_emails' => $validated['bcc_emails'],
                     'subject' => $validated['subject'],
-                    'body' => $validated['body'],
+                    'body' => $bodyWithSignature,
                     'attachments' => $attachmentPaths,
                     'status' => 'draft',
                 ]

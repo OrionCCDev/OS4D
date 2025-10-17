@@ -990,47 +990,58 @@
         }
 
         // Attachment download function
-        function downloadAttachment(emailId, attachmentIndex, filename) {
-            // Create download link
-            const downloadUrl = `/emails/${emailId}/attachment/${attachmentIndex}/download`;
+        async function downloadAttachment(emailId, attachmentIndex, filename) {
+            try {
+                // Generate secure token for public download
+                const token = await generateDownloadToken(emailId, attachmentIndex);
+                const downloadUrl = `/emails/${emailId}/attachment/${attachmentIndex}/download/${token}`;
 
-            // Create temporary link element
-            const link = document.createElement('a');
-            link.href = downloadUrl;
-            link.download = filename;
-            link.style.display = 'none';
+                // Create temporary link element
+                const link = document.createElement('a');
+                link.href = downloadUrl;
+                link.download = filename;
+                link.style.display = 'none';
 
-            // Add to page and click
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+                // Add to page and click
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
 
-            showAlert('success', `Download started for ${filename}`);
+                showAlert('success', `Download started for ${filename}`);
+            } catch (error) {
+                console.error('Download error:', error);
+                showAlert('error', 'Failed to generate download link');
+            }
+        }
+
+        // Generate secure download token
+        function generateDownloadToken(emailId, attachmentIndex) {
+            // Generate token that matches server-side SHA256 hash
+            const data = emailId + attachmentIndex + '{{ config("app.key") }}';
+            return sha256(data);
+        }
+
+        // Simple SHA256 implementation for client-side
+        async function sha256(message) {
+            const msgBuffer = new TextEncoder().encode(message);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
         }
 
         // Copy attachment link to clipboard
-        function copyAttachmentLink(emailId, attachmentIndex) {
-            const downloadUrl = window.location.origin + `/emails/${emailId}/attachment/${attachmentIndex}/download`;
+        async function copyAttachmentLink(emailId, attachmentIndex) {
+            try {
+                const token = await generateDownloadToken(emailId, attachmentIndex);
+                const downloadUrl = window.location.origin + `/emails/${emailId}/attachment/${attachmentIndex}/download/${token}`;
 
-            // Copy to clipboard
-            navigator.clipboard.writeText(downloadUrl).then(() => {
+                // Copy to clipboard
+                await navigator.clipboard.writeText(downloadUrl);
                 showAlert('success', 'Download link copied to clipboard!');
-            }).catch(err => {
-                // Fallback for older browsers
-                const textArea = document.createElement('textarea');
-                textArea.value = downloadUrl;
-                textArea.style.position = 'fixed';
-                textArea.style.left = '-999999px';
-                document.body.appendChild(textArea);
-                textArea.select();
-                try {
-                    document.execCommand('copy');
-                    showAlert('success', 'Download link copied to clipboard!');
-                } catch (err) {
-                    showAlert('error', 'Failed to copy link');
-                }
-                document.body.removeChild(textArea);
-            });
+            } catch (err) {
+                console.error('Copy error:', err);
+                showAlert('error', 'Failed to copy link');
+            }
         }
     </script>
 </body>

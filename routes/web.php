@@ -439,6 +439,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/emails/{id}/standalone', [App\Http\Controllers\EmailFetchController::class, 'showStandalone'])->name('emails.show-standalone');
     Route::get('/emails/{emailId}/attachment/{attachmentIndex}/preview', [App\Http\Controllers\EmailFetchController::class, 'previewAttachment'])->name('emails.attachment.preview');
     Route::get('/emails/{emailId}/attachment/{attachmentIndex}/download', [App\Http\Controllers\EmailFetchController::class, 'downloadAttachment'])->name('emails.attachment.download');
+
+    // Public attachment download with token (no auth required)
+    Route::get('/emails/{emailId}/attachment/{attachmentIndex}/download/{token}', [App\Http\Controllers\EmailFetchController::class, 'downloadAttachmentPublic'])->name('emails.attachment.download.public');
     Route::get('/emails/{emailId}/attachment/{attachmentIndex}/view', [App\Http\Controllers\EmailFetchController::class, 'viewAttachment'])->name('emails.attachment.view');
     Route::get('/email/{id}', [App\Http\Controllers\EmailController::class, 'show'])->name('email.show');
     Route::post('/emails/{id}/mark-read', [App\Http\Controllers\EmailFetchController::class, 'markAsRead'])->name('emails.mark-read');
