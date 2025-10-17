@@ -252,19 +252,113 @@ class DesignersInboxEmailService
     }
 
     /**
-     * Clean email body
+     * Clean email body - properly parse MIME multipart emails
      */
     protected function cleanEmailBody(string $body): string
     {
+        // If it's a MIME multipart email, extract the text/plain or text/html part
+        if (strpos($body, 'Content-Type:') !== false) {
+            $body = $this->extractTextFromMimeMultipart($body);
+        }
+
         // Decode quoted-printable if needed
         if (strpos($body, 'quoted-printable') !== false) {
             $body = quoted_printable_decode($body);
         }
 
-        // Remove excessive whitespace
-        $body = preg_replace('/\s+/', ' ', $body);
+        // Decode base64 if needed
+        if (strpos($body, 'base64') !== false) {
+            $body = base64_decode($body);
+        }
 
-        return trim($body);
+        // Remove MIME boundaries and headers
+        $body = preg_replace('/--[a-zA-Z0-9]+/', '', $body);
+        $body = preg_replace('/Content-Type:.*?\r?\n/', '', $body);
+        $body = preg_replace('/Content-Transfer-Encoding:.*?\r?\n/', '', $body);
+        $body = preg_replace('/charset=.*?\r?\n/', '', $body);
+
+        // Remove excessive whitespace and clean up
+        $body = preg_replace('/\r?\n\s*\r?\n/', "\n\n", $body);
+        $body = preg_replace('/[ \t]+/', ' ', $body);
+        $body = trim($body);
+
+        return $body;
+    }
+
+    /**
+     * Extract text content from MIME multipart email
+     */
+    protected function extractTextFromMimeMultipart(string $body): string
+    {
+        // Split by MIME boundaries
+        $parts = preg_split('/--[a-zA-Z0-9]+/', $body);
+
+        $textContent = '';
+        $htmlContent = '';
+
+        foreach ($parts as $part) {
+            $part = trim($part);
+            if (empty($part)) continue;
+
+            // Check if this is text/plain
+            if (strpos($part, 'Content-Type: text/plain') !== false) {
+                // Extract content after headers
+                $lines = explode("\n", $part);
+                $contentStart = false;
+                $content = '';
+
+                foreach ($lines as $line) {
+                    if ($contentStart) {
+                        $content .= $line . "\n";
+                    } elseif (trim($line) === '') {
+                        $contentStart = true;
+                    }
+                }
+
+                $textContent = trim($content);
+                // Decode quoted-printable if needed
+                if (strpos($part, 'quoted-printable') !== false) {
+                    $textContent = quoted_printable_decode($textContent);
+                }
+            }
+
+            // Check if this is text/html
+            if (strpos($part, 'Content-Type: text/html') !== false) {
+                // Extract content after headers
+                $lines = explode("\n", $part);
+                $contentStart = false;
+                $content = '';
+
+                foreach ($lines as $line) {
+                    if ($contentStart) {
+                        $content .= $line . "\n";
+                    } elseif (trim($line) === '') {
+                        $contentStart = true;
+                    }
+                }
+
+                $html = trim($content);
+                // Decode quoted-printable if needed
+                if (strpos($part, 'quoted-printable') !== false) {
+                    $html = quoted_printable_decode($html);
+                }
+                // Strip HTML tags for plain text display
+                $htmlContent = strip_tags($html);
+                $htmlContent = html_entity_decode($htmlContent, ENT_QUOTES, 'UTF-8');
+            }
+        }
+
+        // Return text/plain if available, otherwise return stripped HTML
+        if (!empty($textContent)) {
+            return $textContent;
+        }
+
+        if (!empty($htmlContent)) {
+            return $htmlContent;
+        }
+
+        // Fallback: return the original body
+        return $body;
     }
 
     /**
