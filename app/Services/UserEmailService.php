@@ -5,11 +5,20 @@ namespace App\Services;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Log;
 use App\Models\User;
 use App\Mail\UserGeneralEmail;
+use App\Services\EmailSignatureService;
 
 class UserEmailService
 {
+    protected $signatureService;
+
+    public function __construct(EmailSignatureService $signatureService)
+    {
+        $this->signatureService = $signatureService;
+    }
+
     /**
      * Send email using user's own email credentials
      * SECURITY: Uses Gmail OAuth instead of SMTP to avoid credential exposure
@@ -37,13 +46,17 @@ class UserEmailService
     {
         $gmailOAuthService = app(\App\Services\GmailOAuthService::class);
 
+        // Add signature to email body
+        $signature = $this->signatureService->getSignatureForEmail($user, 'html');
+        $bodyWithSignature = $body . '<br><br>' . $signature;
+
         $emailData = [
             'from' => $user->email,
             'from_name' => $user->name,
             'to' => $recipients,
             'subject' => $subject,
             'body' => view('emails.user-general-email-gmail', [
-                'bodyContent' => $body,
+                'bodyContent' => $bodyWithSignature,
                 'senderName' => $user->name,
                 'senderEmail' => $user->email,
                 'toRecipients' => $recipients,
@@ -66,8 +79,12 @@ class UserEmailService
      */
     private function sendEmailViaSecureSMTP(User $user, string $subject, string $body, array $recipients)
     {
+        // Add signature to email body
+        $signature = $this->signatureService->getSignatureForEmail($user, 'html');
+        $bodyWithSignature = $body . '<br><br>' . $signature;
+
         // Create a custom mail instance to avoid config exposure
-        $mail = new UserGeneralEmail($subject, $body, $user, $recipients);
+        $mail = new UserGeneralEmail($subject, $bodyWithSignature, $user, $recipients);
 
         // Use a secure mailer instance
         $mailer = app('mail.manager')->mailer('smtp');
@@ -93,9 +110,13 @@ class UserEmailService
     private function sendEngineeringNotification(User $user, string $subject, string $body, array $recipients)
     {
         try {
+            // Add signature to notification email
+            $signature = $this->signatureService->getSignatureForEmail($user, 'html');
+            $bodyWithSignature = $body . '<br><br>' . $signature;
+
             $notificationEmail = new UserGeneralEmail(
                 '[NOTIFICATION] ' . $subject,
-                $body,
+                $bodyWithSignature,
                 $user,
                 $recipients
             );
@@ -104,7 +125,7 @@ class UserEmailService
                 ->send($notificationEmail);
         } catch (\Exception $e) {
             // Log error but don't fail the main email
-            \Log::error('Failed to send engineering notification: ' . $e->getMessage());
+            Log::error('Failed to send engineering notification: ' . $e->getMessage());
         }
     }
 
@@ -171,8 +192,6 @@ class UserEmailService
     public function testUserCredentials(User $user)
     {
         try {
-            $this->configureUserMailSettings($user);
-
             Mail::raw('This is a test email to verify your email credentials are working correctly.', function ($message) use ($user) {
                 $message->to($user->email)
                         ->subject('Email Credentials Test - ' . $user->name)
