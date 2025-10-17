@@ -51,6 +51,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::patch('/profile/notification-preferences', [ProfileController::class, 'updateNotificationPreferences'])->name('profile.notification-preferences.update');
+    Route::patch('/profile/image', [ProfileController::class, 'updateImage'])->name('profile.image.update');
+    Route::delete('/profile/image', [ProfileController::class, 'removeImage'])->name('profile.image.remove');
     Route::get('/profile/signature-preview', [ProfileController::class, 'getSignaturePreview'])->name('profile.signature-preview');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 

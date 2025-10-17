@@ -7,6 +7,23 @@
     <h4 class="fw-bold mb-0">{{ __('Profile') }}</h4>
   </div>
 
+  @if (session('status'))
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+      @if (session('status') === 'profile-updated')
+        {{ __('Profile information updated successfully.') }}
+      @elseif (session('status') === 'profile-image-updated')
+        {{ __('Profile image updated successfully.') }}
+      @elseif (session('status') === 'profile-image-removed')
+        {{ __('Profile image removed successfully.') }}
+      @elseif (session('status') === 'notification-preferences-updated')
+        {{ __('Notification preferences updated successfully.') }}
+      @else
+        {{ session('status') }}
+      @endif
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  @endif
+
   <div class="row g-4">
     <div class="col-12 col-lg-6">
       <div class="card h-100">
@@ -31,6 +48,15 @@
         <div class="card-header"><h5 class="card-title mb-0">{{ __('Notification Preferences') }}</h5></div>
         <div class="card-body">
           @include('profile.partials.notification-preferences-form')
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-lg-6">
+      <div class="card h-100">
+        <div class="card-header"><h5 class="card-title mb-0">{{ __('Profile Image') }}</h5></div>
+        <div class="card-body">
+          @include('profile.partials.profile-image-form')
         </div>
       </div>
     </div>
