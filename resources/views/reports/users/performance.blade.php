@@ -235,7 +235,8 @@ function clearFilters() {
 }
 
 function exportReport(format, type) {
-    const url = `{{ route('reports.export.pdf', '') }}/${type}`.replace('/pdf/', `/${format}/`);
+    const baseUrl = '{{ url("reports/export") }}';
+    const url = `${baseUrl}/${format}/${type}`;
     window.open(url, '_blank');
 }
 
