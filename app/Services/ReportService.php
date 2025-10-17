@@ -37,7 +37,9 @@ class ReportService
         return $projects->map(function ($project) {
             $totalTasks = $project->tasks->count();
             $completedTasks = $project->tasks->where('status', 'completed')->count();
-            $overdueTasks = $project->tasks->where('is_overdue', true)->count();
+            $overdueTasks = $project->tasks->where('status', '!=', 'completed')
+                ->where('due_date', '<', now())
+                ->count();
 
             return [
                 'id' => $project->id,
@@ -90,7 +92,9 @@ class ReportService
             'total_tasks' => $tasks->count(),
             'completed_tasks' => $tasks->where('status', 'completed')->count(),
             'in_progress_tasks' => $tasks->where('status', 'in_progress')->count(),
-            'overdue_tasks' => $tasks->where('is_overdue', true)->count(),
+            'overdue_tasks' => $tasks->where('status', '!=', 'completed')
+                ->where('due_date', '<', now())
+                ->count(),
             'completion_rate' => $tasks->count() > 0 ? round(($tasks->where('status', 'completed')->count() / $tasks->count()) * 100, 2) : 0,
             'tasks_by_priority' => $this->groupTasksByPriority($tasks),
             'tasks_by_status' => $this->groupTasksByStatus($tasks),
@@ -133,7 +137,9 @@ class ReportService
             'total_tasks' => $tasks->count(),
             'completed_tasks' => $completedTasks->count(),
             'on_time_tasks' => $onTimeTasks->count(),
-            'overdue_tasks' => $tasks->where('is_overdue', true)->count(),
+            'overdue_tasks' => $tasks->where('status', '!=', 'completed')
+                ->where('due_date', '<', now())
+                ->count(),
             'completion_rate' => $tasks->count() > 0 ? round(($completedTasks->count() / $tasks->count()) * 100, 2) : 0,
             'on_time_rate' => $completedTasks->count() > 0 ? round(($onTimeTasks->count() / $completedTasks->count()) * 100, 2) : 0,
             'average_completion_time' => $this->calculateAverageCompletionTime($completedTasks),

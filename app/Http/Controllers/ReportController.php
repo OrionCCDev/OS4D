@@ -37,7 +37,9 @@ class ReportController extends Controller
             'total_tasks' => \App\Models\Task::count(),
             'completed_tasks' => \App\Models\Task::where('status', 'completed')->count(),
             'total_users' => User::where('role', '!=', 'admin')->count(),
-            'overdue_tasks' => \App\Models\Task::where('is_overdue', true)->count(),
+            'overdue_tasks' => \App\Models\Task::where('status', '!=', 'completed')
+                ->where('due_date', '<', now())
+                ->count(),
         ];
 
         // Get recent evaluations
