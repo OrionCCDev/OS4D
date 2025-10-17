@@ -170,8 +170,9 @@ class ReportService
         })->sortByDesc('performance_score')->values();
 
         // Add ranking numbers
-        $rankings->each(function ($item, $index) {
+        $rankings = $rankings->map(function ($item, $index) {
             $item['rank'] = $index + 1;
+            return $item;
         });
 
         return $rankings;
