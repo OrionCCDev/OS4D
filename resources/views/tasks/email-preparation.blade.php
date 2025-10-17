@@ -810,8 +810,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 '• [Expected completion timeline]\n\n' +
                 'If you have any questions or concerns, please don\'t hesitate to reach out to us.\n\n' +
                 'Best regards,\n' +
-                'The ' + companyName + ' Team\n\n' +
-                '📧 engineering@orion-contracting.com | 🌐 www.orion-contracting.com',
+                '<!-- Professional Signature will be added here by EmailSignatureService -->',
             body: '<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f4f6f9; padding: 20px;">' +
                 '<div style="background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%); padding: 40px 20px; text-align: center; border-radius: 12px 12px 0 0;">' +
                     '<img src="' + logoUrl + '" alt="' + companyName + '" style="max-width: 200px; height: auto; margin-bottom: 20px;">' +
@@ -836,11 +835,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         '<li>[Expected completion timeline]</li>' +
                     '</ul>' +
                     '<p>If you have any questions or concerns, please don\'t hesitate to reach out to us.</p>' +
-                    '<p style="margin-top: 30px;"><strong>Best regards,</strong><br>The ' + companyName + ' Team</p>' +
-                    '<div style="background: #2d3748; color: white; padding: 30px; text-align: center; margin-top: 30px; border-radius: 8px;">' +
-                        '<p><strong>' + companyName + '</strong></p>' +
-                        '<p>📧 engineering@orion-contracting.com | 🌐 www.orion-contracting.com</p>' +
-                    '</div>' +
+                    '<p style="margin-top: 30px;"><strong>Best regards,</strong><br><!-- Professional Signature will be added here by EmailSignatureService --></p>' +
                 '</div>' +
             '</div>'
         },
@@ -859,8 +854,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 '• Notify us of any required changes\n\n' +
                 'Please review and respond at your earliest convenience.\n\n' +
                 'Thank you,\n' +
-                'The ' + companyName + ' Team\n\n' +
-                '📧 engineering@orion-contracting.com | 🌐 www.orion-contracting.com',
+                '<!-- Professional Signature will be added here by EmailSignatureService -->',
             body: '<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f4f6f9; padding: 20px;">' +
                 '<div style="background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%); padding: 40px 20px; text-align: center; border-radius: 12px 12px 0 0;">' +
                     '<img src="' + logoUrl + '" alt="' + companyName + '" style="max-width: 200px; height: auto; margin-bottom: 20px;">' +
@@ -883,11 +877,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         '<li>Notify us of any required changes</li>' +
                     '</ul>' +
                     '<p><strong>Please review and respond at your earliest convenience.</strong></p>' +
-                    '<p style="margin-top: 30px;"><strong>Thank you,</strong><br>The ' + companyName + ' Team</p>' +
-                    '<div style="background: #2d3748; color: white; padding: 30px; text-align: center; margin-top: 30px; border-radius: 8px;">' +
-                        '<p><strong>' + companyName + '</strong></p>' +
-                        '<p>📧 engineering@orion-contracting.com | 🌐 www.orion-contracting.com</p>' +
-                    '</div>' +
+                    '<p style="margin-top: 30px;"><strong>Thank you,</strong><br><!-- Professional Signature will be added here by EmailSignatureService --></p>' +
                 '</div>' +
             '</div>'
         },
@@ -907,8 +897,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 '📝 NEXT STEPS:\n' +
                 'Please review the attached designs and let us know your thoughts. We\'re happy to make any adjustments you need!\n\n' +
                 'Looking forward to your feedback,\n' +
-                'The ' + companyName + ' Design Team\n\n' +
-                '📧 engineering@orion-contracting.com | 🌐 www.orion-contracting.com',
+                '<!-- Professional Signature will be added here by EmailSignatureService -->',
             body: '<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f4f6f9; padding: 20px;">' +
                 '<div style="background: linear-gradient(135deg, #9f7aea 0%, #805ad5 100%); padding: 40px 20px; text-align: center; border-radius: 12px 12px 0 0;">' +
                     '<img src="' + logoUrl + '" alt="' + companyName + '" style="max-width: 200px; height: auto; margin-bottom: 20px;">' +
@@ -932,11 +921,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     '</ul>' +
                     '<h3>📝 Next Steps:</h3>' +
                     '<p>Please review the attached designs and let us know your thoughts. We\'re happy to make any adjustments you need!</p>' +
-                    '<p style="margin-top: 30px;"><strong>Looking forward to your feedback,</strong><br>The ' + companyName + ' Design Team</p>' +
-                    '<div style="background: #2d3748; color: white; padding: 30px; text-align: center; margin-top: 30px; border-radius: 8px;">' +
-                        '<p><strong>' + companyName + '</strong></p>' +
-                        '<p>📧 engineering@orion-contracting.com | 🌐 www.orion-contracting.com</p>' +
-                    '</div>' +
+                    '<p style="margin-top: 30px;"><strong>Looking forward to your feedback,</strong><br><!-- Professional Signature will be added here by EmailSignatureService --></p>' +
                 '</div>' +
             '</div>'
         }
