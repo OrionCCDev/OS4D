@@ -98,7 +98,6 @@
                             <tr>
                                 <th>Project Details</th>
                                 <th>Status</th>
-                                <th>Owner</th>
                                 <th>Progress</th>
                                 <th>Tasks</th>
                                 <th>Sub Folders</th>
@@ -131,7 +130,6 @@
                                             {{ ucfirst($project['status']) }}
                                         </span>
                                     </td>
-                                    <td>{{ $project['owner'] }}</td>
                                     <td>
                                         <div class="d-flex align-items-center">
                                             <div class="progress me-2" style="width: 80px; height: 8px;">
@@ -172,14 +170,17 @@
                                         @endif
                                     </td>
                                     <td>
-                                        <div class="dropdown">
-                                            <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                                Actions
-                                            </button>
-                                            <ul class="dropdown-menu">
-                                                <li><a class="dropdown-item" href="{{ route('projects.show', $project['id']) }}">View Details</a></li>
-                                                <li><a class="dropdown-item" href="{{ route('reports.projects.progress', ['project_id' => $project['id']]) }}">View Progress</a></li>
-                                            </ul>
+                                        <div class="d-flex gap-1">
+                                            <a href="{{ route('projects.show', $project['id']) }}"
+                                               class="btn btn-sm btn-outline-primary"
+                                               title="View Details">
+                                                <i class="bx bx-show me-1"></i>Details
+                                            </a>
+                                            <a href="{{ route('reports.projects.progress', ['project_id' => $project['id']]) }}"
+                                               class="btn btn-sm btn-outline-info"
+                                               title="View Progress">
+                                                <i class="bx bx-trending-up me-1"></i>Progress
+                                            </a>
                                         </div>
                                     </td>
                                 </tr>
@@ -275,69 +276,20 @@ document.getElementById('search').addEventListener('keypress', function(e) {
     }
 });
 
-// Fix dropdown positioning in table
+// Enhanced button styling for actions
 document.addEventListener('DOMContentLoaded', function() {
-    // Handle dropdown positioning
-    const dropdowns = document.querySelectorAll('.table .dropdown');
-    dropdowns.forEach(function(dropdown) {
-        const button = dropdown.querySelector('.dropdown-toggle');
-        const menu = dropdown.querySelector('.dropdown-menu');
+    // Add hover effects to action buttons
+    const actionButtons = document.querySelectorAll('.table .btn');
+    actionButtons.forEach(function(button) {
+        button.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-1px)';
+            this.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+        });
 
-        if (button && menu) {
-            button.addEventListener('click', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-
-                // Close other dropdowns
-                document.querySelectorAll('.table .dropdown-menu.show').forEach(function(otherMenu) {
-                    if (otherMenu !== menu) {
-                        otherMenu.classList.remove('show');
-                    }
-                });
-
-                // Toggle current dropdown
-                menu.classList.toggle('show');
-
-                // Position the dropdown
-                const rect = button.getBoundingClientRect();
-                const tableRect = document.querySelector('.table-responsive').getBoundingClientRect();
-
-                // Check if dropdown would be cut off at bottom
-                const spaceBelow = window.innerHeight - rect.bottom;
-                const spaceAbove = rect.top;
-                const menuHeight = 80; // Approximate menu height
-
-                if (spaceBelow < menuHeight && spaceAbove > menuHeight) {
-                    // Position above the button
-                    menu.style.top = 'auto';
-                    menu.style.bottom = '100%';
-                    menu.style.transform = 'translateY(-2px)';
-                } else {
-                    // Position below the button
-                    menu.style.top = '100%';
-                    menu.style.bottom = 'auto';
-                    menu.style.transform = 'translateY(2px)';
-                }
-
-                // Ensure dropdown is visible horizontally
-                if (rect.left + 120 > window.innerWidth) {
-                    menu.style.left = 'auto';
-                    menu.style.right = '0';
-                } else {
-                    menu.style.left = '0';
-                    menu.style.right = 'auto';
-                }
-            });
-        }
-    });
-
-    // Close dropdowns when clicking outside
-    document.addEventListener('click', function(e) {
-        if (!e.target.closest('.table .dropdown')) {
-            document.querySelectorAll('.table .dropdown-menu.show').forEach(function(menu) {
-                menu.classList.remove('show');
-            });
-        }
+        button.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+            this.style.boxShadow = 'none';
+        });
     });
 });
 </script>
@@ -401,108 +353,47 @@ document.addEventListener('DOMContentLoaded', function() {
     border-color: #696cff;
 }
 
-/* Fix dropdown menu being hidden by scrollbar */
-.table-responsive {
-    overflow-x: auto;
-    overflow-y: visible;
-    position: relative;
-}
-
-.table .dropdown-menu {
-    z-index: 1060 !important;
-    position: absolute !important;
-    min-width: 120px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    border: 1px solid #dee2e6;
+/* Action buttons styling */
+.table .btn {
+    transition: all 0.2s ease;
+    font-size: 0.75rem;
+    padding: 0.375rem 0.75rem;
     border-radius: 0.375rem;
-    background: white;
-    margin-top: 2px;
+    font-weight: 500;
 }
 
-.table .dropdown-menu .dropdown-item {
-    padding: 0.5rem 1rem;
-    font-size: 0.875rem;
-    color: #495057;
-    white-space: nowrap;
+.table .btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
-.table .dropdown-menu .dropdown-item:hover {
-    background-color: #f8f9fa;
-    color: #696cff;
+.table .btn-outline-primary:hover {
+    background-color: #696cff;
+    border-color: #696cff;
+    color: white;
 }
 
-/* Ensure dropdown doesn't get cut off */
-.table tbody tr {
-    position: relative;
+.table .btn-outline-info:hover {
+    background-color: #17a2b8;
+    border-color: #17a2b8;
+    color: white;
 }
 
-.table .dropdown {
-    position: static;
+/* Ensure buttons are properly spaced */
+.table .d-flex.gap-1 {
+    gap: 0.25rem !important;
 }
 
-.table .dropdown-menu {
-    position: absolute !important;
-    top: 100% !important;
-    left: 0 !important;
-    right: auto !important;
-    transform: translateY(0) !important;
-    will-change: transform;
-}
+/* Responsive button sizing */
+@media (max-width: 768px) {
+    .table .btn {
+        font-size: 0.7rem;
+        padding: 0.25rem 0.5rem;
+    }
 
-/* Fix for last row dropdowns */
-.table tbody tr:last-child .dropdown-menu {
-    top: auto !important;
-    bottom: 100% !important;
-    transform: translateY(-2px) !important;
-}
-
-/* Ensure dropdown is visible above scrollbar */
-.table-responsive .dropdown-menu {
-    z-index: 1060 !important;
-    position: fixed !important;
-}
-
-/* Alternative approach for better positioning */
-.table .dropdown-menu.show {
-    position: absolute !important;
-    z-index: 1060 !important;
-    top: 100% !important;
-    left: 0 !important;
-    right: auto !important;
-    transform: translateY(0) !important;
-}
-
-/* Additional fixes for dropdown visibility */
-.table-responsive {
-    position: relative;
-    z-index: 1;
-}
-
-.table .dropdown {
-    position: relative;
-    z-index: 2;
-}
-
-.table .dropdown-menu {
-    z-index: 1060 !important;
-    position: absolute !important;
-    display: none;
-}
-
-.table .dropdown-menu.show {
-    display: block !important;
-    z-index: 1060 !important;
-    position: absolute !important;
-}
-
-/* Ensure dropdown is not clipped by parent containers */
-.card-body {
-    overflow: visible !important;
-}
-
-.table-responsive {
-    overflow-x: auto !important;
-    overflow-y: visible !important;
+    .table .btn i {
+        display: none;
+    }
 }
 </style>
 @endsection
