@@ -17,7 +17,7 @@ class ReportService
      */
     public function getProjectOverviewReport($filters = [], $request = null)
     {
-        $query = Project::with(['tasks', 'users', 'owner']);
+        $query = Project::with(['tasks', 'users', 'owner', 'folders']);
 
         // Apply search filter
         if ($request && $request->filled('search')) {
@@ -52,8 +52,8 @@ class ReportService
                 ->where('due_date', '<', now())
                 ->count();
 
-            // Count sub-folders (assuming you have a folders relationship or similar)
-            $subFoldersCount = 0; // This would need to be implemented based on your folder structure
+            // Count sub-folders
+            $subFoldersCount = $project->folders->count();
 
             return [
                 'id' => $project->id,
