@@ -719,7 +719,7 @@
                 <li class="nav-item navbar-dropdown dropdown-user dropdown">
                   <a class="nav-link dropdown-toggle hide-arrow" href="javascript:void(0);" data-bs-toggle="dropdown">
                     <div class="avatar avatar-online nav-profile-avatar">
-                      <img src="{{ Auth::user()->img && !in_array(Auth::user()->img, ['default.png', 'default.jpg', '1.png']) ? asset('uploads/users/' . Auth::user()->img) : asset('DAssets/img/avatars/1.png') }}"
+                      <img src="{{ asset('uploads/users/' . (Auth::user()->img ?: 'default.png')) }}"
                            alt="{{ Auth::user()->name }}"
                            class="w-px-40 h-px-40 rounded-circle object-fit-cover"
                            style="width: 40px; height: 40px; object-fit: cover;" />
@@ -731,7 +731,7 @@
                         <div class="d-flex">
                           <div class="flex-shrink-0 me-3">
                             <div class="avatar avatar-online">
-                              <img src="{{ Auth::user()->img && !in_array(Auth::user()->img, ['default.png', 'default.jpg', '1.png']) ? asset('uploads/users/' . Auth::user()->img) : asset('DAssets/img/avatars/1.png') }}"
+                              <img src="{{ asset('uploads/users/' . (Auth::user()->img ?: 'default.png')) }}"
                                    alt="{{ Auth::user()->name }}"
                                    class="w-px-40 h-px-40 rounded-circle object-fit-cover"
                                    style="width: 40px; height: 40px; object-fit: cover;" />

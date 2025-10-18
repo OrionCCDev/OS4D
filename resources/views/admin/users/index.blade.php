@@ -32,7 +32,7 @@
           <tr>
             <td>{{ $user->id }}</td>
             <td>
-              <img src="{{ asset('uploads/users/' . $user->img) }}" alt="" class="rounded-circle" width="36" height="36">
+              <img src="{{ asset('uploads/users/' . ($user->img ?: 'default.png')) }}" alt="{{ $user->name }}" class="rounded-circle" width="36" height="36" style="object-fit: cover;">
             </td>
             <td>{{ $user->name }}</td>
             <td>{{ $user->email }}</td>

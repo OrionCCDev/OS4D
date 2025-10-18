@@ -41,9 +41,9 @@
   <div class="col-md-6">
     <label for="img" class="form-label">Avatar</label>
     <input type="file" id="img" name="img" class="form-control">
-    @if($editing && !empty($user->img))
+    @if($editing)
       <div class="mt-2">
-        <img src="{{ asset('uploads/users/' . $user->img) }}" alt="" class="rounded" width="64" height="64">
+        <img src="{{ asset('uploads/users/' . ($user->img ?: 'default.png')) }}" alt="{{ $user->name }}" class="rounded" width="64" height="64" style="object-fit: cover;">
       </div>
     @endif
   </div>

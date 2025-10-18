@@ -1,5 +1,5 @@
 @php
-    $defaultAvatar = 'DAssets/img/avatars/1.png';
+    $defaultAvatar = 'uploads/users/default.png';
     $currentImage = $user->img ? asset('uploads/users/' . $user->img) : asset($defaultAvatar);
     $hasCustomImage = $user->img && !in_array($user->img, ['default.png', 'default.jpg', '1.png']);
 @endphp

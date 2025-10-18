@@ -85,6 +85,7 @@ class ProfileController extends Controller
 
         try {
             // Delete old image if it exists and is not default
+            // Never delete default.png, default.jpg, or 1.png
             if ($user->img && !in_array($user->img, ['default.png', 'default.jpg', '1.png'])) {
                 $oldImagePath = public_path('uploads/users/' . $user->img);
                 if (file_exists($oldImagePath)) {
@@ -127,6 +128,7 @@ class ProfileController extends Controller
 
         try {
             // Delete current image if it exists and is not default
+            // Never delete default.png, default.jpg, or 1.png
             if ($user->img && !in_array($user->img, ['default.png', 'default.jpg', '1.png'])) {
                 $imagePath = public_path('uploads/users/' . $user->img);
                 if (file_exists($imagePath)) {
@@ -135,7 +137,7 @@ class ProfileController extends Controller
             }
 
             // Reset to default image
-            $user->img = '1.png'; // Default avatar
+            $user->img = 'default.png'; // Use the default.png you uploaded
             $user->save();
 
             return Redirect::route('profile.edit')->with('status', 'profile-image-removed');

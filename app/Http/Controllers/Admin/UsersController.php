@@ -64,8 +64,9 @@ class UsersController extends Controller
 
         if ($request->hasFile('img')) {
             // Delete old image if it's not default
+            // Never delete default.png, default.jpg, 1.png, default_user.jpg, or default-user.jpg
             $old = $user->img;
-            if ($old && !in_array($old, ['default_user.jpg', 'default-user.jpg'])) {
+            if ($old && !in_array($old, ['default.png', 'default.jpg', '1.png', 'default_user.jpg', 'default-user.jpg'])) {
                 $oldPath = public_path('uploads/users/'.$old);
                 if (is_file($oldPath)) {
                     @unlink($oldPath);
@@ -90,8 +91,9 @@ class UsersController extends Controller
     public function destroy(User $user): RedirectResponse
     {
         // remove stored image if not default
+        // Never delete default.png, default.jpg, 1.png, default_user.jpg, or default-user.jpg
         $old = $user->img;
-        if ($old && !in_array($old, ['default_user.jpg', 'default-user.jpg'])) {
+        if ($old && !in_array($old, ['default.png', 'default.jpg', '1.png', 'default_user.jpg', 'default-user.jpg'])) {
             $oldPath = public_path('uploads/users/'.$old);
             if (is_file($oldPath)) {
                 @unlink($oldPath);

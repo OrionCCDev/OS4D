@@ -73,13 +73,15 @@ class EmailSignatureService
     protected function getUserImage(User $user)
     {
         // Check if user has a custom image (not default)
-        if (!empty($user->img) && $user->img !== 'default.png' && $user->img !== 'default.jpg') {
+        if (!empty($user->img) && !in_array($user->img, ['default.png', 'default.jpg', '1.png'])) {
             $imagePath = public_path('uploads/users/' . $user->img);
             if (file_exists($imagePath)) {
                 return asset('uploads/users/' . $user->img);
             }
         }
 
+        // Return null to not show image in signature if using default
+        // This keeps signatures clean for users without custom photos
         return null;
     }
 
