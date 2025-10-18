@@ -33,6 +33,14 @@ class UserFactory extends Factory
     }
 
     /**
+     * Get a new faker instance.
+     */
+    protected function faker()
+    {
+        return $this->faker ??= app(\Faker\Generator::class);
+    }
+
+    /**
      * Indicate that the model's email address should be unverified.
      */
     public function unverified(): static

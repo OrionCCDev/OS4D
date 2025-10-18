@@ -18,7 +18,9 @@ class UserSeeder extends Seeder
             'name' => 'ahmdsyd',
             'email' => 'a.sayed@orioncc.com',
             'password' => Hash::make('THEgh0$t'),
-            'role' => 'admin'
+            'role' => 'admin',
+            'email_verified_at' => now(),
+            'img' => 'default.png',
         ]);
 
         // Create regular user
@@ -26,14 +28,18 @@ class UserSeeder extends Seeder
             'name' => 'malekahmd',
             'email' => 'a.sayed.xc@gmail.com',
             'password' => Hash::make('THEgh0$t'),
-            'role' => 'user'
+            'role' => 'user',
+            'email_verified_at' => now(),
+            'img' => 'default.png',
         ]);
-        
+
         User::create([
             'name' => 'hahmed',
             'email' => 'h.ahmed.moursy@gmail.com',
             'password' => Hash::make('THEgh0$t'),
-            'role' => 'user'
+            'role' => 'user',
+            'email_verified_at' => now(),
+            'img' => 'default.png',
         ]);
 
         $this->command->info('Users created successfully!');
