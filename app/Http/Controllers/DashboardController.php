@@ -32,6 +32,7 @@ class DashboardController extends Controller
     {
         $user = Auth::user();
         $now = now();
+        $reportService = new \App\Services\ReportService();
 
         // User's task statistics
         $userTasks = $user->assignedTasks();
@@ -127,6 +128,10 @@ class DashboardController extends Controller
                 ->where('completed_at', '>=', $now->copy()->startOfMonth())->count(),
         ];
 
+        // Get user rankings
+        $overallRanking = $reportService->getUserRankings($user->id, 'overall');
+        $monthlyRanking = $reportService->getUserRankings($user->id, 'monthly');
+
         return [
             'user' => $user,
             'task_stats' => $taskStats,
@@ -139,6 +144,10 @@ class DashboardController extends Controller
             'recent_activity' => $recentActivity,
             'notifications' => $notifications,
             'performance' => $performance,
+            'rankings' => [
+                'overall' => $overallRanking,
+                'monthly' => $monthlyRanking,
+            ],
         ];
     }
 

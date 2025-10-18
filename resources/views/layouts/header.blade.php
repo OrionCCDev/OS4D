@@ -715,6 +715,39 @@
                   </div>
                 </li>
 
+                <!-- User Ranking Display -->
+                @if(Auth::user()->isRegularUser())
+                @php
+                    $reportService = new \App\Services\ReportService();
+                    $userRanking = $reportService->getUserRankings(Auth::user()->id, 'overall');
+                @endphp
+                <li class="nav-item me-3 me-xl-1">
+                  <div class="nav-link d-flex align-items-center" style="cursor: default; padding: 0.5rem 0.75rem;">
+                    <div class="d-flex align-items-center">
+                      <div class="avatar avatar-sm me-2">
+                        <div class="avatar-initial rounded bg-label-{{ $userRanking['user_ranking']['rank'] <= 3 ? 'success' : ($userRanking['user_ranking']['rank'] <= 10 ? 'warning' : 'primary') }}">
+                          @if($userRanking['user_ranking']['rank'] == 1)
+                            <i class="bx bx-trophy text-white" style="font-size: 12px;"></i>
+                          @elseif($userRanking['user_ranking']['rank'] == 2)
+                            <i class="bx bx-medal text-white" style="font-size: 12px;"></i>
+                          @elseif($userRanking['user_ranking']['rank'] == 3)
+                            <i class="bx bx-award text-white" style="font-size: 12px;"></i>
+                          @else
+                            <i class="bx bx-user text-white" style="font-size: 12px;"></i>
+                          @endif
+                        </div>
+                      </div>
+                      <div class="d-flex flex-column">
+                        <span class="fw-semibold text-{{ $userRanking['user_ranking']['rank'] <= 3 ? 'success' : ($userRanking['user_ranking']['rank'] <= 10 ? 'warning' : 'primary') }}" style="font-size: 12px; line-height: 1;">
+                          #{{ $userRanking['user_ranking']['rank'] }}
+                        </span>
+                        <small class="text-muted" style="font-size: 10px; line-height: 1;">Overall</small>
+                      </div>
+                    </div>
+                  </div>
+                </li>
+                @endif
+
                 <!-- User -->
                 <li class="nav-item navbar-dropdown dropdown-user dropdown">
                   <a class="nav-link dropdown-toggle hide-arrow" href="javascript:void(0);" data-bs-toggle="dropdown">
@@ -1389,7 +1422,7 @@
 
                         // Check if notification requires action
                         const requiresAction = n.requires_action || false;
-                        
+
                         // Enhanced styling for actionable notifications
                         const actionableBg = requiresAction ? (n.is_read ? '#fff3cd' : '#fff3cd') : (n.is_read ? '#f8f9fa' : '#e3f2fd');
                         const actionableBorder = requiresAction ? '#ff9800' : (n.is_read ? '#e0e0e0' : '#2196f3');
@@ -1874,7 +1907,7 @@
 
                       // Check if notification requires action
                       const requiresAction = n.requires_action || false;
-                      
+
                       // Enhanced styling for actionable notifications
                       const actionableBg = requiresAction ? (n.is_read ? '#fff3cd' : '#fff3cd') : (n.is_read ? '#ffffff' : '#e3f2fd');
                       const actionableBorder = requiresAction ? '#ff9800' : (n.is_read ? '#e0e0e0' : '#2196f3');
@@ -2144,11 +2177,11 @@
               }
 
               @keyframes pulse-icon {
-                0%, 100% { 
+                0%, 100% {
                   box-shadow: 0 0 0 4px rgba(255, 152, 0, 0.2);
                   transform: scale(1);
                 }
-                50% { 
+                50% {
                   box-shadow: 0 0 0 8px rgba(255, 152, 0, 0.1);
                   transform: scale(1.05);
                 }

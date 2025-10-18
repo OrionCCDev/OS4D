@@ -558,6 +558,56 @@ class ReportService
     }
 
     /**
+     * Get user rankings for dashboard display
+     */
+    public function getUserRankings($userId, $period = 'overall')
+    {
+        $user = User::findOrFail($userId);
+
+        // Get all users for comparison
+        $allUsers = User::where('role', '!=', 'admin')->get();
+
+        $rankings = $allUsers->map(function ($u) use ($period) {
+            $filters = [];
+
+            // Apply period filter
+            if ($period === 'monthly') {
+                $filters = [
+                    'date_from' => now()->startOfMonth(),
+                    'date_to' => now()->endOfMonth()
+                ];
+            }
+
+            $userReport = $this->getUserPerformanceReport($u->id, $filters);
+            return [
+                'user_id' => $u->id,
+                'user_name' => $u->name,
+                'performance_score' => $userReport['performance_score'],
+                'completion_rate' => $userReport['completion_rate'],
+                'total_tasks' => $userReport['total_tasks'],
+                'completed_tasks' => $userReport['completed_tasks'],
+            ];
+        })->sortByDesc('performance_score')->values();
+
+        // Add ranking numbers and find current user
+        $userRanking = null;
+        $rankings = $rankings->map(function ($item, $index) use ($userId, &$userRanking) {
+            $item['rank'] = $index + 1;
+            if ($item['user_id'] == $userId) {
+                $userRanking = $item;
+            }
+            return $item;
+        });
+
+        return [
+            'user_ranking' => $userRanking,
+            'total_users' => $rankings->count(),
+            'period' => $period,
+            'top_3' => $rankings->take(3)->values(),
+        ];
+    }
+
+    /**
      * Calculate rejected tasks
      */
     private function calculateRejectedTasks($userId, $startDate, $endDate)

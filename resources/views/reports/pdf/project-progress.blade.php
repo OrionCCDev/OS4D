@@ -115,12 +115,19 @@
             font-size: 11px;
         }
         table td {
-            padding: 6px 8px;
+            padding: 8px 6px;
             border-bottom: 1px solid #ddd;
             font-size: 11px;
+            vertical-align: top;
         }
         table tr:nth-child(even) {
             background-color: #f8f9fa;
+        }
+        .task-row {
+            min-height: 60px;
+        }
+        .task-row:hover {
+            background-color: #e3f2fd;
         }
         .progress-bar {
             width: 100%;
@@ -361,20 +368,20 @@
                     </thead>
                     <tbody>
                         @foreach($project['recent_tasks'] as $task)
-                            <tr style="{{ $task['is_overdue'] ? 'background-color: #fff5f5;' : '' }}">
-                                <td style="font-weight: bold; {{ $task['is_overdue'] ? 'color: #dc3545;' : '' }}">
-                                    <div style="margin-bottom: 3px;">{{ $task['name'] }}</div>
+                            <tr class="task-row" style="{{ $task['is_overdue'] ? 'background-color: #fff5f5;' : '' }}">
+                                <td style="font-weight: bold; {{ $task['is_overdue'] ? 'color: #dc3545;' : '' }}; vertical-align: top; padding: 8px;">
+                                    <div style="margin-bottom: 4px; font-size: 11px;">{{ $task['name'] }}</div>
                                     @if($task['description'])
-                                        <div style="font-size: 9px; color: #666; font-weight: normal; margin-top: 2px;">
-                                            {{ Str::limit($task['description'], 60) }}
+                                        <div style="font-size: 9px; color: #666; font-weight: normal; margin-top: 3px; line-height: 1.3;">
+                                            {{ Str::limit($task['description'], 80) }}
                                         </div>
                                     @endif
                                     @if($task['is_overdue'])
-                                        <div style="color: #dc3545; font-weight: bold; font-size: 9px; margin-top: 2px;">⚠ OVERDUE</div>
+                                        <div style="color: #dc3545; font-weight: bold; font-size: 9px; margin-top: 3px; background-color: #f8d7da; padding: 2px 4px; border-radius: 3px; display: inline-block;">⚠ OVERDUE</div>
                                     @endif
                                     @if($task['completion_notes'])
-                                        <div style="font-size: 9px; color: #28c76f; font-style: italic; margin-top: 2px;">
-                                            Notes: {{ Str::limit($task['completion_notes'], 40) }}
+                                        <div style="font-size: 9px; color: #28c76f; font-style: italic; margin-top: 3px; background-color: #d4edda; padding: 2px 4px; border-radius: 3px;">
+                                            <strong>Notes:</strong> {{ Str::limit($task['completion_notes'], 60) }}
                                         </div>
                                     @endif
                                 </td>
@@ -404,75 +411,131 @@
                                         {{ ucfirst($task['priority']) }}
                                     </span>
                                 </td>
-                                <td>
-                                    <div style="font-weight: bold;">{{ $task['assignee'] }}</div>
+                                <td style="vertical-align: top; padding: 8px;">
+                                    <div style="font-weight: bold; font-size: 10px; margin-bottom: 2px;">{{ $task['assignee'] }}</div>
                                     @if($task['assignee_email'])
-                                        <div style="font-size: 9px; color: #666;">{{ $task['assignee_email'] }}</div>
+                                        <div style="font-size: 8px; color: #666; margin-bottom: 2px;">{{ $task['assignee_email'] }}</div>
                                     @endif
-                                    <div style="font-size: 9px; color: #666;">Created by: {{ $task['created_by'] }}</div>
+                                    <div style="font-size: 8px; color: #999; background-color: #f8f9fa; padding: 2px 4px; border-radius: 3px; display: inline-block;">
+                                        Created by: {{ $task['created_by'] }}
+                                    </div>
                                 </td>
-                                <td style="text-align: center; font-size: 10px;">
+                                <td style="text-align: center; font-size: 10px; vertical-align: top; padding: 8px;">
                                     @if($task['created_at'])
-                                        {{ \Carbon\Carbon::parse($task['created_at'])->format('M d, Y') }}
+                                        <div style="font-weight: bold;">{{ \Carbon\Carbon::parse($task['created_at'])->format('M d, Y') }}</div>
+                                        <div style="font-size: 8px; color: #666;">{{ \Carbon\Carbon::parse($task['created_at'])->format('H:i') }}</div>
                                     @else
                                         <span style="color: #6c757d;">-</span>
                                     @endif
                                 </td>
-                                <td style="text-align: center; {{ $task['is_overdue'] ? 'color: #dc3545; font-weight: bold;' : '' }}">
+                                <td style="text-align: center; {{ $task['is_overdue'] ? 'color: #dc3545; font-weight: bold;' : '' }}; vertical-align: top; padding: 8px;">
                                     @if($task['due_date'])
-                                        <div style="font-size: 10px;">{{ \Carbon\Carbon::parse($task['due_date'])->format('M d, Y') }}</div>
+                                        <div style="font-size: 10px; font-weight: bold;">{{ \Carbon\Carbon::parse($task['due_date'])->format('M d, Y') }}</div>
+                                        <div style="font-size: 8px; color: #666;">{{ \Carbon\Carbon::parse($task['due_date'])->format('H:i') }}</div>
                                         @if($task['assigned_at'])
-                                            <div style="font-size: 8px; color: #666;">Assigned: {{ \Carbon\Carbon::parse($task['assigned_at'])->format('M d') }}</div>
+                                            <div style="font-size: 8px; color: #999; background-color: #e9ecef; padding: 1px 3px; border-radius: 2px; margin-top: 2px; display: inline-block;">
+                                                Assigned: {{ \Carbon\Carbon::parse($task['assigned_at'])->format('M d') }}
+                                            </div>
                                         @endif
                                     @else
-                                        <span style="color: #6c757d;">No due date</span>
+                                        <span style="color: #6c757d; font-size: 9px;">No due date</span>
                                     @endif
                                 </td>
-                                <td style="text-align: center;">
+                                <td style="text-align: center; vertical-align: top; padding: 8px;">
                                     @if($task['completed_at'])
                                         <div style="color: #28c76f; font-weight: bold; font-size: 10px;">
                                             {{ \Carbon\Carbon::parse($task['completed_at'])->format('M d, Y') }}
                                         </div>
+                                        <div style="color: #28c76f; font-size: 8px;">{{ \Carbon\Carbon::parse($task['completed_at'])->format('H:i') }}</div>
                                         @if($task['started_at'])
-                                            <div style="font-size: 8px; color: #666;">Started: {{ \Carbon\Carbon::parse($task['started_at'])->format('M d') }}</div>
+                                            <div style="font-size: 8px; color: #999; background-color: #d4edda; padding: 1px 3px; border-radius: 2px; margin-top: 2px; display: inline-block;">
+                                                Started: {{ \Carbon\Carbon::parse($task['started_at'])->format('M d') }}
+                                            </div>
                                         @endif
                                     @else
-                                        <span style="color: #6c757d;">-</span>
+                                        <span style="color: #6c757d; font-size: 9px;">-</span>
                                     @endif
                                 </td>
-                                <td style="text-align: center; font-size: 9px;">
+                                <td style="text-align: center; font-size: 9px; vertical-align: top; padding: 8px;">
                                     @if($task['assigned_at'] && $task['completed_at'])
                                         @php
                                             $assignedDate = \Carbon\Carbon::parse($task['assigned_at']);
                                             $completedDate = \Carbon\Carbon::parse($task['completed_at']);
                                             $duration = $assignedDate->diffInDays($completedDate);
+                                            $hours = $assignedDate->diffInHours($completedDate) % 24;
                                         @endphp
-                                        <span style="color: #28c76f;">{{ $duration }}d</span>
+                                        <div style="color: #28c76f; font-weight: bold; font-size: 10px; background-color: #d4edda; padding: 3px 6px; border-radius: 4px; display: inline-block;">
+                                            {{ $duration }}d
+                                            @if($hours > 0)
+                                                {{ $hours }}h
+                                            @endif
+                                        </div>
+                                        <div style="font-size: 8px; color: #666; margin-top: 2px;">Completed</div>
                                     @elseif($task['assigned_at'] && $task['status'] !== 'completed')
                                         @php
                                             $assignedDate = \Carbon\Carbon::parse($task['assigned_at']);
                                             $duration = $assignedDate->diffInDays(now());
+                                            $hours = $assignedDate->diffInHours(now()) % 24;
                                         @endphp
-                                        <span style="color: #ff9f43;">{{ $duration }}d</span>
+                                        <div style="color: #ff9f43; font-weight: bold; font-size: 10px; background-color: #fff3cd; padding: 3px 6px; border-radius: 4px; display: inline-block;">
+                                            {{ $duration }}d
+                                            @if($hours > 0)
+                                                {{ $hours }}h
+                                            @endif
+                                        </div>
+                                        <div style="font-size: 8px; color: #666; margin-top: 2px;">In Progress</div>
                                     @else
-                                        <span style="color: #6c757d;">-</span>
+                                        <span style="color: #6c757d; font-size: 9px;">-</span>
                                     @endif
                                 </td>
-                                <td style="text-align: center; font-size: 9px;">
+                                <td style="text-align: center; font-size: 9px; vertical-align: top; padding: 8px;">
                                     @if($task['due_date'])
                                         @if($task['status'] === 'completed')
-                                            <span style="color: #28c76f;">✓ Done</span>
+                                            <div style="color: #28c76f; font-weight: bold; font-size: 10px; background-color: #d4edda; padding: 3px 6px; border-radius: 4px; display: inline-block;">
+                                                ✓ Done
+                                            </div>
                                         @elseif($task['is_overdue'])
-                                            <span style="color: #dc3545; font-weight: bold;">{{ $task['days_overdue'] }}d late</span>
+                                            @php
+                                                $overdueDays = $task['days_overdue'];
+                                                $overdueHours = \Carbon\Carbon::parse($task['due_date'])->diffInHours(now()) % 24;
+                                            @endphp
+                                            <div style="color: #dc3545; font-weight: bold; font-size: 10px; background-color: #f8d7da; padding: 3px 6px; border-radius: 4px; display: inline-block;">
+                                                {{ $overdueDays }}d late
+                                                @if($overdueHours > 0)
+                                                    {{ $overdueHours }}h
+                                                @endif
+                                            </div>
+                                            <div style="font-size: 8px; color: #dc3545; margin-top: 2px; font-weight: bold;">OVERDUE</div>
                                         @elseif($task['days_remaining'] == 0)
-                                            <span style="color: #ffc107; font-weight: bold;">Due today</span>
+                                            <div style="color: #ffc107; font-weight: bold; font-size: 10px; background-color: #fff3cd; padding: 3px 6px; border-radius: 4px; display: inline-block;">
+                                                Due Today
+                                            </div>
                                         @elseif($task['days_remaining'] <= 3)
-                                            <span style="color: #ff9f43;">{{ $task['days_remaining'] }}d left</span>
+                                            @php
+                                                $remainingDays = floor($task['days_remaining']);
+                                                $remainingHours = round(($task['days_remaining'] - $remainingDays) * 24);
+                                            @endphp
+                                            <div style="color: #ff9f43; font-weight: bold; font-size: 10px; background-color: #fff3cd; padding: 3px 6px; border-radius: 4px; display: inline-block;">
+                                                {{ $remainingDays }}d left
+                                                @if($remainingHours > 0)
+                                                    {{ $remainingHours }}h
+                                                @endif
+                                            </div>
+                                            <div style="font-size: 8px; color: #ff9f43; margin-top: 2px;">Urgent</div>
                                         @else
-                                            <span style="color: #6c757d;">{{ $task['days_remaining'] }}d left</span>
+                                            @php
+                                                $remainingDays = floor($task['days_remaining']);
+                                                $remainingHours = round(($task['days_remaining'] - $remainingDays) * 24);
+                                            @endphp
+                                            <div style="color: #6c757d; font-weight: bold; font-size: 10px; background-color: #e9ecef; padding: 3px 6px; border-radius: 4px; display: inline-block;">
+                                                {{ $remainingDays }}d left
+                                                @if($remainingHours > 0)
+                                                    {{ $remainingHours }}h
+                                                @endif
+                                            </div>
                                         @endif
                                     @else
-                                        <span style="color: #6c757d;">-</span>
+                                        <span style="color: #6c757d; font-size: 9px;">No due date</span>
                                     @endif
                                 </td>
                             </tr>

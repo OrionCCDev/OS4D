@@ -35,6 +35,109 @@
         </div>
     </div>
 
+    <!-- User Ranking Cards -->
+    <div class="row mb-4">
+        <!-- Overall Ranking -->
+        <div class="col-lg-6 col-md-6 col-12 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center">
+                            <div class="avatar avatar-md me-3">
+                                <div class="avatar-initial rounded bg-label-{{ $userData['rankings']['overall']['user_ranking']['rank'] <= 3 ? 'success' : ($userData['rankings']['overall']['user_ranking']['rank'] <= 10 ? 'warning' : 'primary') }}">
+                                    @if($userData['rankings']['overall']['user_ranking']['rank'] == 1)
+                                        <i class="bx bx-trophy text-white"></i>
+                                    @elseif($userData['rankings']['overall']['user_ranking']['rank'] == 2)
+                                        <i class="bx bx-medal text-white"></i>
+                                    @elseif($userData['rankings']['overall']['user_ranking']['rank'] == 3)
+                                        <i class="bx bx-award text-white"></i>
+                                    @else
+                                        <i class="bx bx-user text-white"></i>
+                                    @endif
+                                </div>
+                            </div>
+                            <div>
+                                <h6 class="mb-1">Overall Ranking</h6>
+                                <div class="d-flex align-items-center">
+                                    <span class="h4 mb-0 me-2 text-{{ $userData['rankings']['overall']['user_ranking']['rank'] <= 3 ? 'success' : ($userData['rankings']['overall']['user_ranking']['rank'] <= 10 ? 'warning' : 'primary') }}">
+                                        #{{ $userData['rankings']['overall']['user_ranking']['rank'] }}
+                                    </span>
+                                    <small class="text-muted">of {{ $userData['rankings']['overall']['total_users'] }} users</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <div class="h5 mb-1 text-{{ $userData['rankings']['overall']['user_ranking']['performance_score'] >= 80 ? 'success' : ($userData['rankings']['overall']['user_ranking']['performance_score'] >= 60 ? 'warning' : 'danger') }}">
+                                {{ $userData['rankings']['overall']['user_ranking']['performance_score'] }}%
+                            </div>
+                            <small class="text-muted">Performance Score</small>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <small class="text-muted">Completion Rate</small>
+                            <small class="text-muted">{{ $userData['rankings']['overall']['user_ranking']['completion_rate'] }}%</small>
+                        </div>
+                        <div class="progress" style="height: 6px;">
+                            <div class="progress-bar bg-{{ $userData['rankings']['overall']['user_ranking']['completion_rate'] >= 80 ? 'success' : ($userData['rankings']['overall']['user_ranking']['completion_rate'] >= 60 ? 'warning' : 'danger') }}"
+                                 style="width: {{ $userData['rankings']['overall']['user_ranking']['completion_rate'] }}%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Monthly Ranking -->
+        <div class="col-lg-6 col-md-6 col-12 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center">
+                            <div class="avatar avatar-md me-3">
+                                <div class="avatar-initial rounded bg-label-{{ $userData['rankings']['monthly']['user_ranking']['rank'] <= 3 ? 'success' : ($userData['rankings']['monthly']['user_ranking']['rank'] <= 10 ? 'warning' : 'primary') }}">
+                                    @if($userData['rankings']['monthly']['user_ranking']['rank'] == 1)
+                                        <i class="bx bx-trophy text-white"></i>
+                                    @elseif($userData['rankings']['monthly']['user_ranking']['rank'] == 2)
+                                        <i class="bx bx-medal text-white"></i>
+                                    @elseif($userData['rankings']['monthly']['user_ranking']['rank'] == 3)
+                                        <i class="bx bx-award text-white"></i>
+                                    @else
+                                        <i class="bx bx-calendar text-white"></i>
+                                    @endif
+                                </div>
+                            </div>
+                            <div>
+                                <h6 class="mb-1">This Month</h6>
+                                <div class="d-flex align-items-center">
+                                    <span class="h4 mb-0 me-2 text-{{ $userData['rankings']['monthly']['user_ranking']['rank'] <= 3 ? 'success' : ($userData['rankings']['monthly']['user_ranking']['rank'] <= 10 ? 'warning' : 'primary') }}">
+                                        #{{ $userData['rankings']['monthly']['user_ranking']['rank'] }}
+                                    </span>
+                                    <small class="text-muted">of {{ $userData['rankings']['monthly']['total_users'] }} users</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <div class="h5 mb-1 text-{{ $userData['rankings']['monthly']['user_ranking']['performance_score'] >= 80 ? 'success' : ($userData['rankings']['monthly']['user_ranking']['performance_score'] >= 60 ? 'warning' : 'danger') }}">
+                                {{ $userData['rankings']['monthly']['user_ranking']['performance_score'] }}%
+                            </div>
+                            <small class="text-muted">Performance Score</small>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <small class="text-muted">Tasks Completed</small>
+                            <small class="text-muted">{{ $userData['rankings']['monthly']['user_ranking']['completed_tasks'] }}/{{ $userData['rankings']['monthly']['user_ranking']['total_tasks'] }}</small>
+                        </div>
+                        <div class="progress" style="height: 6px;">
+                            <div class="progress-bar bg-{{ $userData['rankings']['monthly']['user_ranking']['completion_rate'] >= 80 ? 'success' : ($userData['rankings']['monthly']['user_ranking']['completion_rate'] >= 60 ? 'warning' : 'danger') }}"
+                                 style="width: {{ $userData['rankings']['monthly']['user_ranking']['completion_rate'] }}%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Task Statistics Cards -->
     <div class="row">
         <!-- Total Tasks -->
