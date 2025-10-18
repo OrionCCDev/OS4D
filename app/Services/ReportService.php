@@ -55,9 +55,6 @@ class ReportService
             // Count sub-folders (only direct children, not nested)
             $subFoldersCount = $project->folders()->whereNull('parent_id')->count();
 
-            // Debug: Log subfolders count for verification
-            \Log::info("Project {$project->name} has {$subFoldersCount} subfolders");
-
             return [
                 'id' => $project->id,
                 'name' => $project->name,

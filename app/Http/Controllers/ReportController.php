@@ -74,7 +74,7 @@ class ReportController extends Controller
     public function projectProgress(Request $request): View
     {
         $filters = $this->getFiltersFromRequest($request);
-        $projects = $this->reportService->getProjectOverviewReport($filters);
+        $projects = $this->reportService->getProjectOverviewReport($filters, $request);
 
         return view('reports.projects.progress', compact('projects', 'filters'));
     }
