@@ -122,9 +122,9 @@
                                 <div class="col-md-3 col-sm-6 mb-3">
                                     <div class="stat-card bg-primary-subtle p-3 rounded">
                                         <div class="d-flex justify-content-between align-items-center">
-                                            <div>
+                                        <div>
                                                 <h3 class="mb-0 text-primary">{{ $project['total_tasks'] }}</h3>
-                                                <small class="text-muted">Total Tasks</small>
+                                            <small class="text-muted">Total Tasks</small>
                                             </div>
                                             <div class="avatar bg-primary">
                                                 <i class="bx bx-task fs-4"></i>
@@ -135,9 +135,9 @@
                                 <div class="col-md-3 col-sm-6 mb-3">
                                     <div class="stat-card bg-success-subtle p-3 rounded">
                                         <div class="d-flex justify-content-between align-items-center">
-                                            <div>
+                                        <div>
                                                 <h3 class="mb-0 text-success">{{ $project['completed_tasks'] }}</h3>
-                                                <small class="text-muted">Completed</small>
+                                            <small class="text-muted">Completed</small>
                                             </div>
                                             <div class="avatar bg-success">
                                                 <i class="bx bx-check-circle fs-4"></i>
@@ -154,16 +154,16 @@
                                             </div>
                                             <div class="avatar bg-warning">
                                                 <i class="bx bx-loader-circle fs-4"></i>
-                                            </div>
+                                        </div>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="col-md-3 col-sm-6 mb-3">
                                     <div class="stat-card bg-danger-subtle p-3 rounded">
                                         <div class="d-flex justify-content-between align-items-center">
-                                            <div>
+                                        <div>
                                                 <h3 class="mb-0 text-danger">{{ $project['overdue_tasks'] }}</h3>
-                                                <small class="text-muted">Overdue</small>
+                                            <small class="text-muted">Overdue</small>
                                             </div>
                                             <div class="avatar bg-danger">
                                                 <i class="bx bx-error-circle fs-4"></i>
@@ -289,7 +289,7 @@
                                             <div class="card bg-light">
                                                 <div class="card-body">
                                                     <h6 class="mb-3"><i class="bx bx-target-lock me-2"></i>Performance Metrics</h6>
-                                                    <div class="row">
+                            <div class="row">
                                                         <div class="col-md-3 col-6 mb-3">
                                                             <div class="text-center p-3 border rounded bg-white">
                                                                 <h4 class="text-primary mb-1">{{ $project['on_time_completion_rate'] }}%</h4>
@@ -323,11 +323,58 @@
 
                                 <!-- Tasks Details Tab -->
                                 <div class="tab-pane fade" id="tasks-{{ $project['id'] }}">
-                                    <h6 class="mb-3"><i class="bx bx-list-check me-2"></i>Recent Tasks Activity</h6>
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <h6 class="mb-0"><i class="bx bx-list-check me-2"></i>Project Tasks Overview</h6>
+                                        <div class="d-flex gap-2">
+                                            <button class="btn btn-sm btn-outline-primary" onclick="exportProjectTasks({{ $project['id'] }})">
+                                                <i class="bx bx-download me-1"></i>Export Tasks
+                                            </button>
+                                            <a href="{{ route('projects.show', $project['id']) }}" class="btn btn-sm btn-outline-info">
+                                                <i class="bx bx-link-external me-1"></i>View All Tasks
+                                            </a>
+                                        </div>
+                                    </div>
+
                                     @if(count($project['recent_tasks']) > 0)
+                                        <!-- Task Summary Cards -->
+                                        <div class="row mb-4">
+                                            <div class="col-md-3 col-6 mb-3">
+                                                <div class="card bg-light">
+                                                    <div class="card-body text-center">
+                                                        <h4 class="text-primary mb-1">{{ count($project['recent_tasks']) }}</h4>
+                                                        <small class="text-muted">Total Tasks</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3 col-6 mb-3">
+                                                <div class="card bg-light">
+                                                    <div class="card-body text-center">
+                                                        <h4 class="text-success mb-1">{{ $project['recent_tasks']->where('status', 'completed')->count() }}</h4>
+                                                        <small class="text-muted">Completed</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3 col-6 mb-3">
+                                                <div class="card bg-light">
+                                                    <div class="card-body text-center">
+                                                        <h4 class="text-warning mb-1">{{ $project['recent_tasks']->whereIn('status', ['in_progress', 'workingon'])->count() }}</h4>
+                                                        <small class="text-muted">In Progress</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3 col-6 mb-3">
+                                                <div class="card bg-light">
+                                                    <div class="card-body text-center">
+                                                        <h4 class="text-danger mb-1">{{ $project['recent_tasks']->where('is_overdue', true)->count() }}</h4>
+                                                        <small class="text-muted">Overdue</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
                                         <div class="table-responsive">
-                                            <table class="table table-hover">
-                                                <thead>
+                                            <table class="table table-hover table-striped">
+                                                <thead class="table-dark">
                                                     <tr>
                                                         <th>Task Name</th>
                                                         <th>Status</th>
@@ -335,21 +382,35 @@
                                                         <th>Assignee</th>
                                                         <th>Due Date</th>
                                                         <th>Completed</th>
+                                                        <th>Actions</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
                                                     @foreach($project['recent_tasks'] as $task)
-                                                        <tr class="{{ $task['is_overdue'] ? 'table-danger' : '' }}">
+                                                        <tr class="{{ $task['is_overdue'] ? 'table-warning' : '' }}">
                                                             <td>
                                                                 <div class="d-flex align-items-center">
-                                                                    {{ $task['name'] }}
-                                                                    @if($task['is_overdue'])
-                                                                        <span class="badge bg-danger ms-2">Overdue</span>
-                                                                    @endif
+                                                                    <div class="me-2">
+                                                                        @if($task['status'] === 'completed')
+                                                                            <i class="bx bx-check-circle text-success"></i>
+                                                                        @elseif($task['status'] === 'in_progress' || $task['status'] === 'workingon')
+                                                                            <i class="bx bx-time-five text-warning"></i>
+                                                                        @else
+                                                                            <i class="bx bx-circle text-muted"></i>
+                                                                        @endif
+                                                                    </div>
+                                                                    <div>
+                                                                        <div class="fw-semibold">{{ $task['name'] }}</div>
+                                                                        @if($task['is_overdue'])
+                                                                            <small class="text-danger">
+                                                                                <i class="bx bx-time me-1"></i>Overdue
+                                                                            </small>
+                                                                        @endif
+                                                                    </div>
                                                                 </div>
                                                             </td>
                                                             <td>
-                                                                <span class="badge bg-{{ $task['status'] === 'completed' ? 'success' : ($task['status'] === 'in_progress' ? 'warning' : 'secondary') }}">
+                                                                <span class="badge bg-{{ $task['status'] === 'completed' ? 'success' : ($task['status'] === 'in_progress' || $task['status'] === 'workingon' ? 'warning' : ($task['status'] === 'assigned' ? 'info' : 'secondary')) }}">
                                                                     {{ ucfirst(str_replace('_', ' ', $task['status'])) }}
                                                                 </span>
                                                             </td>
@@ -358,34 +419,129 @@
                                                                     {{ ucfirst($task['priority']) }}
                                                                 </span>
                                                             </td>
-                                                            <td>{{ $task['assignee'] }}</td>
-                                                            <td>{{ $task['due_date'] ? \Carbon\Carbon::parse($task['due_date'])->format('M d, Y') : 'N/A' }}</td>
-                                                            <td>{{ $task['completed_at'] ? \Carbon\Carbon::parse($task['completed_at'])->format('M d, Y') : '-' }}</td>
+                                                            <td>
+                                                                <div class="d-flex align-items-center">
+                                                                    <div class="avatar avatar-xs me-2">
+                                                                        <span class="avatar-initial rounded-circle bg-label-primary">
+                                                                            {{ substr($task['assignee'], 0, 1) }}
+                                                                        </span>
+                                                                    </div>
+                                                                    {{ $task['assignee'] }}
+                                                                </div>
+                                                            </td>
+                                                            <td>
+                                                                @if($task['due_date'])
+                                                                    <span class="{{ $task['is_overdue'] ? 'text-danger fw-semibold' : 'text-muted' }}">
+                                                                        {{ \Carbon\Carbon::parse($task['due_date'])->format('M d, Y') }}
+                                                                    </span>
+                                                                @else
+                                                                    <span class="text-muted">No due date</span>
+                                                                @endif
+                                                            </td>
+                                                            <td>
+                                                                @if($task['completed_at'])
+                                                                    <span class="text-success">
+                                                                        {{ \Carbon\Carbon::parse($task['completed_at'])->format('M d, Y') }}
+                                                                    </span>
+                                                                @else
+                                                                    <span class="text-muted">-</span>
+                                                                @endif
+                                                            </td>
+                                                            <td>
+                                                                <div class="btn-group btn-group-sm">
+                                                                    <a href="{{ route('tasks.show', $task['id']) }}" class="btn btn-outline-primary" title="View Task">
+                                                                        <i class="bx bx-show"></i>
+                                                                    </a>
+                                                                    @if(auth()->user()->isManager() || auth()->user()->isSubAdmin())
+                                                                        <a href="{{ route('tasks.edit', $task['id']) }}" class="btn btn-outline-secondary" title="Edit Task">
+                                                                            <i class="bx bx-edit"></i>
+                                                                        </a>
+                                                                    @endif
+                                                                    @if($task['is_overdue'])
+                                                                        <button class="btn btn-outline-warning" onclick="sendTaskReminder({{ $task['id'] }})" title="Send Reminder">
+                                                                            <i class="bx bx-bell"></i>
+                                                                        </button>
+                                                                    @endif
+                                                                </div>
+                                                            </td>
                                                         </tr>
                                                     @endforeach
                                                 </tbody>
                                             </table>
                                         </div>
+
                                         <div class="alert alert-info mt-3">
                                             <i class="bx bx-info-circle me-2"></i>
-                                            Showing last 10 recently updated tasks.
+                                            Showing last 10 recently updated tasks. Use filters above to narrow down results.
                                             <a href="{{ route('projects.show', $project['id']) }}" class="alert-link">View all tasks</a>
                                         </div>
                                     @else
                                         <div class="text-center py-4">
                                             <i class="bx bx-task fs-1 text-muted"></i>
                                             <p class="text-muted mt-2">No tasks found for this project</p>
+                                            @if(auth()->user()->isManager() || auth()->user()->isSubAdmin())
+                                                <a href="{{ route('tasks.create') }}?project_id={{ $project['id'] }}" class="btn btn-primary">
+                                                    <i class="bx bx-plus me-1"></i>Create First Task
+                                                </a>
+                                            @endif
                                         </div>
                                     @endif
                                 </div>
 
                                 <!-- Team Performance Tab -->
                                 <div class="tab-pane fade" id="team-{{ $project['id'] }}">
-                                    <h6 class="mb-3"><i class="bx bx-group me-2"></i>Individual Team Member Performance</h6>
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <h6 class="mb-0"><i class="bx bx-group me-2"></i>Team Performance Analytics</h6>
+                                        <div class="d-flex gap-2">
+                                            <button class="btn btn-sm btn-outline-primary" onclick="exportTeamPerformance({{ $project['id'] }})">
+                                                <i class="bx bx-download me-1"></i>Export
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-info" onclick="refreshTeamData({{ $project['id'] }})">
+                                                <i class="bx bx-refresh me-1"></i>Refresh
+                                            </button>
+                                        </div>
+                                    </div>
+
                                     @if(count($project['team_performance']) > 0)
+                                        <!-- Team Summary Cards -->
+                                        <div class="row mb-4">
+                                            <div class="col-md-3 col-6 mb-3">
+                                                <div class="card bg-light">
+                                                    <div class="card-body text-center">
+                                                        <h4 class="text-primary mb-1">{{ count($project['team_performance']) }}</h4>
+                                                        <small class="text-muted">Active Team Members</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3 col-6 mb-3">
+                                                <div class="card bg-light">
+                                                    <div class="card-body text-center">
+                                                        <h4 class="text-success mb-1">{{ round($project['team_performance']->avg('completion_rate'), 1) }}%</h4>
+                                                        <small class="text-muted">Avg Completion Rate</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3 col-6 mb-3">
+                                                <div class="card bg-light">
+                                                    <div class="card-body text-center">
+                                                        <h4 class="text-warning mb-1">{{ $project['team_performance']->sum('pending_tasks') }}</h4>
+                                                        <small class="text-muted">Total Pending Tasks</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3 col-6 mb-3">
+                                                <div class="card bg-light">
+                                                    <div class="card-body text-center">
+                                                        <h4 class="text-danger mb-1">{{ $project['team_performance']->sum('overdue_tasks') }}</h4>
+                                                        <small class="text-muted">Overdue Tasks</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
                                         <div class="table-responsive">
-                                            <table class="table table-striped">
-                                                <thead>
+                                            <table class="table table-striped table-hover">
+                                                <thead class="table-dark">
                                                     <tr>
                                                         <th>#</th>
                                                         <th>Team Member</th>
@@ -394,27 +550,38 @@
                                                         <th>Pending</th>
                                                         <th>Overdue</th>
                                                         <th>Completion Rate</th>
+                                                        <th>Avg Duration</th>
                                                         <th>Performance</th>
+                                                        <th>Actions</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
                                                     @foreach($project['team_performance'] as $index => $member)
-                                                        <tr>
+                                                        <tr class="{{ $member['overdue_tasks'] > 0 ? 'table-warning' : '' }}">
                                                             <td>{{ $index + 1 }}</td>
                                                             <td>
                                                                 <div class="d-flex align-items-center">
                                                                     <div class="avatar avatar-sm me-2">
-                                                                        <span class="avatar-initial rounded-circle bg-label-primary">
+                                                                        <span class="avatar-initial rounded-circle bg-{{ $member['completion_rate'] >= 80 ? 'success' : ($member['completion_rate'] >= 50 ? 'primary' : 'warning') }}">
                                                                             {{ substr($member['user_name'], 0, 1) }}
                                                                         </span>
                                                                     </div>
-                                                                    {{ $member['user_name'] }}
+                                                                    <div>
+                                                                        <div class="fw-semibold">{{ $member['user_name'] }}</div>
+                                                                        <small class="text-muted">{{ $member['user_email'] ?? '' }}</small>
+                                                                    </div>
                                                                 </div>
                                                             </td>
                                                             <td><strong>{{ $member['total_tasks'] }}</strong></td>
-                                                            <td><span class="text-success">{{ $member['completed_tasks'] }}</span></td>
-                                                            <td><span class="text-warning">{{ $member['pending_tasks'] }}</span></td>
-                                                            <td><span class="text-danger">{{ $member['overdue_tasks'] }}</span></td>
+                                                            <td><span class="text-success fw-semibold">{{ $member['completed_tasks'] }}</span></td>
+                                                            <td><span class="text-warning fw-semibold">{{ $member['pending_tasks'] }}</span></td>
+                                                            <td>
+                                                                @if($member['overdue_tasks'] > 0)
+                                                                    <span class="text-danger fw-semibold">{{ $member['overdue_tasks'] }}</span>
+                                                                @else
+                                                                    <span class="text-success">0</span>
+                                                                @endif
+                                                            </td>
                                                             <td>
                                                                 <div class="d-flex align-items-center">
                                                                     <div class="progress flex-grow-1" style="height: 8px; width: 100px;">
@@ -423,6 +590,13 @@
                                                                     </div>
                                                                     <span class="ms-2 fw-semibold">{{ $member['completion_rate'] }}%</span>
                                                                 </div>
+                                                            </td>
+                                                            <td>
+                                                                @if(isset($member['avg_task_duration']) && $member['avg_task_duration'] > 0)
+                                                                    <span class="text-muted">{{ $member['avg_task_duration'] }} days</span>
+                                                                @else
+                                                                    <span class="text-muted">N/A</span>
+                                                                @endif
                                                             </td>
                                                             <td>
                                                                 @if($member['completion_rate'] >= 80)
@@ -435,8 +609,23 @@
                                                                     <span class="badge bg-danger">Needs Attention</span>
                                                                 @endif
                                                             </td>
+                                                            <td>
+                                                                <div class="btn-group btn-group-sm">
+                                                                    <button class="btn btn-outline-primary" onclick="viewUserTasks({{ $member['user_id'] }}, {{ $project['id'] }})" title="View Tasks">
+                                                                        <i class="bx bx-list-ul"></i>
+                                                                    </button>
+                                                                    <button class="btn btn-outline-info" onclick="viewUserPerformance({{ $member['user_id'] }})" title="Performance Details">
+                                                                        <i class="bx bx-bar-chart"></i>
+                                                                    </button>
+                                                                    @if($member['overdue_tasks'] > 0)
+                                                                        <button class="btn btn-outline-warning" onclick="sendReminder({{ $member['user_id'] }}, {{ $project['id'] }})" title="Send Reminder">
+                                                                            <i class="bx bx-bell"></i>
+                                                                        </button>
+                                                                    @endif
+                                                                </div>
+                                                            </td>
                                                         </tr>
-                                                    @endforeach
+                                            @endforeach
                                                 </tbody>
                                             </table>
                                         </div>
@@ -556,12 +745,12 @@
                                                                     @endif
                                                                 </ul>
                                                             </div>
-                                                        @else
+                                                @else
                                                             <div class="alert alert-success mb-0">
                                                                 <i class="bx bx-check-circle me-2"></i>
                                                                 No significant risks identified
                                                             </div>
-                                                        @endif
+                                                @endif
                                                     </div>
                                                 </div>
                                             </div>
@@ -607,9 +796,9 @@
             <div class="col-12">
                 <div class="card">
                     <div class="card-body">
-                        <div class="text-center py-5">
-                            <i class="bx bx-folder-open fs-1 text-muted"></i>
-                            <h5 class="mt-3">No Projects Found</h5>
+                <div class="text-center py-5">
+                    <i class="bx bx-folder-open fs-1 text-muted"></i>
+                    <h5 class="mt-3">No Projects Found</h5>
                             <p class="text-muted">No projects match your current filters or search criteria.</p>
                             <a href="{{ route('reports.projects.progress') }}" class="btn btn-primary">
                                 <i class="bx bx-refresh me-1"></i>Clear Filters
@@ -776,4 +965,157 @@ function exportReport(format, type) {
     }
 }
 </style>
+
+<script>
+// Manager Control Functions
+function viewUserTasks(userId, projectId) {
+    // Redirect to user's tasks filtered by project
+    window.open(`{{ url('tasks') }}?user_id=${userId}&project_id=${projectId}`, '_blank');
+}
+
+function viewUserPerformance(userId) {
+    // Redirect to user performance report
+    window.open(`{{ url('reports/users') }}/${userId}`, '_blank');
+}
+
+function sendReminder(userId, projectId) {
+    if (confirm('Send a reminder to this team member about their overdue tasks?')) {
+        // Send AJAX request to send reminder
+        fetch(`{{ url('api/send-reminder') }}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({
+                user_id: userId,
+                project_id: projectId
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Reminder sent successfully!');
+            } else {
+                alert('Failed to send reminder: ' + (data.message || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Failed to send reminder. Please try again.');
+        });
+    }
+}
+
+function exportTeamPerformance(projectId) {
+    // Export team performance data
+    window.open(`{{ url('reports/projects') }}/${projectId}/export/team-performance`, '_blank');
+}
+
+function refreshTeamData(projectId) {
+    // Refresh the current page to get updated data
+    window.location.reload();
+}
+
+function exportProjectTasks(projectId) {
+    // Export project tasks data
+    window.open(`{{ url('reports/projects') }}/${projectId}/export/tasks`, '_blank');
+}
+
+function sendTaskReminder(taskId) {
+    if (confirm('Send a reminder about this overdue task?')) {
+        // Send AJAX request to send task reminder
+        fetch(`{{ url('api/send-task-reminder') }}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({
+                task_id: taskId
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Task reminder sent successfully!');
+            } else {
+                alert('Failed to send reminder: ' + (data.message || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Failed to send reminder. Please try again.');
+        });
+    }
+}
+
+// Auto-refresh data every 5 minutes for managers
+@if(auth()->user()->isManager() || auth()->user()->isSubAdmin())
+setInterval(function() {
+    // Only refresh if user is still on the page
+    if (!document.hidden) {
+        location.reload();
+    }
+}, 300000); // 5 minutes
+@endif
+
+// Enhanced task filtering and search
+function filterTasks(projectId, status = 'all', priority = 'all') {
+    const table = document.querySelector(`#tasks-${projectId} table tbody`);
+    const rows = table.querySelectorAll('tr');
+
+    rows.forEach(row => {
+        const statusCell = row.querySelector('td:nth-child(2) .badge');
+        const priorityCell = row.querySelector('td:nth-child(3) .badge');
+
+        let showRow = true;
+
+        if (status !== 'all') {
+            const taskStatus = statusCell.textContent.toLowerCase().replace(/\s+/g, '_');
+            showRow = showRow && taskStatus.includes(status);
+        }
+
+        if (priority !== 'all') {
+            const taskPriority = priorityCell.textContent.toLowerCase();
+            showRow = showRow && taskPriority.includes(priority);
+        }
+
+        row.style.display = showRow ? '' : 'none';
+    });
+}
+
+// Add filter controls to tasks tab
+document.addEventListener('DOMContentLoaded', function() {
+    // Add filter controls to each tasks tab
+    const taskTabs = document.querySelectorAll('[id^="tasks-"]');
+    taskTabs.forEach(tab => {
+        const projectId = tab.id.split('-')[1];
+        const header = tab.querySelector('h6');
+
+        if (header) {
+            const filterControls = document.createElement('div');
+            filterControls.className = 'mb-3 d-flex gap-2 flex-wrap';
+            filterControls.innerHTML = `
+                <select class="form-select form-select-sm" style="width: auto;" onchange="filterTasks(${projectId}, this.value, document.querySelector('#priority-${projectId}').value)">
+                    <option value="all">All Status</option>
+                    <option value="completed">Completed</option>
+                    <option value="in_progress">In Progress</option>
+                    <option value="pending">Pending</option>
+                    <option value="assigned">Assigned</option>
+                </select>
+                <select id="priority-${projectId}" class="form-select form-select-sm" style="width: auto;" onchange="filterTasks(${projectId}, document.querySelector('#status-${projectId}').value, this.value)">
+                    <option value="all">All Priority</option>
+                    <option value="high">High</option>
+                    <option value="medium">Medium</option>
+                    <option value="low">Low</option>
+                </select>
+                <button class="btn btn-sm btn-outline-secondary" onclick="filterTasks(${projectId}, 'all', 'all')">Clear Filters</button>
+            `;
+
+            header.parentNode.insertBefore(filterControls, header.nextSibling);
+        }
+    });
+});
+</script>
 @endsection

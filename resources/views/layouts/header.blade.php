@@ -1387,22 +1387,32 @@
                                          n.color === 'info' ? '#3b82f6' :
                                          n.type === 'engineering_inbox_user_involved' ? '#8b5cf6' : '#6c757d';
 
+                        // Check if notification requires action
+                        const requiresAction = n.requires_action || false;
+                        
+                        // Enhanced styling for actionable notifications
+                        const actionableBg = requiresAction ? (n.is_read ? '#fff3cd' : '#fff3cd') : (n.is_read ? '#f8f9fa' : '#e3f2fd');
+                        const actionableBorder = requiresAction ? '#ff9800' : (n.is_read ? '#e0e0e0' : '#2196f3');
+                        const actionableBorderWidth = requiresAction ? '4px' : '3px';
+                        const actionableAnimation = requiresAction && !n.is_read ? 'animation: pulse-border 2s infinite;' : '';
+
                         return `
-                          <div class="notification-message p-3 border-bottom" style="transition: all 0.2s ease; cursor: pointer; background: ${n.is_read ? '#f8f9fa' : '#e3f2fd'}; border-left: 3px solid ${n.is_read ? '#e0e0e0' : '#2196f3'};" onclick="handleNotificationClick(${n.id}, '${viewUrl}')">
+                          <div class="notification-message p-3 border-bottom" style="transition: all 0.2s ease; cursor: pointer; background: ${actionableBg}; border-left: ${actionableBorderWidth} solid ${actionableBorder}; ${actionableAnimation} position: relative;" onclick="handleNotificationClick(${n.id}, '${viewUrl}')">
+                            ${requiresAction ? '<div style="position: absolute; top: 8px; right: 8px;"><span class="badge bg-warning text-dark" style="font-size: 9px; font-weight: 600; padding: 3px 6px; box-shadow: 0 2px 4px rgba(255,152,0,0.3);"><i class="bx bx-bell-ring me-1"></i>ACTION REQUIRED</span></div>' : ''}
                             <div class="d-flex align-items-start gap-3">
-                              <div class="notification-avatar" style="width: 40px; height: 40px; background: ${typeColor}; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                              <div class="notification-avatar" style="width: 40px; height: 40px; background: ${requiresAction ? '#ff9800' : typeColor}; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; ${requiresAction && !n.is_read ? 'box-shadow: 0 0 0 4px rgba(255, 152, 0, 0.2); animation: pulse-icon 2s infinite;' : ''}">
                                 <i class="bx ${typeIcon}" style="color: white; font-size: 18px;"></i>
                               </div>
-                              <div class="flex-grow-1" style="min-width: 0;">
+                              <div class="flex-grow-1" style="min-width: 0; ${requiresAction ? 'padding-right: 100px;' : ''}">
                                 <div class="d-flex align-items-center justify-content-between mb-1">
-                                  <h6 class="mb-0 fw-semibold text-dark" style="font-size: 14px;">
+                                  <h6 class="mb-0 fw-semibold ${requiresAction ? 'text-dark' : 'text-dark'}" style="font-size: 14px;">
                                     <span class="badge bg-${n.badge_color || 'primary'} me-2" style="font-size: 10px;">${n.category || 'notification'}</span>
                                     ${title}
                                     ${!n.is_read ? '<span class="badge bg-danger ms-2" style="font-size: 8px;">NEW</span>' : ''}
                                   </h6>
                                   <small class="text-muted" style="font-size: 11px;">${timeAgo}</small>
                                 </div>
-                                <p class="mb-2 text-muted" style="font-size: 13px; line-height: 1.4; margin: 0;">${message}</p>
+                                <p class="mb-2 ${requiresAction ? 'text-dark fw-medium' : 'text-muted'}" style="font-size: 13px; line-height: 1.4; margin: 0;">${message}</p>
                                 ${n.email ? `
                                   <div class="d-flex align-items-center gap-2 mt-2">
                                     <span class="badge bg-light text-dark" style="font-size: 10px; padding: 2px 6px;">
@@ -1414,8 +1424,8 @@
                                   </div>
                                 ` : ''}
                                 ${viewUrl ? `
-                                  <span class="badge bg-primary mt-2" style="font-size: 10px; padding: 2px 6px;">
-                                    <i class="bx bx-link-external me-1"></i>Click to view email
+                                  <span class="badge ${requiresAction ? 'bg-warning text-dark' : 'bg-primary'} mt-2" style="font-size: 10px; padding: 2px 6px;">
+                                    <i class="bx bx-link-external me-1"></i>Click to ${requiresAction ? 'take action' : 'view email'}
                                   </span>
                                 ` : ''}
                               </div>
@@ -1862,13 +1872,23 @@
                                        n.color === 'info' ? '#0dcaf0' :
                                        n.type === 'engineering_inbox_user_involved' ? '#8b5cf6' : '#6c757d';
 
+                      // Check if notification requires action
+                      const requiresAction = n.requires_action || false;
+                      
+                      // Enhanced styling for actionable notifications
+                      const actionableBg = requiresAction ? (n.is_read ? '#fff3cd' : '#fff3cd') : (n.is_read ? '#ffffff' : '#e3f2fd');
+                      const actionableBorder = requiresAction ? '#ff9800' : (n.is_read ? '#e0e0e0' : '#2196f3');
+                      const actionableBorderWidth = requiresAction ? '4px' : '3px';
+                      const actionableAnimation = requiresAction && !n.is_read ? 'animation: pulse-border 2s infinite;' : '';
+
                       return `
-                        <div class="chat-message p-3 border-bottom" style="transition: all 0.2s ease; cursor: pointer; background: ${n.is_read ? '#ffffff' : '#e3f2fd'}; margin: 4px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-left: 3px solid ${n.is_read ? '#e0e0e0' : '#2196f3'};" onclick="handleNotificationClick(${n.id}, '${viewUrl}')">
+                        <div class="chat-message p-3 border-bottom" style="transition: all 0.2s ease; cursor: pointer; background: ${actionableBg}; margin: 4px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-left: ${actionableBorderWidth} solid ${actionableBorder}; ${actionableAnimation} position: relative;" onclick="handleNotificationClick(${n.id}, '${viewUrl}')">
+                          ${requiresAction ? '<div style="position: absolute; top: 6px; right: 6px;"><span class="badge bg-warning text-dark" style="font-size: 8px; font-weight: 600; padding: 2px 5px; box-shadow: 0 2px 4px rgba(255,152,0,0.3);"><i class="bx bx-bell-ring" style="font-size: 8px;"></i> ACTION</span></div>' : ''}
                           <div class="d-flex align-items-start gap-3">
-                            <div class="notification-avatar" style="width: 36px; height: 36px; background: ${typeColor}; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                            <div class="notification-avatar" style="width: 36px; height: 36px; background: ${requiresAction ? '#ff9800' : typeColor}; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; ${requiresAction && !n.is_read ? 'box-shadow: 0 0 0 3px rgba(255, 152, 0, 0.2); animation: pulse-icon 2s infinite;' : ''}">
                               <i class="bx ${typeIcon}" style="color: white; font-size: 16px;"></i>
                             </div>
-                            <div class="flex-grow-1" style="min-width: 0;">
+                            <div class="flex-grow-1" style="min-width: 0; ${requiresAction ? 'padding-right: 60px;' : ''}">
                               <div class="d-flex align-items-center justify-content-between mb-1">
                                 <h6 class="mb-0 fw-semibold text-dark" style="font-size: 13px;">
                                   <span class="badge bg-${n.badge_color} me-2" style="font-size: 9px;">${n.category}</span>
@@ -1877,10 +1897,10 @@
                                 </h6>
                                 <small class="text-muted" style="font-size: 10px;">${timeAgo}</small>
                               </div>
-                              <p class="mb-2 text-muted" style="font-size: 12px; line-height: 1.4; margin: 0;">${message}</p>
+                              <p class="mb-2 ${requiresAction ? 'text-dark fw-medium' : 'text-muted'}" style="font-size: 12px; line-height: 1.4; margin: 0;">${message}</p>
                               ${viewUrl ? `
-                                <span class="badge bg-primary" style="font-size: 9px; padding: 1px 4px;">
-                                  <i class="bx bx-link-external me-1"></i>Click to view ${n.category}
+                                <span class="badge ${requiresAction ? 'bg-warning text-dark' : 'bg-primary'}" style="font-size: 9px; padding: 1px 4px;">
+                                  <i class="bx bx-link-external me-1"></i>Click to ${requiresAction ? 'take action' : 'view ' + n.category}
                                 </span>
                               ` : ''}
                             </div>
@@ -2115,6 +2135,23 @@
                 0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
                 40% { transform: translateY(-3px); }
                 60% { transform: translateY(-2px); }
+              }
+
+              /* Actionable notification pulse animations */
+              @keyframes pulse-border {
+                0%, 100% { border-left-color: #ff9800; }
+                50% { border-left-color: #ff5722; }
+              }
+
+              @keyframes pulse-icon {
+                0%, 100% { 
+                  box-shadow: 0 0 0 4px rgba(255, 152, 0, 0.2);
+                  transform: scale(1);
+                }
+                50% { 
+                  box-shadow: 0 0 0 8px rgba(255, 152, 0, 0.1);
+                  transform: scale(1.05);
+                }
               }
 
               /* Bottom Chat Widget Styles - Always Visible */

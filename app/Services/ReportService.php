@@ -143,8 +143,11 @@ class ReportService
             $mediumPriorityTasks = $tasks->where('priority', 'medium')->count();
             $lowPriorityTasks = $tasks->where('priority', 'low')->count();
 
-            // Team performance
-            $teamPerformance = $project->users->map(function ($user) use ($tasks) {
+            // Team performance - Get users from tasks instead of project->users
+            $assignedUserIds = $tasks->pluck('assigned_to')->filter()->unique();
+            $teamMembers = User::whereIn('id', $assignedUserIds)->get();
+
+            $teamPerformance = $teamMembers->map(function ($user) use ($tasks) {
                 $userTasks = $tasks->where('assigned_to', $user->id);
                 $userCompletedTasks = $userTasks->where('status', 'completed')->count();
                 $userTotalTasks = $userTasks->count();
@@ -152,13 +155,16 @@ class ReportService
                 return [
                     'user_id' => $user->id,
                     'user_name' => $user->name,
+                    'user_email' => $user->email,
                     'total_tasks' => $userTotalTasks,
                     'completed_tasks' => $userCompletedTasks,
-                    'pending_tasks' => $userTasks->whereIn('status', ['pending', 'in_progress'])->count(),
+                    'pending_tasks' => $userTasks->whereIn('status', ['pending', 'assigned', 'in_progress', 'workingon'])->count(),
                     'overdue_tasks' => $userTasks->where('status', '!=', 'completed')
                         ->where('due_date', '<', now())
                         ->count(),
                     'completion_rate' => $userTotalTasks > 0 ? round(($userCompletedTasks / $userTotalTasks) * 100, 2) : 0,
+                    'avg_task_duration' => $this->calculateAverageTaskDuration($userTasks),
+                    'last_activity' => $userTasks->max('updated_at'),
                 ];
             })->sortByDesc('completion_rate')->values();
 
@@ -166,7 +172,7 @@ class ReportService
             $recentTasks = $tasks->sortByDesc('updated_at')->take(10)->map(function ($task) {
                 return [
                     'id' => $task->id,
-                    'name' => $task->name,
+                    'name' => $task->title, // Fixed: Use title instead of name
                     'status' => $task->status,
                     'priority' => $task->priority,
                     'assignee' => $task->assignee->name ?? 'Unassigned',
@@ -545,5 +551,25 @@ class ReportService
             ->where('status', 'rejected')
             ->whereBetween('created_at', [$startDate, $endDate])
             ->count();
+    }
+
+    /**
+     * Calculate average task duration for a user
+     */
+    private function calculateAverageTaskDuration($userTasks)
+    {
+        $completedTasks = $userTasks->where('status', 'completed')
+            ->whereNotNull('completed_at')
+            ->whereNotNull('assigned_at');
+
+        if ($completedTasks->count() === 0) {
+            return 0;
+        }
+
+        $totalDays = $completedTasks->sum(function ($task) {
+            return $task->assigned_at->diffInDays($task->completed_at);
+        });
+
+        return round($totalDays / $completedTasks->count(), 1);
     }
 }

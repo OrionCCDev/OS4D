@@ -32,6 +32,10 @@ class UnifiedNotification extends Model
         'read_at' => 'datetime',
     ];
 
+    protected $appends = [
+        'requires_action',
+    ];
+
     // Relationships
     public function user()
     {
@@ -228,5 +232,40 @@ class UnifiedNotification extends Model
         }
 
         return $query->count();
+    }
+
+    /**
+     * Determine if this notification requires action from the user
+     */
+    public function requiresAction()
+    {
+        // Define notification types that require action
+        $actionableTypes = [
+            // User actionable tasks
+            'task_assigned',
+            'task_resubmit_required',
+            'task_resubmit_enhanced',
+            'task_overdue',
+            
+            // Manager actionable tasks
+            'task_submitted_for_review',
+            'task_waiting_for_review',
+            
+            // Email notifications that may require action
+            'email_reply',
+            'email_received'
+        ];
+
+        // Check if type requires action OR priority is high/urgent
+        return in_array($this->type, $actionableTypes) || 
+               in_array($this->priority, ['high', 'urgent']);
+    }
+
+    /**
+     * Get if notification requires action (accessor)
+     */
+    public function getRequiresActionAttribute()
+    {
+        return $this->requiresAction();
     }
 }

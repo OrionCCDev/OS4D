@@ -308,6 +308,18 @@ class Task extends Model
 
     private function sendNotification(User $user, string $type, string $title, string $message)
     {
+        // Determine priority based on notification type
+        $actionableTypes = [
+            'task_assigned', 
+            'task_resubmit_required', 
+            'task_resubmit_enhanced',
+            'task_submitted_for_review',
+            'task_waiting_for_review',
+            'task_overdue'
+        ];
+        
+        $priority = in_array($type, $actionableTypes) ? 'high' : 'normal';
+        
         UnifiedNotification::createTaskNotification(
             $user->id,
             $type,
@@ -319,7 +331,7 @@ class Task extends Model
                 'due_date' => $this->due_date ? $this->due_date->format('Y-m-d') : null
             ],
             $this->id,
-            'normal'
+            $priority
         );
     }
 
@@ -1102,6 +1114,7 @@ private function notifyManagerAboutReviewFinish()
                 'title' => 'Task Needs Resubmission',
                 'message' => "Your task '{$this->title}' needs to be resubmitted. Manager {$manager->name} requested changes." . ($notes ? " Notes: {$notes}" : ""),
                 'task_id' => $this->id,
+                'priority' => 'high',
                 'data' => [
                     'task_id' => $this->id,
                     'task_title' => $this->title,
@@ -1143,6 +1156,7 @@ private function notifyManagerAboutReviewFinish()
                 'title' => 'Task Resubmission Required - Enhanced',
                 'message' => $message,
                 'task_id' => $this->id,
+                'priority' => 'high',
                 'data' => [
                     'task_id' => $this->id,
                     'task_title' => $this->title,

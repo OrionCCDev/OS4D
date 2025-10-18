@@ -1008,7 +1008,7 @@ class TaskController extends Controller
                         'action_url' => route('tasks.show', $task->id)
                     ],
                     $task->id,
-                    'normal'
+                    'high'
                 );
 
                 Log::info('In-app notifications sent to manager: ' . $manager->email . ' for task: ' . $task->id);
@@ -1961,6 +1961,7 @@ private function sendApprovalEmailViaGmail(Task $task, User $approver)
                 'title' => 'Task Submitted for Review',
                 'message' => "User {$user->name} has submitted task: {$task->title} for review",
                 'task_id' => $task->id,
+                'priority' => 'high',
                 'data' => [
                     'task_id' => $task->id,
                     'user_id' => $user->id,
