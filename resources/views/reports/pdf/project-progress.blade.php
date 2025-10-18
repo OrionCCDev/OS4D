@@ -342,6 +342,244 @@
                 </table>
             @endif
 
+            <!-- Detailed Tasks List -->
+            @if(count($project['recent_tasks']) > 0)
+                <div class="section-title">Complete Tasks Details</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 25%;">Task Name & Description</th>
+                            <th style="width: 10%; text-align: center;">Status</th>
+                            <th style="width: 8%; text-align: center;">Priority</th>
+                            <th style="width: 12%;">Assignee</th>
+                            <th style="width: 10%; text-align: center;">Created</th>
+                            <th style="width: 10%; text-align: center;">Due Date</th>
+                            <th style="width: 10%; text-align: center;">Completed</th>
+                            <th style="width: 8%; text-align: center;">Timeline</th>
+                            <th style="width: 7%; text-align: center;">Days</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($project['recent_tasks'] as $task)
+                            <tr style="{{ $task['is_overdue'] ? 'background-color: #fff5f5;' : '' }}">
+                                <td style="font-weight: bold; {{ $task['is_overdue'] ? 'color: #dc3545;' : '' }}">
+                                    <div style="margin-bottom: 3px;">{{ $task['name'] }}</div>
+                                    @if($task['description'])
+                                        <div style="font-size: 9px; color: #666; font-weight: normal; margin-top: 2px;">
+                                            {{ Str::limit($task['description'], 60) }}
+                                        </div>
+                                    @endif
+                                    @if($task['is_overdue'])
+                                        <div style="color: #dc3545; font-weight: bold; font-size: 9px; margin-top: 2px;">⚠ OVERDUE</div>
+                                    @endif
+                                    @if($task['completion_notes'])
+                                        <div style="font-size: 9px; color: #28c76f; font-style: italic; margin-top: 2px;">
+                                            Notes: {{ Str::limit($task['completion_notes'], 40) }}
+                                        </div>
+                                    @endif
+                                </td>
+                                <td style="text-align: center;">
+                                    <span style="
+                                        display: inline-block;
+                                        padding: 2px 6px;
+                                        border-radius: 3px;
+                                        font-size: 9px;
+                                        font-weight: bold;
+                                        background-color: {{ $task['status'] === 'completed' ? '#28c76f' : ($task['status'] === 'in_progress' || $task['status'] === 'workingon' ? '#ff9f43' : ($task['status'] === 'assigned' ? '#17a2b8' : '#6c757d')) }};
+                                        color: white;
+                                    ">
+                                        {{ ucfirst(str_replace('_', ' ', $task['status'])) }}
+                                    </span>
+                                </td>
+                                <td style="text-align: center;">
+                                    <span style="
+                                        display: inline-block;
+                                        padding: 2px 6px;
+                                        border-radius: 3px;
+                                        font-size: 9px;
+                                        font-weight: bold;
+                                        background-color: {{ $task['priority'] === 'high' ? '#dc3545' : ($task['priority'] === 'medium' ? '#ffc107' : '#17a2b8') }};
+                                        color: {{ $task['priority'] === 'medium' ? '#000' : 'white' }};
+                                    ">
+                                        {{ ucfirst($task['priority']) }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div style="font-weight: bold;">{{ $task['assignee'] }}</div>
+                                    @if($task['assignee_email'])
+                                        <div style="font-size: 9px; color: #666;">{{ $task['assignee_email'] }}</div>
+                                    @endif
+                                    <div style="font-size: 9px; color: #666;">Created by: {{ $task['created_by'] }}</div>
+                                </td>
+                                <td style="text-align: center; font-size: 10px;">
+                                    @if($task['created_at'])
+                                        {{ \Carbon\Carbon::parse($task['created_at'])->format('M d, Y') }}
+                                    @else
+                                        <span style="color: #6c757d;">-</span>
+                                    @endif
+                                </td>
+                                <td style="text-align: center; {{ $task['is_overdue'] ? 'color: #dc3545; font-weight: bold;' : '' }}">
+                                    @if($task['due_date'])
+                                        <div style="font-size: 10px;">{{ \Carbon\Carbon::parse($task['due_date'])->format('M d, Y') }}</div>
+                                        @if($task['assigned_at'])
+                                            <div style="font-size: 8px; color: #666;">Assigned: {{ \Carbon\Carbon::parse($task['assigned_at'])->format('M d') }}</div>
+                                        @endif
+                                    @else
+                                        <span style="color: #6c757d;">No due date</span>
+                                    @endif
+                                </td>
+                                <td style="text-align: center;">
+                                    @if($task['completed_at'])
+                                        <div style="color: #28c76f; font-weight: bold; font-size: 10px;">
+                                            {{ \Carbon\Carbon::parse($task['completed_at'])->format('M d, Y') }}
+                                        </div>
+                                        @if($task['started_at'])
+                                            <div style="font-size: 8px; color: #666;">Started: {{ \Carbon\Carbon::parse($task['started_at'])->format('M d') }}</div>
+                                        @endif
+                                    @else
+                                        <span style="color: #6c757d;">-</span>
+                                    @endif
+                                </td>
+                                <td style="text-align: center; font-size: 9px;">
+                                    @if($task['assigned_at'] && $task['completed_at'])
+                                        @php
+                                            $assignedDate = \Carbon\Carbon::parse($task['assigned_at']);
+                                            $completedDate = \Carbon\Carbon::parse($task['completed_at']);
+                                            $duration = $assignedDate->diffInDays($completedDate);
+                                        @endphp
+                                        <span style="color: #28c76f;">{{ $duration }}d</span>
+                                    @elseif($task['assigned_at'] && $task['status'] !== 'completed')
+                                        @php
+                                            $assignedDate = \Carbon\Carbon::parse($task['assigned_at']);
+                                            $duration = $assignedDate->diffInDays(now());
+                                        @endphp
+                                        <span style="color: #ff9f43;">{{ $duration }}d</span>
+                                    @else
+                                        <span style="color: #6c757d;">-</span>
+                                    @endif
+                                </td>
+                                <td style="text-align: center; font-size: 9px;">
+                                    @if($task['due_date'])
+                                        @if($task['status'] === 'completed')
+                                            <span style="color: #28c76f;">✓ Done</span>
+                                        @elseif($task['is_overdue'])
+                                            <span style="color: #dc3545; font-weight: bold;">{{ $task['days_overdue'] }}d late</span>
+                                        @elseif($task['days_remaining'] == 0)
+                                            <span style="color: #ffc107; font-weight: bold;">Due today</span>
+                                        @elseif($task['days_remaining'] <= 3)
+                                            <span style="color: #ff9f43;">{{ $task['days_remaining'] }}d left</span>
+                                        @else
+                                            <span style="color: #6c757d;">{{ $task['days_remaining'] }}d left</span>
+                                        @endif
+                                    @else
+                                        <span style="color: #6c757d;">-</span>
+                                    @endif
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+
+                <!-- Task Summary Statistics -->
+                <div style="margin-top: 15px; padding: 10px; background-color: #f8f9fa; border-radius: 5px;">
+                    <div style="display: table; width: 100%;">
+                        <div style="display: table-row;">
+                            <div style="display: table-cell; width: 25%; text-align: center; padding: 5px;">
+                                <div style="font-size: 16px; font-weight: bold; color: #4472C4;">{{ count($project['recent_tasks']) }}</div>
+                                <div style="font-size: 10px; color: #666;">Total Tasks</div>
+                            </div>
+                            <div style="display: table-cell; width: 25%; text-align: center; padding: 5px;">
+                                <div style="font-size: 16px; font-weight: bold; color: #28c76f;">{{ $project['recent_tasks']->where('status', 'completed')->count() }}</div>
+                                <div style="font-size: 10px; color: #666;">Completed</div>
+                            </div>
+                            <div style="display: table-cell; width: 25%; text-align: center; padding: 5px;">
+                                <div style="font-size: 16px; font-weight: bold; color: #ff9f43;">{{ $project['recent_tasks']->whereIn('status', ['in_progress', 'workingon'])->count() }}</div>
+                                <div style="font-size: 10px; color: #666;">In Progress</div>
+                            </div>
+                            <div style="display: table-cell; width: 25%; text-align: center; padding: 5px;">
+                                <div style="font-size: 16px; font-weight: bold; color: #dc3545;">{{ $project['recent_tasks']->where('is_overdue', true)->count() }}</div>
+                                <div style="font-size: 10px; color: #666;">Overdue</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Task Priority & Status Breakdown -->
+                <div style="margin-top: 15px;">
+                    <div style="display: table; width: 100%;">
+                        <div style="display: table-row;">
+                            <div style="display: table-cell; width: 50%; padding-right: 10px;">
+                                <div style="font-size: 12px; font-weight: bold; color: #4472C4; margin-bottom: 8px;">Priority Distribution</div>
+                                <table style="width: 100%; font-size: 10px;">
+                                    <tr>
+                                        <td style="padding: 3px; background-color: #dc3545; color: white; font-weight: bold;">High Priority</td>
+                                        <td style="padding: 3px; text-align: center; background-color: #f8f9fa;">{{ $project['recent_tasks']->where('priority', 'high')->count() }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 3px; background-color: #ffc107; color: black; font-weight: bold;">Medium Priority</td>
+                                        <td style="padding: 3px; text-align: center; background-color: #f8f9fa;">{{ $project['recent_tasks']->where('priority', 'medium')->count() }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 3px; background-color: #17a2b8; color: white; font-weight: bold;">Low Priority</td>
+                                        <td style="padding: 3px; text-align: center; background-color: #f8f9fa;">{{ $project['recent_tasks']->where('priority', 'low')->count() }}</td>
+                                    </tr>
+                                </table>
+                            </div>
+                            <div style="display: table-cell; width: 50%; padding-left: 10px;">
+                                <div style="font-size: 12px; font-weight: bold; color: #4472C4; margin-bottom: 8px;">Status Distribution</div>
+                                <table style="width: 100%; font-size: 10px;">
+                                    <tr>
+                                        <td style="padding: 3px; background-color: #28c76f; color: white; font-weight: bold;">Completed</td>
+                                        <td style="padding: 3px; text-align: center; background-color: #f8f9fa;">{{ $project['recent_tasks']->where('status', 'completed')->count() }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 3px; background-color: #ff9f43; color: white; font-weight: bold;">In Progress</td>
+                                        <td style="padding: 3px; text-align: center; background-color: #f8f9fa;">{{ $project['recent_tasks']->whereIn('status', ['in_progress', 'workingon'])->count() }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 3px; background-color: #17a2b8; color: white; font-weight: bold;">Assigned</td>
+                                        <td style="padding: 3px; text-align: center; background-color: #f8f9fa;">{{ $project['recent_tasks']->where('status', 'assigned')->count() }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 3px; background-color: #6c757d; color: white; font-weight: bold;">Pending</td>
+                                        <td style="padding: 3px; text-align: center; background-color: #f8f9fa;">{{ $project['recent_tasks']->where('status', 'pending')->count() }}</td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Task Timeline Analysis -->
+                @php
+                    $completedTasks = $project['recent_tasks']->where('status', 'completed');
+                    $avgCompletionTime = $completedTasks->where('assigned_at', '!=', null)->map(function($task) {
+                        if ($task['assigned_at'] && $task['completed_at']) {
+                            return \Carbon\Carbon::parse($task['assigned_at'])->diffInDays(\Carbon\Carbon::parse($task['completed_at']));
+                        }
+                        return null;
+                    })->filter()->avg();
+                @endphp
+
+                @if($avgCompletionTime)
+                <div style="margin-top: 15px; padding: 10px; background-color: #e8f4fd; border-radius: 5px; border-left: 4px solid #17a2b8;">
+                    <div style="font-size: 12px; font-weight: bold; color: #4472C4; margin-bottom: 5px;">📊 Task Performance Insights</div>
+                    <div style="font-size: 10px; color: #666;">
+                        • Average completion time: <strong>{{ round($avgCompletionTime, 1) }} days</strong><br>
+                        • Most productive period: {{ $completedTasks->count() > 0 ? 'Last ' . $completedTasks->count() . ' completed tasks' : 'No completed tasks yet' }}<br>
+                        • Overdue tasks requiring attention: <strong style="color: #dc3545;">{{ $project['recent_tasks']->where('is_overdue', true)->count() }}</strong>
+                    </div>
+                </div>
+                @endif
+            @else
+                <div class="section-title">Detailed Tasks List</div>
+                <div style="text-align: center; padding: 20px; color: #6c757d; background-color: #f8f9fa; border-radius: 5px;">
+                    <div style="font-size: 24px; margin-bottom: 10px;">📋</div>
+                    <div style="font-weight: bold;">No tasks found for this project</div>
+                    <div style="font-size: 11px; margin-top: 5px;">Tasks will appear here once they are created and assigned to this project.</div>
+                </div>
+            @endif
+
             <!-- Risk Assessment -->
             @if($project['is_at_risk'])
                 <div class="section-title">Risk Assessment</div>

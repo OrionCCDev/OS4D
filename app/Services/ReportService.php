@@ -29,8 +29,9 @@ class ReportService
         }
 
         // Apply filters
-        if (isset($filters['status']) && !empty($filters['status'])) {
-            $query->whereIn('status', $filters['status']);
+        if (isset($filters['status']) && !empty($filters['status']) && $filters['status'] !== 'all') {
+            $statusArray = is_array($filters['status']) ? $filters['status'] : [$filters['status']];
+            $query->whereIn('status', $statusArray);
         }
 
         if (isset($filters['date_from']) && $filters['date_from']) {
@@ -102,8 +103,9 @@ class ReportService
         }
 
         // Apply filters
-        if (isset($filters['status']) && !empty($filters['status'])) {
-            $query->whereIn('status', $filters['status']);
+        if (isset($filters['status']) && !empty($filters['status']) && $filters['status'] !== 'all') {
+            $statusArray = is_array($filters['status']) ? $filters['status'] : [$filters['status']];
+            $query->whereIn('status', $statusArray);
         }
 
         if (isset($filters['date_from']) && $filters['date_from']) {
@@ -168,17 +170,30 @@ class ReportService
                 ];
             })->sortByDesc('completion_rate')->values();
 
-            // Recent tasks (last 10)
+            // Recent tasks (last 10) - Enhanced for PDF export
             $recentTasks = $tasks->sortByDesc('updated_at')->take(10)->map(function ($task) {
                 return [
                     'id' => $task->id,
                     'name' => $task->title, // Fixed: Use title instead of name
+                    'description' => $task->description,
                     'status' => $task->status,
                     'priority' => $task->priority,
                     'assignee' => $task->assignee->name ?? 'Unassigned',
+                    'assignee_email' => $task->assignee->email ?? null,
+                    'created_by' => $task->creator->name ?? 'Unknown',
+                    'created_at' => $task->created_at,
+                    'assigned_at' => $task->assigned_at,
+                    'started_at' => $task->started_at,
                     'due_date' => $task->due_date,
                     'completed_at' => $task->completed_at,
+                    'completion_notes' => $task->completion_notes,
                     'is_overdue' => $task->status != 'completed' && $task->due_date && $task->due_date < now(),
+                    'days_overdue' => $task->status != 'completed' && $task->due_date && $task->due_date < now()
+                        ? now()->diffInDays($task->due_date)
+                        : 0,
+                    'days_remaining' => $task->status != 'completed' && $task->due_date
+                        ? now()->diffInDays($task->due_date, false)
+                        : null,
                 ];
             })->values();
 
