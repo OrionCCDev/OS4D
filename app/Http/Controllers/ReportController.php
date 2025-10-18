@@ -226,9 +226,41 @@ class ReportController extends Controller
      */
     public function exportPdf(Request $request, $reportType)
     {
-        // This would implement PDF export functionality
-        // For now, return a placeholder response
-        return response()->json(['message' => 'PDF export not implemented yet']);
+        $filters = $this->getFiltersFromRequest($request);
+
+        switch ($reportType) {
+            case 'project-progress':
+                // Get all projects (not paginated) for export
+                $projectsQuery = $this->reportService->getDetailedProjectProgress($filters, $request);
+                $projects = $projectsQuery->items(); // Get all items from paginator
+
+                $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('reports.pdf.project-progress', [
+                    'projects' => $projects,
+                    'filters' => $filters,
+                ]);
+
+                $pdf->setPaper('a4', 'portrait');
+                $filename = 'project-progress-report-' . now()->format('Y-m-d') . '.pdf';
+
+                return $pdf->download($filename);
+
+            case 'projects':
+                $projectsQuery = $this->reportService->getProjectOverviewReport($filters, $request);
+                $projects = $projectsQuery->items();
+
+                $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('reports.pdf.project-progress', [
+                    'projects' => $projects,
+                    'filters' => $filters,
+                ]);
+
+                $pdf->setPaper('a4', 'portrait');
+                $filename = 'projects-overview-' . now()->format('Y-m-d') . '.pdf';
+
+                return $pdf->download($filename);
+
+            default:
+                return response()->json(['message' => 'Report type not supported'], 400);
+        }
     }
 
     /**
@@ -236,9 +268,25 @@ class ReportController extends Controller
      */
     public function exportExcel(Request $request, $reportType)
     {
-        // This would implement Excel export functionality
-        // For now, return a placeholder response
-        return response()->json(['message' => 'Excel export not implemented yet']);
+        $filters = $this->getFiltersFromRequest($request);
+
+        switch ($reportType) {
+            case 'project-progress':
+            case 'projects':
+                // Get all projects (not paginated) for export
+                $projectsQuery = $this->reportService->getDetailedProjectProgress($filters, $request);
+                $projects = $projectsQuery->items(); // Get all items from paginator
+
+                $filename = 'project-progress-report-' . now()->format('Y-m-d') . '.xlsx';
+
+                return \Maatwebsite\Excel\Facades\Excel::download(
+                    new \App\Exports\ProjectProgressExport($projects),
+                    $filename
+                );
+
+            default:
+                return response()->json(['message' => 'Report type not supported'], 400);
+        }
     }
 
     /**
