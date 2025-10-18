@@ -63,7 +63,7 @@ class ReportController extends Controller
     public function projects(Request $request): View
     {
         $filters = $this->getFiltersFromRequest($request);
-        $projects = $this->reportService->getProjectOverviewReport($filters);
+        $projects = $this->reportService->getProjectOverviewReport($filters, $request);
 
         return view('reports.projects.overview', compact('projects', 'filters'));
     }

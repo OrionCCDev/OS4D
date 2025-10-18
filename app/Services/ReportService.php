@@ -15,9 +15,18 @@ class ReportService
     /**
      * Generate project overview report
      */
-    public function getProjectOverviewReport($filters = [])
+    public function getProjectOverviewReport($filters = [], $request = null)
     {
         $query = Project::with(['tasks', 'users', 'owner']);
+
+        // Apply search filter
+        if ($request && $request->filled('search')) {
+            $searchTerm = $request->get('search');
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where('name', 'like', "%{$searchTerm}%")
+                  ->orWhere('short_code', 'like', "%{$searchTerm}%");
+            });
+        }
 
         // Apply filters
         if (isset($filters['status'])) {
@@ -32,20 +41,26 @@ class ReportService
             $query->where('created_at', '<=', $filters['date_to']);
         }
 
-        $projects = $query->get();
+        // Get paginated results
+        $projects = $query->paginate(10);
 
-        return $projects->map(function ($project) {
+        // Transform the data
+        $transformedProjects = $projects->getCollection()->map(function ($project) {
             $totalTasks = $project->tasks->count();
             $completedTasks = $project->tasks->where('status', 'completed')->count();
             $overdueTasks = $project->tasks->where('status', '!=', 'completed')
                 ->where('due_date', '<', now())
                 ->count();
 
+            // Count sub-folders (assuming you have a folders relationship or similar)
+            $subFoldersCount = 0; // This would need to be implemented based on your folder structure
+
             return [
                 'id' => $project->id,
                 'name' => $project->name,
+                'short_code' => $project->short_code ?? 'N/A',
                 'status' => $project->status,
-                'owner' => $project->owner->name,
+                'owner' => $project->owner->name ?? 'N/A',
                 'start_date' => $project->start_date,
                 'due_date' => $project->due_date,
                 'total_tasks' => $totalTasks,
@@ -53,9 +68,16 @@ class ReportService
                 'overdue_tasks' => $overdueTasks,
                 'completion_percentage' => $totalTasks > 0 ? round(($completedTasks / $totalTasks) * 100, 2) : 0,
                 'team_size' => $project->users->count(),
+                'sub_folders_count' => $subFoldersCount,
+                'users_involved' => $project->users->pluck('name')->toArray(),
                 'created_at' => $project->created_at,
             ];
         });
+
+        // Replace the collection in the paginator
+        $projects->setCollection($transformedProjects);
+
+        return $projects;
     }
 
     /**

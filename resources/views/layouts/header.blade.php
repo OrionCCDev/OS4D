@@ -718,11 +718,9 @@
                 <!-- User -->
                 <li class="nav-item navbar-dropdown dropdown-user dropdown">
                   <a class="nav-link dropdown-toggle hide-arrow" href="javascript:void(0);" data-bs-toggle="dropdown">
-                    <div class="avatar avatar-online nav-profile-avatar">
+                    <div class="nav-profile-avatar">
                       <img src="{{ asset('uploads/users/' . (Auth::user()->img ?: 'default.png')) }}"
-                           alt="{{ Auth::user()->name }}"
-                           class="w-px-40 h-px-40 rounded-circle object-fit-cover"
-                           style="width: 40px; height: 40px; object-fit: cover;" />
+                           alt="{{ Auth::user()->name }}" />
                     </div>
                   </a>
                   <ul class="dropdown-menu dropdown-menu-end">
@@ -730,11 +728,9 @@
                       <a class="dropdown-item" href="#">
                         <div class="d-flex">
                           <div class="flex-shrink-0 me-3">
-                            <div class="avatar avatar-online">
+                            <div class="nav-profile-avatar">
                               <img src="{{ asset('uploads/users/' . (Auth::user()->img ?: 'default.png')) }}"
-                                   alt="{{ Auth::user()->name }}"
-                                   class="w-px-40 h-px-40 rounded-circle object-fit-cover"
-                                   style="width: 40px; height: 40px; object-fit: cover;" />
+                                   alt="{{ Auth::user()->name }}" />
                             </div>
                           </div>
                           <div class="flex-grow-1">
@@ -2250,11 +2246,27 @@
               .nav-profile-avatar {
                 position: relative;
                 display: inline-block;
+                width: 40px;
+                height: 40px;
+                padding: 0;
+                margin: 0;
+                overflow: hidden;
+                border-radius: 50%;
               }
 
               .nav-profile-avatar img {
+                width: 40px !important;
+                height: 40px !important;
+                border-radius: 50% !important;
+                object-fit: cover !important;
+                object-position: center !important;
                 transition: all 0.3s ease;
                 border: 2px solid transparent;
+                display: block;
+                max-width: 40px !important;
+                max-height: 40px !important;
+                min-width: 40px !important;
+                min-height: 40px !important;
               }
 
               .nav-profile-avatar:hover img {
@@ -2265,38 +2277,79 @@
 
               /* Responsive sizing for different screen sizes */
               @media (max-width: 768px) {
+                .nav-profile-avatar {
+                  width: 35px;
+                  height: 35px;
+                  padding: 0;
+                  margin: 0;
+                  overflow: hidden;
+                  border-radius: 50%;
+                }
                 .nav-profile-avatar img {
                   width: 35px !important;
                   height: 35px !important;
+                  max-width: 35px !important;
+                  max-height: 35px !important;
+                  min-width: 35px !important;
+                  min-height: 35px !important;
                 }
               }
 
               @media (max-width: 576px) {
+                .nav-profile-avatar {
+                  width: 32px;
+                  height: 32px;
+                  padding: 0;
+                  margin: 0;
+                  overflow: hidden;
+                  border-radius: 50%;
+                }
                 .nav-profile-avatar img {
                   width: 32px !important;
                   height: 32px !important;
+                  max-width: 32px !important;
+                  max-height: 32px !important;
+                  min-width: 32px !important;
+                  min-height: 32px !important;
                 }
               }
 
               @media (max-width: 480px) {
+                .nav-profile-avatar {
+                  width: 30px;
+                  height: 30px;
+                  padding: 0;
+                  margin: 0;
+                  overflow: hidden;
+                  border-radius: 50%;
+                }
                 .nav-profile-avatar img {
                   width: 30px !important;
                   height: 30px !important;
+                  max-width: 30px !important;
+                  max-height: 30px !important;
+                  min-width: 30px !important;
+                  min-height: 30px !important;
                 }
-              }
-
-              /* Ensure proper object-fit for all images */
-              .nav-profile-avatar img,
-              .avatar img {
-                object-fit: cover !important;
-                object-position: center !important;
               }
 
               /* Fix for very small screens */
               @media (max-width: 360px) {
+                .nav-profile-avatar {
+                  width: 28px;
+                  height: 28px;
+                  padding: 0;
+                  margin: 0;
+                  overflow: hidden;
+                  border-radius: 50%;
+                }
                 .nav-profile-avatar img {
                   width: 28px !important;
                   height: 28px !important;
+                  max-width: 28px !important;
+                  max-height: 28px !important;
+                  min-width: 28px !important;
+                  min-height: 28px !important;
                 }
               }
             </style>

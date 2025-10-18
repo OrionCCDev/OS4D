@@ -24,10 +24,26 @@
         </div>
     </div>
 
-    <!-- Filters -->
+    <!-- Search and Filters -->
     <div class="card mb-4">
         <div class="card-body">
             <form method="GET" action="{{ route('reports.projects') }}" id="filterForm">
+                <!-- Search Bar -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="search" class="form-label">Search Projects</label>
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="bx bx-search"></i>
+                            </span>
+                            <input type="text" class="form-control" id="search" name="search"
+                                   placeholder="Search by project name or short code..."
+                                   value="{{ request('search') }}">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filters -->
                 <div class="row g-3">
                     <div class="col-md-3">
                         <label for="status" class="form-label">Status</label>
@@ -64,8 +80,9 @@
 
     <!-- Projects Table -->
     <div class="card">
-        <div class="card-header">
+        <div class="card-header d-flex justify-content-between align-items-center">
             <h5 class="card-title mb-0">Project Overview</h5>
+            <span class="badge bg-primary">{{ $projects->total() }} Projects</span>
         </div>
         <div class="card-body">
             @if($projects->count() > 0)
@@ -73,12 +90,13 @@
                     <table class="table table-hover">
                         <thead>
                             <tr>
-                                <th>Project Name</th>
+                                <th>Project Details</th>
                                 <th>Status</th>
                                 <th>Owner</th>
                                 <th>Progress</th>
                                 <th>Tasks</th>
-                                <th>Team Size</th>
+                                <th>Sub Folders</th>
+                                <th>Team Members</th>
                                 <th>Due Date</th>
                                 <th>Actions</th>
                             </tr>
@@ -95,7 +113,10 @@
                                             </div>
                                             <div>
                                                 <h6 class="mb-0">{{ $project['name'] }}</h6>
-                                                <small class="text-muted">Created {{ $project['created_at']->format('M d, Y') }}</small>
+                                                <small class="text-muted">
+                                                    Code: {{ $project['short_code'] }} |
+                                                    Created {{ $project['created_at']->format('M d, Y') }}
+                                                </small>
                                             </div>
                                         </div>
                                     </td>
@@ -114,13 +135,28 @@
                                         </div>
                                     </td>
                                     <td>
-                                        <span class="badge bg-info">{{ $project['completed_tasks'] }}/{{ $project['total_tasks'] }}</span>
-                                        @if($project['overdue_tasks'] > 0)
-                                            <span class="badge bg-danger ms-1">{{ $project['overdue_tasks'] }} overdue</span>
-                                        @endif
+                                        <div class="d-flex flex-column">
+                                            <span class="badge bg-info mb-1">{{ $project['completed_tasks'] }}/{{ $project['total_tasks'] }}</span>
+                                            @if($project['overdue_tasks'] > 0)
+                                                <span class="badge bg-danger">{{ $project['overdue_tasks'] }} overdue</span>
+                                            @endif
+                                        </div>
                                     </td>
                                     <td>
-                                        <span class="badge bg-secondary">{{ $project['team_size'] }} members</span>
+                                        <span class="badge bg-secondary">{{ $project['sub_folders_count'] }} folders</span>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex flex-column">
+                                            <span class="badge bg-light text-dark">{{ $project['team_size'] }} members</span>
+                                            @if(count($project['users_involved']) > 0)
+                                                <small class="text-muted mt-1">
+                                                    {{ implode(', ', array_slice($project['users_involved'], 0, 2)) }}
+                                                    @if(count($project['users_involved']) > 2)
+                                                        +{{ count($project['users_involved']) - 2 }} more
+                                                    @endif
+                                                </small>
+                                            @endif
+                                        </div>
                                     </td>
                                     <td>
                                         @if($project['due_date'])
@@ -145,11 +181,26 @@
                         </tbody>
                     </table>
                 </div>
+
+                <!-- Pagination -->
+                <div class="d-flex justify-content-between align-items-center mt-4">
+                    <div class="text-muted">
+                        Showing {{ $projects->firstItem() }} to {{ $projects->lastItem() }} of {{ $projects->total() }} projects
+                    </div>
+                    <div>
+                        {{ $projects->withQueryString()->links('vendor.pagination.bootstrap-5') }}
+                    </div>
+                </div>
             @else
                 <div class="text-center py-5">
                     <i class="bx bx-folder-open fs-1 text-muted"></i>
                     <h5 class="mt-3">No Projects Found</h5>
-                    <p class="text-muted">No projects match your current filters.</p>
+                    <p class="text-muted">No projects match your current search and filters.</p>
+                    @if(request('search'))
+                        <button class="btn btn-outline-primary" onclick="clearSearch()">
+                            <i class="bx bx-x me-1"></i>Clear Search
+                        </button>
+                    @endif
                 </div>
             @endif
         </div>
@@ -167,10 +218,84 @@ function clearFilters() {
     document.getElementById('filterForm').submit();
 }
 
+function clearSearch() {
+    document.getElementById('search').value = '';
+    document.getElementById('filterForm').submit();
+}
+
 function exportReport(format, type) {
     const baseUrl = '{{ url("reports/export") }}';
     const url = `${baseUrl}/${format}/${type}`;
     window.open(url, '_blank');
 }
+
+// Auto-submit search after 500ms delay
+let searchTimeout;
+document.getElementById('search').addEventListener('input', function() {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+        document.getElementById('filterForm').submit();
+    }, 500);
+});
 </script>
+
+<style>
+/* Enhanced table styling */
+.table th {
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
+    font-weight: 600;
+    color: #495057;
+}
+
+.table td {
+    vertical-align: middle;
+}
+
+.badge {
+    font-size: 0.75rem;
+}
+
+.progress {
+    border-radius: 10px;
+}
+
+.progress-bar {
+    border-radius: 10px;
+}
+
+/* Responsive table */
+@media (max-width: 768px) {
+    .table-responsive {
+        font-size: 0.875rem;
+    }
+
+    .table th,
+    .table td {
+        padding: 0.5rem;
+    }
+}
+
+/* Search input styling */
+.input-group-text {
+    background-color: #f8f9fa;
+    border-color: #ced4da;
+}
+
+/* Pagination styling */
+.pagination .page-link {
+    color: #696cff;
+    border-color: #e1e4e8;
+}
+
+.pagination .page-item.active .page-link {
+    background-color: #696cff;
+    border-color: #696cff;
+}
+
+.pagination .page-link:hover {
+    background-color: #e1e4e8;
+    border-color: #696cff;
+}
+</style>
 @endsection
