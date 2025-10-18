@@ -41,6 +41,12 @@
                                    value="{{ request('search') }}">
                         </div>
                     </div>
+                    <div class="col-md-2">
+                        <label class="form-label">&nbsp;</label>
+                        <button type="button" class="btn btn-outline-info" onclick="testSearch()">
+                            <i class="bx bx-bug me-1"></i>Debug
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Filters -->
@@ -223,6 +229,27 @@ function clearSearch() {
     document.getElementById('filterForm').submit();
 }
 
+function testSearch() {
+    const searchTerm = document.getElementById('search').value;
+    if (!searchTerm) {
+        alert('Please enter a search term first');
+        return;
+    }
+
+    console.log('Testing search with term:', searchTerm);
+
+    fetch(`{{ route('reports.debug.search') }}?search=${encodeURIComponent(searchTerm)}`)
+        .then(response => response.json())
+        .then(data => {
+            console.log('Debug search result:', data);
+            alert(`Search term: "${data.search_term}"\nFound ${data.count} projects:\n${data.projects.map(p => `- ${p.name} (${p.short_code || 'No code'})`).join('\n')}`);
+        })
+        .catch(error => {
+            console.error('Debug search error:', error);
+            alert('Error testing search: ' + error.message);
+        });
+}
+
 function exportReport(format, type) {
     const baseUrl = '{{ url("reports/export") }}';
     const url = `${baseUrl}/${format}/${type}`;
@@ -234,8 +261,18 @@ let searchTimeout;
 document.getElementById('search').addEventListener('input', function() {
     clearTimeout(searchTimeout);
     searchTimeout = setTimeout(() => {
+        console.log('Auto-submitting search with value:', this.value);
         document.getElementById('filterForm').submit();
     }, 500);
+});
+
+// Also submit on Enter key
+document.getElementById('search').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        console.log('Manual submit on Enter with value:', this.value);
+        document.getElementById('filterForm').submit();
+    }
 });
 </script>
 

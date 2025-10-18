@@ -29,15 +29,15 @@ class ReportService
         }
 
         // Apply filters
-        if (isset($filters['status'])) {
+        if (isset($filters['status']) && !empty($filters['status'])) {
             $query->whereIn('status', $filters['status']);
         }
 
-        if (isset($filters['date_from'])) {
+        if (isset($filters['date_from']) && $filters['date_from']) {
             $query->where('created_at', '>=', $filters['date_from']);
         }
 
-        if (isset($filters['date_to'])) {
+        if (isset($filters['date_to']) && $filters['date_to']) {
             $query->where('created_at', '<=', $filters['date_to']);
         }
 

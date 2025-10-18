@@ -284,12 +284,19 @@ class ReportController extends Controller
      */
     private function getFiltersFromRequest(Request $request): array
     {
+        $status = $request->get('status', []);
+
+        // Ensure status is always an array
+        if (!is_array($status)) {
+            $status = $status ? [$status] : [];
+        }
+
         return [
             'date_from' => $request->get('date_from'),
             'date_to' => $request->get('date_to'),
             'user_id' => $request->get('user_id'),
             'project_id' => $request->get('project_id'),
-            'status' => $request->get('status', []),
+            'status' => $status,
             'priority' => $request->get('priority', []),
         ];
     }

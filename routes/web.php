@@ -99,6 +99,19 @@ Route::middleware('auth')->group(function () {
         Route::get('/api/users', [App\Http\Controllers\ReportController::class, 'getUsers'])->name('api.users');
         Route::get('/api/projects', [App\Http\Controllers\ReportController::class, 'getProjects'])->name('api.projects');
         Route::get('/api/users/{user}/metrics', [App\Http\Controllers\ReportController::class, 'getUserMetrics'])->name('api.user.metrics');
+
+        // Debug route for search testing
+        Route::get('/debug-search', function(Request $request) {
+            $searchTerm = $request->get('search');
+            $projects = \App\Models\Project::where('name', 'like', "%{$searchTerm}%")
+                ->orWhere('short_code', 'like', "%{$searchTerm}%")
+                ->get(['id', 'name', 'short_code']);
+            return response()->json([
+                'search_term' => $searchTerm,
+                'projects' => $projects,
+                'count' => $projects->count()
+            ]);
+        })->name('debug.search');
     });
 
     // Email monitoring routes
