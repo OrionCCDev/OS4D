@@ -74,9 +74,12 @@ class ReportController extends Controller
     public function projectProgress(Request $request): View
     {
         $filters = $this->getFiltersFromRequest($request);
-        $projects = $this->reportService->getProjectOverviewReport($filters, $request);
+        $projects = $this->reportService->getDetailedProjectProgress($filters, $request);
 
-        return view('reports.projects.progress', compact('projects', 'filters'));
+        // Get all projects for the filter dropdown
+        $allProjects = Project::select('id', 'name', 'short_code')->orderBy('name')->get();
+
+        return view('reports.projects.progress', compact('projects', 'filters', 'allProjects'));
     }
 
     /**

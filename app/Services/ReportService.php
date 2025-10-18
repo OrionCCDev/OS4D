@@ -81,6 +81,180 @@ class ReportService
     }
 
     /**
+     * Get detailed project progress report with comprehensive data
+     */
+    public function getDetailedProjectProgress($filters = [], $request = null)
+    {
+        $query = Project::with(['tasks.assignee', 'tasks.creator', 'users', 'owner', 'folders']);
+
+        // Apply project_id filter if specified
+        if (isset($filters['project_id']) && $filters['project_id']) {
+            $query->where('id', $filters['project_id']);
+        }
+
+        // Apply search filter
+        if ($request && $request->filled('search')) {
+            $searchTerm = $request->get('search');
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where('name', 'like', "%{$searchTerm}%")
+                  ->orWhere('short_code', 'like', "%{$searchTerm}%");
+            });
+        }
+
+        // Apply filters
+        if (isset($filters['status']) && !empty($filters['status'])) {
+            $query->whereIn('status', $filters['status']);
+        }
+
+        if (isset($filters['date_from']) && $filters['date_from']) {
+            $query->where('created_at', '>=', $filters['date_from']);
+        }
+
+        if (isset($filters['date_to']) && $filters['date_to']) {
+            $query->where('created_at', '<=', $filters['date_to']);
+        }
+
+        // Get paginated results
+        $projects = $query->paginate(10);
+
+        // Transform the data with detailed information
+        $transformedProjects = $projects->getCollection()->map(function ($project) {
+            $tasks = $project->tasks;
+            $totalTasks = $tasks->count();
+            $completedTasks = $tasks->where('status', 'completed');
+            $completedTasksCount = $completedTasks->count();
+
+            // Task status breakdown
+            $pendingTasks = $tasks->where('status', 'pending')->count();
+            $inProgressTasks = $tasks->where('status', 'in_progress')->count();
+            $onHoldTasks = $tasks->where('status', 'on_hold')->count();
+
+            // Overdue and on-time analysis
+            $overdueTasks = $tasks->where('status', '!=', 'completed')
+                ->where('due_date', '<', now())
+                ->count();
+
+            $onTimeTasks = $completedTasks->filter(function ($task) {
+                return $task->completed_at && $task->due_date && $task->completed_at <= $task->due_date;
+            })->count();
+
+            // Priority breakdown
+            $highPriorityTasks = $tasks->where('priority', 'high')->count();
+            $mediumPriorityTasks = $tasks->where('priority', 'medium')->count();
+            $lowPriorityTasks = $tasks->where('priority', 'low')->count();
+
+            // Team performance
+            $teamPerformance = $project->users->map(function ($user) use ($tasks) {
+                $userTasks = $tasks->where('assigned_to', $user->id);
+                $userCompletedTasks = $userTasks->where('status', 'completed')->count();
+                $userTotalTasks = $userTasks->count();
+
+                return [
+                    'user_id' => $user->id,
+                    'user_name' => $user->name,
+                    'total_tasks' => $userTotalTasks,
+                    'completed_tasks' => $userCompletedTasks,
+                    'pending_tasks' => $userTasks->whereIn('status', ['pending', 'in_progress'])->count(),
+                    'overdue_tasks' => $userTasks->where('status', '!=', 'completed')
+                        ->where('due_date', '<', now())
+                        ->count(),
+                    'completion_rate' => $userTotalTasks > 0 ? round(($userCompletedTasks / $userTotalTasks) * 100, 2) : 0,
+                ];
+            })->sortByDesc('completion_rate')->values();
+
+            // Recent tasks (last 10)
+            $recentTasks = $tasks->sortByDesc('updated_at')->take(10)->map(function ($task) {
+                return [
+                    'id' => $task->id,
+                    'name' => $task->name,
+                    'status' => $task->status,
+                    'priority' => $task->priority,
+                    'assignee' => $task->assignee->name ?? 'Unassigned',
+                    'due_date' => $task->due_date,
+                    'completed_at' => $task->completed_at,
+                    'is_overdue' => $task->status != 'completed' && $task->due_date && $task->due_date < now(),
+                ];
+            })->values();
+
+            // Timeline analysis
+            $projectDuration = $project->created_at->diffInDays(now());
+            $expectedDuration = $project->due_date ? $project->created_at->diffInDays($project->due_date) : null;
+            $daysRemaining = $project->due_date ? now()->diffInDays($project->due_date, false) : null;
+
+            // Calculate estimated completion date based on current progress
+            $estimatedCompletionDate = null;
+            if ($completedTasksCount > 0 && $totalTasks > 0 && $projectDuration > 0) {
+                $tasksPerDay = $completedTasksCount / $projectDuration;
+                $remainingTasks = $totalTasks - $completedTasksCount;
+                $estimatedDaysToComplete = $tasksPerDay > 0 ? ceil($remainingTasks / $tasksPerDay) : 0;
+                $estimatedCompletionDate = now()->addDays($estimatedDaysToComplete);
+            }
+
+            // Count sub-folders
+            $subFoldersCount = $project->folders()->whereNull('parent_id')->count();
+
+            return [
+                'id' => $project->id,
+                'name' => $project->name,
+                'description' => $project->description,
+                'short_code' => $project->short_code ?? 'N/A',
+                'status' => $project->status,
+                'owner' => $project->owner->name ?? 'N/A',
+                'owner_email' => $project->owner->email ?? 'N/A',
+                'start_date' => $project->start_date,
+                'due_date' => $project->due_date,
+                'created_at' => $project->created_at,
+                'updated_at' => $project->updated_at,
+
+                // Task statistics
+                'total_tasks' => $totalTasks,
+                'completed_tasks' => $completedTasksCount,
+                'pending_tasks' => $pendingTasks,
+                'in_progress_tasks' => $inProgressTasks,
+                'on_hold_tasks' => $onHoldTasks,
+                'overdue_tasks' => $overdueTasks,
+                'on_time_tasks' => $onTimeTasks,
+
+                // Priority breakdown
+                'high_priority_tasks' => $highPriorityTasks,
+                'medium_priority_tasks' => $mediumPriorityTasks,
+                'low_priority_tasks' => $lowPriorityTasks,
+
+                // Completion metrics
+                'completion_percentage' => $totalTasks > 0 ? round(($completedTasksCount / $totalTasks) * 100, 2) : 0,
+                'on_time_completion_rate' => $completedTasksCount > 0 ? round(($onTimeTasks / $completedTasksCount) * 100, 2) : 0,
+
+                // Team information
+                'team_size' => $project->users->count(),
+                'users_involved' => $project->users->pluck('name')->toArray(),
+                'team_performance' => $teamPerformance,
+
+                // Timeline data
+                'project_duration_days' => $projectDuration,
+                'expected_duration_days' => $expectedDuration,
+                'days_remaining' => $daysRemaining,
+                'estimated_completion_date' => $estimatedCompletionDate,
+                'is_on_schedule' => $estimatedCompletionDate && $project->due_date ?
+                    $estimatedCompletionDate <= $project->due_date : true,
+
+                // Additional details
+                'sub_folders_count' => $subFoldersCount,
+                'recent_tasks' => $recentTasks,
+
+                // Risk indicators
+                'has_overdue_tasks' => $overdueTasks > 0,
+                'overdue_percentage' => $totalTasks > 0 ? round(($overdueTasks / $totalTasks) * 100, 2) : 0,
+                'is_at_risk' => $overdueTasks > 0 || ($daysRemaining !== null && $daysRemaining < 7 && $completedTasksCount < $totalTasks * 0.8),
+            ];
+        });
+
+        // Replace the collection in the paginator
+        $projects->setCollection($transformedProjects);
+
+        return $projects;
+    }
+
+    /**
      * Generate task completion report
      */
     public function getTaskCompletionReport($filters = [])
