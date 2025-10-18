@@ -194,6 +194,9 @@ class ReportService
                     'days_remaining' => $task->status != 'completed' && $task->due_date
                         ? now()->diffInDays($task->due_date, false)
                         : null,
+                    'progress_percentage' => $this->calculateTaskProgress($task),
+                    'progress_status' => $this->getTaskProgressStatus($task),
+                    'progress_stage' => $this->getTaskProgressStage($task),
                 ];
             })->values();
 
@@ -636,5 +639,76 @@ class ReportService
         });
 
         return round($totalDays / $completedTasks->count(), 1);
+    }
+
+    /**
+     * Calculate task progress percentage
+     */
+    private function calculateTaskProgress($task)
+    {
+        $statusProgressMap = [
+            'pending' => 0,
+            'assigned' => 5,
+            'in_progress' => 15,
+            'submitted_for_review' => 30,
+            'in_review' => 50,
+            'approved' => 70,
+            'ready_for_email' => 85,
+            'on_client_consultant_review' => 90,
+            'in_review_after_client_consultant_reply' => 95,
+            're_submit_required' => 60,
+            'rejected' => 0,
+            'completed' => 100,
+        ];
+
+        return $statusProgressMap[$task->status] ?? 0;
+    }
+
+    /**
+     * Get task progress status description
+     */
+    private function getTaskProgressStatus($task)
+    {
+        $statusDescriptions = [
+            'pending' => 'Not Started',
+            'assigned' => 'Assigned',
+            'in_progress' => 'In Progress',
+            'submitted_for_review' => 'Under Internal Review',
+            'in_review' => 'Internal Review',
+            'approved' => 'Internally Approved',
+            'ready_for_email' => 'Ready for Client',
+            'on_client_consultant_review' => 'Client Review',
+            'in_review_after_client_consultant_reply' => 'Processing Client Feedback',
+            're_submit_required' => 'Resubmission Required',
+            'rejected' => 'Rejected',
+            'completed' => 'Completed',
+        ];
+
+        return $statusDescriptions[$task->status] ?? 'Unknown';
+    }
+
+    /**
+     * Get task progress stage
+     */
+    private function getTaskProgressStage($task)
+    {
+        $userWorkStages = [
+            'pending', 'assigned', 'in_progress', 'submitted_for_review',
+            'in_review', 'approved', 'ready_for_email'
+        ];
+
+        $clientReviewStages = [
+            'on_client_consultant_review', 'in_review_after_client_consultant_reply'
+        ];
+
+        if (in_array($task->status, $userWorkStages)) {
+            return 'user_work';
+        } elseif (in_array($task->status, $clientReviewStages)) {
+            return 'client_review';
+        } elseif ($task->status === 'completed') {
+            return 'completed';
+        } else {
+            return 'pending';
+        }
     }
 }

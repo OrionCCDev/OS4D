@@ -413,6 +413,9 @@
                                                                 <span class="badge bg-{{ $task['status'] === 'completed' ? 'success' : ($task['status'] === 'in_progress' || $task['status'] === 'workingon' ? 'warning' : ($task['status'] === 'assigned' ? 'info' : 'secondary')) }}">
                                                                     {{ ucfirst(str_replace('_', ' ', $task['status'])) }}
                                                                 </span>
+                                                                <div class="mt-1">
+                                                                    <x-task-progress :task="(object)$task" :showLabel="false" :showPercentage="true" size="sm" />
+                                                                </div>
                                                             </td>
                                                             <td>
                                                                 <span class="badge bg-{{ $task['priority'] === 'high' ? 'danger' : ($task['priority'] === 'medium' ? 'warning' : 'info') }}">

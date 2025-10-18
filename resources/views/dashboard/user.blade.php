@@ -286,9 +286,12 @@
                                 </span>
                             </div>
                             <div class="d-flex w-100 flex-wrap align-items-center justify-content-between gap-2">
-                                <div class="me-2">
+                                <div class="me-2 flex-grow-1">
                                     <h6 class="mb-0">{{ $task->title }}</h6>
                                     <small class="text-muted">{{ $task->project->name ?? 'No Project' }}</small>
+                                    <div class="mt-1">
+                                        <x-task-progress :task="$task" :showLabel="false" :showPercentage="true" size="sm" />
+                                    </div>
                                 </div>
                                 <div class="user-progress">
                                     <span class="badge bg-label-{{ $task->status === 'completed' ? 'success' : ($task->status === 'in_progress' ? 'warning' : 'primary') }}">
@@ -322,9 +325,12 @@
                                 </span>
                             </div>
                             <div class="d-flex w-100 flex-wrap align-items-center justify-content-between gap-2">
-                                <div class="me-2">
+                                <div class="me-2 flex-grow-1">
                                     <h6 class="mb-0">{{ $task->title }}</h6>
                                     <small class="text-muted">{{ $task->project->name ?? 'No Project' }}</small>
+                                    <div class="mt-1">
+                                        <x-task-progress :task="$task" :showLabel="false" :showPercentage="true" size="sm" />
+                                    </div>
                                 </div>
                                 <div class="user-progress">
                                     <small class="text-warning fw-semibold">{{ $task->due_date->format('M d') }}</small>

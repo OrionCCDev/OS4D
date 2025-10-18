@@ -232,7 +232,7 @@ class ReportController extends Controller
             case 'project-progress':
                 // Get all projects (not paginated) for export
                 $projectsQuery = $this->reportService->getDetailedProjectProgress($filters, $request);
-                $projects = $projectsQuery->items(); // Get all items from paginator
+                $projects = $projectsQuery->getCollection(); // Get all items from paginator collection
 
                 $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('reports.pdf.project-progress', [
                     'projects' => $projects,
@@ -246,7 +246,7 @@ class ReportController extends Controller
 
             case 'projects':
                 $projectsQuery = $this->reportService->getProjectOverviewReport($filters, $request);
-                $projects = $projectsQuery->items();
+                $projects = $projectsQuery->getCollection();
 
                 $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('reports.pdf.project-progress', [
                     'projects' => $projects,
@@ -275,7 +275,7 @@ class ReportController extends Controller
             case 'projects':
                 // Get all projects (not paginated) for export
                 $projectsQuery = $this->reportService->getDetailedProjectProgress($filters, $request);
-                $projects = $projectsQuery->items(); // Get all items from paginator
+                $projects = $projectsQuery->getCollection(); // Get all items from paginator collection
 
                 $filename = 'project-progress-report-' . now()->format('Y-m-d') . '.xlsx';
 

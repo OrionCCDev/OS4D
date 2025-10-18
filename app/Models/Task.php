@@ -61,6 +61,13 @@ class Task extends Model
         'combined_approval_status',
     ];
 
+    protected $appends = [
+        'progress_percentage',
+        'progress_status',
+        'progress_stage',
+        'progress_color',
+    ];
+
     protected $casts = [
         'due_date' => 'date',
         'assigned_at' => 'datetime',
@@ -77,6 +84,144 @@ class Task extends Model
         'consultant_response_updated_at' => 'datetime',
         'manager_override_updated_at' => 'datetime',
     ];
+
+    /**
+     * Get task progress percentage based on status
+     * User work (up to internal approval) = 95%
+     * Client/consultant confirmation = 5%
+     */
+    public function getProgressPercentageAttribute()
+    {
+        return $this->calculateProgressPercentage();
+    }
+
+    /**
+     * Calculate task progress percentage
+     */
+    public function calculateProgressPercentage()
+    {
+        $statusProgressMap = [
+            'pending' => 0,
+            'assigned' => 5,
+            'in_progress' => 15,
+            'submitted_for_review' => 30,
+            'in_review' => 50,
+            'approved' => 70,
+            'ready_for_email' => 85,
+            'on_client_consultant_review' => 90,
+            'in_review_after_client_consultant_reply' => 95,
+            're_submit_required' => 60, // Back to internal review
+            'rejected' => 0, // Reset to beginning
+            'completed' => 100,
+        ];
+
+        return $statusProgressMap[$this->status] ?? 0;
+    }
+
+    /**
+     * Get progress status description
+     */
+    public function getProgressStatusAttribute()
+    {
+        $statusDescriptions = [
+            'pending' => 'Not Started',
+            'assigned' => 'Assigned',
+            'in_progress' => 'In Progress',
+            'submitted_for_review' => 'Under Internal Review',
+            'in_review' => 'Internal Review',
+            'approved' => 'Internally Approved',
+            'ready_for_email' => 'Ready for Client',
+            'on_client_consultant_review' => 'Client Review',
+            'in_review_after_client_consultant_reply' => 'Processing Client Feedback',
+            're_submit_required' => 'Resubmission Required',
+            'rejected' => 'Rejected',
+            'completed' => 'Completed',
+        ];
+
+        return $statusDescriptions[$this->status] ?? 'Unknown';
+    }
+
+    /**
+     * Get progress stage (User Work vs Client Review)
+     */
+    public function getProgressStageAttribute()
+    {
+        $userWorkStages = [
+            'pending', 'assigned', 'in_progress', 'submitted_for_review',
+            'in_review', 'approved', 'ready_for_email'
+        ];
+
+        $clientReviewStages = [
+            'on_client_consultant_review', 'in_review_after_client_consultant_reply'
+        ];
+
+        if (in_array($this->status, $userWorkStages)) {
+            return 'user_work';
+        } elseif (in_array($this->status, $clientReviewStages)) {
+            return 'client_review';
+        } elseif ($this->status === 'completed') {
+            return 'completed';
+        } else {
+            return 'pending';
+        }
+    }
+
+    /**
+     * Get progress color based on stage
+     */
+    public function getProgressColorAttribute()
+    {
+        $stage = $this->getProgressStageAttribute();
+
+        switch ($stage) {
+            case 'user_work':
+                return $this->status === 'completed' ? 'success' : 'primary';
+            case 'client_review':
+                return 'warning';
+            case 'completed':
+                return 'success';
+            case 'pending':
+            default:
+                return 'secondary';
+        }
+    }
+
+    /**
+     * Check if task is in user work phase (95% of progress)
+     */
+    public function isInUserWorkPhase()
+    {
+        return $this->getProgressStageAttribute() === 'user_work';
+    }
+
+    /**
+     * Check if task is in client review phase (5% of progress)
+     */
+    public function isInClientReviewPhase()
+    {
+        return $this->getProgressStageAttribute() === 'client_review';
+    }
+
+    /**
+     * Get next expected status
+     */
+    public function getNextExpectedStatus()
+    {
+        $statusFlow = [
+            'pending' => 'assigned',
+            'assigned' => 'in_progress',
+            'in_progress' => 'submitted_for_review',
+            'submitted_for_review' => 'in_review',
+            'in_review' => 'approved',
+            'approved' => 'ready_for_email',
+            'ready_for_email' => 'on_client_consultant_review',
+            'on_client_consultant_review' => 'in_review_after_client_consultant_reply',
+            'in_review_after_client_consultant_reply' => 'completed',
+            're_submit_required' => 'in_progress',
+        ];
+
+        return $statusFlow[$this->status] ?? null;
+    }
 
     public function project()
     {
@@ -310,16 +455,16 @@ class Task extends Model
     {
         // Determine priority based on notification type
         $actionableTypes = [
-            'task_assigned', 
-            'task_resubmit_required', 
+            'task_assigned',
+            'task_resubmit_required',
             'task_resubmit_enhanced',
             'task_submitted_for_review',
             'task_waiting_for_review',
             'task_overdue'
         ];
-        
+
         $priority = in_array($type, $actionableTypes) ? 'high' : 'normal';
-        
+
         UnifiedNotification::createTaskNotification(
             $user->id,
             $type,
