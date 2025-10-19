@@ -356,33 +356,38 @@
                 <table>
                     <thead>
                         <tr>
-                            <th style="width: 25%;">Task Name & Description</th>
-                            <th style="width: 10%; text-align: center;">Status</th>
-                            <th style="width: 8%; text-align: center;">Priority</th>
-                            <th style="width: 12%;">Assignee</th>
-                            <th style="width: 10%; text-align: center;">Created</th>
-                            <th style="width: 10%; text-align: center;">Due Date</th>
-                            <th style="width: 10%; text-align: center;">Completed</th>
-                            <th style="width: 8%; text-align: center;">Timeline</th>
-                            <th style="width: 7%; text-align: center;">Days</th>
+                            <th style="width: 35%;">Task Name & Description</th>
+                            <th style="width: 8%; text-align: center;">Status</th>
+                            <th style="width: 7%; text-align: center;">Priority</th>
+                            <th style="width: 10%;">Assignee</th>
+                            <th style="width: 8%; text-align: center;">Created</th>
+                            <th style="width: 8%; text-align: center;">Due Date</th>
+                            <th style="width: 8%; text-align: center;">Completed</th>
+                            <th style="width: 8%; text-align: center;">Duration</th>
+                            <th style="width: 8%; text-align: center;">Time Left</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach($project['recent_tasks'] as $task)
                             <tr class="task-row" style="{{ $task['is_overdue'] ? 'background-color: #fff5f5;' : '' }}">
-                                <td style="font-weight: bold; {{ $task['is_overdue'] ? 'color: #dc3545;' : '' }}; vertical-align: top; padding: 8px;">
-                                    <div style="margin-bottom: 4px; font-size: 11px;">{{ $task['name'] }}</div>
+                                <td style="font-weight: bold; {{ $task['is_overdue'] ? 'color: #dc3545;' : '' }}; vertical-align: top; padding: 8px; min-height: 60px;">
+                                    <div style="margin-bottom: 4px; font-size: 12px; font-weight: bold; color: #2c3e50;">{{ $task['name'] }}</div>
                                     @if($task['description'])
-                                        <div style="font-size: 9px; color: #666; font-weight: normal; margin-top: 3px; line-height: 1.3;">
-                                            {{ Str::limit($task['description'], 80) }}
+                                        <div style="font-size: 10px; color: #555; font-weight: normal; margin-top: 4px; line-height: 1.4; margin-bottom: 6px;">
+                                            {{ Str::limit($task['description'], 120) }}
                                         </div>
                                     @endif
                                     @if($task['is_overdue'])
-                                        <div style="color: #dc3545; font-weight: bold; font-size: 9px; margin-top: 3px; background-color: #f8d7da; padding: 2px 4px; border-radius: 3px; display: inline-block;">⚠ OVERDUE</div>
+                                        <div style="color: #dc3545; font-weight: bold; font-size: 9px; margin-top: 4px; background-color: #f8d7da; padding: 3px 6px; border-radius: 4px; display: inline-block; border: 1px solid #f5c6cb;">⚠ OVERDUE</div>
                                     @endif
                                     @if($task['completion_notes'])
-                                        <div style="font-size: 9px; color: #28c76f; font-style: italic; margin-top: 3px; background-color: #d4edda; padding: 2px 4px; border-radius: 3px;">
-                                            <strong>Notes:</strong> {{ Str::limit($task['completion_notes'], 60) }}
+                                        <div style="font-size: 9px; color: #155724; font-style: italic; margin-top: 4px; background-color: #d4edda; padding: 4px 6px; border-radius: 4px; border: 1px solid #c3e6cb; line-height: 1.3;">
+                                            <strong>Notes:</strong> {{ Str::limit($task['completion_notes'], 100) }}
+                                        </div>
+                                    @endif
+                                    @if($task['assignee_email'])
+                                        <div style="font-size: 8px; color: #6c757d; margin-top: 3px; font-style: italic;">
+                                            Assigned to: {{ $task['assignee_email'] }}
                                         </div>
                                     @endif
                                 </td>
@@ -447,7 +452,7 @@
                                             </div>
                                         @endif
                                     @else
-                                        <span style="color: #6c757d; font-size: 9px;">No due date</span>
+                                        <span style="color: #6c757d; font-size: 9px;">No Due Date</span>
                                     @endif
                                 </td>
                                 <td style="text-align: center; vertical-align: top; padding: 8px;">
@@ -470,29 +475,41 @@
                                         @php
                                             $assignedDate = \Carbon\Carbon::parse($task['assigned_at']);
                                             $completedDate = \Carbon\Carbon::parse($task['completed_at']);
-                                            $duration = $assignedDate->diffInDays($completedDate);
-                                            $hours = $assignedDate->diffInHours($completedDate) % 24;
+                                            $totalHours = $assignedDate->diffInHours($completedDate);
+                                            $days = floor($totalHours / 24);
+                                            $hours = $totalHours % 24;
                                         @endphp
-                                        <div style="color: #28c76f; font-weight: bold; font-size: 10px; background-color: #d4edda; padding: 3px 6px; border-radius: 4px; display: inline-block;">
-                                            {{ $duration }}d
+                                        <div style="color: #155724; font-weight: bold; font-size: 10px; background-color: #d4edda; padding: 4px 6px; border-radius: 4px; display: inline-block; border: 1px solid #c3e6cb;">
+                                            @if($days > 0)
+                                                {{ $days }}d
+                                            @endif
                                             @if($hours > 0)
                                                 {{ $hours }}h
                                             @endif
+                                            @if($days == 0 && $hours == 0)
+                                                < 1h
+                                            @endif
                                         </div>
-                                        <div style="font-size: 8px; color: #666; margin-top: 2px;">Completed</div>
+                                        <div style="font-size: 8px; color: #155724; margin-top: 2px; font-weight: 500;">Duration</div>
                                     @elseif($task['assigned_at'] && $task['status'] !== 'completed')
                                         @php
                                             $assignedDate = \Carbon\Carbon::parse($task['assigned_at']);
-                                            $duration = $assignedDate->diffInDays(now());
-                                            $hours = $assignedDate->diffInHours(now()) % 24;
+                                            $totalHours = $assignedDate->diffInHours(now());
+                                            $days = floor($totalHours / 24);
+                                            $hours = $totalHours % 24;
                                         @endphp
-                                        <div style="color: #ff9f43; font-weight: bold; font-size: 10px; background-color: #fff3cd; padding: 3px 6px; border-radius: 4px; display: inline-block;">
-                                            {{ $duration }}d
+                                        <div style="color: #856404; font-weight: bold; font-size: 10px; background-color: #fff3cd; padding: 4px 6px; border-radius: 4px; display: inline-block; border: 1px solid #ffeaa7;">
+                                            @if($days > 0)
+                                                {{ $days }}d
+                                            @endif
                                             @if($hours > 0)
                                                 {{ $hours }}h
                                             @endif
+                                            @if($days == 0 && $hours == 0)
+                                                < 1h
+                                            @endif
                                         </div>
-                                        <div style="font-size: 8px; color: #666; margin-top: 2px;">In Progress</div>
+                                        <div style="font-size: 8px; color: #856404; margin-top: 2px; font-weight: 500;">Working</div>
                                     @else
                                         <span style="color: #6c757d; font-size: 9px;">-</span>
                                     @endif
@@ -500,51 +517,54 @@
                                 <td style="text-align: center; font-size: 9px; vertical-align: top; padding: 8px;">
                                     @if($task['due_date'])
                                         @if($task['status'] === 'completed')
-                                            <div style="color: #28c76f; font-weight: bold; font-size: 10px; background-color: #d4edda; padding: 3px 6px; border-radius: 4px; display: inline-block;">
-                                                ✓ Done
+                                            <div style="color: #155724; font-weight: bold; font-size: 10px; background-color: #d4edda; padding: 4px 6px; border-radius: 4px; display: inline-block; border: 1px solid #c3e6cb;">
+                                                ✓ Completed
                                             </div>
+                                            <div style="font-size: 8px; color: #155724; margin-top: 2px; font-weight: 500;">On Time</div>
                                         @elseif($task['is_overdue'])
                                             @php
                                                 $overdueDays = $task['days_overdue'];
                                                 $overdueHours = \Carbon\Carbon::parse($task['due_date'])->diffInHours(now()) % 24;
                                             @endphp
-                                            <div style="color: #dc3545; font-weight: bold; font-size: 10px; background-color: #f8d7da; padding: 3px 6px; border-radius: 4px; display: inline-block;">
-                                                {{ $overdueDays }}d late
+                                            <div style="color: #721c24; font-weight: bold; font-size: 10px; background-color: #f8d7da; padding: 4px 6px; border-radius: 4px; display: inline-block; border: 1px solid #f5c6cb;">
+                                                {{ $overdueDays }}d
                                                 @if($overdueHours > 0)
                                                     {{ $overdueHours }}h
                                                 @endif
                                             </div>
-                                            <div style="font-size: 8px; color: #dc3545; margin-top: 2px; font-weight: bold;">OVERDUE</div>
+                                            <div style="font-size: 8px; color: #721c24; margin-top: 2px; font-weight: 500;">Overdue</div>
                                         @elseif($task['days_remaining'] == 0)
-                                            <div style="color: #ffc107; font-weight: bold; font-size: 10px; background-color: #fff3cd; padding: 3px 6px; border-radius: 4px; display: inline-block;">
+                                            <div style="color: #856404; font-weight: bold; font-size: 10px; background-color: #fff3cd; padding: 4px 6px; border-radius: 4px; display: inline-block; border: 1px solid #ffeaa7;">
                                                 Due Today
                                             </div>
+                                            <div style="font-size: 8px; color: #856404; margin-top: 2px; font-weight: 500;">Urgent</div>
                                         @elseif($task['days_remaining'] <= 3)
                                             @php
                                                 $remainingDays = floor($task['days_remaining']);
                                                 $remainingHours = round(($task['days_remaining'] - $remainingDays) * 24);
                                             @endphp
-                                            <div style="color: #ff9f43; font-weight: bold; font-size: 10px; background-color: #fff3cd; padding: 3px 6px; border-radius: 4px; display: inline-block;">
-                                                {{ $remainingDays }}d left
+                                            <div style="color: #856404; font-weight: bold; font-size: 10px; background-color: #fff3cd; padding: 4px 6px; border-radius: 4px; display: inline-block; border: 1px solid #ffeaa7;">
+                                                {{ $remainingDays }}d
                                                 @if($remainingHours > 0)
                                                     {{ $remainingHours }}h
                                                 @endif
                                             </div>
-                                            <div style="font-size: 8px; color: #ff9f43; margin-top: 2px;">Urgent</div>
+                                            <div style="font-size: 8px; color: #856404; margin-top: 2px; font-weight: 500;">Urgent</div>
                                         @else
                                             @php
                                                 $remainingDays = floor($task['days_remaining']);
                                                 $remainingHours = round(($task['days_remaining'] - $remainingDays) * 24);
                                             @endphp
-                                            <div style="color: #6c757d; font-weight: bold; font-size: 10px; background-color: #e9ecef; padding: 3px 6px; border-radius: 4px; display: inline-block;">
-                                                {{ $remainingDays }}d left
+                                            <div style="color: #0c5460; font-weight: bold; font-size: 10px; background-color: #d1ecf1; padding: 4px 6px; border-radius: 4px; display: inline-block; border: 1px solid #bee5eb;">
+                                                {{ $remainingDays }}d
                                                 @if($remainingHours > 0)
                                                     {{ $remainingHours }}h
                                                 @endif
                                             </div>
+                                            <div style="font-size: 8px; color: #0c5460; margin-top: 2px; font-weight: 500;">Remaining</div>
                                         @endif
                                     @else
-                                        <span style="color: #6c757d; font-size: 9px;">No due date</span>
+                                        <span style="color: #6c757d; font-size: 9px;">No Due Date</span>
                                     @endif
                                 </td>
                             </tr>
