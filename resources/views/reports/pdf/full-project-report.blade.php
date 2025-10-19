@@ -286,12 +286,12 @@
                 <td>{{ ucfirst($project->priority ?? 'Normal') }}</td>
             </tr>
             <tr>
-                <td><strong>Manager</strong></td>
-                <td>{{ $project->manager->name ?? 'Not assigned' }}</td>
+                <td><strong>Owner</strong></td>
+                <td>{{ $project->owner->name ?? 'Not assigned' }}</td>
             </tr>
             <tr>
                 <td><strong>Created By</strong></td>
-                <td>{{ $project->createdBy->name ?? 'Unknown' }}</td>
+                <td>{{ $project->owner->name ?? 'Unknown' }}</td>
             </tr>
             <tr>
                 <td><strong>Start Date</strong></td>

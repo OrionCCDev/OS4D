@@ -420,8 +420,7 @@ class ReportController extends Controller
             'tasks.creator',
             'tasks.attachments',
             'tasks.histories.user',
-            'manager',
-            'createdBy'
+            'owner'
         ]);
         
         \Log::info('Project relationships loaded successfully');
