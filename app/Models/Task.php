@@ -524,33 +524,48 @@ class Task extends Model
     public function getStatusBadgeClassAttribute()
     {
         return match($this->status) {
-            'pending' => 'bg-secondary',
-            'assigned' => 'bg-info',
-            'accepted' => 'bg-primary',
-            'in_progress' => 'bg-warning',
-            'workingon' => 'bg-warning',
-            'submitted_for_review' => 'bg-primary',
-            'in_review' => 'bg-warning',
-            'approved' => 'bg-success',
-            'ready_for_email' => 'bg-info',
-            'rejected' => 'bg-danger',
-            'waiting_sending_client_consultant_approve' => 'bg-warning',
-            'waiting_client_consultant_approve' => 'bg-info',
-            'completed' => 'bg-success',
-            default => 'bg-secondary'
+            // Core workflow statuses
+            'pending' => 'bg-secondary',      // ⚪ Gray - not started
+            'assigned' => 'bg-info',          // 🔵 Blue - assigned to user
+            'accepted' => 'bg-primary',       // 🟣 Purple - accepted by user
+            'in_progress' => 'bg-warning',    // 🟡 Yellow/Orange - actively working
+            'workingon' => 'bg-warning',      // 🟡 Yellow/Orange - working on (alias)
+            
+            // Review workflow statuses
+            'submitted_for_review' => 'bg-primary',  // 🟣 Purple - submitted for review
+            'in_review' => 'bg-warning',             // 🟠 Yellow/Orange - under review
+            'approved' => 'bg-success',              // 🟢 Green - approved
+            'rejected' => 'bg-danger',               // 🔴 Red - rejected
+            
+            // Email workflow statuses
+            'ready_for_email' => 'bg-info',          // 🔵 Blue - ready to send email
+            'waiting_sending_client_consultant_approve' => 'bg-warning',  // 🟠 Yellow/Orange - waiting to send approval
+            'waiting_client_consultant_approve' => 'bg-info',             // 🔵 Blue - waiting for client/consultant approval
+            
+            // Final statuses
+            'completed' => 'bg-success',      // 🟢 Green - completed
+            'cancelled' => 'bg-dark',         // ⚫ Black - cancelled
+            
+            // Additional statuses
+            'on_hold' => 'bg-secondary',      // ⚪ Gray - on hold
+            'blocked' => 'bg-danger',         // 🔴 Red - blocked
+            'draft' => 'bg-light',            // ⚪ Light gray - draft
+            'archived' => 'bg-dark',          // ⚫ Black - archived
+            
+            default => 'bg-secondary'         // ⚪ Gray - default unknown status
         };
     }
 
     public function getPriorityBadgeClassAttribute()
     {
         return match($this->priority) {
-            'low' => 'bg-success',
-            'normal' => 'bg-primary',
-            'medium' => 'bg-info',
-            'high' => 'bg-warning',
-            'urgent' => 'bg-danger',
-            'critical' => 'bg-dark',
-            default => 'bg-primary'
+            'urgent' => 'bg-danger',      // 🔴 Red - highest priority
+            'high' => 'bg-warning',       // 🟠 Orange - high priority
+            'medium' => 'bg-info',        // 🟡 Yellow - medium priority
+            'normal' => 'bg-primary',     // 🔵 Blue - normal priority
+            'low' => 'bg-success',        // 🟢 Green - lowest priority
+            'critical' => 'bg-dark',      // ⚫ Black - critical (higher than urgent)
+            default => 'bg-primary'       // 🔵 Blue - default normal
         };
     }
 

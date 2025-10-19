@@ -50,6 +50,8 @@
     <link rel="stylesheet" href="{{ asset('DAssets/assets/vendor/css/theme-default.css') }}" class="template-customizer-theme-css" />
     <!-- Custom Gradient CSS -->
     <link rel="stylesheet" href="{{ asset('css/custom-gradient.css') }}" />
+    <!-- Status and Priority Badge CSS -->
+    <link rel="stylesheet" href="{{ asset('css/status-priority-badges.css') }}" />
     <link rel="stylesheet" href="{{ asset('DAssets/assets/css/demo.css') }}" />
     <link rel="stylesheet" href="{{ asset('DAssets/assets/css/task-files.css') }}" />
 

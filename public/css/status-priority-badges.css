@@ -1,0 +1,186 @@
+/* Global Status and Priority Badge Styles */
+
+/* Priority Badge Colors */
+.badge-priority-urgent {
+    background-color: #dc3545 !important; /* Red */
+    color: white !important;
+}
+
+.badge-priority-high {
+    background-color: #fd7e14 !important; /* Orange */
+    color: white !important;
+}
+
+.badge-priority-medium {
+    background-color: #ffc107 !important; /* Yellow */
+    color: #000 !important; /* Black text for better contrast */
+}
+
+.badge-priority-normal {
+    background-color: #0d6efd !important; /* Blue */
+    color: white !important;
+}
+
+.badge-priority-low {
+    background-color: #198754 !important; /* Green */
+    color: white !important;
+}
+
+.badge-priority-critical {
+    background-color: #212529 !important; /* Black */
+    color: white !important;
+}
+
+/* Status Badge Colors */
+.badge-status-pending {
+    background-color: #6c757d !important; /* Gray */
+    color: white !important;
+}
+
+.badge-status-assigned {
+    background-color: #0dcaf0 !important; /* Light Blue */
+    color: #000 !important; /* Black text for better contrast */
+}
+
+.badge-status-accepted {
+    background-color: #6f42c1 !important; /* Purple */
+    color: white !important;
+}
+
+.badge-status-in-progress {
+    background-color: #ffc107 !important; /* Yellow/Orange */
+    color: #000 !important; /* Black text for better contrast */
+}
+
+.badge-status-workingon {
+    background-color: #ffc107 !important; /* Yellow/Orange */
+    color: #000 !important; /* Black text for better contrast */
+}
+
+.badge-status-submitted-for-review {
+    background-color: #6f42c1 !important; /* Purple */
+    color: white !important;
+}
+
+.badge-status-in-review {
+    background-color: #fd7e14 !important; /* Orange */
+    color: white !important;
+}
+
+.badge-status-approved {
+    background-color: #198754 !important; /* Green */
+    color: white !important;
+}
+
+.badge-status-rejected {
+    background-color: #dc3545 !important; /* Red */
+    color: white !important;
+}
+
+.badge-status-ready-for-email {
+    background-color: #0dcaf0 !important; /* Light Blue */
+    color: #000 !important; /* Black text for better contrast */
+}
+
+.badge-status-waiting-sending-client-consultant-approve {
+    background-color: #fd7e14 !important; /* Orange */
+    color: white !important;
+}
+
+.badge-status-waiting-client-consultant-approve {
+    background-color: #0dcaf0 !important; /* Light Blue */
+    color: #000 !important; /* Black text for better contrast */
+}
+
+.badge-status-completed {
+    background-color: #198754 !important; /* Green */
+    color: white !important;
+}
+
+.badge-status-cancelled {
+    background-color: #212529 !important; /* Black */
+    color: white !important;
+}
+
+.badge-status-on-hold {
+    background-color: #6c757d !important; /* Gray */
+    color: white !important;
+}
+
+.badge-status-blocked {
+    background-color: #dc3545 !important; /* Red */
+    color: white !important;
+}
+
+.badge-status-draft {
+    background-color: #f8f9fa !important; /* Light Gray */
+    color: #000 !important; /* Black text for better contrast */
+}
+
+.badge-status-archived {
+    background-color: #212529 !important; /* Black */
+    color: white !important;
+}
+
+/* Enhanced Badge Styling */
+.badge-status, .badge-priority {
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    padding: 4px 8px !important;
+    border-radius: 12px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    border: none !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Hover Effects */
+.badge-status:hover, .badge-priority:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15) !important;
+    transition: all 0.2s ease !important;
+}
+
+/* Responsive Badge Sizing */
+@media (max-width: 768px) {
+    .badge-status, .badge-priority {
+        font-size: 10px !important;
+        padding: 3px 6px !important;
+    }
+}
+
+/* Status Badge Icons */
+.badge-status::before {
+    margin-right: 4px;
+}
+
+.badge-status-pending::before { content: "⏳"; }
+.badge-status-assigned::before { content: "👤"; }
+.badge-status-accepted::before { content: "✅"; }
+.badge-status-in-progress::before { content: "⚡"; }
+.badge-status-workingon::before { content: "⚡"; }
+.badge-status-submitted-for-review::before { content: "📝"; }
+.badge-status-in-review::before { content: "🔍"; }
+.badge-status-approved::before { content: "✅"; }
+.badge-status-rejected::before { content: "❌"; }
+.badge-status-ready-for-email::before { content: "📧"; }
+.badge-status-waiting-sending-client-consultant-approve::before { content: "⏳"; }
+.badge-status-waiting-client-consultant-approve::before { content: "⏳"; }
+.badge-status-completed::before { content: "🎉"; }
+.badge-status-cancelled::before { content: "🚫"; }
+.badge-status-on-hold::before { content: "⏸️"; }
+.badge-status-blocked::before { content: "🚧"; }
+.badge-status-draft::before { content: "📄"; }
+.badge-status-archived::before { content: "📦"; }
+
+/* Priority Badge Icons */
+.badge-priority::before {
+    margin-right: 4px;
+}
+
+.badge-priority-urgent::before { content: "🔴"; }
+.badge-priority-high::before { content: "🟠"; }
+.badge-priority-medium::before { content: "🟡"; }
+.badge-priority-normal::before { content: "🔵"; }
+.badge-priority-low::before { content: "🟢"; }
+.badge-priority-critical::before { content: "⚫"; }
