@@ -93,14 +93,47 @@
   background: var(--bs-gradient) !important;
 }
 
-.sidebar-gradient .nav-link {
-  color: rgba(255, 255, 255, 0.8) !important;
+.sidebar-gradient .nav-link,
+.sidebar-gradient .menu-link,
+.sidebar-gradient .menu-item,
+.sidebar-gradient .menu-icon,
+.sidebar-gradient .tf-icons,
+.sidebar-gradient i,
+.sidebar-gradient .bx,
+.sidebar-gradient div,
+.sidebar-gradient span {
+  color: rgba(255, 255, 255, 0.9) !important;
 }
 
 .sidebar-gradient .nav-link:hover,
-.sidebar-gradient .nav-link.active {
+.sidebar-gradient .nav-link.active,
+.sidebar-gradient .menu-link:hover,
+.sidebar-gradient .menu-item.active .menu-link {
   color: white !important;
   background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.sidebar-gradient .menu-item.active .menu-link {
+  color: white !important;
+  background-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+/* Sidebar brand/logo */
+.sidebar-gradient .app-brand-link {
+  color: white !important;
+}
+
+.sidebar-gradient .app-brand-logo {
+  color: white !important;
+}
+
+/* Sidebar menu toggle */
+.sidebar-gradient .layout-menu-toggle {
+  color: white !important;
+}
+
+.sidebar-gradient .layout-menu-toggle i {
+  color: white !important;
 }
 
 /* Navbar gradient */
@@ -109,7 +142,43 @@
 }
 
 .navbar-gradient .navbar-brand,
-.navbar-gradient .navbar-nav .nav-link {
+.navbar-gradient .navbar-nav .nav-link,
+.navbar-gradient .nav-link,
+.navbar-gradient .nav-item,
+.navbar-gradient i,
+.navbar-gradient .bx {
+  color: white !important;
+}
+
+/* Search input in navbar */
+.navbar-gradient .form-control {
+  background: transparent !important;
+  color: white !important;
+  border: none !important;
+}
+
+.navbar-gradient .form-control::placeholder {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.navbar-gradient .form-control:focus {
+  background: transparent !important;
+  color: white !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
+/* Navbar dropdowns */
+.navbar-gradient .dropdown-toggle::after {
+  color: white !important;
+}
+
+/* Navbar menu toggle */
+.navbar-gradient .layout-menu-toggle .nav-link {
+  color: white !important;
+}
+
+.navbar-gradient .layout-menu-toggle i {
   color: white !important;
 }
 

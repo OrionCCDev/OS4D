@@ -538,12 +538,12 @@
           <!-- Navbar -->
 
           <nav
-            class="layout-navbar container navbar navbar-expand-xl navbar-detached align-items-center bg-navbar-theme"
+            class="layout-navbar container navbar navbar-expand-xl navbar-detached align-items-center navbar-gradient"
             id="layout-navbar"
           >
             <div class="layout-menu-toggle navbar-nav align-items-xl-center me-3 me-xl-0 d-xl-none">
-              <a class="nav-item nav-link px-0 me-xl-4" href="javascript:void(0)">
-                <i class="bx bx-menu bx-sm"></i>
+              <a class="nav-item nav-link px-0 me-xl-4 text-white" href="javascript:void(0)">
+                <i class="bx bx-menu bx-sm text-white"></i>
               </a>
             </div>
 
@@ -551,12 +551,13 @@
               <!-- Search -->
               <div class="navbar-nav align-items-center">
                 <div class="nav-item d-flex align-items-center">
-                  <i class="bx bx-search fs-4 lh-0"></i>
+                  <i class="bx bx-search fs-4 lh-0 text-white"></i>
                   <input
                     type="text"
-                    class="form-control border-0 shadow-none"
+                    class="form-control border-0 shadow-none text-white"
                     placeholder="Search..."
                     aria-label="Search..."
+                    style="background: transparent; color: white;"
                   />
                 </div>
               </div>
@@ -617,8 +618,8 @@
 
                 <!-- Email Notifications - All Users -->
                 <li class="nav-item dropdown me-3">
-                  <a class="nav-link dropdown-toggle hide-arrow position-relative" href="#" data-bs-toggle="dropdown" aria-expanded="false">
-                    <i class="bx bx-envelope fs-4"></i>
+                  <a class="nav-link dropdown-toggle hide-arrow position-relative text-white" href="#" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bx bx-envelope fs-4 text-white"></i>
                     <span class="badge rounded-pill bg-primary position-absolute" style="top: 0; right: -4px;" id="nav-email-notification-count">0</span>
                   </a>
                   <div class="dropdown-menu dropdown-menu-end p-0 email-notification-popup" style="min-width: 380px; max-width: 400px; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.12); border: 1px solid #e5e7eb;">
@@ -669,8 +670,8 @@
 
                 <!-- Task Notifications - All Users -->
                 <li class="nav-item dropdown me-3">
-                  <a class="nav-link dropdown-toggle hide-arrow position-relative" href="#" data-bs-toggle="dropdown" aria-expanded="false">
-                    <i class="bx bx-task fs-4"></i>
+                  <a class="nav-link dropdown-toggle hide-arrow position-relative text-white" href="#" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bx bx-task fs-4 text-white"></i>
                     <span class="badge rounded-pill bg-success position-absolute" style="top: 0; right: -4px;" id="nav-task-notification-count">0</span>
                   </a>
                   <div class="dropdown-menu dropdown-menu-end p-0 task-notification-popup" style="min-width: 380px; max-width: 400px; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.12); border: 1px solid #e5e7eb;">
@@ -752,7 +753,7 @@
 
                 <!-- User -->
                 <li class="nav-item navbar-dropdown dropdown-user dropdown">
-                  <a class="nav-link dropdown-toggle hide-arrow" href="javascript:void(0);" data-bs-toggle="dropdown">
+                  <a class="nav-link dropdown-toggle hide-arrow text-white" href="javascript:void(0);" data-bs-toggle="dropdown">
                     <div class="nav-profile-avatar">
                       <img src="{{ asset('uploads/users/' . (Auth::user()->img ?: 'default.png')) }}"
                            alt="{{ Auth::user()->name }}" />
