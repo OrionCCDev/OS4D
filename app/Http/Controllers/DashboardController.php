@@ -235,7 +235,7 @@ class DashboardController extends Controller
                 return $user;
             });
 
-        // Top performers for current month - simplified and more robust query
+        // Top performers for current month - show users with any assigned tasks
         $monthlyTopPerformers = User::withCount(['assignedTasks as completed_tasks_count' => function($query) {
                 $query->where('status', 'completed')
                       ->where(function($q) {
@@ -258,37 +258,44 @@ class DashboardController extends Controller
                       ->whereYear('created_at', now()->year);
                 });
             }])
-            ->whereHas('assignedTasks', function($query) {
-                $query->where('status', 'completed');
-            })
+            ->withCount(['assignedTasks as in_progress_tasks_count' => function($query) {
+                $query->whereIn('status', ['in_progress', 'workingon', 'assigned']);
+            }])
+            ->whereHas('assignedTasks')
             ->orderBy('completed_tasks_count', 'desc')
+            ->orderBy('in_progress_tasks_count', 'desc')
+            ->orderBy('total_tasks_count', 'desc')
             ->limit(10)
             ->get()
             ->map(function($user) {
                 $user->completion_rate = $user->total_tasks_count > 0
                     ? round(($user->completed_tasks_count / $user->total_tasks_count) * 100, 1)
                     : 0;
-                $user->monthly_performance_score = $user->completed_tasks_count * 10 + $user->completion_rate;
+                // Calculate performance score based on completed tasks + in progress tasks
+                $user->monthly_performance_score = ($user->completed_tasks_count * 10) + ($user->in_progress_tasks_count * 5) + $user->completion_rate;
                 return $user;
             });
 
-        // If no monthly performers found, get any users with completed tasks as fallback
+        // If no monthly performers found, get any users with assigned tasks as fallback
         if ($monthlyTopPerformers->count() == 0) {
             $monthlyTopPerformers = User::withCount(['assignedTasks as completed_tasks_count' => function($query) {
                     $query->where('status', 'completed');
                 }])
                 ->withCount(['assignedTasks as total_tasks_count'])
-                ->whereHas('assignedTasks', function($query) {
-                    $query->where('status', 'completed');
-                })
+                ->withCount(['assignedTasks as in_progress_tasks_count' => function($query) {
+                    $query->whereIn('status', ['in_progress', 'workingon', 'assigned']);
+                }])
+                ->whereHas('assignedTasks')
                 ->orderBy('completed_tasks_count', 'desc')
+                ->orderBy('in_progress_tasks_count', 'desc')
+                ->orderBy('total_tasks_count', 'desc')
                 ->limit(10)
                 ->get()
                 ->map(function($user) {
                     $user->completion_rate = $user->total_tasks_count > 0
                         ? round(($user->completed_tasks_count / $user->total_tasks_count) * 100, 1)
                         : 0;
-                    $user->monthly_performance_score = $user->completed_tasks_count * 10 + $user->completion_rate;
+                    $user->monthly_performance_score = ($user->completed_tasks_count * 10) + ($user->in_progress_tasks_count * 5) + $user->completion_rate;
                     return $user;
                 });
         }
@@ -372,6 +379,14 @@ class DashboardController extends Controller
             ->limit(5)
             ->get();
 
+        // Debug: Log competition data
+        \Log::info('Competition Board Data:', [
+            'monthly_top_performers_count' => $monthlyTopPerformers->count(),
+            'monthly_top_performers' => $monthlyTopPerformers->toArray(),
+            'quarterly_top_performers_count' => $this->getTopPerformersForPeriod('quarter')->count(),
+            'yearly_top_performers_count' => $this->getTopPerformersForPeriod('year')->count(),
+        ]);
+
         return [
             'overview' => [
                 'total_users' => $totalUsers,
@@ -445,26 +460,20 @@ class DashboardController extends Controller
             ->withCount(['assignedTasks as total_tasks_count' => function($query) use ($startDate, $endDate) {
                 $query->whereBetween('created_at', [$startDate, $endDate]);
             }])
-            ->whereHas('assignedTasks', function($query) use ($startDate, $endDate) {
-                $query->where('status', 'completed')
-                      ->where(function($q) use ($startDate, $endDate) {
-                          $q->where(function($subQ) use ($startDate, $endDate) {
-                              $subQ->whereBetween('completed_at', [$startDate, $endDate]);
-                          })
-                          ->orWhere(function($subQ) use ($startDate, $endDate) {
-                              $subQ->whereNull('completed_at')
-                                   ->whereBetween('updated_at', [$startDate, $endDate]);
-                          });
-                      });
-            })
+            ->withCount(['assignedTasks as in_progress_tasks_count' => function($query) {
+                $query->whereIn('status', ['in_progress', 'workingon', 'assigned']);
+            }])
+            ->whereHas('assignedTasks')
             ->orderBy('completed_tasks_count', 'desc')
+            ->orderBy('in_progress_tasks_count', 'desc')
+            ->orderBy('total_tasks_count', 'desc')
             ->limit(10)
             ->get()
             ->map(function($user) {
                 $user->completion_rate = $user->total_tasks_count > 0
                     ? round(($user->completed_tasks_count / $user->total_tasks_count) * 100, 1)
                     : 0;
-                $user->performance_score = $user->completed_tasks_count * 10 + $user->completion_rate;
+                $user->performance_score = ($user->completed_tasks_count * 10) + ($user->in_progress_tasks_count * 5) + $user->completion_rate;
                 return $user;
             });
     }
