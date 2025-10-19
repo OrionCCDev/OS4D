@@ -198,17 +198,27 @@
                         <i class="bx bx-trophy me-2 text-warning medal-animation"></i>Top 3 Competition
                     </h5>
                     <div class="d-flex align-items-center gap-2">
-                        <span class="badge bg-label-info">
-                            <i class="bx bx-calendar me-1"></i>This Month
-                        </span>
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-sm btn-outline-light active" data-period="month" onclick="changeCompetitionPeriod('month')">
+                                <i class="bx bx-calendar me-1"></i>This Month
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-light" data-period="quarter" onclick="changeCompetitionPeriod('quarter')">
+                                <i class="bx bx-calendar-check me-1"></i>This Quarter
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-light" data-period="year" onclick="changeCompetitionPeriod('year')">
+                                <i class="bx bx-calendar-star me-1"></i>This Year
+                            </button>
+                        </div>
                         <button class="btn btn-sm btn-outline-primary" onclick="refreshCompetition()" title="Refresh Competition Data">
                             <i class="bx bx-refresh"></i>
                         </button>
                     </div>
                 </div>
                 <div class="card-body">
-                    @if($data['monthly_top_performers']->count() > 0)
-                        @foreach($data['monthly_top_performers']->take(3) as $index => $user)
+                    <!-- Month Period (Default) -->
+                    <div id="competition-month" class="competition-period">
+                        @if($data['monthly_top_performers']->count() > 0)
+                            @foreach($data['monthly_top_performers']->take(3) as $index => $user)
                             @php
                                 $medalClass = '';
                                 $medalIcon = '';
@@ -297,13 +307,200 @@
                                 </small>
                             </div>
                         @endif
-                    @else
-                        <div class="text-center py-4">
-                            <i class="bx bx-trophy text-muted" style="font-size: 48px;"></i>
-                            <p class="text-muted mt-2">No performance data available</p>
-                            <small class="text-muted">Start assigning tasks to see competition results</small>
-                        </div>
-                    @endif
+                        @else
+                            <div class="text-center py-4">
+                                <i class="bx bx-trophy text-muted" style="font-size: 48px;"></i>
+                                <p class="text-muted mt-2">No performance data available</p>
+                                <small class="text-muted">Start assigning tasks to see competition results</small>
+                            </div>
+                        @endif
+                    </div>
+
+                    <!-- Quarter Period -->
+                    <div id="competition-quarter" class="competition-period" style="display: none;">
+                        @if($data['quarterly_top_performers']->count() > 0)
+                            @foreach($data['quarterly_top_performers']->take(3) as $index => $user)
+                                @php
+                                    $medalClass = '';
+                                    $medalIcon = '';
+                                    $rankColor = '';
+                                    $bgClass = '';
+                                    $rankBadge = '';
+
+                                    switch($index) {
+                                        case 0:
+                                            $medalClass = 'gold-medal';
+                                            $medalIcon = 'bx-trophy';
+                                            $rankColor = 'text-warning';
+                                            $bgClass = 'bg-warning bg-opacity-10';
+                                            $rankBadge = 'bg-warning';
+                                            break;
+                                        case 1:
+                                            $medalClass = 'silver-medal';
+                                            $medalIcon = 'bx-medal';
+                                            $rankColor = 'text-secondary';
+                                            $bgClass = 'bg-secondary bg-opacity-10';
+                                            $rankBadge = 'bg-secondary';
+                                            break;
+                                        case 2:
+                                            $medalClass = 'bronze-medal';
+                                            $medalIcon = 'bx-award';
+                                            $rankColor = 'text-warning';
+                                            $bgClass = 'bg-warning bg-opacity-10';
+                                            $rankBadge = 'bg-warning';
+                                            break;
+                                    }
+                                @endphp
+
+                                <div class="d-flex align-items-center mb-3 p-3 rounded {{ $bgClass }}">
+                                    <div class="avatar flex-shrink-0 me-3 position-relative">
+                                        @if($index < 3)
+                                            <div class="position-absolute top-0 start-100 translate-middle">
+                                                <i class="bx {{ $medalIcon }} {{ $medalClass }}" style="font-size: 24px;"></i>
+                                            </div>
+                                        @endif
+                                        <span class="avatar-initial rounded-circle {{ $rankBadge }} text-white fw-bold rank-badge" style="font-size: 18px; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                                            {{ $index + 1 }}
+                                        </span>
+                                    </div>
+                                    <div class="d-flex w-100 flex-wrap align-items-center justify-content-between gap-2">
+                                        <div class="me-2">
+                                            <h6 class="mb-0 {{ $rankColor }} fw-bold">
+                                                {{ $user->name }}
+                                                @if($index === 0)
+                                                    <i class="bx bx-crown text-warning ms-1 gold-medal" style="font-size: 16px;"></i>
+                                                @endif
+                                            </h6>
+                                            <small class="text-muted">
+                                                <i class="bx bx-task me-1"></i>{{ $user->completed_tasks_count }} completed tasks
+                                                @if($user->total_tasks_count > 0)
+                                                    <span class="ms-2">
+                                                        <i class="bx bx-target-lock me-1"></i>{{ $user->total_tasks_count }} total
+                                                    </span>
+                                                @endif
+                                            </small>
+                                        </div>
+                                        <div class="user-progress d-flex flex-column align-items-end">
+                                            <h6 class="mb-0 {{ $rankColor }} fw-bold">{{ $user->completion_rate }}%</h6>
+                                            <small class="text-muted">Completion Rate</small>
+                                            @if($index === 0)
+                                                <small class="text-success fw-semibold">
+                                                    <i class="bx bx-star me-1"></i>Champion
+                                                </small>
+                                            @elseif($index === 1)
+                                                <small class="text-info fw-semibold">
+                                                    <i class="bx bx-medal me-1"></i>Runner-up
+                                                </small>
+                                            @elseif($index === 2)
+                                                <small class="text-warning fw-semibold">
+                                                    <i class="bx bx-award me-1"></i>Third Place
+                                                </small>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        @else
+                            <div class="text-center py-4">
+                                <i class="bx bx-trophy text-muted" style="font-size: 48px;"></i>
+                                <p class="text-muted mt-2">No performance data available</p>
+                                <small class="text-muted">Start assigning tasks to see competition results</small>
+                            </div>
+                        @endif
+                    </div>
+
+                    <!-- Year Period -->
+                    <div id="competition-year" class="competition-period" style="display: none;">
+                        @if($data['yearly_top_performers']->count() > 0)
+                            @foreach($data['yearly_top_performers']->take(3) as $index => $user)
+                                @php
+                                    $medalClass = '';
+                                    $medalIcon = '';
+                                    $rankColor = '';
+                                    $bgClass = '';
+                                    $rankBadge = '';
+
+                                    switch($index) {
+                                        case 0:
+                                            $medalClass = 'gold-medal';
+                                            $medalIcon = 'bx-trophy';
+                                            $rankColor = 'text-warning';
+                                            $bgClass = 'bg-warning bg-opacity-10';
+                                            $rankBadge = 'bg-warning';
+                                            break;
+                                        case 1:
+                                            $medalClass = 'silver-medal';
+                                            $medalIcon = 'bx-medal';
+                                            $rankColor = 'text-secondary';
+                                            $bgClass = 'bg-secondary bg-opacity-10';
+                                            $rankBadge = 'bg-secondary';
+                                            break;
+                                        case 2:
+                                            $medalClass = 'bronze-medal';
+                                            $medalIcon = 'bx-award';
+                                            $rankColor = 'text-warning';
+                                            $bgClass = 'bg-warning bg-opacity-10';
+                                            $rankBadge = 'bg-warning';
+                                            break;
+                                    }
+                                @endphp
+
+                                <div class="d-flex align-items-center mb-3 p-3 rounded {{ $bgClass }}">
+                                    <div class="avatar flex-shrink-0 me-3 position-relative">
+                                        @if($index < 3)
+                                            <div class="position-absolute top-0 start-100 translate-middle">
+                                                <i class="bx {{ $medalIcon }} {{ $medalClass }}" style="font-size: 24px;"></i>
+                                            </div>
+                                        @endif
+                                        <span class="avatar-initial rounded-circle {{ $rankBadge }} text-white fw-bold rank-badge" style="font-size: 18px; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                                            {{ $index + 1 }}
+                                        </span>
+                                    </div>
+                                    <div class="d-flex w-100 flex-wrap align-items-center justify-content-between gap-2">
+                                        <div class="me-2">
+                                            <h6 class="mb-0 {{ $rankColor }} fw-bold">
+                                                {{ $user->name }}
+                                                @if($index === 0)
+                                                    <i class="bx bx-crown text-warning ms-1 gold-medal" style="font-size: 16px;"></i>
+                                                @endif
+                                            </h6>
+                                            <small class="text-muted">
+                                                <i class="bx bx-task me-1"></i>{{ $user->completed_tasks_count }} completed tasks
+                                                @if($user->total_tasks_count > 0)
+                                                    <span class="ms-2">
+                                                        <i class="bx bx-target-lock me-1"></i>{{ $user->total_tasks_count }} total
+                                                    </span>
+                                                @endif
+                                            </small>
+                                        </div>
+                                        <div class="user-progress d-flex flex-column align-items-end">
+                                            <h6 class="mb-0 {{ $rankColor }} fw-bold">{{ $user->completion_rate }}%</h6>
+                                            <small class="text-muted">Completion Rate</small>
+                                            @if($index === 0)
+                                                <small class="text-success fw-semibold">
+                                                    <i class="bx bx-star me-1"></i>Champion
+                                                </small>
+                                            @elseif($index === 1)
+                                                <small class="text-info fw-semibold">
+                                                    <i class="bx bx-medal me-1"></i>Runner-up
+                                                </small>
+                                            @elseif($index === 2)
+                                                <small class="text-warning fw-semibold">
+                                                    <i class="bx bx-award me-1"></i>Third Place
+                                                </small>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        @else
+                            <div class="text-center py-4">
+                                <i class="bx bx-trophy text-muted" style="font-size: 48px;"></i>
+                                <p class="text-muted mt-2">No performance data available</p>
+                                <small class="text-muted">Start assigning tasks to see competition results</small>
+                            </div>
+                        @endif
+                    </div>
                 </div>
             </div>
         </div>

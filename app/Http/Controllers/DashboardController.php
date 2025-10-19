@@ -235,17 +235,43 @@ class DashboardController extends Controller
                 return $user;
             });
 
-        // Top performers for current month
+        // Top performers for current month - improved query
         $monthlyTopPerformers = User::withCount(['assignedTasks as completed_tasks_count' => function($query) {
                 $query->where('status', 'completed')
-                      ->whereMonth('completed_at', now()->month)
-                      ->whereYear('completed_at', now()->year);
+                      ->where(function($q) {
+                          // Include tasks with completed_at in current month
+                          $q->where(function($subQ) {
+                              $subQ->whereMonth('completed_at', now()->month)
+                                   ->whereYear('completed_at', now()->year);
+                          })
+                          // OR tasks completed this month but without completed_at (fallback to updated_at)
+                          ->orWhere(function($subQ) {
+                              $subQ->whereNull('completed_at')
+                                   ->whereMonth('updated_at', now()->month)
+                                   ->whereYear('updated_at', now()->year);
+                          });
+                      });
             }])
             ->withCount(['assignedTasks as total_tasks_count' => function($query) {
-                $query->whereMonth('created_at', now()->month)
+                $query->where(function($q) {
+                    $q->whereMonth('created_at', now()->month)
                       ->whereYear('created_at', now()->year);
+                });
             }])
-            ->having('completed_tasks_count', '>', 0)
+            ->whereHas('assignedTasks', function($query) {
+                $query->where('status', 'completed')
+                      ->where(function($q) {
+                          $q->where(function($subQ) {
+                              $subQ->whereMonth('completed_at', now()->month)
+                                   ->whereYear('completed_at', now()->year);
+                          })
+                          ->orWhere(function($subQ) {
+                              $subQ->whereNull('completed_at')
+                                   ->whereMonth('updated_at', now()->month)
+                                   ->whereYear('updated_at', now()->year);
+                          });
+                      });
+            })
             ->orderBy('completed_tasks_count', 'desc')
             ->limit(10)
             ->get()
@@ -353,6 +379,8 @@ class DashboardController extends Controller
             'tasks_by_status' => $tasksByStatus,
             'top_performers' => $topPerformers,
             'monthly_top_performers' => $monthlyTopPerformers,
+            'quarterly_top_performers' => $this->getTopPerformersForPeriod('quarter'),
+            'yearly_top_performers' => $this->getTopPerformersForPeriod('year'),
             'tasks_per_user' => $tasksPerUser,
             'recent_activity' => $recentActivity,
             'upcoming_due_dates' => $upcomingDueDates,
@@ -361,6 +389,74 @@ class DashboardController extends Controller
             'tasks_by_project' => $tasksByProject,
             'recent_notifications' => $recentNotifications,
         ];
+    }
+
+    /**
+     * Get top performers for different time periods
+     */
+    public function getTopPerformersForPeriod($period = 'month')
+    {
+        $now = now();
+        $startDate = null;
+        $endDate = null;
+
+        switch ($period) {
+            case 'month':
+                $startDate = $now->copy()->startOfMonth();
+                $endDate = $now->copy()->endOfMonth();
+                break;
+            case 'quarter':
+                $startDate = $now->copy()->startOfQuarter();
+                $endDate = $now->copy()->endOfQuarter();
+                break;
+            case 'year':
+                $startDate = $now->copy()->startOfYear();
+                $endDate = $now->copy()->endOfYear();
+                break;
+            default:
+                $startDate = $now->copy()->startOfMonth();
+                $endDate = $now->copy()->endOfMonth();
+        }
+
+        return User::withCount(['assignedTasks as completed_tasks_count' => function($query) use ($startDate, $endDate) {
+                $query->where('status', 'completed')
+                      ->where(function($q) use ($startDate, $endDate) {
+                          // Include tasks with completed_at in period
+                          $q->where(function($subQ) use ($startDate, $endDate) {
+                              $subQ->whereBetween('completed_at', [$startDate, $endDate]);
+                          })
+                          // OR tasks completed in period but without completed_at (fallback to updated_at)
+                          ->orWhere(function($subQ) use ($startDate, $endDate) {
+                              $subQ->whereNull('completed_at')
+                                   ->whereBetween('updated_at', [$startDate, $endDate]);
+                          });
+                      });
+            }])
+            ->withCount(['assignedTasks as total_tasks_count' => function($query) use ($startDate, $endDate) {
+                $query->whereBetween('created_at', [$startDate, $endDate]);
+            }])
+            ->whereHas('assignedTasks', function($query) use ($startDate, $endDate) {
+                $query->where('status', 'completed')
+                      ->where(function($q) use ($startDate, $endDate) {
+                          $q->where(function($subQ) use ($startDate, $endDate) {
+                              $subQ->whereBetween('completed_at', [$startDate, $endDate]);
+                          })
+                          ->orWhere(function($subQ) use ($startDate, $endDate) {
+                              $subQ->whereNull('completed_at')
+                                   ->whereBetween('updated_at', [$startDate, $endDate]);
+                          });
+                      });
+            })
+            ->orderBy('completed_tasks_count', 'desc')
+            ->limit(10)
+            ->get()
+            ->map(function($user) {
+                $user->completion_rate = $user->total_tasks_count > 0
+                    ? round(($user->completed_tasks_count / $user->total_tasks_count) * 100, 1)
+                    : 0;
+                $user->performance_score = $user->completed_tasks_count * 10 + $user->completion_rate;
+                return $user;
+            });
     }
 
     public function getChartData(Request $request)

@@ -730,13 +730,13 @@
              <div class="avatar avatar-sm me-2">
                <div class="avatar-initial rounded bg-white text-secondary">
                  @if($userRanking['user_ranking']['rank'] == 1)
-                   <i class="bx bx-trophy" style="font-size: 12px;"></i>
+                   <i class="bx bx-trophy" style="font-size: 12px; color: #1c3644;"></i>
                  @elseif($userRanking['user_ranking']['rank'] == 2)
-                   <i class="bx bx-medal" style="font-size: 12px;"></i>
+                   <i class="bx bx-medal" style="font-size: 12px; color: #1c3644;"></i>
                  @elseif($userRanking['user_ranking']['rank'] == 3)
-                   <i class="bx bx-award" style="font-size: 12px;"></i>
+                   <i class="bx bx-award" style="font-size: 12px; color: #1c3644;"></i>
                  @else
-                   <i class="bx bx-user" style="font-size: 12px;"></i>
+                   <i class="bx bx-user" style="font-size: 12px; color: #1c3644;"></i>
                  @endif
                </div>
              </div>

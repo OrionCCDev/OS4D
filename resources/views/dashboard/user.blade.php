@@ -46,13 +46,13 @@
                             <div class="avatar avatar-md me-3">
                                 <div class="avatar-initial rounded bg-label-{{ $userData['rankings']['overall']['user_ranking']['rank'] <= 3 ? 'success' : ($userData['rankings']['overall']['user_ranking']['rank'] <= 10 ? 'warning' : 'primary') }}">
                                     @if($userData['rankings']['overall']['user_ranking']['rank'] == 1)
-                                        <i class="bx bx-trophy text-white"></i>
+                                        <i class="bx bx-trophy" style="color: #1c3644;"></i>
                                     @elseif($userData['rankings']['overall']['user_ranking']['rank'] == 2)
-                                        <i class="bx bx-medal text-white"></i>
+                                        <i class="bx bx-medal" style="color: #1c3644;"></i>
                                     @elseif($userData['rankings']['overall']['user_ranking']['rank'] == 3)
-                                        <i class="bx bx-award text-white"></i>
+                                        <i class="bx bx-award" style="color: #1c3644;"></i>
                                     @else
-                                        <i class="bx bx-user text-white"></i>
+                                        <i class="bx bx-user" style="color: #1c3644;"></i>
                                     @endif
                                 </div>
                             </div>
@@ -96,13 +96,13 @@
                             <div class="avatar avatar-md me-3">
                                 <div class="avatar-initial rounded bg-label-{{ $userData['rankings']['monthly']['user_ranking']['rank'] <= 3 ? 'success' : ($userData['rankings']['monthly']['user_ranking']['rank'] <= 10 ? 'warning' : 'primary') }}">
                                     @if($userData['rankings']['monthly']['user_ranking']['rank'] == 1)
-                                        <i class="bx bx-trophy text-white"></i>
+                                        <i class="bx bx-trophy" style="color: #1c3644;"></i>
                                     @elseif($userData['rankings']['monthly']['user_ranking']['rank'] == 2)
-                                        <i class="bx bx-medal text-white"></i>
+                                        <i class="bx bx-medal" style="color: #1c3644;"></i>
                                     @elseif($userData['rankings']['monthly']['user_ranking']['rank'] == 3)
-                                        <i class="bx bx-award text-white"></i>
+                                        <i class="bx bx-award" style="color: #1c3644;"></i>
                                     @else
-                                        <i class="bx bx-calendar text-white"></i>
+                                        <i class="bx bx-calendar" style="color: #1c3644;"></i>
                                     @endif
                                 </div>
                             </div>

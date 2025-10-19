@@ -356,40 +356,58 @@
                 <table>
                     <thead>
                         <tr>
-                            <th style="width: 35%;">Task Name & Description</th>
-                            <th style="width: 8%; text-align: center;">Status</th>
-                            <th style="width: 7%; text-align: center;">Priority</th>
-                            <th style="width: 10%;">Assignee</th>
-                            <th style="width: 8%; text-align: center;">Created</th>
-                            <th style="width: 8%; text-align: center;">Due Date</th>
-                            <th style="width: 8%; text-align: center;">Completed</th>
-                            <th style="width: 8%; text-align: center;">Duration</th>
-                            <th style="width: 8%; text-align: center;">Time Left</th>
+                            <th style="width: 100%;" colspan="9">Task Details</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach($project['recent_tasks'] as $task)
+                            <!-- Task Name & Description Row -->
                             <tr class="task-row" style="{{ $task['is_overdue'] ? 'background-color: #fff5f5;' : '' }}">
-                                <td style="font-weight: bold; {{ $task['is_overdue'] ? 'color: #dc3545;' : '' }}; vertical-align: top; padding: 8px; min-height: 60px;">
-                                    <div style="margin-bottom: 4px; font-size: 12px; font-weight: bold; color: #2c3e50;">{{ $task['name'] }}</div>
+                                <td colspan="9" style="font-weight: bold; {{ $task['is_overdue'] ? 'color: #dc3545;' : '' }}; vertical-align: top; padding: 12px; border-bottom: 1px solid #e9ecef;">
+                                    <div style="margin-bottom: 6px; font-size: 14px; font-weight: bold; color: #2c3e50;">{{ $task['name'] }}</div>
                                     @if($task['description'])
-                                        <div style="font-size: 10px; color: #555; font-weight: normal; margin-top: 4px; line-height: 1.4; margin-bottom: 6px;">
-                                            {{ Str::limit($task['description'], 120) }}
+                                        <div style="font-size: 11px; color: #555; font-weight: normal; margin-top: 4px; line-height: 1.5; margin-bottom: 8px;">
+                                            {{ Str::limit($task['description'], 150) }}
                                         </div>
                                     @endif
                                     @if($task['is_overdue'])
-                                        <div style="color: #dc3545; font-weight: bold; font-size: 9px; margin-top: 4px; background-color: #f8d7da; padding: 3px 6px; border-radius: 4px; display: inline-block; border: 1px solid #f5c6cb;">⚠ OVERDUE</div>
+                                        <div style="color: #dc3545; font-weight: bold; font-size: 10px; margin-top: 4px; background-color: #f8d7da; padding: 4px 8px; border-radius: 4px; display: inline-block; border: 1px solid #f5c6cb;">⚠ OVERDUE</div>
                                     @endif
                                     @if($task['completion_notes'])
-                                        <div style="font-size: 9px; color: #155724; font-style: italic; margin-top: 4px; background-color: #d4edda; padding: 4px 6px; border-radius: 4px; border: 1px solid #c3e6cb; line-height: 1.3;">
-                                            <strong>Notes:</strong> {{ Str::limit($task['completion_notes'], 100) }}
+                                        <div style="font-size: 10px; color: #155724; font-style: italic; margin-top: 6px; background-color: #d4edda; padding: 6px 8px; border-radius: 4px; border: 1px solid #c3e6cb; line-height: 1.4;">
+                                            <strong>Notes:</strong> {{ Str::limit($task['completion_notes'], 120) }}
                                         </div>
                                     @endif
                                     @if($task['assignee_email'])
-                                        <div style="font-size: 8px; color: #6c757d; margin-top: 3px; font-style: italic;">
+                                        <div style="font-size: 9px; color: #6c757d; margin-top: 4px; font-style: italic;">
                                             Assigned to: {{ $task['assignee_email'] }}
                                         </div>
                                     @endif
+                                </td>
+                            </tr>
+                            
+                            <!-- Task Details Row -->
+                            <tr class="task-details-row" style="{{ $task['is_overdue'] ? 'background-color: #fff5f5;' : '' }}">
+                                <td style="text-align: center; font-size: 9px; vertical-align: top; padding: 8px; border-bottom: 1px solid #e9ecef;">
+                                    <span style="
+                                        display: inline-block;
+                                        padding: 2px 6px;
+                                        border-radius: 3px;
+                                        font-size: 9px;
+                                        font-weight: bold;
+                                        background-color: {{ $task['status'] === 'completed' ? '#28c76f' : ($task['status'] === 'in_progress' || $task['status'] === 'workingon' ? '#ff9f43' : ($task['status'] === 'assigned' ? '#17a2b8' : '#6c757d')) }};
+                                        color: white;
+                                    ">
+                                        {{ ucfirst(str_replace('_', ' ', $task['status'])) }}
+                                    </span>
+                                    <div style="margin-top: 4px;">
+                                        <div style="background-color: #e9ecef; height: 4px; border-radius: 2px; width: 100%;">
+                                            <div style="background-color: {{ $task['progress_stage'] === 'completed' ? '#28c76f' : ($task['progress_stage'] === 'client_review' ? '#ff9f43' : '#007bff') }}; height: 4px; border-radius: 2px; width: {{ $task['progress_percentage'] ?? 0 }}%;"></div>
+                                        </div>
+                                        <div style="font-size: 8px; color: #666; margin-top: 2px;">
+                                            {{ $task['progress_percentage'] ?? 0 }}% - {{ $task['progress_status'] ?? 'Unknown' }}
+                                        </div>
+                                    </div>
                                 </td>
                                 <td style="text-align: center;">
                                     <span style="
