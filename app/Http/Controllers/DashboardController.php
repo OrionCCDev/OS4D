@@ -171,6 +171,63 @@ class DashboardController extends Controller
         return round($totalDays / $completedTasks->count(), 1);
     }
 
+    /**
+     * Get activity title for recent activity
+     */
+    private function getActivityTitle($task)
+    {
+        $status = ucfirst(str_replace('_', ' ', $task->status));
+        $projectName = $task->project ? $task->project->name : 'Unknown Project';
+        
+        switch($task->status) {
+            case 'completed':
+                return "Task Completed: {$task->title}";
+            case 'in_progress':
+                return "Task In Progress: {$task->title}";
+            case 'in_review':
+                return "Task Under Review: {$task->title}";
+            case 'assigned':
+                return "Task Assigned: {$task->title}";
+            case 'pending':
+                return "Task Pending: {$task->title}";
+            default:
+                return "Task Updated: {$task->title}";
+        }
+    }
+
+    /**
+     * Get activity description for recent activity
+     */
+    private function getActivityDescription($task)
+    {
+        $projectName = $task->project ? $task->project->name : 'Unknown Project';
+        $assigneeName = $task->assignee ? $task->assignee->name : 'Unassigned';
+        $status = ucfirst(str_replace('_', ' ', $task->status));
+        
+        return "Project: {$projectName} | Assigned to: {$assigneeName} | Status: {$status}";
+    }
+
+    /**
+     * Get activity type for recent activity
+     */
+    private function getActivityType($task)
+    {
+        switch($task->status) {
+            case 'completed':
+                return 'success';
+            case 'in_progress':
+                return 'primary';
+            case 'in_review':
+                return 'warning';
+            case 'assigned':
+                return 'info';
+            case 'pending':
+                return 'secondary';
+            default:
+                return 'secondary';
+        }
+    }
+
     public function getDashboardData()
     {
         $now = now();
@@ -365,12 +422,23 @@ class DashboardController extends Controller
             ->orderBy('total_tasks', 'desc')
             ->get();
 
-        // Recent activity (last 30 days)
-        $recentActivity = Task::with(['assignee', 'project'])
+        // Recent activity (last 30 days) - formatted for display
+        $recentActivity = Task::with(['assignee', 'project', 'creator'])
             ->where('created_at', '>=', $now->copy()->subDays(30))
             ->orderBy('created_at', 'desc')
             ->limit(10)
-            ->get();
+            ->get()
+            ->map(function($task) {
+                return [
+                    'title' => $this->getActivityTitle($task),
+                    'description' => $this->getActivityDescription($task),
+                    'created_at' => $task->created_at,
+                    'type' => $this->getActivityType($task),
+                    'user' => $task->creator,
+                    'task' => $task,
+                    'project' => $task->project
+                ];
+            });
 
         // Upcoming due dates (next 7 days)
         $upcomingDueDates = Task::with(['assignee', 'project'])

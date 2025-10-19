@@ -369,20 +369,53 @@ class ReportController extends Controller
     public function exportFullProjectReport(Project $project)
     {
         try {
+            \Log::info('Starting full project report export for project: ' . $project->id);
+            
             // Get comprehensive project data
             $projectData = $this->getComprehensiveProjectData($project);
+            \Log::info('Project data retrieved successfully', ['project_id' => $project->id]);
+            
+            // Test with minimal data first
+            $testData = [
+                'project' => $project,
+                'projectStats' => [
+                    'total_tasks' => 0,
+                    'completed_tasks' => 0,
+                    'in_progress_tasks' => 0,
+                    'pending_tasks' => 0,
+                    'overdue_tasks' => 0,
+                    'completion_rate' => 0,
+                ],
+                'allTasks' => collect([]),
+                'allTaskHistory' => collect([]),
+                'teamPerformance' => collect([]),
+                'projectTimeline' => [
+                    'created_at' => $project->created_at,
+                    'start_date' => $project->start_date,
+                    'end_date' => $project->end_date,
+                    'updated_at' => $project->updated_at,
+                ],
+                'projectDuration' => 0
+            ];
             
             // Generate PDF
-            $pdf = Pdf::loadView('reports.pdf.full-project-report', $projectData);
+            $pdf = Pdf::loadView('reports.pdf.full-project-report', $testData);
             $pdf->setPaper('A4', 'portrait');
+            \Log::info('PDF generated successfully');
             
             $filename = 'Full_Project_Report_' . $project->short_code . '_' . now()->format('Y-m-d_H-i-s') . '.pdf';
             
+            \Log::info('Downloading PDF with filename: ' . $filename);
             return $pdf->download($filename);
             
         } catch (\Exception $e) {
-            \Log::error('Failed to export full project report: ' . $e->getMessage());
-            return redirect()->back()->with('error', 'Failed to generate project report. Please try again.');
+            \Log::error('Failed to export full project report: ' . $e->getMessage(), [
+                'project_id' => $project->id,
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return redirect()->back()->with('error', 'Failed to generate project report: ' . $e->getMessage());
         }
     }
 
@@ -433,7 +466,7 @@ class ReportController extends Controller
         $teamPerformance = [];
         
         foreach ($teamMembers as $member) {
-            $memberTasks = $allTasks->where('assigned_to', $member->id);
+            $memberTasks = $allTasks->where('assignee_id', $member->id);
             $teamPerformance[] = [
                 'user' => $member,
                 'total_tasks' => $memberTasks->count(),

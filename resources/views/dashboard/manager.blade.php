@@ -234,7 +234,7 @@
                 </div>
                 <div class="card-body">
                     @if(!empty($data['tasks_by_status']))
-                        <canvas id="taskStatusChart" width="400" height="200"></canvas>
+                    <canvas id="taskStatusChart" width="400" height="200"></canvas>
                     @else
                         <div class="text-center py-4">
                             <i class="bx bx-pie-chart-alt-2 fs-1 text-muted opacity-50"></i>
@@ -253,7 +253,7 @@
                 </div>
                 <div class="card-body">
                     @if(!empty($data['tasks_by_priority']))
-                        <canvas id="taskPriorityChart" width="400" height="200"></canvas>
+                    <canvas id="taskPriorityChart" width="400" height="200"></canvas>
                     @else
                         <div class="text-center py-4">
                             <i class="bx bx-bar-chart-alt-2 fs-1 text-muted opacity-50"></i>
@@ -333,10 +333,10 @@
                                                     </small>
                                                 @endif
                                                 <div class="mt-1">
-                                                    <span class="badge bg-success bg-opacity-20 text-success">
+                                                    <span class="badge bg-success bg-opacity-20 text-dark">
                                                         Performance Score: {{ $performer->monthly_performance_score ?? $performer->performance_score ?? 0 }}
                                                     </span>
-                                                    <span class="badge bg-info bg-opacity-20 text-info ms-1">
+                                                    <span class="badge bg-info bg-opacity-20 text-dark ms-1">
                                                         Completion Rate: {{ number_format($performer->completion_rate ?? 0, 1) }}%
                                                     </span>
                                                 </div>
@@ -352,7 +352,7 @@
                                 <small class="text-white-50">Start assigning tasks to see competition results</small>
                             </div>
                         @endif
-                    </div>
+                        </div>
                 </div>
             </div>
         </div>
@@ -368,13 +368,16 @@
                         <div class="timeline">
                             @foreach($data['recent_activity'] as $activity)
                                 <div class="timeline-item">
-                                    <div class="timeline-marker bg-primary"></div>
+                                    <div class="timeline-marker bg-{{ $activity['type'] ?? 'primary' }}"></div>
                                     <div class="timeline-content">
-                                        <h6 class="mb-1 text-dark">{{ $activity['title'] }}</h6>
-                                        <p class="text-muted mb-1 small">{{ $activity['description'] }}</p>
+                                        <h6 class="mb-1 text-dark fw-semibold">{{ $activity['title'] ?? 'Activity' }}</h6>
+                                        <p class="text-muted mb-1 small">{{ $activity['description'] ?? 'No description available' }}</p>
                                         <small class="text-muted">
                                             <i class="bx bx-time me-1"></i>
-                                            {{ $activity['created_at']->diffForHumans() }}
+                                            {{ \Carbon\Carbon::parse($activity['created_at'])->diffForHumans() }}
+                                            @if(isset($activity['project']))
+                                                | <i class="bx bx-folder me-1"></i>{{ $activity['project']['name'] ?? 'Unknown Project' }}
+                                            @endif
                                         </small>
                                     </div>
                                 </div>
@@ -392,6 +395,65 @@
     </div>
 </div>
 
+@push('styles')
+<style>
+.timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 15px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #e9ecef;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -22px;
+    top: 5px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 2px #e9ecef;
+}
+
+.timeline-content {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    border-left: 3px solid #007bff;
+}
+
+.timeline-title {
+    margin: 0 0 8px 0;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.timeline-text {
+    margin: 0 0 8px 0;
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.timeline-meta {
+    font-size: 12px;
+    color: #6c757d;
+}
+</style>
+@endpush
+
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
@@ -399,6 +461,8 @@
     @if(!empty($data['tasks_by_status']))
     const taskStatusCtx = document.getElementById('taskStatusChart').getContext('2d');
     const taskStatusData = @json($data['tasks_by_status']);
+    
+    console.log('Task Status Data:', taskStatusData);
 
     new Chart(taskStatusCtx, {
         type: 'doughnut',
@@ -439,6 +503,8 @@
     @if(!empty($data['tasks_by_priority']))
     const taskPriorityCtx = document.getElementById('taskPriorityChart').getContext('2d');
     const taskPriorityData = @json($data['tasks_by_priority']);
+    
+    console.log('Task Priority Data:', taskPriorityData);
 
     new Chart(taskPriorityCtx, {
         type: 'bar',
@@ -518,6 +584,11 @@
             window.location.reload();
         }, 1000);
     }
+    
+    // Debug data
+    console.log('Recent Activity Data:', @json($data['recent_activity']));
+    console.log('Tasks by Status:', @json($data['tasks_by_status']));
+    console.log('Tasks by Priority:', @json($data['tasks_by_priority']));
 </script>
 @endpush
 @endsection
