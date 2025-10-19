@@ -300,7 +300,7 @@
                         </div>
                         @if($data['tasks_by_status']->hasPages())
                             <div class="card-footer">
-                                {{ $data['tasks_by_status']->links() }}
+                                {{ $data['tasks_by_status']->appends(request()->except('status_page'))->links() }}
                             </div>
                         @endif
                     @else
@@ -387,7 +387,7 @@
                         </div>
                         @if($data['tasks_by_priority']->hasPages())
                             <div class="card-footer">
-                                {{ $data['tasks_by_priority']->links() }}
+                                {{ $data['tasks_by_priority']->appends(request()->except('priority_page'))->links() }}
                             </div>
                         @endif
                     @else

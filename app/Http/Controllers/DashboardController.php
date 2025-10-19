@@ -286,7 +286,7 @@ class DashboardController extends Controller
             ")
             ->orderBy('due_date', 'asc')
             ->orderBy('created_at', 'desc')
-            ->paginate(4);
+            ->paginate(4, ['*'], 'priority_page');
 
         // Tasks by status - get actual tasks ordered by status priority
         $tasksByStatus = Task::with(['assignee', 'project', 'folder'])
@@ -308,7 +308,7 @@ class DashboardController extends Controller
             ")
             ->orderBy('due_date', 'asc')
             ->orderBy('created_at', 'desc')
-            ->paginate(4);
+            ->paginate(4, ['*'], 'status_page');
 
         // Top performers (users with most completed tasks) - Overall
         $topPerformers = User::withCount(['assignedTasks as completed_tasks_count' => function($query) {
