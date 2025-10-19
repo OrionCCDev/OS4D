@@ -33,7 +33,7 @@
                         <label for="project_id" class="form-label">Project</label>
                         <select class="form-select" id="project_id" name="project_id">
                             <option value="">All Projects</option>
-                            @foreach(\App\Models\Project::all() as $project)
+                            @foreach($projects as $project)
                                 <option value="{{ $project->id }}" {{ $filters['project_id'] == $project->id ? 'selected' : '' }}>
                                     {{ $project->name }}
                                 </option>
@@ -44,7 +44,7 @@
                         <label for="user_id" class="form-label">User</label>
                         <select class="form-select" id="user_id" name="user_id">
                             <option value="">All Users</option>
-                            @foreach(\App\Models\User::where('role', '!=', 'admin')->get() as $user)
+                            @foreach($users as $user)
                                 <option value="{{ $user->id }}" {{ $filters['user_id'] == $user->id ? 'selected' : '' }}>
                                     {{ $user->name }}
                                 </option>
@@ -76,7 +76,13 @@
                         <label for="date_to" class="form-label">To Date</label>
                         <input type="date" class="form-control" id="date_to" name="date_to" value="{{ $filters['date_to'] ?? '' }}">
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-3">
+                        <label for="search" class="form-label">Search Tasks</label>
+                        <input type="text" class="form-control" id="search" name="search" 
+                               placeholder="Search by task name, description, project, or assignee..." 
+                               value="{{ $filters['search'] ?? '' }}">
+                    </div>
+                    <div class="col-md-3">
                         <label class="form-label">&nbsp;</label>
                         <div class="d-flex gap-2">
                             <button type="submit" class="btn btn-primary">
@@ -310,6 +316,131 @@
             </div>
         </div>
     </div>
+
+    <!-- Task List -->
+    @if(isset($taskReport['tasks']) && $taskReport['tasks']->count() > 0)
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex align-items-center justify-content-between">
+                    <h5 class="card-title mb-0">Task List</h5>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="text-muted small">Showing {{ $taskReport['tasks']->firstItem() }} to {{ $taskReport['tasks']->lastItem() }} of {{ $taskReport['tasks']->total() }} tasks</span>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Task</th>
+                                    <th>Project</th>
+                                    <th>Assignee</th>
+                                    <th>Status</th>
+                                    <th>Priority</th>
+                                    <th>Due Date</th>
+                                    <th>Created</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($taskReport['tasks'] as $task)
+                                <tr>
+                                    <td>
+                                        <div class="d-flex flex-column">
+                                            <h6 class="mb-1">{{ $task->title }}</h6>
+                                            @if($task->description)
+                                                <small class="text-muted">{{ Str::limit($task->description, 60) }}</small>
+                                            @endif
+                                        </div>
+                                    </td>
+                                    <td>
+                                        @if($task->project)
+                                            <span class="badge bg-info">{{ $task->project->name }}</span>
+                                        @else
+                                            <span class="text-muted">No Project</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @if($task->assignee)
+                                            <div class="d-flex align-items-center">
+                                                <div class="avatar avatar-xs me-2">
+                                                    <img src="{{ asset('uploads/users/' . ($task->assignee->img ?: 'default.png')) }}" 
+                                                         alt="{{ $task->assignee->name }}" class="rounded-circle">
+                                                </div>
+                                                <div>
+                                                    <div class="fw-semibold">{{ $task->assignee->name }}</div>
+                                                    <small class="text-muted">{{ $task->assignee->email }}</small>
+                                                </div>
+                                            </div>
+                                        @else
+                                            <span class="text-muted">Unassigned</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{{ $task->status === 'completed' ? 'success' : ($task->status === 'in_progress' ? 'warning' : ($task->status === 'pending' ? 'info' : 'danger')) }}">
+                                            {{ ucfirst(str_replace('_', ' ', $task->status)) }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{{ $task->priority === 'high' ? 'danger' : ($task->priority === 'medium' ? 'warning' : 'info') }}">
+                                            {{ ucfirst($task->priority) }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        @if($task->due_date)
+                                            <div class="d-flex flex-column">
+                                                <span class="fw-semibold">{{ \Carbon\Carbon::parse($task->due_date)->format('M d, Y') }}</span>
+                                                <small class="text-muted">{{ \Carbon\Carbon::parse($task->due_date)->format('H:i') }}</small>
+                                                @if($task->due_date < now() && $task->status !== 'completed')
+                                                    <small class="text-danger">Overdue</small>
+                                                @endif
+                                            </div>
+                                        @else
+                                            <span class="text-muted">No due date</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        <div class="d-flex flex-column">
+                                            <span class="fw-semibold">{{ \Carbon\Carbon::parse($task->created_at)->format('M d, Y') }}</span>
+                                            <small class="text-muted">{{ \Carbon\Carbon::parse($task->created_at)->format('H:i') }}</small>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex gap-1">
+                                            <button class="btn btn-sm btn-outline-primary" onclick="viewTaskHistory({{ $task->id }})" title="View Task History">
+                                                <i class="bx bx-history"></i>
+                                            </button>
+                                            <a href="{{ route('tasks.show', $task->id) }}" class="btn btn-sm btn-outline-info" title="View Task Details">
+                                                <i class="bx bx-show"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    {{ $taskReport['tasks']->appends(request()->query())->links() }}
+                </div>
+            </div>
+        </div>
+    </div>
+    @else
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="bx bx-task fs-1 text-muted mb-3"></i>
+                    <h5 class="text-muted">No tasks found</h5>
+                    <p class="text-muted">Try adjusting your filters or search criteria to find tasks.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
 </div>
 <!-- / Content -->
 
@@ -328,5 +459,98 @@ function exportReport(format, type) {
     const url = `${baseUrl}/${format}/${type}`;
     window.open(url, '_blank');
 }
+
+function viewTaskHistory(taskId) {
+    // Create a modal to show task history
+    const modalHtml = `
+        <div class="modal fade" id="taskHistoryModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Task History - Task #${taskId}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="text-center py-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-2">Loading task history...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Remove existing modal if any
+    const existingModal = document.getElementById('taskHistoryModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    // Add modal to body
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('taskHistoryModal'));
+    modal.show();
+    
+    // Load task history via AJAX
+    fetch(`/tasks/${taskId}/history`)
+        .then(response => response.json())
+        .then(data => {
+            const modalBody = document.querySelector('#taskHistoryModal .modal-body');
+            if (data.success && data.history) {
+                modalBody.innerHTML = `
+                    <div class="timeline">
+                        ${data.history.map(entry => `
+                            <div class="timeline-item">
+                                <div class="timeline-marker bg-${entry.type === 'created' ? 'primary' : entry.type === 'updated' ? 'warning' : 'success'}"></div>
+                                <div class="timeline-content">
+                                    <h6 class="mb-1">${entry.title}</h6>
+                                    <p class="text-muted mb-1">${entry.description}</p>
+                                    <small class="text-muted">
+                                        <i class="bx bx-time me-1"></i>
+                                        ${new Date(entry.created_at).toLocaleString()}
+                                        ${entry.user ? ` by ${entry.user.name}` : ''}
+                                    </small>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            } else {
+                modalBody.innerHTML = `
+                    <div class="text-center py-4">
+                        <i class="bx bx-history fs-1 text-muted"></i>
+                        <p class="text-muted mt-2">No history found for this task</p>
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            console.error('Error loading task history:', error);
+            const modalBody = document.querySelector('#taskHistoryModal .modal-body');
+            modalBody.innerHTML = `
+                <div class="text-center py-4">
+                    <i class="bx bx-error fs-1 text-danger"></i>
+                    <p class="text-danger mt-2">Error loading task history</p>
+                </div>
+            `;
+        });
+}
+
+// Auto-submit form on filter change
+document.addEventListener('DOMContentLoaded', function() {
+    const filterForm = document.getElementById('filterForm');
+    const filterInputs = filterForm.querySelectorAll('select, input[type="date"]');
+    
+    filterInputs.forEach(input => {
+        input.addEventListener('change', function() {
+            filterForm.submit();
+        });
+    });
+});
 </script>
 @endsection

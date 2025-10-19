@@ -270,17 +270,33 @@
                                             @endif
                                         </h6>
                                         <small class="text-muted">
-                                            <i class="bx bx-task me-1"></i>{{ $user->completed_tasks_count }} completed tasks
+                                            <i class="bx bx-task me-1"></i>{{ $user->completed_tasks_count }} completed
+                                            @if($user->in_progress_tasks_count > 0)
+                                                <span class="ms-2">
+                                                    <i class="bx bx-time me-1"></i>{{ $user->in_progress_tasks_count }} in progress
+                                                </span>
+                                            @endif
                                             @if($user->total_tasks_count > 0)
                                                 <span class="ms-2">
                                                     <i class="bx bx-target-lock me-1"></i>{{ $user->total_tasks_count }} total
                                                 </span>
                                             @endif
                                         </small>
+                                        @if($user->rejection_rate > 0 || $user->overdue_rate > 0)
+                                            <small class="text-danger d-block mt-1">
+                                                @if($user->rejection_rate > 0)
+                                                    <i class="bx bx-x-circle me-1"></i>{{ $user->rejection_rate }}% rejected
+                                                @endif
+                                                @if($user->overdue_rate > 0)
+                                                    <i class="bx bx-time-five me-1"></i>{{ $user->overdue_rate }}% overdue
+                                                @endif
+                                            </small>
+                                        @endif
                                     </div>
                                     <div class="user-progress d-flex flex-column align-items-end">
-                                        <h6 class="mb-0 {{ $rankColor }} fw-bold">{{ $user->completion_rate }}%</h6>
-                                        <small class="text-muted">Completion Rate</small>
+                                        <h6 class="mb-0 {{ $rankColor }} fw-bold">{{ $user->monthly_performance_score ?? $user->performance_score ?? 0 }}</h6>
+                                        <small class="text-muted">Performance Score</small>
+                                        <small class="text-success fw-semibold">{{ $user->completion_rate }}% completion</small>
                                         @if($index === 0)
                                             <small class="text-success fw-semibold">
                                                 <i class="bx bx-star me-1"></i>Champion
@@ -371,18 +387,34 @@
                                                     <i class="bx bx-crown text-warning ms-1 gold-medal" style="font-size: 16px;"></i>
                                                 @endif
                                             </h6>
-                                            <small class="text-muted">
-                                                <i class="bx bx-task me-1"></i>{{ $user->completed_tasks_count }} completed tasks
-                                                @if($user->total_tasks_count > 0)
-                                                    <span class="ms-2">
-                                                        <i class="bx bx-target-lock me-1"></i>{{ $user->total_tasks_count }} total
-                                                    </span>
+                                        <small class="text-muted">
+                                            <i class="bx bx-task me-1"></i>{{ $user->completed_tasks_count }} completed
+                                            @if($user->in_progress_tasks_count > 0)
+                                                <span class="ms-2">
+                                                    <i class="bx bx-time me-1"></i>{{ $user->in_progress_tasks_count }} in progress
+                                                </span>
+                                            @endif
+                                            @if($user->total_tasks_count > 0)
+                                                <span class="ms-2">
+                                                    <i class="bx bx-target-lock me-1"></i>{{ $user->total_tasks_count }} total
+                                                </span>
+                                            @endif
+                                        </small>
+                                        @if($user->rejection_rate > 0 || $user->overdue_rate > 0)
+                                            <small class="text-danger d-block mt-1">
+                                                @if($user->rejection_rate > 0)
+                                                    <i class="bx bx-x-circle me-1"></i>{{ $user->rejection_rate }}% rejected
+                                                @endif
+                                                @if($user->overdue_rate > 0)
+                                                    <i class="bx bx-time-five me-1"></i>{{ $user->overdue_rate }}% overdue
                                                 @endif
                                             </small>
+                                        @endif
                                         </div>
                                         <div class="user-progress d-flex flex-column align-items-end">
-                                            <h6 class="mb-0 {{ $rankColor }} fw-bold">{{ $user->completion_rate }}%</h6>
-                                            <small class="text-muted">Completion Rate</small>
+                                        <h6 class="mb-0 {{ $rankColor }} fw-bold">{{ $user->monthly_performance_score ?? $user->performance_score ?? 0 }}</h6>
+                                        <small class="text-muted">Performance Score</small>
+                                        <small class="text-success fw-semibold">{{ $user->completion_rate }}% completion</small>
                                             @if($index === 0)
                                                 <small class="text-success fw-semibold">
                                                     <i class="bx bx-star me-1"></i>Champion
@@ -464,18 +496,34 @@
                                                     <i class="bx bx-crown text-warning ms-1 gold-medal" style="font-size: 16px;"></i>
                                                 @endif
                                             </h6>
-                                            <small class="text-muted">
-                                                <i class="bx bx-task me-1"></i>{{ $user->completed_tasks_count }} completed tasks
-                                                @if($user->total_tasks_count > 0)
-                                                    <span class="ms-2">
-                                                        <i class="bx bx-target-lock me-1"></i>{{ $user->total_tasks_count }} total
-                                                    </span>
+                                        <small class="text-muted">
+                                            <i class="bx bx-task me-1"></i>{{ $user->completed_tasks_count }} completed
+                                            @if($user->in_progress_tasks_count > 0)
+                                                <span class="ms-2">
+                                                    <i class="bx bx-time me-1"></i>{{ $user->in_progress_tasks_count }} in progress
+                                                </span>
+                                            @endif
+                                            @if($user->total_tasks_count > 0)
+                                                <span class="ms-2">
+                                                    <i class="bx bx-target-lock me-1"></i>{{ $user->total_tasks_count }} total
+                                                </span>
+                                            @endif
+                                        </small>
+                                        @if($user->rejection_rate > 0 || $user->overdue_rate > 0)
+                                            <small class="text-danger d-block mt-1">
+                                                @if($user->rejection_rate > 0)
+                                                    <i class="bx bx-x-circle me-1"></i>{{ $user->rejection_rate }}% rejected
+                                                @endif
+                                                @if($user->overdue_rate > 0)
+                                                    <i class="bx bx-time-five me-1"></i>{{ $user->overdue_rate }}% overdue
                                                 @endif
                                             </small>
+                                        @endif
                                         </div>
                                         <div class="user-progress d-flex flex-column align-items-end">
-                                            <h6 class="mb-0 {{ $rankColor }} fw-bold">{{ $user->completion_rate }}%</h6>
-                                            <small class="text-muted">Completion Rate</small>
+                                        <h6 class="mb-0 {{ $rankColor }} fw-bold">{{ $user->monthly_performance_score ?? $user->performance_score ?? 0 }}</h6>
+                                        <small class="text-muted">Performance Score</small>
+                                        <small class="text-success fw-semibold">{{ $user->completion_rate }}% completion</small>
                                             @if($index === 0)
                                                 <small class="text-success fw-semibold">
                                                     <i class="bx bx-star me-1"></i>Champion

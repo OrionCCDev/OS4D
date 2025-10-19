@@ -286,39 +286,63 @@ class ReportService
         $query = Task::with(['project', 'assignee', 'creator']);
 
         // Apply filters
-        if (isset($filters['project_id'])) {
+        if (!empty($filters['project_id']) && $filters['project_id'] !== 'all') {
             $query->where('project_id', $filters['project_id']);
         }
 
-        if (isset($filters['user_id'])) {
+        if (!empty($filters['user_id']) && $filters['user_id'] !== 'all') {
             $query->where('assigned_to', $filters['user_id']);
         }
 
-        if (isset($filters['status'])) {
+        if (!empty($filters['status']) && is_array($filters['status']) && !in_array('all', $filters['status'])) {
             $query->whereIn('status', $filters['status']);
         }
 
-        if (isset($filters['date_from'])) {
+        if (!empty($filters['priority']) && is_array($filters['priority']) && !in_array('all', $filters['priority'])) {
+            $query->whereIn('priority', $filters['priority']);
+        }
+
+        if (!empty($filters['date_from'])) {
             $query->where('created_at', '>=', $filters['date_from']);
         }
 
-        if (isset($filters['date_to'])) {
+        if (!empty($filters['date_to'])) {
             $query->where('created_at', '<=', $filters['date_to']);
         }
 
-        $tasks = $query->get();
+        // Add search functionality
+        if (!empty($filters['search'])) {
+            $searchTerm = $filters['search'];
+            $query->where(function($q) use ($searchTerm) {
+                $q->where('title', 'like', "%{$searchTerm}%")
+                  ->orWhere('description', 'like', "%{$searchTerm}%")
+                  ->orWhereHas('project', function($projectQuery) use ($searchTerm) {
+                      $projectQuery->where('name', 'like', "%{$searchTerm}%");
+                  })
+                  ->orWhereHas('assignee', function($userQuery) use ($searchTerm) {
+                      $userQuery->where('name', 'like', "%{$searchTerm}%");
+                  });
+            });
+        }
+
+        // Get all tasks for statistics
+        $allTasks = $query->get();
+
+        // Get paginated tasks for display
+        $paginatedTasks = $query->orderBy('created_at', 'desc')->paginate(15);
 
         return [
-            'total_tasks' => $tasks->count(),
-            'completed_tasks' => $tasks->where('status', 'completed')->count(),
-            'in_progress_tasks' => $tasks->where('status', 'in_progress')->count(),
-            'overdue_tasks' => $tasks->where('status', '!=', 'completed')
+            'total_tasks' => $allTasks->count(),
+            'completed_tasks' => $allTasks->where('status', 'completed')->count(),
+            'in_progress_tasks' => $allTasks->whereIn('status', ['in_progress', 'workingon', 'assigned'])->count(),
+            'overdue_tasks' => $allTasks->where('status', '!=', 'completed')
                 ->where('due_date', '<', now())
                 ->count(),
-            'completion_rate' => $tasks->count() > 0 ? round(($tasks->where('status', 'completed')->count() / $tasks->count()) * 100, 2) : 0,
-            'tasks_by_priority' => $this->groupTasksByPriority($tasks),
-            'tasks_by_status' => $this->groupTasksByStatus($tasks),
-            'average_completion_time' => $this->calculateAverageCompletionTime($tasks),
+            'completion_rate' => $allTasks->count() > 0 ? round(($allTasks->where('status', 'completed')->count() / $allTasks->count()) * 100, 2) : 0,
+            'tasks_by_priority' => $this->groupTasksByPriority($allTasks),
+            'tasks_by_status' => $this->groupTasksByStatus($allTasks),
+            'average_completion_time' => $this->calculateAverageCompletionTime($allTasks),
+            'tasks' => $paginatedTasks, // Paginated task list for display
         ];
     }
 

@@ -261,6 +261,21 @@ class DashboardController extends Controller
             ->withCount(['assignedTasks as in_progress_tasks_count' => function($query) {
                 $query->whereIn('status', ['in_progress', 'workingon', 'assigned']);
             }])
+            ->withCount(['assignedTasks as rejected_tasks_count' => function($query) {
+                $query->where('status', 'rejected');
+            }])
+            ->withCount(['assignedTasks as overdue_tasks_count' => function($query) {
+                $query->where('due_date', '<', now())
+                      ->whereNotIn('status', ['completed', 'cancelled']);
+            }])
+            ->withCount(['assignedTasks as on_time_completed_count' => function($query) {
+                $query->where('status', 'completed')
+                      ->whereRaw('completed_at <= due_date');
+            }])
+            ->withCount(['assignedTasks as late_completed_count' => function($query) {
+                $query->where('status', 'completed')
+                      ->whereRaw('completed_at > due_date');
+            }])
             ->whereHas('assignedTasks')
             ->orderBy('completed_tasks_count', 'desc')
             ->orderBy('in_progress_tasks_count', 'desc')
@@ -271,8 +286,21 @@ class DashboardController extends Controller
                 $user->completion_rate = $user->total_tasks_count > 0
                     ? round(($user->completed_tasks_count / $user->total_tasks_count) * 100, 1)
                     : 0;
-                // Calculate performance score based on completed tasks + in progress tasks
-                $user->monthly_performance_score = ($user->completed_tasks_count * 10) + ($user->in_progress_tasks_count * 5) + $user->completion_rate;
+                
+                // Enhanced performance scoring system
+                $user->monthly_performance_score = $this->calculateAdvancedPerformanceScore($user);
+                
+                // Additional metrics for display
+                $user->rejection_rate = $user->total_tasks_count > 0
+                    ? round(($user->rejected_tasks_count / $user->total_tasks_count) * 100, 1)
+                    : 0;
+                $user->overdue_rate = $user->total_tasks_count > 0
+                    ? round(($user->overdue_tasks_count / $user->total_tasks_count) * 100, 1)
+                    : 0;
+                $user->on_time_rate = $user->completed_tasks_count > 0
+                    ? round(($user->on_time_completed_count / $user->completed_tasks_count) * 100, 1)
+                    : 0;
+                
                 return $user;
             });
 
@@ -285,6 +313,21 @@ class DashboardController extends Controller
                 ->withCount(['assignedTasks as in_progress_tasks_count' => function($query) {
                     $query->whereIn('status', ['in_progress', 'workingon', 'assigned']);
                 }])
+                ->withCount(['assignedTasks as rejected_tasks_count' => function($query) {
+                    $query->where('status', 'rejected');
+                }])
+                ->withCount(['assignedTasks as overdue_tasks_count' => function($query) {
+                    $query->where('due_date', '<', now())
+                          ->whereNotIn('status', ['completed', 'cancelled']);
+                }])
+                ->withCount(['assignedTasks as on_time_completed_count' => function($query) {
+                    $query->where('status', 'completed')
+                          ->whereRaw('completed_at <= due_date');
+                }])
+                ->withCount(['assignedTasks as late_completed_count' => function($query) {
+                    $query->where('status', 'completed')
+                          ->whereRaw('completed_at > due_date');
+                }])
                 ->whereHas('assignedTasks')
                 ->orderBy('completed_tasks_count', 'desc')
                 ->orderBy('in_progress_tasks_count', 'desc')
@@ -295,7 +338,21 @@ class DashboardController extends Controller
                     $user->completion_rate = $user->total_tasks_count > 0
                         ? round(($user->completed_tasks_count / $user->total_tasks_count) * 100, 1)
                         : 0;
-                    $user->monthly_performance_score = ($user->completed_tasks_count * 10) + ($user->in_progress_tasks_count * 5) + $user->completion_rate;
+                    
+                    // Enhanced performance scoring system
+                    $user->monthly_performance_score = $this->calculateAdvancedPerformanceScore($user);
+                    
+                    // Additional metrics for display
+                    $user->rejection_rate = $user->total_tasks_count > 0
+                        ? round(($user->rejected_tasks_count / $user->total_tasks_count) * 100, 1)
+                        : 0;
+                    $user->overdue_rate = $user->total_tasks_count > 0
+                        ? round(($user->overdue_tasks_count / $user->total_tasks_count) * 100, 1)
+                        : 0;
+                    $user->on_time_rate = $user->completed_tasks_count > 0
+                        ? round(($user->on_time_completed_count / $user->completed_tasks_count) * 100, 1)
+                        : 0;
+                    
                     return $user;
                 });
         }
@@ -463,6 +520,21 @@ class DashboardController extends Controller
             ->withCount(['assignedTasks as in_progress_tasks_count' => function($query) {
                 $query->whereIn('status', ['in_progress', 'workingon', 'assigned']);
             }])
+            ->withCount(['assignedTasks as rejected_tasks_count' => function($query) {
+                $query->where('status', 'rejected');
+            }])
+            ->withCount(['assignedTasks as overdue_tasks_count' => function($query) {
+                $query->where('due_date', '<', now())
+                      ->whereNotIn('status', ['completed', 'cancelled']);
+            }])
+            ->withCount(['assignedTasks as on_time_completed_count' => function($query) {
+                $query->where('status', 'completed')
+                      ->whereRaw('completed_at <= due_date');
+            }])
+            ->withCount(['assignedTasks as late_completed_count' => function($query) {
+                $query->where('status', 'completed')
+                      ->whereRaw('completed_at > due_date');
+            }])
             ->whereHas('assignedTasks')
             ->orderBy('completed_tasks_count', 'desc')
             ->orderBy('in_progress_tasks_count', 'desc')
@@ -473,9 +545,68 @@ class DashboardController extends Controller
                 $user->completion_rate = $user->total_tasks_count > 0
                     ? round(($user->completed_tasks_count / $user->total_tasks_count) * 100, 1)
                     : 0;
-                $user->performance_score = ($user->completed_tasks_count * 10) + ($user->in_progress_tasks_count * 5) + $user->completion_rate;
+                
+                // Enhanced performance scoring system
+                $user->performance_score = $this->calculateAdvancedPerformanceScore($user);
+                
+                // Additional metrics for display
+                $user->rejection_rate = $user->total_tasks_count > 0
+                    ? round(($user->rejected_tasks_count / $user->total_tasks_count) * 100, 1)
+                    : 0;
+                $user->overdue_rate = $user->total_tasks_count > 0
+                    ? round(($user->overdue_tasks_count / $user->total_tasks_count) * 100, 1)
+                    : 0;
+                $user->on_time_rate = $user->completed_tasks_count > 0
+                    ? round(($user->on_time_completed_count / $user->completed_tasks_count) * 100, 1)
+                    : 0;
+                
                 return $user;
             });
+    }
+
+    /**
+     * Calculate advanced performance score considering multiple factors
+     */
+    private function calculateAdvancedPerformanceScore($user)
+    {
+        // Base scores
+        $completedScore = $user->completed_tasks_count * 10;
+        $inProgressScore = $user->in_progress_tasks_count * 5;
+        
+        // Quality bonuses
+        $onTimeBonus = $user->on_time_completed_count * 3; // Bonus for on-time completion
+        $completionRateBonus = $user->completion_rate * 0.5; // Completion rate bonus
+        
+        // Penalties
+        $rejectionPenalty = $user->rejected_tasks_count * 8; // Heavy penalty for rejections
+        $overduePenalty = $user->overdue_tasks_count * 5; // Penalty for overdue tasks
+        $lateCompletionPenalty = $user->late_completed_count * 2; // Penalty for late completion
+        
+        // User experience factor (more tasks = more experience = higher multiplier)
+        $experienceMultiplier = $this->calculateExperienceMultiplier($user->total_tasks_count);
+        
+        // Calculate base score
+        $baseScore = $completedScore + $inProgressScore + $onTimeBonus + $completionRateBonus;
+        $penalties = $rejectionPenalty + $overduePenalty + $lateCompletionPenalty;
+        
+        // Apply experience multiplier and subtract penalties
+        $finalScore = ($baseScore * $experienceMultiplier) - $penalties;
+        
+        // Ensure score is not negative
+        return max(0, round($finalScore, 2));
+    }
+    
+    /**
+     * Calculate experience multiplier based on total tasks
+     */
+    private function calculateExperienceMultiplier($totalTasks)
+    {
+        if ($totalTasks == 0) return 1.0;
+        if ($totalTasks <= 5) return 1.0; // New users
+        if ($totalTasks <= 15) return 1.1; // Some experience
+        if ($totalTasks <= 30) return 1.2; // Experienced
+        if ($totalTasks <= 50) return 1.3; // Very experienced
+        return 1.4; // Expert level
     }
 
     public function getChartData(Request $request)

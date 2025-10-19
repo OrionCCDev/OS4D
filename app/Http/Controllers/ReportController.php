@@ -88,12 +88,20 @@ class ReportController extends Controller
     public function tasks(Request $request): View
     {
         $filters = $this->getFiltersFromRequest($request);
+        
+        // Add search parameter to filters
+        $filters['search'] = $request->get('search');
+        
         $taskReport = $this->reportService->getTaskCompletionReport($filters);
+
+        // Get all projects and users for filter dropdowns
+        $projects = Project::select('id', 'name', 'short_code')->orderBy('name')->get();
+        $users = User::where('role', '!=', 'admin')->select('id', 'name', 'email')->orderBy('name')->get();
 
         // Debug: Log the task report data
         \Log::info('Task Report Data:', $taskReport);
 
-        return view('reports.tasks.completion', compact('taskReport', 'filters'));
+        return view('reports.tasks.completion', compact('taskReport', 'filters', 'projects', 'users'));
     }
 
     /**
