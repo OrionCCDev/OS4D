@@ -263,7 +263,7 @@
                                             </div>
                                         </td>
                                         <td>
-                                            <span class="badge bg-{{ $task->status_badge_class }} text-white px-2 py-1 rounded-pill" style="font-size: 11px; font-weight: 600;">
+                                            <span class="badge {{ $task->status_badge_class }} text-white px-2 py-1 rounded-pill" style="font-size: 11px; font-weight: 600;">
                                                 {{ ucfirst(str_replace('_', ' ', $task->status)) }}
                                             </span>
                                         </td>
