@@ -271,27 +271,21 @@ class DashboardController extends Controller
             ->toArray();
 
         // Tasks by status - get actual tasks ordered by status priority
-        $statusPriority = [
-            'overdue' => 1,
-            'in_progress' => 2,
-            'assigned' => 3,
-            'pending' => 4,
-            'submitted_for_review' => 5,
-            'in_review' => 6,
-            'waiting_sending_client_consultant_approve' => 7,
-            'waiting_client_consultant_approve' => 8,
-            'approved' => 9,
-            'completed' => 10,
-            'cancelled' => 11
-        ];
-        
         $tasksByStatus = Task::with(['assignee', 'project', 'folder'])
             ->orderByRaw("
                 CASE 
                     WHEN due_date < NOW() AND status != 'completed' THEN 1
-                    ELSE " . collect($statusPriority)->map(function($priority, $status) {
-                        return "WHEN status = '{$status}' THEN {$priority}";
-                    })->join(' ') . "
+                    WHEN status = 'in_progress' THEN 2
+                    WHEN status = 'assigned' THEN 3
+                    WHEN status = 'pending' THEN 4
+                    WHEN status = 'submitted_for_review' THEN 5
+                    WHEN status = 'in_review' THEN 6
+                    WHEN status = 'waiting_sending_client_consultant_approve' THEN 7
+                    WHEN status = 'waiting_client_consultant_approve' THEN 8
+                    WHEN status = 'approved' THEN 9
+                    WHEN status = 'completed' THEN 10
+                    WHEN status = 'cancelled' THEN 11
+                    ELSE 12
                 END
             ")
             ->orderBy('due_date', 'asc')
