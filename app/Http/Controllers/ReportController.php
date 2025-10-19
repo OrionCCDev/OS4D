@@ -419,7 +419,7 @@ class ReportController extends Controller
             'tasks.assignee',
             'tasks.creator',
             'tasks.attachments',
-            'tasks.history.user',
+            'tasks.histories.user',
             'manager',
             'createdBy'
         ]);
@@ -432,7 +432,7 @@ class ReportController extends Controller
             'assignee',
             'creator',
             'attachments',
-            'history.user',
+            'histories.user',
             'project'
         ])->get();
         
