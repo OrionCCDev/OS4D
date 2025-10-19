@@ -401,11 +401,11 @@
                                                                     </div>
                                                                     <div>
                                                                         <div class="fw-semibold">{{ $task['name'] }}</div>
-                                                                        @if($task['is_overdue'])
+                                                                    @if($task['is_overdue'])
                                                                             <small class="text-danger">
                                                                                 <i class="bx bx-time me-1"></i>Overdue
                                                                             </small>
-                                                                        @endif
+                                                                    @endif
                                                                     </div>
                                                                 </div>
                                                             </td>

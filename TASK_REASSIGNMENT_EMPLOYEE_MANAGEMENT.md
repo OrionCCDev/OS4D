@@ -72,7 +72,7 @@ You'll see a summary of:
 
 ### For Individual Task Reassignment
 
-#### From Task Details Page
+#### Method 1: From Task Details Page
 1. Open any task details page
 2. Find the **"Assigned To"** field
 3. Click the **"Reassign"** button (managers/admins only)
@@ -81,6 +81,20 @@ You'll see a summary of:
 6. Click **"Reassign Task"**
 
 The new assignee will be notified immediately.
+
+#### Method 2: From Task Edit Page
+1. Open any task details page
+2. Click **"Edit"** button (managers only)
+3. Change the **"Assigned To"** dropdown
+4. Click **"Update"** button
+5. Confirm the reassignment when prompted
+6. Task is updated and reassigned
+
+**Benefits of Edit Method**:
+- Change multiple task properties at once
+- See full task context while reassigning
+- Visual confirmation before submitting
+- Button changes to "Update & Reassign" when changing assignee
 
 ---
 
@@ -176,6 +190,17 @@ php artisan migrate
 - Modal for quick reassignment
 - Available users dropdown
 - Reason input field
+
+### 4. Task Edit Page
+**Location**: `resources/views/tasks/edit.blade.php`
+
+**Features**:
+- **"Assigned To"** dropdown in edit form
+- Shows current assignee with "- Current" label
+- Live button text change when reassigning
+- Confirmation prompt before saving
+- Only active users are shown in dropdown
+- Visual indicator: button changes to warning color when reassigning
 
 ---
 

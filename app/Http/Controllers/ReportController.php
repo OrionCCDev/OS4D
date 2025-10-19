@@ -155,11 +155,11 @@ class ReportController extends Controller
     public function generateMonthlyEvaluation(Request $request)
     {
         try {
-            $request->validate([
-                'user_id' => 'required|exists:users,id',
-                'year' => 'required|integer|min:2020|max:2030',
-                'month' => 'required|integer|min:1|max:12',
-            ]);
+        $request->validate([
+            'user_id' => 'required|exists:users,id',
+            'year' => 'required|integer|min:2020|max:2030',
+            'month' => 'required|integer|min:1|max:12',
+        ]);
 
             $user = User::findOrFail($request->user_id);
             
@@ -230,11 +230,11 @@ class ReportController extends Controller
     public function generateQuarterlyEvaluation(Request $request)
     {
         try {
-            $request->validate([
-                'user_id' => 'required|exists:users,id',
-                'year' => 'required|integer|min:2020|max:2030',
-                'quarter' => 'required|integer|min:1|max:4',
-            ]);
+        $request->validate([
+            'user_id' => 'required|exists:users,id',
+            'year' => 'required|integer|min:2020|max:2030',
+            'quarter' => 'required|integer|min:1|max:4',
+        ]);
 
             $user = User::findOrFail($request->user_id);
             
@@ -315,10 +315,10 @@ class ReportController extends Controller
     public function generateAnnualEvaluation(Request $request)
     {
         try {
-            $request->validate([
-                'user_id' => 'required|exists:users,id',
-                'year' => 'required|integer|min:2020|max:2030',
-            ]);
+        $request->validate([
+            'user_id' => 'required|exists:users,id',
+            'year' => 'required|integer|min:2020|max:2030',
+        ]);
 
             $user = User::findOrFail($request->user_id);
             

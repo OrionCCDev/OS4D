@@ -234,7 +234,7 @@
                             <i class="bx bx-error-circle me-2 text-danger"></i>Urgent Tasks
                         </h5>
                         <small class="text-muted">Tasks approaching or exceeding due date</small>
-                    </div>
+                </div>
                     <small class="text-muted">{{ $data['urgent_tasks']->total() }} urgent tasks</small>
                 </div>
                 <div class="card-body p-0">
@@ -288,18 +288,18 @@
                                         onmouseout="this.style.backgroundColor='transparent'">
                                         <td>
                                             <div class="d-flex align-items-center">
-                                                <div class="me-2">
+                                <div class="me-2">
                                                     @if($isOverdue)
                                                         <i class="bx bx-error-circle text-danger" style="font-size: 1.2rem;"></i>
                                                     @else
                                                         <i class="bx bx-time-five text-warning" style="font-size: 1.2rem;"></i>
                                                     @endif
-                                                </div>
+                                </div>
                                                 <div>
                                                     <h6 class="mb-0 text-dark fw-semibold">{{ Str::limit($task->title, 40) }}</h6>
                                                     <small class="text-muted">{{ $task->project->name ?? 'No Project' }}</small>
-                                                </div>
-                                            </div>
+                                </div>
+                            </div>
                                         </td>
                                         <td>
                                             <span class="badge {{ $task->status_badge_class }} text-white px-2 py-1 rounded-pill" style="font-size: 11px; font-weight: 600;">
@@ -317,10 +317,10 @@
                                                     <div class="avatar avatar-xs me-2">
                                                         <span class="avatar-initial rounded-circle bg-label-primary">
                                                             {{ substr($task->assignee->name, 0, 1) }}
-                                                        </span>
-                                                    </div>
+                                </span>
+                            </div>
                                                     <span class="text-dark fw-semibold">{{ $task->assignee->name }}</span>
-                                                </div>
+                                </div>
                                             @else
                                                 <span class="text-muted">Unassigned</span>
                                             @endif
@@ -345,7 +345,7 @@
                                     @endforeach
                                 </tbody>
                             </table>
-                        </div>
+                                </div>
                         @if($data['urgent_tasks']->hasPages())
                             <div class="card-footer">
                                 {{ $data['urgent_tasks']->appends(request()->except('urgent_page'))->links() }}
@@ -412,10 +412,10 @@
                                                     <div class="avatar avatar-xs me-2">
                                                         <span class="avatar-initial rounded-circle bg-label-primary">
                                                             {{ substr($task->assignee->name, 0, 1) }}
-                                                        </span>
-                                                    </div>
+                                </span>
+                            </div>
                                                     <span class="text-dark fw-semibold">{{ $task->assignee->name }}</span>
-                                                </div>
+                                </div>
                                             @else
                                                 <span class="text-muted">Unassigned</span>
                                             @endif
@@ -436,7 +436,7 @@
                                     @endforeach
                                 </tbody>
                             </table>
-                        </div>
+                                </div>
                         @if($data['tasks_by_status']->hasPages())
                             <div class="card-footer">
                                 {{ $data['tasks_by_status']->appends(request()->except('status_page'))->links() }}
@@ -499,10 +499,10 @@
                                                     <div class="avatar avatar-xs me-2">
                                                         <span class="avatar-initial rounded-circle bg-label-primary">
                                                             {{ substr($task->assignee->name, 0, 1) }}
-                                                        </span>
-                                                    </div>
+                                </span>
+                            </div>
                                                     <span class="text-dark fw-semibold">{{ $task->assignee->name }}</span>
-                                                </div>
+                                </div>
                                             @else
                                                 <span class="text-muted">Unassigned</span>
                                             @endif
@@ -523,7 +523,7 @@
                                     @endforeach
                                 </tbody>
                             </table>
-                        </div>
+                                </div>
                         @if($data['tasks_by_priority']->hasPages())
                             <div class="card-footer">
                                 {{ $data['tasks_by_priority']->appends(request()->except('priority_page'))->links() }}
@@ -566,7 +566,7 @@
                 <div class="card-body">
                     <div id="competitionContent">
                         @if(count($data['monthly_top_performers']) > 0)
-                            <div class="row">
+                    <div class="row">
                                 @foreach($data['monthly_top_performers'] as $index => $performer)
                                     <div class="col-12 mb-3">
                                         <div class="d-flex align-items-center p-3 rounded-3" style="background: rgba(255,255,255,0.1);">
@@ -627,10 +627,10 @@
                                 <small class="text-white-50">Start assigning tasks to see competition results</small>
                             </div>
                         @endif
-                        </div>
                 </div>
             </div>
         </div>
+    </div>
 
         <!-- Recent Activity -->
         <div class="col-lg-6 col-md-6 col-12 mb-4">
@@ -654,8 +654,8 @@
                                                 | <i class="bx bx-folder me-1"></i>{{ $activity['project']['name'] ?? 'Unknown Project' }}
                                             @endif
                                         </small>
-                                    </div>
-                                </div>
+                </div>
+            </div>
                             @endforeach
                         </div>
                     @else

@@ -196,6 +196,7 @@ class TaskController extends Controller
             'due_date' => 'nullable|date',
             'status' => 'nullable|in:pending,assigned,in_progress,in_review,approved,rejected,completed',
             'priority' => 'nullable|in:low,normal,medium,high,urgent,critical',
+            'assigned_to' => 'nullable|exists:users,id',
         ];
 
         // Only add file validation if files are actually uploaded
@@ -204,6 +205,10 @@ class TaskController extends Controller
         }
 
         $validated = $request->validate($rules);
+        
+        // Check if task is being reassigned
+        $isReassignment = $request->has('assigned_to') && $request->assigned_to != $task->assignee_id;
+        $oldAssignee = $task->assignee;
 
         $task->update($validated);
 
@@ -229,7 +234,49 @@ class TaskController extends Controller
                 ]);
             }
         }
-        return redirect()->route('tasks.index')->with('success', 'Task updated');
+        
+        // Handle task reassignment
+        if ($isReassignment) {
+            $newAssignee = $task->assignee;
+            
+            // Create reassignment history
+            TaskHistory::create([
+                'task_id' => $task->id,
+                'user_id' => Auth::id(),
+                'action' => 'reassigned',
+                'old_value' => $oldAssignee ? $oldAssignee->name : 'Unassigned',
+                'new_value' => $newAssignee ? $newAssignee->name : 'Unassigned',
+                'description' => 'Task reassigned during edit from ' . ($oldAssignee ? $oldAssignee->name : 'Unassigned') . ' to ' . ($newAssignee ? $newAssignee->name : 'Unassigned')
+            ]);
+            
+            // Send notification to OLD assignee (task removed from their list)
+            if ($oldAssignee) {
+                $task->sendNotification(
+                    $oldAssignee->id,
+                    'task_reassigned_away',
+                    'Task Reassigned',
+                    'Task "' . $task->title . '" has been reassigned from you to ' . ($newAssignee ? $newAssignee->name : 'another user') . ' by ' . Auth::user()->name,
+                    ['reassigned_to' => $newAssignee ? $newAssignee->name : 'Unassigned'],
+                    null,
+                    'normal'
+                );
+            }
+            
+            // Send notification to NEW assignee (task assigned to them)
+            if ($newAssignee) {
+                $task->sendNotification(
+                    $newAssignee->id,
+                    'task_assigned',
+                    'New Task Assigned to You',
+                    'You have been assigned a task: "' . $task->title . '" (reassigned from ' . ($oldAssignee ? $oldAssignee->name : 'unassigned') . ') by ' . Auth::user()->name,
+                    ['reassigned_from' => $oldAssignee ? $oldAssignee->name : 'Unassigned'],
+                    null,
+                    'high'
+                );
+            }
+        }
+        
+        return redirect()->route('tasks.index')->with('success', 'Task updated' . ($isReassignment ? ' and reassigned' : ''));
     }
 
     public function destroy(Task $task)

@@ -75,6 +75,33 @@
                         @endforeach
                     </select>
                 </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">
+                        <i class="bx bx-user me-1"></i>Assigned To
+                        @if(old('assigned_to', $task->assignee_id) != $task->assignee_id)
+                            <span class="badge bg-warning ms-1">Reassigning</span>
+                        @endif
+                    </label>
+                    <select name="assigned_to" id="assigned_to" class="form-select">
+                        <option value="">Unassigned</option>
+                        @foreach(\App\Models\User::where('status', 'active')->where('role', '!=', 'admin')->orderBy('name')->get() as $user)
+                            <option value="{{ $user->id }}" @selected(old('assigned_to', $task->assignee_id) == $user->id)>
+                                {{ $user->name }} ({{ $user->email }})
+                                @if($user->id == $task->assignee_id)
+                                    - Current
+                                @endif
+                            </option>
+                        @endforeach
+                    </select>
+                    <small class="text-muted">
+                        <i class="bx bx-info-circle me-1"></i>
+                        @if($task->assignee)
+                            Currently: <strong>{{ $task->assignee->name }}</strong>
+                        @else
+                            Currently unassigned
+                        @endif
+                    </small>
+                </div>
                 @else
                 <div class="col-md-4 mb-3">
                     <label class="form-label">Due Date</label>
@@ -119,6 +146,45 @@
         </div>
     @endif
 </div>
+
+<script>
+// Show reassignment warning when changing assignee
+document.addEventListener('DOMContentLoaded', function() {
+    const assignedToSelect = document.getElementById('assigned_to');
+    
+    if (assignedToSelect) {
+        const originalAssignee = {{ $task->assignee_id ?? 'null' }};
+        
+        assignedToSelect.addEventListener('change', function() {
+            const newAssignee = parseInt(this.value) || null;
+            const form = this.closest('form');
+            const submitButton = form.querySelector('button[type="submit"]');
+            
+            if (newAssignee !== originalAssignee) {
+                // Show reassignment indicator
+                submitButton.innerHTML = '<i class="bx bx-transfer me-1"></i>Update & Reassign';
+                submitButton.classList.remove('btn-primary');
+                submitButton.classList.add('btn-warning');
+                
+                // Show confirmation
+                form.addEventListener('submit', function(e) {
+                    const selectedOption = assignedToSelect.options[assignedToSelect.selectedIndex];
+                    const newUserName = selectedOption.text;
+                    
+                    if (!confirm(`Are you sure you want to reassign this task to ${newUserName}?`)) {
+                        e.preventDefault();
+                    }
+                }, { once: true });
+            } else {
+                // Restore original button
+                submitButton.innerHTML = '<i class="bx bx-check me-1"></i>Update';
+                submitButton.classList.remove('btn-warning');
+                submitButton.classList.add('btn-primary');
+            }
+        });
+    }
+});
+</script>
 @endsection
 
 

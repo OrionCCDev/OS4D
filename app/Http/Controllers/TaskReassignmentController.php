@@ -66,12 +66,34 @@ class TaskReassignmentController extends Controller
                 'description' => $request->reassignment_reason ?? 'Task reassigned to ' . $newAssignee->name
             ]);
 
-            // Send notification to new assignee
+            // Send notification to OLD assignee (if exists)
+            if ($oldAssignee) {
+                $task->sendNotification(
+                    $oldAssignee->id,
+                    'task_reassigned_away',
+                    'Task Reassigned',
+                    'Task "' . $task->title . '" has been reassigned from you to ' . $newAssignee->name . ' by ' . auth()->user()->name,
+                    [
+                        'reassigned_to' => $newAssignee->name,
+                        'reason' => $request->reassignment_reason
+                    ],
+                    null,
+                    'normal'
+                );
+            }
+
+            // Send notification to NEW assignee
             $task->sendNotification(
                 $newAssignee->id,
                 'task_assigned',
-                'New Task Assigned',
-                'You have been assigned a task: ' . $task->title
+                'New Task Assigned to You',
+                'You have been assigned a task: "' . $task->title . '"' . ($oldAssignee ? ' (reassigned from ' . $oldAssignee->name . ')' : '') . ' by ' . auth()->user()->name,
+                [
+                    'reassigned_from' => $oldAssignee ? $oldAssignee->name : 'Unassigned',
+                    'reason' => $request->reassignment_reason
+                ],
+                null,
+                'high'
             );
 
             DB::commit();
@@ -131,16 +153,41 @@ class TaskReassignmentController extends Controller
                         'description' => $request->reassignment_reason ?? 'Bulk reassignment from ' . $fromUser->name . ' to ' . $toUser->name
                     ]);
 
-                    // Send notification to new assignee
+                    // Send notification to NEW assignee
                     $task->sendNotification(
                         $toUser->id,
                         'task_assigned',
-                        'New Task Assigned',
-                        'You have been assigned a task: ' . $task->title
+                        'New Task Assigned to You',
+                        'You have been assigned a task: "' . $task->title . '" (reassigned from ' . $fromUser->name . ') by ' . auth()->user()->name,
+                        [
+                            'reassigned_from' => $fromUser->name,
+                            'reason' => $request->reassignment_reason,
+                            'bulk_reassignment' => true
+                        ],
+                        null,
+                        'high'
                     );
 
                     $reassignedCount++;
                 }
+            }
+            
+            // Send summary notification to OLD assignee after all tasks are reassigned
+            if ($reassignedCount > 0) {
+                \App\Models\UnifiedNotification::createTaskNotification(
+                    $fromUser->id,
+                    'task_reassigned_bulk',
+                    'Tasks Reassigned',
+                    $reassignedCount . ' task(s) have been reassigned from you to ' . $toUser->name . ' by ' . auth()->user()->name . ($request->reassignment_reason ? '. Reason: ' . $request->reassignment_reason : ''),
+                    [
+                        'reassigned_to' => $toUser->name,
+                        'reassigned_by' => auth()->user()->name,
+                        'task_count' => $reassignedCount,
+                        'reason' => $request->reassignment_reason
+                    ],
+                    null,
+                    'normal'
+                );
             }
 
             // Optionally deactivate the user

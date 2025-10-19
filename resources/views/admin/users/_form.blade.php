@@ -39,14 +39,77 @@
     </select>
   </div>
   <div class="col-md-6">
-    <label for="img" class="form-label">Avatar</label>
-    <input type="file" id="img" name="img" class="form-control">
+    <label for="img" class="form-label">
+      <i class="bx bx-image me-1"></i>Avatar Image
+    </label>
+    <input type="file" 
+           id="img" 
+           name="img" 
+           class="form-control @error('img') is-invalid @enderror" 
+           accept="image/jpeg,image/png,image/jpg,image/webp"
+           onchange="previewUserImage(this)">
+    @error('img')
+      <div class="invalid-feedback">{{ $message }}</div>
+    @enderror
+    <small class="text-muted d-block mt-1">
+      <i class="bx bx-info-circle me-1"></i>JPG, PNG, or WEBP. Max 2MB. Recommended: 400x400px
+    </small>
     @if($editing)
-      <div class="mt-2">
-        <img src="{{ asset('uploads/users/' . ($user->img ?: 'default.png')) }}" alt="{{ $user->name }}" class="rounded" width="64" height="64" style="object-fit: cover;">
+      <div class="mt-3">
+        <label class="form-label small text-muted">Current Image:</label>
+        <div class="d-flex align-items-center gap-2">
+          <img id="current-avatar" 
+               src="{{ asset('uploads/users/' . ($user->img ?: 'default.png')) }}" 
+               alt="{{ $user->name }}" 
+               class="rounded-circle border" 
+               width="80" 
+               height="80" 
+               style="object-fit: cover;">
+          <div id="image-preview-container" style="display: none;">
+            <label class="form-label small text-success">New Image Preview:</label>
+            <img id="image-preview" 
+                 src="" 
+                 alt="Preview" 
+                 class="rounded-circle border border-success" 
+                 width="80" 
+                 height="80" 
+                 style="object-fit: cover;">
+          </div>
+        </div>
       </div>
     @endif
   </div>
 </div>
 
+<script>
+function previewUserImage(input) {
+    const previewContainer = document.getElementById('image-preview-container');
+    const preview = document.getElementById('image-preview');
+    
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            preview.src = e.target.result;
+            previewContainer.style.display = 'block';
+        };
+        
+        reader.readAsDataURL(input.files[0]);
+        
+        // Show file info
+        const file = input.files[0];
+        const fileSize = (file.size / 1024 / 1024).toFixed(2); // Convert to MB
+        console.log('Image selected:', file.name, '(' + fileSize + ' MB)');
+        
+        // Validate file size
+        if (file.size > 2048 * 1024) {
+            alert('File size exceeds 2MB. Please choose a smaller image.');
+            input.value = '';
+            previewContainer.style.display = 'none';
+        }
+    } else {
+        previewContainer.style.display = 'none';
+    }
+}
+</script>
 

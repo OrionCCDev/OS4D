@@ -63,29 +63,47 @@ class UsersController extends Controller
         }
 
         if ($request->hasFile('img')) {
-            // Delete old image if it's not default
-            // Never delete default.png, default.jpg, 1.png, default_user.jpg, or default-user.jpg
-            $old = $user->img;
-            if ($old && !in_array($old, ['default.png', 'default.jpg', '1.png', 'default_user.jpg', 'default-user.jpg'])) {
-                $oldPath = public_path('uploads/users/'.$old);
-                if (is_file($oldPath)) {
-                    @unlink($oldPath);
+            try {
+                // Delete old image if it's not default
+                // Never delete default.png, default.jpg, 1.png, default_user.jpg, or default-user.jpg
+                $old = $user->img;
+                if ($old && !in_array($old, ['default.png', 'default.jpg', '1.png', 'default_user.jpg', 'default-user.jpg'])) {
+                    $oldPath = public_path('uploads/users/'.$old);
+                    if (is_file($oldPath)) {
+                        @unlink($oldPath);
+                    }
                 }
-            }
 
-            $dir = public_path('uploads/users');
-            if (!is_dir($dir)) {
-                @mkdir($dir, 0777, true);
+                $dir = public_path('uploads/users');
+                if (!is_dir($dir)) {
+                    @mkdir($dir, 0777, true);
+                }
+                
+                $file = $request->file('img');
+                $filename = 'user_' . $user->id . '_' . time() . '.' . $file->getClientOriginalExtension();
+                $file->move($dir, $filename);
+                $data['img'] = $filename;
+                
+                \Log::info('User image uploaded successfully', [
+                    'user_id' => $user->id,
+                    'filename' => $filename,
+                    'path' => $dir . '/' . $filename
+                ]);
+            } catch (\Exception $e) {
+                \Log::error('Failed to upload user image', [
+                    'user_id' => $user->id,
+                    'error' => $e->getMessage()
+                ]);
+                return back()->withErrors(['img' => 'Failed to upload image: ' . $e->getMessage()]);
             }
-            $file = $request->file('img');
-            $filename = uniqid('u_').'.'.$file->getClientOriginalExtension();
-            $file->move($dir, $filename);
-            $data['img'] = $filename;
+        } else {
+            // If no new image uploaded, don't change the existing img field
+            unset($data['img']);
         }
 
         $user->update($data);
 
-        return back()->with('status', 'User updated');
+        return back()->with('status', 'User updated successfully' . ($request->hasFile('img') ? ' with new image' : ''));
     }
 
     public function destroy(User $user): RedirectResponse

@@ -20,9 +20,14 @@
 Users → Click "Reassign" → Select new user → Check all tasks → Submit
 ```
 
-### Reassign One Task
+### Reassign One Task (Method 1: From Task Details)
 ```
 Open Task → Click "Reassign" button → Select new user → Submit
+```
+
+### Reassign One Task (Method 2: From Task Edit)
+```
+Open Task → Click "Edit" → Change "Assigned To" dropdown → Submit
 ```
 
 ### Mark User Inactive (Without Reassigning)
