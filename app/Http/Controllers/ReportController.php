@@ -167,6 +167,32 @@ class ReportController extends Controller
             $startDate = Carbon::create($request->year, $request->month, 1)->startOfMonth();
             $endDate = Carbon::create($request->year, $request->month, 1)->endOfMonth();
             
+            // Check if evaluation already exists for this user and period
+            $existingEvaluation = EmployeeEvaluation::where('user_id', $request->user_id)
+                ->where('evaluation_type', 'monthly')
+                ->where('evaluation_period_start', $startDate)
+                ->first();
+            
+            if ($existingEvaluation) {
+                // Update existing evaluation instead of creating a new one
+                $metrics = $this->calculateUserMetrics($user, $startDate, $endDate);
+                
+                $existingEvaluation->update([
+                    'evaluated_by' => auth()->id(),
+                    'performance_score' => $metrics['performance_score'],
+                    'tasks_completed' => $metrics['completed_tasks'],
+                    'on_time_completion_rate' => $metrics['on_time_rate'],
+                    'overdue_tasks' => $metrics['overdue_tasks'],
+                    'status' => 'completed'
+                ]);
+                
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Monthly evaluation for ' . $startDate->format('F Y') . ' updated successfully',
+                    'evaluation_id' => $existingEvaluation->id
+                ]);
+            }
+            
             $metrics = $this->calculateUserMetrics($user, $startDate, $endDate);
             
             // Create evaluation record
@@ -226,6 +252,32 @@ class ReportController extends Controller
             $startDate = Carbon::create($request->year, $startMonth, 1)->startOfMonth();
             $endDate = Carbon::create($request->year, $endMonth, 1)->endOfMonth();
             
+            // Check if evaluation already exists for this user and period
+            $existingEvaluation = EmployeeEvaluation::where('user_id', $request->user_id)
+                ->where('evaluation_type', 'quarterly')
+                ->where('evaluation_period_start', $startDate)
+                ->first();
+            
+            if ($existingEvaluation) {
+                // Update existing evaluation instead of creating a new one
+                $metrics = $this->calculateUserMetrics($user, $startDate, $endDate);
+                
+                $existingEvaluation->update([
+                    'evaluated_by' => auth()->id(),
+                    'performance_score' => $metrics['performance_score'],
+                    'tasks_completed' => $metrics['completed_tasks'],
+                    'on_time_completion_rate' => $metrics['on_time_rate'],
+                    'overdue_tasks' => $metrics['overdue_tasks'],
+                    'status' => 'completed'
+                ]);
+                
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Quarterly evaluation for Q' . $request->quarter . ' ' . $request->year . ' updated successfully',
+                    'evaluation_id' => $existingEvaluation->id
+                ]);
+            }
+            
             $metrics = $this->calculateUserMetrics($user, $startDate, $endDate);
             
             // Create evaluation record
@@ -273,6 +325,32 @@ class ReportController extends Controller
             // Calculate year dates
             $startDate = Carbon::create($request->year, 1, 1)->startOfYear();
             $endDate = Carbon::create($request->year, 12, 31)->endOfYear();
+            
+            // Check if evaluation already exists for this user and period
+            $existingEvaluation = EmployeeEvaluation::where('user_id', $request->user_id)
+                ->where('evaluation_type', 'annual')
+                ->where('evaluation_period_start', $startDate)
+                ->first();
+            
+            if ($existingEvaluation) {
+                // Update existing evaluation instead of creating a new one
+                $metrics = $this->calculateUserMetrics($user, $startDate, $endDate);
+                
+                $existingEvaluation->update([
+                    'evaluated_by' => auth()->id(),
+                    'performance_score' => $metrics['performance_score'],
+                    'tasks_completed' => $metrics['completed_tasks'],
+                    'on_time_completion_rate' => $metrics['on_time_rate'],
+                    'overdue_tasks' => $metrics['overdue_tasks'],
+                    'status' => 'completed'
+                ]);
+                
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Annual evaluation for ' . $request->year . ' updated successfully',
+                    'evaluation_id' => $existingEvaluation->id
+                ]);
+            }
             
             $metrics = $this->calculateUserMetrics($user, $startDate, $endDate);
             
