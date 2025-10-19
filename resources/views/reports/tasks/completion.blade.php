@@ -443,8 +443,27 @@ function refreshReport() {
 }
 
 function clearFilters() {
+    // Clear all form fields
     document.getElementById('filterForm').reset();
-    document.getElementById('filterForm').submit();
+    
+    // Clear multiple select fields explicitly
+    const statusSelect = document.getElementById('status');
+    const prioritySelect = document.getElementById('priority');
+    
+    if (statusSelect) {
+        Array.from(statusSelect.options).forEach(option => {
+            option.selected = false;
+        });
+    }
+    
+    if (prioritySelect) {
+        Array.from(prioritySelect.options).forEach(option => {
+            option.selected = false;
+        });
+    }
+    
+    // Redirect to clean URL without any parameters
+    window.location.href = '{{ route("reports.tasks") }}';
 }
 
 function exportReport(format, type) {
