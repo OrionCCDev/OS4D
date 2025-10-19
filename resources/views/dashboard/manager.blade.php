@@ -226,19 +226,84 @@
 
     <!-- Charts Row -->
     <div class="row mb-4">
-        <!-- Task Status Chart -->
+        <!-- Tasks by Status List -->
         <div class="col-lg-6 col-md-6 col-12 mb-4">
             <div class="card">
-                <div class="card-header">
+                <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="card-title mb-0 text-dark fw-semibold">Tasks by Status</h5>
+                    <small class="text-muted">{{ $data['tasks_by_status']->total() }} total tasks</small>
                 </div>
-                <div class="card-body">
-                    @if(!empty($data['tasks_by_status']))
-                    <canvas id="taskStatusChart" width="400" height="200"></canvas>
+                <div class="card-body p-0">
+                    @if($data['tasks_by_status']->count() > 0)
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th class="text-dark fw-semibold">Task</th>
+                                        <th class="text-dark fw-semibold">Status</th>
+                                        <th class="text-dark fw-semibold">Assignee</th>
+                                        <th class="text-dark fw-semibold">Due Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($data['tasks_by_status'] as $task)
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="me-2">
+                                                    <i class="bx bx-task text-primary"></i>
+                                                </div>
+                                                <div>
+                                                    <h6 class="mb-0 text-dark fw-semibold">{{ Str::limit($task->title, 30) }}</h6>
+                                                    <small class="text-muted">{{ $task->project->name ?? 'No Project' }}</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-{{ $task->status_badge_class }} text-white">
+                                                {{ ucfirst(str_replace('_', ' ', $task->status)) }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            @if($task->assignee)
+                                                <div class="d-flex align-items-center">
+                                                    <div class="avatar avatar-xs me-2">
+                                                        <span class="avatar-initial rounded-circle bg-label-primary">
+                                                            {{ substr($task->assignee->name, 0, 1) }}
+                                                        </span>
+                                                    </div>
+                                                    <span class="text-dark fw-semibold">{{ $task->assignee->name }}</span>
+                                                </div>
+                                            @else
+                                                <span class="text-muted">Unassigned</span>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            @if($task->due_date)
+                                                <span class="text-dark fw-semibold {{ $task->is_overdue ? 'text-danger' : '' }}">
+                                                    {{ $task->due_date->format('M j, Y') }}
+                                                </span>
+                                                @if($task->is_overdue)
+                                                    <br><small class="text-danger">Overdue</small>
+                                                @endif
+                                            @else
+                                                <span class="text-muted">No due date</span>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                        @if($data['tasks_by_status']->hasPages())
+                            <div class="card-footer">
+                                {{ $data['tasks_by_status']->links() }}
+                            </div>
+                        @endif
                     @else
                         <div class="text-center py-4">
-                            <i class="bx bx-pie-chart-alt-2 fs-1 text-muted opacity-50"></i>
-                            <p class="text-muted mt-2">No task status data available</p>
+                            <i class="bx bx-task fs-1 text-muted opacity-50"></i>
+                            <p class="text-muted mt-2">No tasks available</p>
                         </div>
                     @endif
                 </div>
@@ -457,47 +522,7 @@
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    // Task Status Chart
-    @if(!empty($data['tasks_by_status']))
-    const taskStatusCtx = document.getElementById('taskStatusChart').getContext('2d');
-    const taskStatusData = @json($data['tasks_by_status']);
-    
-    console.log('Task Status Data:', taskStatusData);
-
-    new Chart(taskStatusCtx, {
-        type: 'doughnut',
-        data: {
-            labels: Object.keys(taskStatusData).map(status => status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' ')),
-            datasets: [{
-                data: Object.values(taskStatusData),
-                backgroundColor: [
-                    '#3B82F6', // blue
-                    '#10B981', // green
-                    '#F59E0B', // yellow
-                    '#EF4444', // red
-                    '#8B5CF6', // purple
-                    '#06B6D4', // cyan
-                    '#84CC16'  // lime
-                ]
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'bottom',
-                    labels: {
-                        color: '#374151',
-                        font: {
-                            size: 12
-                        }
-                    }
-                }
-            }
-        }
-    });
-    @endif
+    // Task Status Chart removed - now showing task list instead
 
     // Task Priority Chart
     @if(!empty($data['tasks_by_priority']))

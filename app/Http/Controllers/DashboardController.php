@@ -270,11 +270,33 @@ class DashboardController extends Controller
             ->pluck('count', 'priority')
             ->toArray();
 
-        // Tasks by status
-        $tasksByStatus = Task::select('status', DB::raw('count(*) as count'))
-            ->groupBy('status')
-            ->pluck('count', 'status')
-            ->toArray();
+        // Tasks by status - get actual tasks ordered by status priority
+        $statusPriority = [
+            'overdue' => 1,
+            'in_progress' => 2,
+            'assigned' => 3,
+            'pending' => 4,
+            'submitted_for_review' => 5,
+            'in_review' => 6,
+            'waiting_sending_client_consultant_approve' => 7,
+            'waiting_client_consultant_approve' => 8,
+            'approved' => 9,
+            'completed' => 10,
+            'cancelled' => 11
+        ];
+        
+        $tasksByStatus = Task::with(['assignee', 'project', 'folder'])
+            ->orderByRaw("
+                CASE 
+                    WHEN due_date < NOW() AND status != 'completed' THEN 1
+                    ELSE " . collect($statusPriority)->map(function($priority, $status) {
+                        return "WHEN status = '{$status}' THEN {$priority}";
+                    })->join(' ') . "
+                END
+            ")
+            ->orderBy('due_date', 'asc')
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
 
         // Top performers (users with most completed tasks) - Overall
         $topPerformers = User::withCount(['assignedTasks as completed_tasks_count' => function($query) {
