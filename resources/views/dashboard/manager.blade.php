@@ -247,7 +247,10 @@
                                 </thead>
                                 <tbody>
                                     @foreach($data['tasks_by_status'] as $task)
-                                    <tr>
+                                    <tr style="cursor: pointer; transition: background-color 0.2s;" 
+                                        onclick="window.location.href='{{ route('tasks.show', $task->id) }}'"
+                                        onmouseover="this.style.backgroundColor='#f8f9fa'" 
+                                        onmouseout="this.style.backgroundColor='transparent'">
                                         <td>
                                             <div class="d-flex align-items-center">
                                                 <div class="me-2">
@@ -260,7 +263,7 @@
                                             </div>
                                         </td>
                                         <td>
-                                            <span class="badge bg-{{ $task->status_badge_class }} text-white">
+                                            <span class="badge bg-{{ $task->status_badge_class }} text-white px-2 py-1 rounded-pill" style="font-size: 11px; font-weight: 600;">
                                                 {{ ucfirst(str_replace('_', ' ', $task->status)) }}
                                             </span>
                                         </td>

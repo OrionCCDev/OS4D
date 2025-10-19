@@ -290,7 +290,7 @@ class DashboardController extends Controller
             ")
             ->orderBy('due_date', 'asc')
             ->orderBy('created_at', 'desc')
-            ->paginate(10);
+            ->paginate(4);
 
         // Top performers (users with most completed tasks) - Overall
         $topPerformers = User::withCount(['assignedTasks as completed_tasks_count' => function($query) {
