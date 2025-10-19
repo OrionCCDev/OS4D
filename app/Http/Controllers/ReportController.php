@@ -174,15 +174,12 @@ class ReportController extends Controller
                 'user_id' => $request->user_id,
                 'evaluated_by' => auth()->id(),
                 'evaluation_type' => 'monthly',
-                'period_start' => $startDate,
-                'period_end' => $endDate,
+                'evaluation_period_start' => $startDate,
+                'evaluation_period_end' => $endDate,
                 'performance_score' => $metrics['performance_score'],
-                'completion_rate' => $metrics['completion_rate'],
-                'on_time_rate' => $metrics['on_time_rate'],
-                'total_tasks' => $metrics['total_tasks'],
-                'completed_tasks' => $metrics['completed_tasks'],
+                'tasks_completed' => $metrics['completed_tasks'],
+                'on_time_completion_rate' => $metrics['on_time_rate'],
                 'overdue_tasks' => $metrics['overdue_tasks'],
-                'notes' => "Monthly evaluation for " . $startDate->format('F Y'),
                 'status' => 'completed'
             ]);
 
@@ -236,15 +233,12 @@ class ReportController extends Controller
                 'user_id' => $request->user_id,
                 'evaluated_by' => auth()->id(),
                 'evaluation_type' => 'quarterly',
-                'period_start' => $startDate,
-                'period_end' => $endDate,
+                'evaluation_period_start' => $startDate,
+                'evaluation_period_end' => $endDate,
                 'performance_score' => $metrics['performance_score'],
-                'completion_rate' => $metrics['completion_rate'],
-                'on_time_rate' => $metrics['on_time_rate'],
-                'total_tasks' => $metrics['total_tasks'],
-                'completed_tasks' => $metrics['completed_tasks'],
+                'tasks_completed' => $metrics['completed_tasks'],
+                'on_time_completion_rate' => $metrics['on_time_rate'],
                 'overdue_tasks' => $metrics['overdue_tasks'],
-                'notes' => "Quarterly evaluation for Q{$request->quarter} {$request->year}",
                 'status' => 'completed'
             ]);
 
@@ -287,15 +281,12 @@ class ReportController extends Controller
                 'user_id' => $request->user_id,
                 'evaluated_by' => auth()->id(),
                 'evaluation_type' => 'annual',
-                'period_start' => $startDate,
-                'period_end' => $endDate,
+                'evaluation_period_start' => $startDate,
+                'evaluation_period_end' => $endDate,
                 'performance_score' => $metrics['performance_score'],
-                'completion_rate' => $metrics['completion_rate'],
-                'on_time_rate' => $metrics['on_time_rate'],
-                'total_tasks' => $metrics['total_tasks'],
-                'completed_tasks' => $metrics['completed_tasks'],
+                'tasks_completed' => $metrics['completed_tasks'],
+                'on_time_completion_rate' => $metrics['on_time_rate'],
                 'overdue_tasks' => $metrics['overdue_tasks'],
-                'notes' => "Annual evaluation for {$request->year}",
                 'status' => 'completed'
             ]);
 
