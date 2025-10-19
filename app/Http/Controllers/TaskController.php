@@ -2036,9 +2036,9 @@ private function sendApprovalEmailViaGmail(Task $task, User $approver)
                 ->map(function ($entry) {
                     return [
                         'id' => $entry->id,
-                        'title' => $entry->title,
-                        'description' => $entry->description,
-                        'type' => $entry->type,
+                        'title' => $entry->title ?? 'Task Update',
+                        'description' => $entry->description ?? '',
+                        'type' => $entry->type ?? 'updated',
                         'created_at' => $entry->created_at->toISOString(),
                         'user' => $entry->user ? [
                             'id' => $entry->user->id,

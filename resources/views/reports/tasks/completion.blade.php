@@ -459,21 +459,104 @@ function viewTaskHistory(taskId) {
         <div class="modal fade" id="taskHistoryModal" tabindex="-1">
             <div class="modal-dialog modal-lg">
                 <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Task History - Task #${taskId}</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <div class="modal-header bg-gradient-primary text-white">
+                        <h5 class="modal-title d-flex align-items-center">
+                            <i class="bx bx-history me-2"></i>
+                            Task History - Task #${taskId}
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                     </div>
-                    <div class="modal-body">
-                        <div class="text-center py-4">
+                    <div class="modal-body p-0">
+                        <div class="text-center py-5">
                             <div class="spinner-border text-primary" role="status">
                                 <span class="visually-hidden">Loading...</span>
                             </div>
-                            <p class="mt-2">Loading task history...</p>
+                            <p class="mt-3 text-muted">Loading task history...</p>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+        <style>
+            .timeline {
+                position: relative;
+                padding: 20px 0;
+            }
+            
+            .timeline::before {
+                content: '';
+                position: absolute;
+                left: 30px;
+                top: 0;
+                bottom: 0;
+                width: 2px;
+                background: linear-gradient(to bottom, #e9ecef, #dee2e6);
+            }
+            
+            .timeline-item {
+                position: relative;
+                margin-bottom: 30px;
+                padding-left: 60px;
+            }
+            
+            .timeline-marker {
+                position: absolute;
+                left: 20px;
+                top: 5px;
+                width: 20px;
+                height: 20px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 10px;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                z-index: 2;
+            }
+            
+            .timeline-content {
+                background: #fff;
+                border: 1px solid #e9ecef;
+                border-radius: 8px;
+                padding: 15px 20px;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+                transition: all 0.3s ease;
+            }
+            
+            .timeline-content:hover {
+                box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+                transform: translateY(-1px);
+            }
+            
+            .timeline-meta {
+                border-top: 1px solid #f8f9fa;
+                padding-top: 10px;
+                margin-top: 10px;
+            }
+            
+            .bg-gradient-primary {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            }
+            
+            .modal-lg {
+                max-width: 800px;
+            }
+            
+            .timeline-item:last-child {
+                margin-bottom: 0;
+            }
+            
+            .timeline-item:last-child::after {
+                content: '';
+                position: absolute;
+                left: 30px;
+                top: 25px;
+                bottom: -20px;
+                width: 2px;
+                background: #fff;
+                z-index: 1;
+            }
+        </style>
     `;
     
     // Remove existing modal if any
@@ -494,30 +577,96 @@ function viewTaskHistory(taskId) {
         .then(response => response.json())
         .then(data => {
             const modalBody = document.querySelector('#taskHistoryModal .modal-body');
-            if (data.success && data.history) {
+            if (data.success && data.history && data.history.length > 0) {
                 modalBody.innerHTML = `
                     <div class="timeline">
-                        ${data.history.map(entry => `
-                            <div class="timeline-item">
-                                <div class="timeline-marker bg-${entry.type === 'created' ? 'primary' : entry.type === 'updated' ? 'warning' : 'success'}"></div>
-                                <div class="timeline-content">
-                                    <h6 class="mb-1">${entry.title}</h6>
-                                    <p class="text-muted mb-1">${entry.description}</p>
-                                    <small class="text-muted">
-                                        <i class="bx bx-time me-1"></i>
-                                        ${new Date(entry.created_at).toLocaleString()}
-                                        ${entry.user ? ` by ${entry.user.name}` : ''}
-                                    </small>
+                        ${data.history.map(entry => {
+                            const title = entry.title || 'Task Update';
+                            const description = entry.description || '';
+                            const type = entry.type || 'updated';
+                            const user = entry.user ? entry.user.name : 'System';
+                            const date = new Date(entry.created_at);
+                            
+                            // Get type-specific styling
+                            let typeClass = 'secondary';
+                            let typeIcon = 'bx-edit';
+                            let typeLabel = 'Updated';
+                            
+                            switch(type) {
+                                case 'created':
+                                    typeClass = 'primary';
+                                    typeIcon = 'bx-plus-circle';
+                                    typeLabel = 'Created';
+                                    break;
+                                case 'status_changed':
+                                    typeClass = 'info';
+                                    typeIcon = 'bx-refresh';
+                                    typeLabel = 'Status Changed';
+                                    break;
+                                case 'assigned':
+                                    typeClass = 'warning';
+                                    typeIcon = 'bx-user-plus';
+                                    typeLabel = 'Assigned';
+                                    break;
+                                case 'completed':
+                                    typeClass = 'success';
+                                    typeIcon = 'bx-check-circle';
+                                    typeLabel = 'Completed';
+                                    break;
+                                case 'approved':
+                                    typeClass = 'success';
+                                    typeIcon = 'bx-check-double';
+                                    typeLabel = 'Approved';
+                                    break;
+                                case 'rejected':
+                                    typeClass = 'danger';
+                                    typeIcon = 'bx-x-circle';
+                                    typeLabel = 'Rejected';
+                                    break;
+                            }
+                            
+                            return `
+                                <div class="timeline-item">
+                                    <div class="timeline-marker bg-${typeClass}">
+                                        <i class="bx ${typeIcon} text-white"></i>
+                                    </div>
+                                    <div class="timeline-content">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <h6 class="mb-0 text-${typeClass}">${title}</h6>
+                                            <span class="badge bg-${typeClass} bg-opacity-10 text-${typeClass}">${typeLabel}</span>
+                                        </div>
+                                        ${description ? `<p class="text-muted mb-2 small">${description}</p>` : ''}
+                                        <div class="timeline-meta">
+                                            <small class="text-muted">
+                                                <i class="bx bx-time me-1"></i>
+                                                ${date.toLocaleString('en-US', {
+                                                    year: 'numeric',
+                                                    month: 'short',
+                                                    day: 'numeric',
+                                                    hour: '2-digit',
+                                                    minute: '2-digit',
+                                                    hour12: true
+                                                })}
+                                                <span class="ms-2">
+                                                    <i class="bx bx-user me-1"></i>
+                                                    ${user}
+                                                </span>
+                                            </small>
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                        `).join('')}
+                            `;
+                        }).join('')}
                     </div>
                 `;
             } else {
                 modalBody.innerHTML = `
-                    <div class="text-center py-4">
-                        <i class="bx bx-history fs-1 text-muted"></i>
-                        <p class="text-muted mt-2">No history found for this task</p>
+                    <div class="text-center py-5">
+                        <div class="mb-3">
+                            <i class="bx bx-history fs-1 text-muted opacity-50"></i>
+                        </div>
+                        <h6 class="text-muted">No History Available</h6>
+                        <p class="text-muted small">This task doesn't have any recorded history yet.</p>
                     </div>
                 `;
             }
@@ -526,9 +675,15 @@ function viewTaskHistory(taskId) {
             console.error('Error loading task history:', error);
             const modalBody = document.querySelector('#taskHistoryModal .modal-body');
             modalBody.innerHTML = `
-                <div class="text-center py-4">
-                    <i class="bx bx-error fs-1 text-danger"></i>
-                    <p class="text-danger mt-2">Error loading task history</p>
+                <div class="text-center py-5">
+                    <div class="mb-3">
+                        <i class="bx bx-error-circle fs-1 text-danger opacity-50"></i>
+                    </div>
+                    <h6 class="text-danger">Error Loading History</h6>
+                    <p class="text-muted small">Unable to load task history. Please try again later.</p>
+                    <button class="btn btn-outline-primary btn-sm mt-2" onclick="viewTaskHistory(${taskId})">
+                        <i class="bx bx-refresh me-1"></i>Retry
+                    </button>
                 </div>
             `;
         });
