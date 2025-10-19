@@ -251,26 +251,35 @@ class TaskController extends Controller
             
             // Send notification to OLD assignee (task removed from their list)
             if ($oldAssignee) {
-                $task->sendNotification(
+                \App\Models\UnifiedNotification::createTaskNotification(
                     $oldAssignee->id,
                     'task_reassigned_away',
                     'Task Reassigned',
                     'Task "' . $task->title . '" has been reassigned from you to ' . ($newAssignee ? $newAssignee->name : 'another user') . ' by ' . Auth::user()->name,
-                    ['reassigned_to' => $newAssignee ? $newAssignee->name : 'Unassigned'],
-                    null,
+                    [
+                        'task_id' => $task->id,
+                        'project_id' => $task->project_id,
+                        'reassigned_to' => $newAssignee ? $newAssignee->name : 'Unassigned'
+                    ],
+                    $task->id,
                     'normal'
                 );
             }
             
             // Send notification to NEW assignee (task assigned to them)
             if ($newAssignee) {
-                $task->sendNotification(
+                \App\Models\UnifiedNotification::createTaskNotification(
                     $newAssignee->id,
                     'task_assigned',
                     'New Task Assigned to You',
-                    'You have been assigned a task: "' . $task->title . '" (reassigned from ' . ($oldAssignee ? $oldAssignee->name : 'unassigned') . ') by ' . Auth::user()->name,
-                    ['reassigned_from' => $oldAssignee ? $oldAssignee->name : 'Unassigned'],
-                    null,
+                    'You have been assigned a task: "' . $task->title . '"' . ($oldAssignee ? ' (reassigned from ' . $oldAssignee->name . ')' : '') . ' by ' . Auth::user()->name,
+                    [
+                        'task_id' => $task->id,
+                        'project_id' => $task->project_id,
+                        'reassigned_from' => $oldAssignee ? $oldAssignee->name : 'Unassigned',
+                        'due_date' => $task->due_date ? $task->due_date->format('Y-m-d') : null
+                    ],
+                    $task->id,
                     'high'
                 );
             }

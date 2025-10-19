@@ -68,31 +68,36 @@ class TaskReassignmentController extends Controller
 
             // Send notification to OLD assignee (if exists)
             if ($oldAssignee) {
-                $task->sendNotification(
+                \App\Models\UnifiedNotification::createTaskNotification(
                     $oldAssignee->id,
                     'task_reassigned_away',
                     'Task Reassigned',
-                    'Task "' . $task->title . '" has been reassigned from you to ' . $newAssignee->name . ' by ' . auth()->user()->name,
+                    'Task "' . $task->title . '" has been reassigned from you to ' . $newAssignee->name . ' by ' . auth()->user()->name . ($request->reassignment_reason ? '. Reason: ' . $request->reassignment_reason : ''),
                     [
+                        'task_id' => $task->id,
+                        'project_id' => $task->project_id,
                         'reassigned_to' => $newAssignee->name,
                         'reason' => $request->reassignment_reason
                     ],
-                    null,
+                    $task->id,
                     'normal'
                 );
             }
 
             // Send notification to NEW assignee
-            $task->sendNotification(
+            \App\Models\UnifiedNotification::createTaskNotification(
                 $newAssignee->id,
                 'task_assigned',
                 'New Task Assigned to You',
-                'You have been assigned a task: "' . $task->title . '"' . ($oldAssignee ? ' (reassigned from ' . $oldAssignee->name . ')' : '') . ' by ' . auth()->user()->name,
+                'You have been assigned a task: "' . $task->title . '"' . ($oldAssignee ? ' (reassigned from ' . $oldAssignee->name . ')' : '') . ' by ' . auth()->user()->name . ($request->reassignment_reason ? '. Reason: ' . $request->reassignment_reason : ''),
                 [
+                    'task_id' => $task->id,
+                    'project_id' => $task->project_id,
                     'reassigned_from' => $oldAssignee ? $oldAssignee->name : 'Unassigned',
-                    'reason' => $request->reassignment_reason
+                    'reason' => $request->reassignment_reason,
+                    'due_date' => $task->due_date ? $task->due_date->format('Y-m-d') : null
                 ],
-                null,
+                $task->id,
                 'high'
             );
 
@@ -154,17 +159,20 @@ class TaskReassignmentController extends Controller
                     ]);
 
                     // Send notification to NEW assignee
-                    $task->sendNotification(
+                    \App\Models\UnifiedNotification::createTaskNotification(
                         $toUser->id,
                         'task_assigned',
                         'New Task Assigned to You',
-                        'You have been assigned a task: "' . $task->title . '" (reassigned from ' . $fromUser->name . ') by ' . auth()->user()->name,
+                        'You have been assigned a task: "' . $task->title . '" (reassigned from ' . $fromUser->name . ') by ' . auth()->user()->name . ($request->reassignment_reason ? '. Reason: ' . $request->reassignment_reason : ''),
                         [
+                            'task_id' => $task->id,
+                            'project_id' => $task->project_id,
                             'reassigned_from' => $fromUser->name,
                             'reason' => $request->reassignment_reason,
-                            'bulk_reassignment' => true
+                            'bulk_reassignment' => true,
+                            'due_date' => $task->due_date ? $task->due_date->format('Y-m-d') : null
                         ],
-                        null,
+                        $task->id,
                         'high'
                     );
 
