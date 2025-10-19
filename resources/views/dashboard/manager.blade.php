@@ -835,46 +835,77 @@
     }
 
     // Competition refresh function
-    function refreshCompetition() {
-        const refreshBtn = document.querySelector('button[onclick="refreshCompetition()"]');
-        const icon = refreshBtn.querySelector('i');
+       function refreshCompetition() {
+           const refreshBtn = document.querySelector('button[onclick="refreshCompetition()"]');
+           const icon = refreshBtn.querySelector('i');
 
-        // Add loading animation
-        icon.classList.add('bx-spin');
-        refreshBtn.disabled = true;
+           // Add loading animation
+           icon.classList.add('bx-spin');
+           refreshBtn.disabled = true;
 
-        // Simulate refresh (in real implementation, this would make an AJAX call)
-        setTimeout(() => {
-            // Remove loading animation
-            icon.classList.remove('bx-spin');
-            refreshBtn.disabled = false;
+           // Simulate refresh (in real implementation, this would make an AJAX call)
+           setTimeout(() => {
+               // Remove loading animation
+               icon.classList.remove('bx-spin');
+               refreshBtn.disabled = false;
 
-            // Show success message
-            const toast = document.createElement('div');
-            toast.className = 'toast align-items-center text-white bg-success border-0 position-fixed top-0 end-0 m-3';
-            toast.style.zIndex = '9999';
-            toast.innerHTML = `
-                <div class="d-flex">
-                    <div class="toast-body">
-                        <i class="bx bx-check-circle me-2"></i>Competition data refreshed!
-                    </div>
-                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-                </div>
-            `;
-            document.body.appendChild(toast);
+               // Show success message
+               const toast = document.createElement('div');
+               toast.className = 'toast align-items-center text-white bg-success border-0 position-fixed top-0 end-0 m-3';
+               toast.style.zIndex = '9999';
+               toast.innerHTML = `
+                   <div class="d-flex">
+                       <div class="toast-body">
+                           <i class="bx bx-check-circle me-2"></i>Competition data refreshed!
+                       </div>
+                       <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                   </div>
+               `;
+               document.body.appendChild(toast);
 
-            const bsToast = new bootstrap.Toast(toast);
-            bsToast.show();
+               const bsToast = new bootstrap.Toast(toast);
+               bsToast.show();
 
-            // Remove toast after it's hidden
-            toast.addEventListener('hidden.bs.toast', () => {
-                document.body.removeChild(toast);
-            });
+               // Remove toast after it's hidden
+               toast.addEventListener('hidden.bs.toast', () => {
+                   document.body.removeChild(toast);
+               });
 
-            // In a real implementation, you would reload the page or update the data via AJAX
-            // window.location.reload();
-        }, 1500);
-    }
+               // In a real implementation, you would reload the page or update the data via AJAX
+               // window.location.reload();
+           }, 1500);
+       }
+
+       function changeCompetitionPeriod(period) {
+           // Remove active class from all buttons
+           document.querySelectorAll('[data-period]').forEach(btn => {
+               btn.classList.remove('active');
+           });
+
+           // Add active class to clicked button
+           document.querySelector(`[data-period="${period}"]`).classList.add('active');
+
+           // Hide all competition periods
+           document.querySelectorAll('.competition-period').forEach(div => {
+               div.style.display = 'none';
+           });
+
+           // Show selected period
+           const selectedPeriod = document.getElementById(`competition-${period}`);
+           if (selectedPeriod) {
+               selectedPeriod.style.display = 'block';
+           }
+
+           // Update button text based on period
+           const periodNames = {
+               'month': 'This Month',
+               'quarter': 'This Quarter', 
+               'year': 'This Year'
+           };
+
+           // You could also make an AJAX call here to fetch fresh data for the selected period
+           console.log(`Switched to ${periodNames[period]} view`);
+       }
 </script>
 @endpush
 @endsection

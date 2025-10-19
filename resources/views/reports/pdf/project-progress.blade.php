@@ -189,7 +189,7 @@
                     <strong>Code:</strong> {{ $project['short_code'] }} |
                     <strong>Owner:</strong> {{ $project['owner'] }} |
                     <span class="status-badge status-{{ $project['status'] }}">{{ ucfirst($project['status']) }}</span>
-                    @if($project['is_at_risk'])
+                    @if(isset($project['is_at_risk']) && $project['is_at_risk'])
                         <span class="risk-badge">At Risk</span>
                     @endif
                 </div>
@@ -385,7 +385,7 @@
                                     @endif
                                 </td>
                             </tr>
-                            
+
                             <!-- Task Details Row -->
                             <tr class="task-details-row" style="{{ $task['is_overdue'] ? 'background-color: #fff5f5;' : '' }}">
                                 <td style="text-align: center; font-size: 9px; vertical-align: top; padding: 8px; border-bottom: 1px solid #e9ecef;">

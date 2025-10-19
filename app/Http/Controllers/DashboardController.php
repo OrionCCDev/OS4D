@@ -235,7 +235,7 @@ class DashboardController extends Controller
                 return $user;
             });
 
-        // Top performers for current month - improved query
+        // Top performers for current month - simplified and more robust query
         $monthlyTopPerformers = User::withCount(['assignedTasks as completed_tasks_count' => function($query) {
                 $query->where('status', 'completed')
                       ->where(function($q) {
@@ -259,18 +259,7 @@ class DashboardController extends Controller
                 });
             }])
             ->whereHas('assignedTasks', function($query) {
-                $query->where('status', 'completed')
-                      ->where(function($q) {
-                          $q->where(function($subQ) {
-                              $subQ->whereMonth('completed_at', now()->month)
-                                   ->whereYear('completed_at', now()->year);
-                          })
-                          ->orWhere(function($subQ) {
-                              $subQ->whereNull('completed_at')
-                                   ->whereMonth('updated_at', now()->month)
-                                   ->whereYear('updated_at', now()->year);
-                          });
-                      });
+                $query->where('status', 'completed');
             })
             ->orderBy('completed_tasks_count', 'desc')
             ->limit(10)
@@ -282,6 +271,27 @@ class DashboardController extends Controller
                 $user->monthly_performance_score = $user->completed_tasks_count * 10 + $user->completion_rate;
                 return $user;
             });
+
+        // If no monthly performers found, get any users with completed tasks as fallback
+        if ($monthlyTopPerformers->count() == 0) {
+            $monthlyTopPerformers = User::withCount(['assignedTasks as completed_tasks_count' => function($query) {
+                    $query->where('status', 'completed');
+                }])
+                ->withCount(['assignedTasks as total_tasks_count'])
+                ->whereHas('assignedTasks', function($query) {
+                    $query->where('status', 'completed');
+                })
+                ->orderBy('completed_tasks_count', 'desc')
+                ->limit(10)
+                ->get()
+                ->map(function($user) {
+                    $user->completion_rate = $user->total_tasks_count > 0
+                        ? round(($user->completed_tasks_count / $user->total_tasks_count) * 100, 1)
+                        : 0;
+                    $user->monthly_performance_score = $user->completed_tasks_count * 10 + $user->completion_rate;
+                    return $user;
+                });
+        }
 
         // Tasks per user
         $tasksPerUser = User::withCount(['assignedTasks as total_tasks', 'assignedTasks as completed_tasks' => function($query) {

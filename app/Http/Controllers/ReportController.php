@@ -245,7 +245,8 @@ class ReportController extends Controller
                 return $pdf->download($filename);
 
             case 'projects':
-                $projectsQuery = $this->reportService->getProjectOverviewReport($filters, $request);
+                // Use detailed project progress for consistency with template
+                $projectsQuery = $this->reportService->getDetailedProjectProgress($filters, $request);
                 $projects = $projectsQuery->getCollection();
 
                 $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('reports.pdf.project-progress', [
