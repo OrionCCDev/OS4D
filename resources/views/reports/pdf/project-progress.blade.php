@@ -170,9 +170,50 @@
         .page-break {
             page-break-after: always;
         }
+        .company-logo {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 20px 0;
+            background: linear-gradient(135deg, #12242E 0%, #254659 100%);
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .company-logo img {
+            max-height: 80px;
+            max-width: 300px;
+            filter: brightness(0) invert(1);
+        }
+        .company-logo .logo-text {
+            color: white;
+            font-size: 32px;
+            font-weight: bold;
+            margin: 10px 0 5px 0;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        .company-logo .logo-subtitle {
+            color: rgba(255,255,255,0.9);
+            font-size: 14px;
+            margin: 0;
+            font-weight: 300;
+        }
     </style>
 </head>
 <body>
+    <!-- Company Logo Header -->
+    <div class="company-logo">
+        @if(file_exists(public_path('uploads/company/logo.png')))
+            <img src="{{ public_path('uploads/company/logo.png') }}" alt="Company Logo">
+        @elseif(file_exists(public_path('uploads/company/logo.jpg')))
+            <img src="{{ public_path('uploads/company/logo.jpg') }}" alt="Company Logo">
+        @elseif(file_exists(public_path('uploads/company/logo.svg')))
+            <img src="{{ public_path('uploads/company/logo.svg') }}" alt="Company Logo">
+        @else
+            <!-- Fallback: Text-based logo -->
+            <div class="logo-text">🏢 ORION CONTRACTING</div>
+        @endif
+        <div class="logo-subtitle">Project Management & Design Solutions</div>
+    </div>
+
     <div class="header">
         <h1>Project Progress Report</h1>
         <div class="subtitle">
@@ -361,9 +402,18 @@
                     </thead>
                     <tbody>
                         @foreach($project['recent_tasks'] as $task)
+                            <!-- Task Separator (except for first task) -->
+                            @if(!$loop->first)
+                            <tr>
+                                <td colspan="9" style="padding: 8px 0; background-color: #f8f9fa;">
+                                    <div style="height: 1px; background-color: #dee2e6;"></div>
+                                </td>
+                            </tr>
+                            @endif
+
                             <!-- Task Name & Description Row -->
-                            <tr class="task-row" style="{{ $task['is_overdue'] ? 'background-color: #fff5f5;' : '' }}">
-                                <td colspan="9" style="font-weight: bold; {{ $task['is_overdue'] ? 'color: #dc3545;' : '' }}; vertical-align: top; padding: 12px; border-bottom: 1px solid #e9ecef;">
+                            <tr class="task-row" style="{{ $task['is_overdue'] ? 'background-color: #fff5f5;' : 'background-color: #fafbfc;' }} border-left: 4px solid {{ $task['is_overdue'] ? '#dc3545' : '#007bff' }};">
+                                <td colspan="9" style="font-weight: bold; {{ $task['is_overdue'] ? 'color: #dc3545;' : '' }}; vertical-align: top; padding: 15px; border-bottom: 1px solid #e9ecef; border-radius: 0 5px 5px 0;">
                                     <div style="margin-bottom: 6px; font-size: 14px; font-weight: bold; color: #2c3e50;">{{ $task['name'] }}</div>
                                     @if($task['description'])
                                         <div style="font-size: 11px; color: #555; font-weight: normal; margin-top: 4px; line-height: 1.5; margin-bottom: 8px;">
@@ -387,8 +437,8 @@
                             </tr>
 
                             <!-- Task Details Row -->
-                            <tr class="task-details-row" style="{{ $task['is_overdue'] ? 'background-color: #fff5f5;' : '' }}">
-                                <td style="text-align: center; font-size: 9px; vertical-align: top; padding: 8px; border-bottom: 1px solid #e9ecef;">
+                            <tr class="task-details-row" style="{{ $task['is_overdue'] ? 'background-color: #fff5f5;' : 'background-color: #fafbfc;' }} border-left: 4px solid {{ $task['is_overdue'] ? '#dc3545' : '#007bff' }};">
+                                <td style="text-align: center; font-size: 9px; vertical-align: top; padding: 12px; border-bottom: 1px solid #e9ecef; border-radius: 0 5px 5px 0;">
                                     <span style="
                                         display: inline-block;
                                         padding: 2px 6px;
@@ -586,6 +636,21 @@
                                     @endif
                                 </td>
                             </tr>
+
+                            <!-- Task Separator (except for last task) -->
+                            @if(!$loop->last)
+                            <tr>
+                                <td colspan="9" style="padding: 15px 0; border-bottom: 2px solid #e9ecef; background-color: #f8f9fa;">
+                                    <div style="display: flex; align-items: center; justify-content: center;">
+                                        <div style="flex: 1; height: 1px; background-color: #dee2e6; margin: 0 10px;"></div>
+                                        <div style="background-color: #f8f9fa; padding: 0 15px; color: #6c757d; font-size: 10px; font-weight: 500;">
+                                            <i class="bx bx-task" style="margin-right: 5px;"></i>Task {{ $loop->iteration + 1 }}
+                                        </div>
+                                        <div style="flex: 1; height: 1px; background-color: #dee2e6; margin: 0 10px;"></div>
+                                    </div>
+                                </td>
+                            </tr>
+                            @endif
                         @endforeach
                     </tbody>
                 </table>

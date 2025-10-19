@@ -12,14 +12,13 @@
             <button class="btn btn-outline-primary" onclick="refreshReport()">
                 <i class="bx bx-refresh me-1"></i>Refresh
             </button>
-            <div class="dropdown">
-                <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                    <i class="bx bx-download me-1"></i>Export
+            <div class="d-flex gap-2">
+                <button class="btn btn-primary" onclick="exportReport('pdf', 'users')">
+                    <i class="bx bx-file-pdf me-1"></i>Export PDF
                 </button>
-                <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="#" onclick="exportReport('pdf', 'users')">Export as PDF</a></li>
-                    <li><a class="dropdown-item" href="#" onclick="exportReport('excel', 'users')">Export as Excel</a></li>
-                </ul>
+                <button class="btn btn-success" onclick="exportReport('excel', 'users')">
+                    <i class="bx bx-file-excel me-1"></i>Export Excel
+                </button>
             </div>
         </div>
     </div>
@@ -140,14 +139,18 @@
                                         </span>
                                     </td>
                                     <td>
-                                        <div class="dropdown">
-                                            <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                                Actions
+                                        <div class="d-flex gap-2">
+                                            <a href="{{ route('reports.users.performance', $ranking['user']['id']) }}"
+                                               class="btn btn-sm btn-outline-primary"
+                                               title="View Details">
+                                                <i class="bx bx-show me-1"></i>View
+                                            </a>
+                                            <button type="button"
+                                                    class="btn btn-sm btn-outline-success"
+                                                    onclick="generateEvaluation({{ $ranking['user']['id'] }})"
+                                                    title="Generate Evaluation">
+                                                <i class="bx bx-file-plus me-1"></i>Evaluate
                                             </button>
-                                            <ul class="dropdown-menu">
-                                                <li><a class="dropdown-item" href="{{ route('reports.users.performance', $ranking['user']['id']) }}">View Details</a></li>
-                                                <li><a class="dropdown-item" href="#" onclick="generateEvaluation({{ $ranking['user']['id'] }})">Generate Evaluation</a></li>
-                                            </ul>
                                         </div>
                                     </td>
                                 </tr>

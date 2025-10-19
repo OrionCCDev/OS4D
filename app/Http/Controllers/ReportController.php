@@ -90,6 +90,9 @@ class ReportController extends Controller
         $filters = $this->getFiltersFromRequest($request);
         $taskReport = $this->reportService->getTaskCompletionReport($filters);
 
+        // Debug: Log the task report data
+        \Log::info('Task Report Data:', $taskReport);
+
         return view('reports.tasks.completion', compact('taskReport', 'filters'));
     }
 

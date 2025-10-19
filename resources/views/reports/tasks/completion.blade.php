@@ -92,6 +92,14 @@
         </div>
     </div>
 
+    <!-- Debug Information (remove in production) -->
+    @if(config('app.debug'))
+    <div class="alert alert-info mb-4">
+        <h6>Debug Information:</h6>
+        <pre>{{ json_encode($taskReport, JSON_PRETTY_PRINT) }}</pre>
+    </div>
+    @endif
+
     <!-- Summary Cards -->
     <div class="row g-4 mb-4">
         <div class="col-12 col-sm-6 col-lg-3">
@@ -105,7 +113,7 @@
                         </div>
                         <div>
                             <h6 class="mb-0">Total Tasks</h6>
-                            <h4 class="mb-0">{{ $taskReport['total_tasks'] }}</h4>
+                            <h4 class="mb-0">{{ $taskReport['total_tasks'] ?? 0 }}</h4>
                         </div>
                     </div>
                 </div>
@@ -122,7 +130,7 @@
                         </div>
                         <div>
                             <h6 class="mb-0">Completed</h6>
-                            <h4 class="mb-0">{{ $taskReport['completed_tasks'] }}</h4>
+                            <h4 class="mb-0">{{ $taskReport['completed_tasks'] ?? 0 }}</h4>
                         </div>
                     </div>
                 </div>
@@ -139,7 +147,7 @@
                         </div>
                         <div>
                             <h6 class="mb-0">In Progress</h6>
-                            <h4 class="mb-0">{{ $taskReport['in_progress_tasks'] }}</h4>
+                            <h4 class="mb-0">{{ $taskReport['in_progress_tasks'] ?? 0 }}</h4>
                         </div>
                     </div>
                 </div>
@@ -156,7 +164,7 @@
                         </div>
                         <div>
                             <h6 class="mb-0">Overdue</h6>
-                            <h4 class="mb-0 text-danger">{{ $taskReport['overdue_tasks'] }}</h4>
+                            <h4 class="mb-0 text-danger">{{ $taskReport['overdue_tasks'] ?? 0 }}</h4>
                         </div>
                     </div>
                 </div>
