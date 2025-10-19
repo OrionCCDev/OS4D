@@ -2034,11 +2034,19 @@ private function sendApprovalEmailViaGmail(Task $task, User $approver)
                 ->orderBy('created_at', 'desc')
                 ->get()
                 ->map(function ($entry) {
+                    // Create specific titles based on action and values
+                    $title = $this->generateHistoryTitle($entry);
+                    $description = $entry->description ?? '';
+                    $type = $this->determineHistoryType($entry);
+                    
                     return [
                         'id' => $entry->id,
-                        'title' => $entry->title ?? 'Task Update',
-                        'description' => $entry->description ?? '',
-                        'type' => $entry->type ?? 'updated',
+                        'title' => $title,
+                        'description' => $description,
+                        'type' => $type,
+                        'action' => $entry->action,
+                        'old_value' => $entry->old_value,
+                        'new_value' => $entry->new_value,
                         'created_at' => $entry->created_at->toISOString(),
                         'user' => $entry->user ? [
                             'id' => $entry->user->id,
@@ -2060,6 +2068,148 @@ private function sendApprovalEmailViaGmail(Task $task, User $approver)
                 'success' => false,
                 'message' => 'Error loading task history'
             ], 500);
+        }
+    }
+
+    /**
+     * Generate specific title for history entry
+     */
+    private function generateHistoryTitle($entry)
+    {
+        $action = $entry->action ?? '';
+        $oldValue = $entry->old_value;
+        $newValue = $entry->new_value;
+        
+        switch ($action) {
+            case 'status_changed':
+                return "Status Changed from " . ucfirst(str_replace('_', ' ', $oldValue)) . " to " . ucfirst(str_replace('_', ' ', $newValue));
+            
+            case 'assigned':
+                return "Task Assigned to " . $newValue;
+            
+            case 'created':
+                return "Task Created";
+            
+            case 'updated':
+                return "Task Updated";
+            
+            case 'completed':
+                return "Task Completed";
+            
+            case 'approved':
+                return "Task Approved";
+            
+            case 'rejected':
+                return "Task Rejected";
+            
+            case 'review_started':
+                return "Review Started";
+            
+            case 'review_completed':
+                return "Review Completed";
+            
+            case 'submitted_for_review':
+                return "Submitted for Review";
+            
+            case 'accepted':
+                return "Task Accepted";
+            
+            case 'manager_override':
+                return "Manager Override Applied";
+            
+            case 'client_approval':
+                return "Client Approval Updated";
+            
+            case 'consultant_approval':
+                return "Consultant Approval Updated";
+            
+            case 'internal_approval':
+                return "Internal Approval Updated";
+            
+            case 'email_sent':
+                return "Email Sent";
+            
+            case 'attachment_uploaded':
+                return "Attachment Uploaded";
+            
+            case 'attachment_deleted':
+                return "Attachment Deleted";
+            
+            default:
+                // Try to create a meaningful title from description
+                if ($entry->description) {
+                    $desc = $entry->description;
+                    if (strpos($desc, 'Status changed') !== false) {
+                        return "Status Changed";
+                    } elseif (strpos($desc, 'assigned') !== false) {
+                        return "Task Assigned";
+                    } elseif (strpos($desc, 'review') !== false) {
+                        return "Review Action";
+                    } elseif (strpos($desc, 'approved') !== false) {
+                        return "Approval Action";
+                    } elseif (strpos($desc, 'completed') !== false) {
+                        return "Completion Action";
+                    } else {
+                        return "Task Action";
+                    }
+                }
+                return "Task Update";
+        }
+    }
+
+    /**
+     * Determine history type for styling
+     */
+    private function determineHistoryType($entry)
+    {
+        $action = $entry->action ?? '';
+        
+        switch ($action) {
+            case 'created':
+                return 'created';
+            
+            case 'status_changed':
+                return 'status_changed';
+            
+            case 'assigned':
+                return 'assigned';
+            
+            case 'completed':
+                return 'completed';
+            
+            case 'approved':
+                return 'approved';
+            
+            case 'rejected':
+                return 'rejected';
+            
+            case 'review_started':
+            case 'review_completed':
+                return 'review';
+            
+            case 'submitted_for_review':
+                return 'submitted';
+            
+            case 'accepted':
+                return 'accepted';
+            
+            case 'manager_override':
+                return 'override';
+            
+            case 'client_approval':
+            case 'consultant_approval':
+            case 'internal_approval':
+                return 'approval';
+            
+            case 'email_sent':
+                return 'email';
+            
+            case 'attachment_uploaded':
+            case 'attachment_deleted':
+                return 'attachment';
+            
+            default:
+                return 'updated';
         }
     }
 }

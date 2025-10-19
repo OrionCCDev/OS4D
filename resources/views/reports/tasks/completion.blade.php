@@ -587,57 +587,106 @@ function viewTaskHistory(taskId) {
                             const user = entry.user ? entry.user.name : 'System';
                             const date = new Date(entry.created_at);
                             
-                            // Get type-specific styling
+                            // Get type-specific styling with better colors
                             let typeClass = 'secondary';
                             let typeIcon = 'bx-edit';
                             let typeLabel = 'Updated';
+                            let typeColor = '#6c757d';
                             
                             switch(type) {
                                 case 'created':
                                     typeClass = 'primary';
                                     typeIcon = 'bx-plus-circle';
                                     typeLabel = 'Created';
+                                    typeColor = '#0d6efd';
                                     break;
                                 case 'status_changed':
                                     typeClass = 'info';
                                     typeIcon = 'bx-refresh';
                                     typeLabel = 'Status Changed';
+                                    typeColor = '#0dcaf0';
                                     break;
                                 case 'assigned':
                                     typeClass = 'warning';
                                     typeIcon = 'bx-user-plus';
                                     typeLabel = 'Assigned';
+                                    typeColor = '#ffc107';
                                     break;
                                 case 'completed':
                                     typeClass = 'success';
                                     typeIcon = 'bx-check-circle';
                                     typeLabel = 'Completed';
+                                    typeColor = '#198754';
                                     break;
                                 case 'approved':
                                     typeClass = 'success';
                                     typeIcon = 'bx-check-double';
                                     typeLabel = 'Approved';
+                                    typeColor = '#198754';
                                     break;
                                 case 'rejected':
                                     typeClass = 'danger';
                                     typeIcon = 'bx-x-circle';
                                     typeLabel = 'Rejected';
+                                    typeColor = '#dc3545';
+                                    break;
+                                case 'review':
+                                    typeClass = 'info';
+                                    typeIcon = 'bx-search';
+                                    typeLabel = 'Review';
+                                    typeColor = '#17a2b8';
+                                    break;
+                                case 'submitted':
+                                    typeClass = 'primary';
+                                    typeIcon = 'bx-send';
+                                    typeLabel = 'Submitted';
+                                    typeColor = '#0d6efd';
+                                    break;
+                                case 'accepted':
+                                    typeClass = 'success';
+                                    typeIcon = 'bx-check';
+                                    typeLabel = 'Accepted';
+                                    typeColor = '#198754';
+                                    break;
+                                case 'override':
+                                    typeClass = 'warning';
+                                    typeIcon = 'bx-shield';
+                                    typeLabel = 'Override';
+                                    typeColor = '#ffc107';
+                                    break;
+                                case 'approval':
+                                    typeClass = 'success';
+                                    typeIcon = 'bx-check-double';
+                                    typeLabel = 'Approval';
+                                    typeColor = '#198754';
+                                    break;
+                                case 'email':
+                                    typeClass = 'info';
+                                    typeIcon = 'bx-envelope';
+                                    typeLabel = 'Email';
+                                    typeColor = '#17a2b8';
+                                    break;
+                                case 'attachment':
+                                    typeClass = 'secondary';
+                                    typeIcon = 'bx-paperclip';
+                                    typeLabel = 'Attachment';
+                                    typeColor = '#6c757d';
                                     break;
                             }
                             
                             return `
                                 <div class="timeline-item">
-                                    <div class="timeline-marker bg-${typeClass}">
+                                    <div class="timeline-marker" style="background-color: ${typeColor};">
                                         <i class="bx ${typeIcon} text-white"></i>
                                     </div>
                                     <div class="timeline-content">
                                         <div class="d-flex justify-content-between align-items-start mb-2">
-                                            <h6 class="mb-0 text-${typeClass}">${title}</h6>
-                                            <span class="badge bg-${typeClass} bg-opacity-10 text-${typeClass}">${typeLabel}</span>
+                                            <h6 class="mb-0" style="color: ${typeColor}; font-weight: 600;">${title}</h6>
+                                            <span class="badge" style="background-color: ${typeColor}20; color: ${typeColor}; border: 1px solid ${typeColor}40;">${typeLabel}</span>
                                         </div>
-                                        ${description ? `<p class="text-muted mb-2 small">${description}</p>` : ''}
+                                        ${description ? `<p class="mb-2 small" style="color: #6c757d; line-height: 1.4;">${description}</p>` : ''}
                                         <div class="timeline-meta">
-                                            <small class="text-muted">
+                                            <small style="color: #8e9297;">
                                                 <i class="bx bx-time me-1"></i>
                                                 ${date.toLocaleString('en-US', {
                                                     year: 'numeric',

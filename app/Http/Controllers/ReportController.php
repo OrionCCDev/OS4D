@@ -11,6 +11,7 @@ use App\Models\PerformanceMetric;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Carbon\Carbon;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class ReportController extends Controller
 {
@@ -372,7 +373,7 @@ class ReportController extends Controller
             $projectData = $this->getComprehensiveProjectData($project);
             
             // Generate PDF
-            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('reports.pdf.full-project-report', $projectData);
+            $pdf = Pdf::loadView('reports.pdf.full-project-report', $projectData);
             $pdf->setPaper('A4', 'portrait');
             
             $filename = 'Full_Project_Report_' . $project->short_code . '_' . now()->format('Y-m-d_H-i-s') . '.pdf';

@@ -76,7 +76,58 @@
         50% { opacity: 1; }
         100% { transform: translateX(100%) translateY(100%) rotate(45deg); opacity: 0; }
     }
+
+    .timeline {
+        position: relative;
+        padding: 20px 0;
+    }
+    
+    .timeline::before {
+        content: '';
+        position: absolute;
+        left: 30px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: linear-gradient(to bottom, #e9ecef, #dee2e6);
+    }
+    
+    .timeline-item {
+        position: relative;
+        margin-bottom: 30px;
+        padding-left: 60px;
+    }
+    
+    .timeline-marker {
+        position: absolute;
+        left: 20px;
+        top: 5px;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 10px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        z-index: 2;
+    }
+    
+    .timeline-content {
+        background: #fff;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        padding: 15px 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        transition: all 0.3s ease;
+    }
+    
+    .timeline-content:hover {
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        transform: translateY(-1px);
+    }
 </style>
+
 <div class="container flex-grow-1 container-p-y">
     <!-- Header -->
     <div class="row">
@@ -85,8 +136,8 @@
                 <div class="d-flex align-items-end row">
                     <div class="col-sm-7">
                         <div class="card-body">
-                            <h5 class="card-title text-primary">Manager Dashboard</h5>
-                            <p class="mb-4">Last updated: {{ now()->format('M d, Y H:i') }}</p>
+                            <h5 class="card-title text-primary fw-bold">Manager Dashboard</h5>
+                            <p class="mb-4 text-muted">Last updated: {{ now()->format('M d, Y H:i') }}</p>
                         </div>
                     </div>
                 </div>
@@ -94,20 +145,23 @@
         </div>
     </div>
 
-    <!-- Overview Cards -->
-    <div class="row">
+    <!-- Quick Statistics - Moved to top -->
+    <div class="row mb-4">
         <!-- Total Users -->
         <div class="col-lg-3 col-md-6 col-6 mb-4">
             <div class="card">
                 <div class="card-body">
-                    <div class="card-title d-flex align-items-start justify-content-between">
-                        <div class="avatar flex-shrink-0">
-                            <i class="bx bx-user text-primary" style="font-size: 2rem;"></i>
+                    <div class="d-flex align-items-center">
+                        <div class="avatar avatar-sm me-3">
+                            <span class="avatar-initial rounded bg-label-primary">
+                                <i class="bx bx-user text-primary"></i>
+                            </span>
+                        </div>
+                        <div>
+                            <h6 class="mb-0 text-dark fw-semibold">{{ $data['overview']['total_users'] }}</h6>
+                            <small class="text-muted">Total Users</small>
                         </div>
                     </div>
-                    <span class="fw-semibold d-block mb-1">Total Users</span>
-                    <h3 class="card-title mb-2">{{ $data['overview']['total_users'] }}</h3>
-                    <small class="text-success fw-semibold">{{ $data['overview']['active_users'] }} active</small>
                 </div>
             </div>
         </div>
@@ -116,61 +170,77 @@
         <div class="col-lg-3 col-md-6 col-6 mb-4">
             <div class="card">
                 <div class="card-body">
-                    <div class="card-title d-flex align-items-start justify-content-between">
-                        <div class="avatar flex-shrink-0">
-                            <i class="bx bx-task text-success" style="font-size: 2rem;"></i>
+                    <div class="d-flex align-items-center">
+                        <div class="avatar avatar-sm me-3">
+                            <span class="avatar-initial rounded bg-label-success">
+                                <i class="bx bx-task text-success"></i>
+                            </span>
+                        </div>
+                        <div>
+                            <h6 class="mb-0 text-dark fw-semibold">{{ $data['overview']['total_tasks'] }}</h6>
+                            <small class="text-muted">Total Tasks</small>
                         </div>
                     </div>
-                    <span class="fw-semibold d-block mb-1">Total Tasks</span>
-                    <h3 class="card-title mb-2">{{ $data['overview']['total_tasks'] }}</h3>
-                    <small class="text-primary fw-semibold">{{ $data['overview']['completion_rate'] }}% completed</small>
                 </div>
             </div>
         </div>
 
-        <!-- Projects -->
+        <!-- Total Projects -->
         <div class="col-lg-3 col-md-6 col-6 mb-4">
             <div class="card">
                 <div class="card-body">
-                    <div class="card-title d-flex align-items-start justify-content-between">
-                        <div class="avatar flex-shrink-0">
-                            <i class="bx bx-folder text-warning" style="font-size: 2rem;"></i>
+                    <div class="d-flex align-items-center">
+                        <div class="avatar avatar-sm me-3">
+                            <span class="avatar-initial rounded bg-label-warning">
+                                <i class="bx bx-folder text-warning"></i>
+                            </span>
+                        </div>
+                        <div>
+                            <h6 class="mb-0 text-dark fw-semibold">{{ $data['overview']['total_projects'] }}</h6>
+                            <small class="text-muted">Total Projects</small>
                         </div>
                     </div>
-                    <span class="fw-semibold d-block mb-1">Projects</span>
-                    <h3 class="card-title mb-2">{{ $data['overview']['total_projects'] }}</h3>
-                    <small class="text-warning fw-semibold">{{ $data['project_stats']['active'] }} active</small>
                 </div>
             </div>
         </div>
 
-        <!-- Weekly Completed -->
+        <!-- Completion Rate -->
         <div class="col-lg-3 col-md-6 col-6 mb-4">
             <div class="card">
                 <div class="card-body">
-                    <div class="card-title d-flex align-items-start justify-content-between">
-                        <div class="avatar flex-shrink-0">
-                            <i class="bx bx-check-circle text-info" style="font-size: 2rem;"></i>
+                    <div class="d-flex align-items-center">
+                        <div class="avatar avatar-sm me-3">
+                            <span class="avatar-initial rounded bg-label-info">
+                                <i class="bx bx-trending-up text-info"></i>
+                            </span>
+                        </div>
+                        <div>
+                            <h6 class="mb-0 text-dark fw-semibold">{{ $data['overview']['completion_rate'] }}%</h6>
+                            <small class="text-muted">Completion Rate</small>
                         </div>
                     </div>
-                    <span class="fw-semibold d-block mb-1">This Week</span>
-                    <h3 class="card-title mb-2">{{ $data['overview']['weekly_completed'] }}</h3>
-                    <small class="text-info fw-semibold">tasks completed</small>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Charts Row -->
-    <div class="row">
+    <div class="row mb-4">
         <!-- Task Status Chart -->
         <div class="col-lg-6 col-md-6 col-12 mb-4">
             <div class="card">
                 <div class="card-header">
-                    <h5 class="card-title mb-0">Tasks by Status</h5>
+                    <h5 class="card-title mb-0 text-dark fw-semibold">Tasks by Status</h5>
                 </div>
                 <div class="card-body">
-                    <canvas id="taskStatusChart" width="400" height="200"></canvas>
+                    @if(!empty($data['tasks_by_status']))
+                        <canvas id="taskStatusChart" width="400" height="200"></canvas>
+                    @else
+                        <div class="text-center py-4">
+                            <i class="bx bx-pie-chart-alt-2 fs-1 text-muted opacity-50"></i>
+                            <p class="text-muted mt-2">No task status data available</p>
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>
@@ -179,10 +249,17 @@
         <div class="col-lg-6 col-md-6 col-12 mb-4">
             <div class="card">
                 <div class="card-header">
-                    <h5 class="card-title mb-0">Tasks by Priority</h5>
+                    <h5 class="card-title mb-0 text-dark fw-semibold">Tasks by Priority</h5>
                 </div>
                 <div class="card-body">
-                    <canvas id="taskPriorityChart" width="400" height="200"></canvas>
+                    @if(!empty($data['tasks_by_priority']))
+                        <canvas id="taskPriorityChart" width="400" height="200"></canvas>
+                    @else
+                        <div class="text-center py-4">
+                            <i class="bx bx-bar-chart-alt-2 fs-1 text-muted opacity-50"></i>
+                            <p class="text-muted mt-2">No task priority data available</p>
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>
@@ -194,7 +271,7 @@
         <div class="col-lg-6 col-md-6 col-12 mb-4">
             <div class="card competition-card card-gradient">
                 <div class="card-header d-flex align-items-center justify-content-between">
-                    <h5 class="card-title mb-0 text-white">
+                    <h5 class="card-title mb-0 text-white fw-semibold">
                         <i class="bx bx-trophy me-2 text-warning medal-animation"></i>Top 3 Competition
                     </h5>
                     <div class="d-flex align-items-center gap-2">
@@ -203,352 +280,79 @@
                                 <i class="bx bx-calendar me-1"></i>This Month
                             </button>
                             <button type="button" class="btn btn-sm btn-outline-light" data-period="quarter" onclick="changeCompetitionPeriod('quarter')">
-                                <i class="bx bx-calendar-check me-1"></i>This Quarter
+                                <i class="bx bx-calendar me-1"></i>This Quarter
                             </button>
                             <button type="button" class="btn btn-sm btn-outline-light" data-period="year" onclick="changeCompetitionPeriod('year')">
-                                <i class="bx bx-calendar-star me-1"></i>This Year
+                                <i class="bx bx-calendar me-1"></i>This Year
                             </button>
                         </div>
-                        <button class="btn btn-sm btn-outline-primary" onclick="refreshCompetition()" title="Refresh Competition Data">
-                            <i class="bx bx-refresh"></i>
-                        </button>
                     </div>
                 </div>
                 <div class="card-body">
-                    <!-- Month Period (Default) -->
-                    <div id="competition-month" class="competition-period">
-                        @if($data['monthly_top_performers']->count() > 0)
-                            @foreach($data['monthly_top_performers']->take(3) as $index => $user)
-                            @php
-                                $medalClass = '';
-                                $medalIcon = '';
-                                $rankColor = '';
-                                $bgClass = '';
-
-                                switch($index) {
-                                    case 0:
-                                        $medalClass = 'gold-medal';
-                                        $medalIcon = 'bx-trophy';
-                                        $rankColor = 'text-warning';
-                                        $bgClass = 'bg-warning bg-opacity-10';
-                                        $rankBadge = 'bg-warning';
-                                        break;
-                                    case 1:
-                                        $medalClass = 'silver-medal';
-                                        $medalIcon = 'bx-medal';
-                                        $rankColor = 'text-secondary';
-                                        $bgClass = 'bg-secondary bg-opacity-10';
-                                        $rankBadge = 'bg-secondary';
-                                        break;
-                                    case 2:
-                                        $medalClass = 'bronze-medal';
-                                        $medalIcon = 'bx-award';
-                                        $rankColor = 'text-warning';
-                                        $bgClass = 'bg-warning bg-opacity-10';
-                                        $rankBadge = 'bg-warning';
-                                        break;
-                                }
-                            @endphp
-
-                            <div class="d-flex align-items-center mb-3 p-3 rounded {{ $bgClass }}">
-                                <div class="avatar flex-shrink-0 me-3 position-relative">
-                                    @if($index < 3)
-                                        <div class="position-absolute top-0 start-100 translate-middle">
-                                            <i class="bx {{ $medalIcon }} {{ $medalClass }}" style="font-size: 24px;"></i>
+                    <div id="competitionContent">
+                        @if(count($data['monthly_top_performers']) > 0)
+                            <div class="row">
+                                @foreach($data['monthly_top_performers'] as $index => $performer)
+                                    <div class="col-12 mb-3">
+                                        <div class="d-flex align-items-center p-3 rounded-3" style="background: rgba(255,255,255,0.1);">
+                                            <div class="rank-badge me-3">
+                                                @if($index === 0)
+                                                    <i class="bx bx-medal gold-medal" style="font-size: 2rem;"></i>
+                                                @elseif($index === 1)
+                                                    <i class="bx bx-medal silver-medal" style="font-size: 2rem;"></i>
+                                                @else
+                                                    <i class="bx bx-medal bronze-medal" style="font-size: 2rem;"></i>
+                                                @endif
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <h6 class="mb-1 text-white fw-semibold">{{ $performer->name }}</h6>
+                                                <div class="d-flex align-items-center gap-3">
+                                                    <small class="text-white-50">
+                                                        <i class="bx bx-check-circle me-1"></i>
+                                                        {{ $performer->completed_tasks_count ?? 0 }} completed
+                                                    </small>
+                                                    <small class="text-white-50">
+                                                        <i class="bx bx-time me-1"></i>
+                                                        {{ $performer->in_progress_tasks_count ?? 0 }} in progress
+                                                    </small>
+                                                    <small class="text-white-50">
+                                                        <i class="bx bx-list-ul me-1"></i>
+                                                        {{ $performer->total_tasks_count ?? 0 }} total
+                                                    </small>
+                                                </div>
+                                                @if(isset($performer->rejection_rate) && $performer->rejection_rate > 0)
+                                                    <small class="text-warning">
+                                                        <i class="bx bx-error-circle me-1"></i>
+                                                        {{ number_format($performer->rejection_rate, 1) }}% rejection rate
+                                                    </small>
+                                                @endif
+                                                @if(isset($performer->overdue_rate) && $performer->overdue_rate > 0)
+                                                    <small class="text-warning ms-2">
+                                                        <i class="bx bx-time-five me-1"></i>
+                                                        {{ number_format($performer->overdue_rate, 1) }}% overdue rate
+                                                    </small>
+                                                @endif
+                                                <div class="mt-1">
+                                                    <span class="badge bg-success bg-opacity-20 text-success">
+                                                        Performance Score: {{ $performer->monthly_performance_score ?? $performer->performance_score ?? 0 }}
+                                                    </span>
+                                                    <span class="badge bg-info bg-opacity-20 text-info ms-1">
+                                                        Completion Rate: {{ number_format($performer->completion_rate ?? 0, 1) }}%
+                                                    </span>
+                                                </div>
+                                            </div>
                                         </div>
-                                    @endif
-                                    <span class="avatar-initial rounded-circle {{ $rankBadge }} text-white fw-bold rank-badge" style="font-size: 18px; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
-                                        {{ $index + 1 }}
-                                    </span>
-                                </div>
-                                <div class="d-flex w-100 flex-wrap align-items-center justify-content-between gap-2">
-                                    <div class="me-2">
-                                        <h6 class="mb-0 {{ $rankColor }} fw-bold">
-                                            {{ $user->name }}
-                                            @if($index === 0)
-                                                <i class="bx bx-crown text-warning ms-1 gold-medal" style="font-size: 16px;"></i>
-                                            @endif
-                                        </h6>
-                                        <small class="text-muted">
-                                            <i class="bx bx-task me-1"></i>{{ $user->completed_tasks_count }} completed
-                                            @if($user->in_progress_tasks_count > 0)
-                                                <span class="ms-2">
-                                                    <i class="bx bx-time me-1"></i>{{ $user->in_progress_tasks_count }} in progress
-                                                </span>
-                                            @endif
-                                            @if($user->total_tasks_count > 0)
-                                                <span class="ms-2">
-                                                    <i class="bx bx-target-lock me-1"></i>{{ $user->total_tasks_count }} total
-                                                </span>
-                                            @endif
-                                        </small>
-                                        @if($user->rejection_rate > 0 || $user->overdue_rate > 0)
-                                            <small class="text-danger d-block mt-1">
-                                                @if($user->rejection_rate > 0)
-                                                    <i class="bx bx-x-circle me-1"></i>{{ $user->rejection_rate }}% rejected
-                                                @endif
-                                                @if($user->overdue_rate > 0)
-                                                    <i class="bx bx-time-five me-1"></i>{{ $user->overdue_rate }}% overdue
-                                                @endif
-                                            </small>
-                                        @endif
                                     </div>
-                                    <div class="user-progress d-flex flex-column align-items-end">
-                                        <h6 class="mb-0 {{ $rankColor }} fw-bold">{{ $user->monthly_performance_score ?? $user->performance_score ?? 0 }}</h6>
-                                        <small class="text-muted">Performance Score</small>
-                                        <small class="text-success fw-semibold">{{ $user->completion_rate }}% completion</small>
-                                        @if($index === 0)
-                                            <small class="text-success fw-semibold">
-                                                <i class="bx bx-star me-1"></i>Champion
-                                            </small>
-                                        @elseif($index === 1)
-                                            <small class="text-info fw-semibold">
-                                                <i class="bx bx-medal me-1"></i>Runner-up
-                                            </small>
-                                        @elseif($index === 2)
-                                            <small class="text-warning fw-semibold">
-                                                <i class="bx bx-award me-1"></i>Third Place
-                                            </small>
-                                        @endif
-                                    </div>
-                                </div>
+                                @endforeach
                             </div>
-                        @endforeach
-
-                        @if($data['monthly_top_performers']->count() > 3)
-                            <div class="text-center mt-3">
-                                <small class="text-muted">
-                                    <i class="bx bx-info-circle me-1"></i>
-                                    Showing top 3 of {{ $data['monthly_top_performers']->count() }} performers
-                                </small>
-                            </div>
-                        @endif
                         @else
                             <div class="text-center py-4">
-                                <i class="bx bx-trophy text-muted" style="font-size: 48px;"></i>
-                                <p class="text-muted mt-2">No performance data available</p>
-                                <small class="text-muted">Start assigning tasks to see competition results</small>
+                                <i class="bx bx-trophy fs-1 text-white-50"></i>
+                                <p class="text-white-50 mt-2">No performance data available</p>
+                                <small class="text-white-50">Start assigning tasks to see competition results</small>
                             </div>
                         @endif
                     </div>
-
-                    <!-- Quarter Period -->
-                    <div id="competition-quarter" class="competition-period" style="display: none;">
-                        @if($data['quarterly_top_performers']->count() > 0)
-                            @foreach($data['quarterly_top_performers']->take(3) as $index => $user)
-                                @php
-                                    $medalClass = '';
-                                    $medalIcon = '';
-                                    $rankColor = '';
-                                    $bgClass = '';
-                                    $rankBadge = '';
-
-                                    switch($index) {
-                                        case 0:
-                                            $medalClass = 'gold-medal';
-                                            $medalIcon = 'bx-trophy';
-                                            $rankColor = 'text-warning';
-                                            $bgClass = 'bg-warning bg-opacity-10';
-                                            $rankBadge = 'bg-warning';
-                                            break;
-                                        case 1:
-                                            $medalClass = 'silver-medal';
-                                            $medalIcon = 'bx-medal';
-                                            $rankColor = 'text-secondary';
-                                            $bgClass = 'bg-secondary bg-opacity-10';
-                                            $rankBadge = 'bg-secondary';
-                                            break;
-                                        case 2:
-                                            $medalClass = 'bronze-medal';
-                                            $medalIcon = 'bx-award';
-                                            $rankColor = 'text-warning';
-                                            $bgClass = 'bg-warning bg-opacity-10';
-                                            $rankBadge = 'bg-warning';
-                                            break;
-                                    }
-                                @endphp
-
-                                <div class="d-flex align-items-center mb-3 p-3 rounded {{ $bgClass }}">
-                                    <div class="avatar flex-shrink-0 me-3 position-relative">
-                                        @if($index < 3)
-                                            <div class="position-absolute top-0 start-100 translate-middle">
-                                                <i class="bx {{ $medalIcon }} {{ $medalClass }}" style="font-size: 24px;"></i>
-                                            </div>
-                                        @endif
-                                        <span class="avatar-initial rounded-circle {{ $rankBadge }} text-white fw-bold rank-badge" style="font-size: 18px; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
-                                            {{ $index + 1 }}
-                                        </span>
-                            </div>
-                            <div class="d-flex w-100 flex-wrap align-items-center justify-content-between gap-2">
-                                <div class="me-2">
-                                            <h6 class="mb-0 {{ $rankColor }} fw-bold">
-                                                {{ $user->name }}
-                                                @if($index === 0)
-                                                    <i class="bx bx-crown text-warning ms-1 gold-medal" style="font-size: 16px;"></i>
-                                                @endif
-                                            </h6>
-                                        <small class="text-muted">
-                                            <i class="bx bx-task me-1"></i>{{ $user->completed_tasks_count }} completed
-                                            @if($user->in_progress_tasks_count > 0)
-                                                <span class="ms-2">
-                                                    <i class="bx bx-time me-1"></i>{{ $user->in_progress_tasks_count }} in progress
-                                                </span>
-                                            @endif
-                                            @if($user->total_tasks_count > 0)
-                                                <span class="ms-2">
-                                                    <i class="bx bx-target-lock me-1"></i>{{ $user->total_tasks_count }} total
-                                                </span>
-                                            @endif
-                                        </small>
-                                        @if($user->rejection_rate > 0 || $user->overdue_rate > 0)
-                                            <small class="text-danger d-block mt-1">
-                                                @if($user->rejection_rate > 0)
-                                                    <i class="bx bx-x-circle me-1"></i>{{ $user->rejection_rate }}% rejected
-                                                @endif
-                                                @if($user->overdue_rate > 0)
-                                                    <i class="bx bx-time-five me-1"></i>{{ $user->overdue_rate }}% overdue
-                                                @endif
-                                            </small>
-                                        @endif
-                                        </div>
-                                        <div class="user-progress d-flex flex-column align-items-end">
-                                        <h6 class="mb-0 {{ $rankColor }} fw-bold">{{ $user->monthly_performance_score ?? $user->performance_score ?? 0 }}</h6>
-                                        <small class="text-muted">Performance Score</small>
-                                        <small class="text-success fw-semibold">{{ $user->completion_rate }}% completion</small>
-                                            @if($index === 0)
-                                                <small class="text-success fw-semibold">
-                                                    <i class="bx bx-star me-1"></i>Champion
-                                                </small>
-                                            @elseif($index === 1)
-                                                <small class="text-info fw-semibold">
-                                                    <i class="bx bx-medal me-1"></i>Runner-up
-                                                </small>
-                                            @elseif($index === 2)
-                                                <small class="text-warning fw-semibold">
-                                                    <i class="bx bx-award me-1"></i>Third Place
-                                                </small>
-                                            @endif
-                                        </div>
-                                    </div>
-                                </div>
-                            @endforeach
-                        @else
-                            <div class="text-center py-4">
-                                <i class="bx bx-trophy text-muted" style="font-size: 48px;"></i>
-                                <p class="text-muted mt-2">No performance data available</p>
-                                <small class="text-muted">Start assigning tasks to see competition results</small>
-                            </div>
-                        @endif
-                    </div>
-
-                    <!-- Year Period -->
-                    <div id="competition-year" class="competition-period" style="display: none;">
-                        @if($data['yearly_top_performers']->count() > 0)
-                            @foreach($data['yearly_top_performers']->take(3) as $index => $user)
-                                @php
-                                    $medalClass = '';
-                                    $medalIcon = '';
-                                    $rankColor = '';
-                                    $bgClass = '';
-                                    $rankBadge = '';
-
-                                    switch($index) {
-                                        case 0:
-                                            $medalClass = 'gold-medal';
-                                            $medalIcon = 'bx-trophy';
-                                            $rankColor = 'text-warning';
-                                            $bgClass = 'bg-warning bg-opacity-10';
-                                            $rankBadge = 'bg-warning';
-                                            break;
-                                        case 1:
-                                            $medalClass = 'silver-medal';
-                                            $medalIcon = 'bx-medal';
-                                            $rankColor = 'text-secondary';
-                                            $bgClass = 'bg-secondary bg-opacity-10';
-                                            $rankBadge = 'bg-secondary';
-                                            break;
-                                        case 2:
-                                            $medalClass = 'bronze-medal';
-                                            $medalIcon = 'bx-award';
-                                            $rankColor = 'text-warning';
-                                            $bgClass = 'bg-warning bg-opacity-10';
-                                            $rankBadge = 'bg-warning';
-                                            break;
-                                    }
-                                @endphp
-
-                                <div class="d-flex align-items-center mb-3 p-3 rounded {{ $bgClass }}">
-                                    <div class="avatar flex-shrink-0 me-3 position-relative">
-                                        @if($index < 3)
-                                            <div class="position-absolute top-0 start-100 translate-middle">
-                                                <i class="bx {{ $medalIcon }} {{ $medalClass }}" style="font-size: 24px;"></i>
-                                            </div>
-                                        @endif
-                                        <span class="avatar-initial rounded-circle {{ $rankBadge }} text-white fw-bold rank-badge" style="font-size: 18px; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
-                                            {{ $index + 1 }}
-                                        </span>
-                                    </div>
-                                    <div class="d-flex w-100 flex-wrap align-items-center justify-content-between gap-2">
-                                        <div class="me-2">
-                                            <h6 class="mb-0 {{ $rankColor }} fw-bold">
-                                                {{ $user->name }}
-                                                @if($index === 0)
-                                                    <i class="bx bx-crown text-warning ms-1 gold-medal" style="font-size: 16px;"></i>
-                                                @endif
-                                            </h6>
-                                        <small class="text-muted">
-                                            <i class="bx bx-task me-1"></i>{{ $user->completed_tasks_count }} completed
-                                            @if($user->in_progress_tasks_count > 0)
-                                                <span class="ms-2">
-                                                    <i class="bx bx-time me-1"></i>{{ $user->in_progress_tasks_count }} in progress
-                                                </span>
-                                            @endif
-                                            @if($user->total_tasks_count > 0)
-                                                <span class="ms-2">
-                                                    <i class="bx bx-target-lock me-1"></i>{{ $user->total_tasks_count }} total
-                                                </span>
-                                            @endif
-                                        </small>
-                                        @if($user->rejection_rate > 0 || $user->overdue_rate > 0)
-                                            <small class="text-danger d-block mt-1">
-                                                @if($user->rejection_rate > 0)
-                                                    <i class="bx bx-x-circle me-1"></i>{{ $user->rejection_rate }}% rejected
-                                                @endif
-                                                @if($user->overdue_rate > 0)
-                                                    <i class="bx bx-time-five me-1"></i>{{ $user->overdue_rate }}% overdue
-                                                @endif
-                                            </small>
-                                        @endif
-                                        </div>
-                                        <div class="user-progress d-flex flex-column align-items-end">
-                                        <h6 class="mb-0 {{ $rankColor }} fw-bold">{{ $user->monthly_performance_score ?? $user->performance_score ?? 0 }}</h6>
-                                        <small class="text-muted">Performance Score</small>
-                                        <small class="text-success fw-semibold">{{ $user->completion_rate }}% completion</small>
-                                            @if($index === 0)
-                                                <small class="text-success fw-semibold">
-                                                    <i class="bx bx-star me-1"></i>Champion
-                                                </small>
-                                            @elseif($index === 1)
-                                                <small class="text-info fw-semibold">
-                                                    <i class="bx bx-medal me-1"></i>Runner-up
-                                                </small>
-                                            @elseif($index === 2)
-                                                <small class="text-warning fw-semibold">
-                                                    <i class="bx bx-award me-1"></i>Third Place
-                                                </small>
-                                            @endif
-                                        </div>
-                                    </div>
-                                </div>
-                            @endforeach
-                        @else
-                            <div class="text-center py-4">
-                                <i class="bx bx-trophy text-muted" style="font-size: 48px;"></i>
-                                <p class="text-muted mt-2">No performance data available</p>
-                                <small class="text-muted">Start assigning tasks to see competition results</small>
-                            </div>
-                        @endif
-                        </div>
                 </div>
             </div>
         </div>
@@ -557,177 +361,31 @@
         <div class="col-lg-6 col-md-6 col-12 mb-4">
             <div class="card">
                 <div class="card-header">
-                    <h5 class="card-title mb-0">Recent Activity</h5>
+                    <h5 class="card-title mb-0 text-dark fw-semibold">Recent Activity</h5>
                 </div>
                 <div class="card-body">
-                    @forelse($data['recent_activity'] as $task)
-                        <div class="d-flex align-items-center mb-3">
-                            <div class="avatar flex-shrink-0 me-3">
-                                <span class="avatar-initial rounded bg-label-primary">
-                                    <i class="bx bx-task"></i>
-                                </span>
-                            </div>
-                            <div class="d-flex w-100 flex-wrap align-items-center justify-content-between gap-2">
-                                <div class="me-2">
-                                    <h6 class="mb-0">{{ $task->title }}</h6>
-                                    <small class="text-muted">{{ $task->assignee->name ?? 'Unassigned' }} • {{ $task->project->name }}</small>
-                                </div>
-                                <div class="user-progress">
-                                    <small class="text-muted">{{ $task->created_at->diffForHumans() }}</small>
-                                </div>
-                            </div>
-                        </div>
-                    @empty
-                        <p class="text-muted text-center py-4">No recent activity</p>
-                    @endforelse
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Due Dates and Overdue Tasks -->
-    <div class="row">
-        <!-- Upcoming Due Dates -->
-        <div class="col-lg-6 col-md-6 col-12 mb-4">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">Upcoming Due Dates</h5>
-                </div>
-                <div class="card-body">
-                    @forelse($data['upcoming_due_dates'] as $task)
-                        <div class="d-flex align-items-center mb-3 p-2 bg-warning bg-opacity-10 rounded">
-                            <div class="avatar flex-shrink-0 me-3">
-                                <span class="avatar-initial rounded bg-label-warning">
-                                    <i class="bx bx-time"></i>
-                                </span>
-                            </div>
-                            <div class="d-flex w-100 flex-wrap align-items-center justify-content-between gap-2">
-                                <div class="me-2">
-                                    <h6 class="mb-0">{{ $task->title }}</h6>
-                                    <small class="text-muted">{{ $task->assignee->name ?? 'Unassigned' }} • {{ $task->project->name }}</small>
-                                </div>
-                                <div class="user-progress">
-                                    <small class="text-warning fw-semibold">{{ $task->due_date->format('M d') }}</small>
-                                </div>
-                            </div>
-                        </div>
-                    @empty
-                        <p class="text-muted text-center py-4">No upcoming due dates</p>
-                    @endforelse
-                </div>
-            </div>
-        </div>
-
-        <!-- Overdue Tasks -->
-        <div class="col-lg-6 col-md-6 col-12 mb-4">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">Overdue Tasks</h5>
-                </div>
-                <div class="card-body">
-                    @forelse($data['overdue_tasks'] as $task)
-                        <div class="d-flex align-items-center mb-3 p-2 bg-danger bg-opacity-10 rounded">
-                            <div class="avatar flex-shrink-0 me-3">
-                                <span class="avatar-initial rounded bg-label-danger">
-                                    <i class="bx bx-error"></i>
-                                </span>
-                            </div>
-                            <div class="d-flex w-100 flex-wrap align-items-center justify-content-between gap-2">
-                                <div class="me-2">
-                                    <h6 class="mb-0">{{ $task->title }}</h6>
-                                    <small class="text-muted">{{ $task->assignee->name ?? 'Unassigned' }} • {{ $task->project->name }}</small>
-                                </div>
-                                <div class="user-progress">
-                                    <small class="text-danger fw-semibold">{{ $task->due_date->format('M d') }}</small>
-                                </div>
-                            </div>
-                        </div>
-                    @empty
-                        <p class="text-muted text-center py-4">No overdue tasks</p>
-                    @endforelse
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Task Distribution by Project -->
-    <div class="row">
-        <div class="col-12 mb-4">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">Task Distribution by Project</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        @forelse($data['tasks_by_project'] as $project)
-                            <div class="col-lg-3 col-md-4 col-sm-6 mb-3">
-                                <div class="card h-100">
-                                    <div class="card-body text-center">
-                                        <h6 class="card-title">{{ $project->name }}</h6>
-                                        <h3 class="text-primary mb-0">{{ $project->tasks_count }}</h3>
-                                        <small class="text-muted">tasks</small>
+                    @if(count($data['recent_activity']) > 0)
+                        <div class="timeline">
+                            @foreach($data['recent_activity'] as $activity)
+                                <div class="timeline-item">
+                                    <div class="timeline-marker bg-primary"></div>
+                                    <div class="timeline-content">
+                                        <h6 class="mb-1 text-dark">{{ $activity['title'] }}</h6>
+                                        <p class="text-muted mb-1 small">{{ $activity['description'] }}</p>
+                                        <small class="text-muted">
+                                            <i class="bx bx-time me-1"></i>
+                                            {{ $activity['created_at']->diffForHumans() }}
+                                        </small>
                                     </div>
                                 </div>
-                            </div>
-                        @empty
-                            <div class="col-12">
-                                <p class="text-muted text-center py-4">No project data available</p>
-                            </div>
-                        @endforelse
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Monthly Trend Chart -->
-    <div class="row">
-        <div class="col-12 mb-4">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">Task Completion Trend (Last 12 Months)</h5>
-                </div>
-                <div class="card-body">
-                    <canvas id="monthlyTrendChart" width="400" height="100"></canvas>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Quick Stats -->
-    <div class="row">
-        <div class="col-12 mb-4">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">Quick Statistics</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-lg-3 col-md-6 col-6 mb-3">
-                            <div class="text-center p-3 bg-primary bg-opacity-10 rounded">
-                                <h3 class="text-primary mb-0">{{ $data['task_stats']['completed'] }}</h3>
-                                <small class="text-muted">Completed</small>
-                            </div>
+                            @endforeach
                         </div>
-                        <div class="col-lg-3 col-md-6 col-6 mb-3">
-                            <div class="text-center p-3 bg-warning bg-opacity-10 rounded">
-                                <h3 class="text-warning mb-0">{{ $data['task_stats']['in_progress'] }}</h3>
-                                <small class="text-muted">In Progress</small>
-                            </div>
+                    @else
+                        <div class="text-center py-4">
+                            <i class="bx bx-activity fs-1 text-muted opacity-50"></i>
+                            <p class="text-muted mt-2">No recent activity</p>
                         </div>
-                        <div class="col-lg-3 col-md-6 col-6 mb-3">
-                            <div class="text-center p-3 bg-secondary bg-opacity-10 rounded">
-                                <h3 class="text-secondary mb-0">{{ $data['task_stats']['pending'] }}</h3>
-                                <small class="text-muted">Pending</small>
-                            </div>
-                        </div>
-                        <div class="col-lg-3 col-md-6 col-6 mb-3">
-                            <div class="text-center p-3 bg-danger bg-opacity-10 rounded">
-                                <h3 class="text-danger mb-0">{{ $data['task_stats']['overdue'] }}</h3>
-                                <small class="text-muted">Overdue</small>
-                            </div>
-                        </div>
-                    </div>
+                    @endif
                 </div>
             </div>
         </div>
@@ -738,6 +396,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     // Task Status Chart
+    @if(!empty($data['tasks_by_status']))
     const taskStatusCtx = document.getElementById('taskStatusChart').getContext('2d');
     const taskStatusData = @json($data['tasks_by_status']);
 
@@ -760,15 +419,24 @@
         },
         options: {
             responsive: true,
+            maintainAspectRatio: false,
             plugins: {
                 legend: {
-                    position: 'bottom'
+                    position: 'bottom',
+                    labels: {
+                        color: '#374151',
+                        font: {
+                            size: 12
+                        }
+                    }
                 }
             }
         }
     });
+    @endif
 
     // Task Priority Chart
+    @if(!empty($data['tasks_by_priority']))
     const taskPriorityCtx = document.getElementById('taskPriorityChart').getContext('2d');
     const taskPriorityData = @json($data['tasks_by_priority']);
 
@@ -791,6 +459,7 @@
         },
         options: {
             responsive: true,
+            maintainAspectRatio: false,
             plugins: {
                 legend: {
                     display: false
@@ -798,161 +467,56 @@
             },
             scales: {
                 y: {
-                    beginAtZero: true
+                    beginAtZero: true,
+                    ticks: {
+                        color: '#374151',
+                        font: {
+                            size: 12
+                        }
+                    }
+                },
+                x: {
+                    ticks: {
+                        color: '#374151',
+                        font: {
+                            size: 12
+                        }
+                    }
                 }
             }
         }
     });
+    @endif
 
-    // Monthly Trend Chart
-    const monthlyTrendCtx = document.getElementById('monthlyTrendChart').getContext('2d');
-    const monthlyTrendData = @json($data['monthly_trend']);
-
-    // Create array of last 12 months with data
-    const months = [];
-    const completedData = [];
-    const currentDate = new Date();
-
-    for (let i = 11; i >= 0; i--) {
-        const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
-        const monthKey = date.toISOString().slice(0, 7);
-        const monthName = date.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
-
-        months.push(monthName);
-        completedData.push(monthlyTrendData[monthKey] || 0);
-    }
-
-    new Chart(monthlyTrendCtx, {
-        type: 'line',
-        data: {
-            labels: months,
-            datasets: [{
-                label: 'Completed Tasks',
-                data: completedData,
-                borderColor: '#3B82F6',
-                backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                tension: 0.4,
-                fill: true
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    display: false
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true
-                }
-            }
-        }
-    });
-
-    // Ensure handleNotificationClick function is available on dashboard
-    if (typeof window.handleNotificationClick === 'undefined') {
-        window.handleNotificationClick = function(notificationId, viewUrl) {
-            console.log('handleNotificationClick called with:', notificationId, viewUrl);
-
-            // Mark as read using unified notification system
-            fetch(`{{ url('notifications') }}/${notificationId}/mark-read`, {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                    'Content-Type': 'application/json',
-                }
-            }).then(() => {
-                console.log('Notification marked as read:', notificationId);
-                // Refresh notification counts if functions are available
-                if (typeof fetchEmailCount === 'function') fetchEmailCount();
-                if (typeof fetchTaskCount === 'function') fetchTaskCount();
-                if (typeof fetchBottomNotifications === 'function') fetchBottomNotifications();
-            }).catch(error => {
-                console.error('Error marking notification as read:', error);
-            });
-
-            // Navigate to URL if provided
-            if (viewUrl && viewUrl.trim() !== '' && viewUrl !== '#') {
-                console.log('Navigating to:', viewUrl);
-                window.location.href = viewUrl;
-            } else {
-                console.log('No valid URL provided for navigation');
-            }
-        };
-    }
-
-    // Competition refresh function
-       function refreshCompetition() {
-           const refreshBtn = document.querySelector('button[onclick="refreshCompetition()"]');
-           const icon = refreshBtn.querySelector('i');
-
-           // Add loading animation
-           icon.classList.add('bx-spin');
-           refreshBtn.disabled = true;
-
-           // Simulate refresh (in real implementation, this would make an AJAX call)
-           setTimeout(() => {
-               // Remove loading animation
-               icon.classList.remove('bx-spin');
-               refreshBtn.disabled = false;
-
-               // Show success message
-               const toast = document.createElement('div');
-               toast.className = 'toast align-items-center text-white bg-success border-0 position-fixed top-0 end-0 m-3';
-               toast.style.zIndex = '9999';
-               toast.innerHTML = `
-                   <div class="d-flex">
-                       <div class="toast-body">
-                           <i class="bx bx-check-circle me-2"></i>Competition data refreshed!
-                       </div>
-                       <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-                   </div>
-               `;
-               document.body.appendChild(toast);
-
-               const bsToast = new bootstrap.Toast(toast);
-               bsToast.show();
-
-               // Remove toast after it's hidden
-               toast.addEventListener('hidden.bs.toast', () => {
-                   document.body.removeChild(toast);
-               });
-
-               // In a real implementation, you would reload the page or update the data via AJAX
-               // window.location.reload();
-           }, 1500);
-       }
-
-       function changeCompetitionPeriod(period) {
-           // Remove active class from all buttons
-           document.querySelectorAll('[data-period]').forEach(btn => {
-               btn.classList.remove('active');
-           });
-
-           // Add active class to clicked button
-           document.querySelector(`[data-period="${period}"]`).classList.add('active');
-
-           // Hide all competition periods
-           document.querySelectorAll('.competition-period').forEach(div => {
-               div.style.display = 'none';
-           });
-
-           // Show selected period
-           const selectedPeriod = document.getElementById(`competition-${period}`);
-           if (selectedPeriod) {
-               selectedPeriod.style.display = 'block';
-           }
-
-           // Update button text based on period
-           const periodNames = {
-               'month': 'This Month',
-               'quarter': 'This Quarter', 
-               'year': 'This Year'
-           };
-
-           // You could also make an AJAX call here to fetch fresh data for the selected period
-           console.log(`Switched to ${periodNames[period]} view`);
+    // Competition period change function
+    function changeCompetitionPeriod(period) {
+        // Remove active class from all buttons
+        document.querySelectorAll('[data-period]').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        
+        // Add active class to clicked button
+        event.target.closest('button').classList.add('active');
+        
+        // Update content based on period
+        const content = document.getElementById('competitionContent');
+        
+        // You can implement AJAX calls here to fetch different period data
+        // For now, we'll just show a loading state
+        content.innerHTML = `
+            <div class="text-center py-4">
+                <div class="spinner-border text-light" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="text-white-50 mt-2">Loading ${period} data...</p>
+            </div>
+        `;
+        
+        // Simulate loading (replace with actual AJAX call)
+        setTimeout(() => {
+            // Reload the page to show updated data
+            window.location.reload();
+        }, 1000);
     }
 </script>
 @endpush
