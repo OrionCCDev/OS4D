@@ -301,6 +301,12 @@ document.getElementById('evaluationForm').addEventListener('submit', function(e)
     const formData = new FormData(this);
     formData.append('user_id', selectedUserId);
 
+    // Show loading state
+    const submitButton = this.querySelector('button[type="submit"]');
+    const originalText = submitButton.innerHTML;
+    submitButton.innerHTML = '<i class="bx bx-loader-alt bx-spin me-2"></i>Generating...';
+    submitButton.disabled = true;
+
     let url = '';
     if (formData.get('evaluation_type') === 'monthly') {
         url = '{{ route("reports.evaluations.monthly") }}';
@@ -319,14 +325,40 @@ document.getElementById('evaluationForm').addEventListener('submit', function(e)
     })
     .then(response => response.json())
     .then(data => {
+        // Restore button state
+        submitButton.innerHTML = originalText;
+        submitButton.disabled = false;
+        
         if (data.success) {
             bootstrap.Modal.getInstance(document.getElementById('evaluationModal')).hide();
-            location.reload();
+            
+            // Show success message
+            const successAlert = document.createElement('div');
+            successAlert.className = 'alert alert-success alert-dismissible fade show position-fixed';
+            successAlert.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+            successAlert.innerHTML = `
+                <i class="bx bx-check-circle me-2"></i>
+                <strong>Success!</strong> ${data.message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.body.appendChild(successAlert);
+            
+            // Auto-hide after 3 seconds and reload
+            setTimeout(() => {
+                if (successAlert.parentNode) {
+                    successAlert.remove();
+                }
+                location.reload();
+            }, 3000);
         } else {
             alert('Error generating evaluation: ' + (data.message || 'Unknown error'));
         }
     })
     .catch(error => {
+        // Restore button state
+        submitButton.innerHTML = originalText;
+        submitButton.disabled = false;
+        
         console.error('Error:', error);
         alert('Error generating evaluation');
     });

@@ -25,6 +25,9 @@ class User extends Authenticatable implements HasMedia
         'email',
         'password',
         'role',
+        'status',
+        'deactivated_at',
+        'deactivation_reason',
         'img',
         'mobile',
         'position',
@@ -59,7 +62,24 @@ class User extends Authenticatable implements HasMedia
             'notification_sound_enabled' => 'boolean',
             'gmail_connected' => 'boolean',
             'gmail_connected_at' => 'datetime',
+            'deactivated_at' => 'datetime',
         ];
+    }
+    
+    /**
+     * Check if user is active
+     */
+    public function isActive(): bool
+    {
+        return $this->status === 'active';
+    }
+    
+    /**
+     * Scope to only get active users
+     */
+    public function scopeActive($query)
+    {
+        return $query->where('status', 'active');
     }
 
     // Task relationships

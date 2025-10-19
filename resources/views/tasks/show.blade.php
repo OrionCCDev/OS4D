@@ -1301,7 +1301,14 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Assigned To:</label>
-                            <p class="form-control-plaintext">{{ $task->assignee->name ?? 'Unassigned' }}</p>
+                            <div class="d-flex align-items-center justify-content-between">
+                                <p class="form-control-plaintext mb-0">{{ $task->assignee->name ?? 'Unassigned' }}</p>
+                                @if(auth()->user()->role === 'manager' || auth()->user()->role === 'admin')
+                                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="showReassignModal()">
+                                        <i class="bx bx-transfer me-1"></i>Reassign
+                                    </button>
+                                @endif
+                            </div>
                         </div>
                     </div>
 
@@ -2226,5 +2233,129 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+// Task Reassignment Functions
+function showReassignModal() {
+    // Load available users
+    fetch('{{ route("users.index") }}')
+        .then(response => response.text())
+        .then(() => {
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('reassignTaskModal'));
+            modal.show();
+        });
+}
+
+document.getElementById('reassignTaskForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const newAssigneeId = document.getElementById('new_assignee_id').value;
+    if (!newAssigneeId) {
+        alert('Please select a user to reassign the task to');
+        return;
+    }
+    
+    // Show loading state
+    const submitButton = this.querySelector('button[type="submit"]');
+    const originalText = submitButton.innerHTML;
+    submitButton.innerHTML = '<i class="bx bx-loader-alt bx-spin me-1"></i>Reassigning...';
+    submitButton.disabled = true;
+    
+    const formData = new FormData(this);
+    
+    fetch('{{ route("tasks.reassign", $task) }}', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Restore button state
+        submitButton.innerHTML = originalText;
+        submitButton.disabled = false;
+        
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('reassignTaskModal')).hide();
+            
+            // Show success message
+            const successAlert = document.createElement('div');
+            successAlert.className = 'alert alert-success alert-dismissible fade show position-fixed';
+            successAlert.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+            successAlert.innerHTML = `
+                <i class="bx bx-check-circle me-2"></i>
+                <strong>Success!</strong> ${data.message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.body.appendChild(successAlert);
+            
+            // Reload after 2 seconds
+            setTimeout(() => {
+                location.reload();
+            }, 2000);
+        } else {
+            alert('Error: ' + (data.message || 'Failed to reassign task'));
+        }
+    })
+    .catch(error => {
+        // Restore button state
+        submitButton.innerHTML = originalText;
+        submitButton.disabled = false;
+        
+        console.error('Error:', error);
+        alert('An error occurred while reassigning the task');
+    });
+});
 </script>
+
+<!-- Reassign Task Modal -->
+<div class="modal fade" id="reassignTaskModal" tabindex="-1" aria-labelledby="reassignTaskModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="reassignTaskModalLabel">
+                    <i class="bx bx-transfer me-2"></i>Reassign Task
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="reassignTaskForm">
+                @csrf
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="new_assignee_id" class="form-label">
+                            New Assignee <span class="text-danger">*</span>
+                        </label>
+                        <select class="form-select" id="new_assignee_id" name="new_assignee_id" required>
+                            <option value="">Select a user...</option>
+                            @foreach(\App\Models\User::where('status', 'active')->where('role', '!=', 'admin')->orderBy('name')->get() as $user)
+                                @if($user->id !== $task->assignee_id)
+                                    <option value="{{ $user->id }}">{{ $user->name }} ({{ $user->email }})</option>
+                                @endif
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="reassignment_reason" class="form-label">
+                            Reason for Reassignment
+                        </label>
+                        <textarea class="form-control" id="reassignment_reason" name="reassignment_reason" rows="3" 
+                                  placeholder="Optional: Explain why this task is being reassigned"></textarea>
+                    </div>
+                    <div class="alert alert-info">
+                        <i class="bx bx-info-circle me-2"></i>
+                        The new assignee will be notified about this task assignment.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bx bx-transfer me-1"></i>Reassign Task
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 @endsection

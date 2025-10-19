@@ -38,10 +38,28 @@
             <td>{{ $user->email }}</td>
             <td>{{ $user->mobile }}</td>
             <td>{{ $user->position }}</td>
-            <td><span class="badge bg-label-{{ $user->role === 'admin' ? 'primary' : 'secondary' }}">{{ ucfirst($user->role) }}</span></td>
+            <td>
+              <span class="badge bg-label-{{ $user->role === 'admin' ? 'primary' : 'secondary' }}">{{ ucfirst($user->role) }}</span>
+              @if(isset($user->status))
+                @if($user->status === 'inactive')
+                  <span class="badge bg-warning ms-1">Inactive</span>
+                @elseif($user->status === 'resigned')
+                  <span class="badge bg-danger ms-1">Resigned</span>
+                @endif
+              @endif
+            </td>
             <td>{{ $user->created_at->format('Y-m-d') }}</td>
             <td class="text-end">
-              <a href="{{ route('admin.users.edit', $user) }}" class="btn btn-sm btn-outline-secondary">Edit</a>
+              <div class="btn-group">
+                <a href="{{ route('admin.users.edit', $user) }}" class="btn btn-sm btn-outline-secondary">
+                  <i class="bx bx-edit"></i> Edit
+                </a>
+                @if(auth()->user()->role === 'manager' || auth()->user()->role === 'admin')
+                  <a href="{{ route('users.bulk-reassignment', $user) }}" class="btn btn-sm btn-outline-primary" title="Reassign Tasks">
+                    <i class="bx bx-transfer"></i> Reassign
+                  </a>
+                @endif
+              </div>
               <form action="{{ route('admin.users.destroy', $user) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete this user?')">
                 @csrf
                 @method('DELETE')

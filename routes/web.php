@@ -353,11 +353,22 @@ Route::middleware('auth')->group(function () {
         Route::delete('tasks/{task}', [TaskController::class, 'destroy'])->name('tasks.destroy');
     });
 
-        // Task attachment download - Available to assigned users and managers
-        Route::get('tasks/attachments/{attachment}/download', [TaskController::class, 'downloadAttachment'])->name('tasks.attachments.download');
-        
-        // Task history - Available to assigned users and managers
-        Route::get('tasks/{task}/history', [TaskController::class, 'getTaskHistory'])->name('tasks.history');
+    // Task attachment download - Available to assigned users and managers
+    Route::get('tasks/attachments/{attachment}/download', [TaskController::class, 'downloadAttachment'])->name('tasks.attachments.download');
+    
+    // Task history - Available to assigned users and managers
+    Route::get('tasks/{task}/history', [TaskController::class, 'getTaskHistory'])->name('tasks.history');
+    
+    // Task reassignment routes
+    Route::post('tasks/{task}/reassign', [App\Http\Controllers\TaskReassignmentController::class, 'reassignTask'])->name('tasks.reassign');
+
+    // Task bulk reassignment routes - Manager only
+    Route::middleware('manager.or.admin')->group(function () {
+        Route::get('users/{user}/bulk-reassignment', [App\Http\Controllers\TaskReassignmentController::class, 'showBulkReassignment'])->name('users.bulk-reassignment');
+        Route::post('tasks/bulk-reassign', [App\Http\Controllers\TaskReassignmentController::class, 'bulkReassign'])->name('tasks.bulk-reassign');
+        Route::post('users/{user}/status', [App\Http\Controllers\TaskReassignmentController::class, 'updateUserStatus'])->name('users.update-status');
+        Route::get('users/{user}/active-tasks', [App\Http\Controllers\TaskReassignmentController::class, 'getUserActiveTasks'])->name('users.active-tasks');
+    });
 
     // Notification routes - Available to all authenticated users
     Route::get('notifications', [TaskController::class, 'notifications'])->name('notifications.index');
