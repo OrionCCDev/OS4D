@@ -497,4 +497,267 @@ class ReportController extends Controller
             'exportDate' => now(),
         ];
     }
+
+    /**
+     * Generate monthly evaluation for a user
+     */
+    public function generateMonthlyEvaluation(Request $request)
+    {
+        try {
+            $userId = $request->input('user_id');
+            $year = $request->input('year');
+            $month = $request->input('month');
+            
+            $user = User::findOrFail($userId);
+            
+            // Calculate performance metrics for the month
+            $startDate = Carbon::create($year, $month, 1)->startOfMonth();
+            $endDate = Carbon::create($year, $month, 1)->endOfMonth();
+            
+            $metrics = $this->calculateUserMetrics($user, $startDate, $endDate);
+            
+            // Create evaluation record
+            $evaluation = EmployeeEvaluation::create([
+                'user_id' => $userId,
+                'evaluator_id' => auth()->id(),
+                'evaluation_type' => 'monthly',
+                'period_start' => $startDate,
+                'period_end' => $endDate,
+                'performance_score' => $metrics['performance_score'],
+                'completion_rate' => $metrics['completion_rate'],
+                'on_time_rate' => $metrics['on_time_rate'],
+                'total_tasks' => $metrics['total_tasks'],
+                'completed_tasks' => $metrics['completed_tasks'],
+                'overdue_tasks' => $metrics['overdue_tasks'],
+                'notes' => "Monthly evaluation for " . $startDate->format('F Y'),
+                'status' => 'completed'
+            ]);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Monthly evaluation generated successfully',
+                'evaluation_id' => $evaluation->id
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('Error generating monthly evaluation: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error generating evaluation: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Generate quarterly evaluation for a user
+     */
+    public function generateQuarterlyEvaluation(Request $request)
+    {
+        try {
+            $userId = $request->input('user_id');
+            $year = $request->input('year');
+            $quarter = $request->input('quarter');
+            
+            $user = User::findOrFail($userId);
+            
+            // Calculate quarter dates
+            $quarterMonths = [
+                1 => [1, 3],   // Q1: Jan-Mar
+                2 => [4, 6],   // Q2: Apr-Jun
+                3 => [7, 9],   // Q3: Jul-Sep
+                4 => [10, 12]  // Q4: Oct-Dec
+            ];
+            
+            $startMonth = $quarterMonths[$quarter][0];
+            $endMonth = $quarterMonths[$quarter][1];
+            
+            $startDate = Carbon::create($year, $startMonth, 1)->startOfMonth();
+            $endDate = Carbon::create($year, $endMonth, 1)->endOfMonth();
+            
+            $metrics = $this->calculateUserMetrics($user, $startDate, $endDate);
+            
+            // Create evaluation record
+            $evaluation = EmployeeEvaluation::create([
+                'user_id' => $userId,
+                'evaluator_id' => auth()->id(),
+                'evaluation_type' => 'quarterly',
+                'period_start' => $startDate,
+                'period_end' => $endDate,
+                'performance_score' => $metrics['performance_score'],
+                'completion_rate' => $metrics['completion_rate'],
+                'on_time_rate' => $metrics['on_time_rate'],
+                'total_tasks' => $metrics['total_tasks'],
+                'completed_tasks' => $metrics['completed_tasks'],
+                'overdue_tasks' => $metrics['overdue_tasks'],
+                'notes' => "Quarterly evaluation for Q{$quarter} {$year}",
+                'status' => 'completed'
+            ]);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Quarterly evaluation generated successfully',
+                'evaluation_id' => $evaluation->id
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('Error generating quarterly evaluation: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error generating evaluation: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Generate annual evaluation for a user
+     */
+    public function generateAnnualEvaluation(Request $request)
+    {
+        try {
+            $userId = $request->input('user_id');
+            $year = $request->input('year');
+            
+            $user = User::findOrFail($userId);
+            
+            // Calculate year dates
+            $startDate = Carbon::create($year, 1, 1)->startOfYear();
+            $endDate = Carbon::create($year, 12, 31)->endOfYear();
+            
+            $metrics = $this->calculateUserMetrics($user, $startDate, $endDate);
+            
+            // Create evaluation record
+            $evaluation = EmployeeEvaluation::create([
+                'user_id' => $userId,
+                'evaluator_id' => auth()->id(),
+                'evaluation_type' => 'annual',
+                'period_start' => $startDate,
+                'period_end' => $endDate,
+                'performance_score' => $metrics['performance_score'],
+                'completion_rate' => $metrics['completion_rate'],
+                'on_time_rate' => $metrics['on_time_rate'],
+                'total_tasks' => $metrics['total_tasks'],
+                'completed_tasks' => $metrics['completed_tasks'],
+                'overdue_tasks' => $metrics['overdue_tasks'],
+                'notes' => "Annual evaluation for {$year}",
+                'status' => 'completed'
+            ]);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Annual evaluation generated successfully',
+                'evaluation_id' => $evaluation->id
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('Error generating annual evaluation: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error generating evaluation: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Calculate user metrics for a given period
+     */
+    private function calculateUserMetrics($user, $startDate, $endDate)
+    {
+        $tasks = $user->assignedTasks()
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->get();
+        
+        $totalTasks = $tasks->count();
+        $completedTasks = $tasks->where('status', 'completed')->count();
+        $overdueTasks = $tasks->where('due_date', '<', now())
+            ->whereNotIn('status', ['completed', 'cancelled'])
+            ->count();
+        
+        $onTimeTasks = $tasks->where('status', 'completed')
+            ->filter(function($task) {
+                return $task->completed_at && $task->due_date && 
+                       $task->completed_at <= $task->due_date;
+            })->count();
+        
+        $completionRate = $totalTasks > 0 ? round(($completedTasks / $totalTasks) * 100, 1) : 0;
+        $onTimeRate = $completedTasks > 0 ? round(($onTimeTasks / $completedTasks) * 100, 1) : 0;
+        
+        // Calculate performance score (similar to dashboard logic)
+        $performanceScore = $this->calculateAdvancedPerformanceScore($user, $startDate, $endDate);
+        
+        return [
+            'total_tasks' => $totalTasks,
+            'completed_tasks' => $completedTasks,
+            'overdue_tasks' => $overdueTasks,
+            'completion_rate' => $completionRate,
+            'on_time_rate' => $onTimeRate,
+            'performance_score' => $performanceScore
+        ];
+    }
+
+    /**
+     * Calculate advanced performance score for a user
+     */
+    private function calculateAdvancedPerformanceScore($user, $startDate = null, $endDate = null)
+    {
+        $query = $user->assignedTasks();
+        
+        if ($startDate && $endDate) {
+            $query->whereBetween('created_at', [$startDate, $endDate]);
+        }
+        
+        $tasks = $query->get();
+        
+        if ($tasks->isEmpty()) {
+            return 0;
+        }
+        
+        $completedTasks = $tasks->where('status', 'completed')->count();
+        $inProgressTasks = $tasks->whereIn('status', ['in_progress', 'workingon', 'assigned'])->count();
+        $rejectedTasks = $tasks->where('status', 'rejected')->count();
+        $overdueTasks = $tasks->where('due_date', '<', now())
+            ->whereNotIn('status', ['completed', 'cancelled'])
+            ->count();
+        $onTimeCompleted = $tasks->where('status', 'completed')
+            ->filter(function($task) {
+                return $task->completed_at && $task->due_date && 
+                       $task->completed_at <= $task->due_date;
+            })->count();
+        
+        $totalTasks = $tasks->count();
+        $completionRate = $totalTasks > 0 ? ($completedTasks / $totalTasks) * 100 : 0;
+        
+        // Base score from completed tasks
+        $baseScore = $completedTasks * 10;
+        
+        // Bonus for in-progress tasks
+        $progressBonus = $inProgressTasks * 5;
+        
+        // Penalties
+        $rejectionPenalty = $rejectedTasks * 15;
+        $overduePenalty = $overdueTasks * 10;
+        
+        // On-time bonus
+        $onTimeBonus = $onTimeCompleted * 5;
+        
+        // Experience multiplier
+        $experienceMultiplier = $this->calculateExperienceMultiplier($totalTasks);
+        
+        // Calculate final score
+        $rawScore = ($baseScore + $progressBonus + $onTimeBonus - $rejectionPenalty - $overduePenalty) * $experienceMultiplier;
+        $finalScore = max(0, min(100, $rawScore));
+        
+        return round($finalScore, 1);
+    }
+
+    /**
+     * Calculate experience multiplier based on total tasks
+     */
+    private function calculateExperienceMultiplier($totalTasks)
+    {
+        if ($totalTasks >= 50) return 1.2;      // Experienced
+        if ($totalTasks >= 20) return 1.1;      // Intermediate
+        if ($totalTasks >= 10) return 1.0;      // Standard
+        if ($totalTasks >= 5) return 0.9;       // New
+        return 0.8;                             // Very new
+    }
 }

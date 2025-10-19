@@ -233,9 +233,40 @@ function refreshReport() {
 }
 
 function clearFilters() {
+    // Clear all form fields
     document.getElementById('filterForm').reset();
-    document.getElementById('filterForm').submit();
+    
+    // Redirect to clean URL without any parameters
+    window.location.href = '{{ route("reports.users") }}';
 }
+
+// Auto-submit form when filters change
+document.addEventListener('DOMContentLoaded', function() {
+    const filterForm = document.getElementById('filterForm');
+    const userSelect = document.getElementById('user_id');
+    const dateFromInput = document.getElementById('date_from');
+    const dateToInput = document.getElementById('date_to');
+    
+    // Auto-submit on user selection change
+    if (userSelect) {
+        userSelect.addEventListener('change', function() {
+            filterForm.submit();
+        });
+    }
+    
+    // Auto-submit on date changes
+    if (dateFromInput) {
+        dateFromInput.addEventListener('change', function() {
+            filterForm.submit();
+        });
+    }
+    
+    if (dateToInput) {
+        dateToInput.addEventListener('change', function() {
+            filterForm.submit();
+        });
+    }
+});
 
 function exportReport(format, type) {
     const baseUrl = '{{ url("reports/export") }}';
