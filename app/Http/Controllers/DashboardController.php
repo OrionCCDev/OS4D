@@ -264,11 +264,29 @@ class DashboardController extends Controller
             ? round(($taskStats['completed'] / $totalTasks) * 100, 1)
             : 0;
 
-        // Tasks by priority
-        $tasksByPriority = Task::select('priority', DB::raw('count(*) as count'))
-            ->groupBy('priority')
-            ->pluck('count', 'priority')
-            ->toArray();
+        // Tasks by priority - get actual tasks ordered by priority
+        $priorityOrder = [
+            'urgent' => 1,
+            'high' => 2,
+            'medium' => 3,
+            'normal' => 4,
+            'low' => 5
+        ];
+        
+        $tasksByPriority = Task::with(['assignee', 'project', 'folder'])
+            ->orderByRaw("
+                CASE 
+                    WHEN priority = 'urgent' THEN 1
+                    WHEN priority = 'high' THEN 2
+                    WHEN priority = 'medium' THEN 3
+                    WHEN priority = 'normal' THEN 4
+                    WHEN priority = 'low' THEN 5
+                    ELSE 6
+                END
+            ")
+            ->orderBy('due_date', 'asc')
+            ->orderBy('created_at', 'desc')
+            ->paginate(4);
 
         // Tasks by status - get actual tasks ordered by status priority
         $tasksByStatus = Task::with(['assignee', 'project', 'folder'])

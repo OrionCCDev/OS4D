@@ -313,19 +313,87 @@
             </div>
         </div>
 
-        <!-- Task Priority Chart -->
+        <!-- Tasks by Priority List -->
         <div class="col-lg-6 col-md-6 col-12 mb-4">
             <div class="card">
-                <div class="card-header">
+                <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="card-title mb-0 text-dark fw-semibold">Tasks by Priority</h5>
+                    <small class="text-muted">{{ $data['tasks_by_priority']->total() }} total tasks</small>
                 </div>
-                <div class="card-body">
-                    @if(!empty($data['tasks_by_priority']))
-                    <canvas id="taskPriorityChart" width="400" height="200"></canvas>
+                <div class="card-body p-0">
+                    @if($data['tasks_by_priority']->count() > 0)
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th class="text-dark fw-semibold">Task</th>
+                                        <th class="text-dark fw-semibold">Priority</th>
+                                        <th class="text-dark fw-semibold">Assignee</th>
+                                        <th class="text-dark fw-semibold">Due Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($data['tasks_by_priority'] as $task)
+                                    <tr style="cursor: pointer; transition: background-color 0.2s;" 
+                                        onclick="window.location.href='{{ route('tasks.show', $task->id) }}'"
+                                        onmouseover="this.style.backgroundColor='#f8f9fa'" 
+                                        onmouseout="this.style.backgroundColor='transparent'">
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="me-2">
+                                                    <i class="bx bx-task text-primary"></i>
+                                                </div>
+                                                <div>
+                                                    <h6 class="mb-0 text-dark fw-semibold">{{ Str::limit($task->title, 30) }}</h6>
+                                                    <small class="text-muted">{{ $task->project->name ?? 'No Project' }}</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge {{ $task->priority_badge_class }} text-white px-2 py-1 rounded-pill" style="font-size: 11px; font-weight: 600;">
+                                                {{ ucfirst($task->priority ?? 'Normal') }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            @if($task->assignee)
+                                                <div class="d-flex align-items-center">
+                                                    <div class="avatar avatar-xs me-2">
+                                                        <span class="avatar-initial rounded-circle bg-label-primary">
+                                                            {{ substr($task->assignee->name, 0, 1) }}
+                                                        </span>
+                                                    </div>
+                                                    <span class="text-dark fw-semibold">{{ $task->assignee->name }}</span>
+                                                </div>
+                                            @else
+                                                <span class="text-muted">Unassigned</span>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            @if($task->due_date)
+                                                <span class="text-dark fw-semibold {{ $task->is_overdue ? 'text-danger' : '' }}">
+                                                    {{ $task->due_date->format('M j, Y') }}
+                                                </span>
+                                                @if($task->is_overdue)
+                                                    <br><small class="text-danger">Overdue</small>
+                                                @endif
+                                            @else
+                                                <span class="text-muted">No due date</span>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                        @if($data['tasks_by_priority']->hasPages())
+                            <div class="card-footer">
+                                {{ $data['tasks_by_priority']->links() }}
+                            </div>
+                        @endif
                     @else
                         <div class="text-center py-4">
-                            <i class="bx bx-bar-chart-alt-2 fs-1 text-muted opacity-50"></i>
-                            <p class="text-muted mt-2">No task priority data available</p>
+                            <i class="bx bx-task fs-1 text-muted opacity-50"></i>
+                            <p class="text-muted mt-2">No tasks available</p>
                         </div>
                     @endif
                 </div>
@@ -527,60 +595,7 @@
 <script>
     // Task Status Chart removed - now showing task list instead
 
-    // Task Priority Chart
-    @if(!empty($data['tasks_by_priority']))
-    const taskPriorityCtx = document.getElementById('taskPriorityChart').getContext('2d');
-    const taskPriorityData = @json($data['tasks_by_priority']);
-    
-    console.log('Task Priority Data:', taskPriorityData);
-
-    new Chart(taskPriorityCtx, {
-        type: 'bar',
-        data: {
-            labels: Object.keys(taskPriorityData).map(priority => priority.charAt(0).toUpperCase() + priority.slice(1)),
-            datasets: [{
-                label: 'Tasks',
-                data: Object.values(taskPriorityData),
-                backgroundColor: [
-                    '#10B981', // green - low
-                    '#3B82F6', // blue - normal
-                    '#06B6D4', // cyan - medium
-                    '#F59E0B', // yellow - high
-                    '#EF4444', // red - urgent
-                    '#7C2D12'  // dark red - critical
-                ]
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: false
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        color: '#374151',
-                        font: {
-                            size: 12
-                        }
-                    }
-                },
-                x: {
-                    ticks: {
-                        color: '#374151',
-                        font: {
-                            size: 12
-                        }
-                    }
-                }
-            }
-        }
-    });
-    @endif
+    // Task Priority Chart removed - now showing task list instead
 
     // Competition period change function
     function changeCompetitionPeriod(period) {
