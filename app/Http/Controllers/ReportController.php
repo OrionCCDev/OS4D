@@ -172,7 +172,7 @@ class ReportController extends Controller
             // Create evaluation record
             $evaluation = EmployeeEvaluation::create([
                 'user_id' => $request->user_id,
-                'evaluator_id' => auth()->id(),
+                'evaluated_by' => auth()->id(),
                 'evaluation_type' => 'monthly',
                 'period_start' => $startDate,
                 'period_end' => $endDate,
@@ -234,7 +234,7 @@ class ReportController extends Controller
             // Create evaluation record
             $evaluation = EmployeeEvaluation::create([
                 'user_id' => $request->user_id,
-                'evaluator_id' => auth()->id(),
+                'evaluated_by' => auth()->id(),
                 'evaluation_type' => 'quarterly',
                 'period_start' => $startDate,
                 'period_end' => $endDate,
@@ -285,7 +285,7 @@ class ReportController extends Controller
             // Create evaluation record
             $evaluation = EmployeeEvaluation::create([
                 'user_id' => $request->user_id,
-                'evaluator_id' => auth()->id(),
+                'evaluated_by' => auth()->id(),
                 'evaluation_type' => 'annual',
                 'period_start' => $startDate,
                 'period_end' => $endDate,

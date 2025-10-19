@@ -399,6 +399,11 @@ class ReportService
     {
         $query = User::where('role', '!=', 'admin');
 
+        // Apply user filter if provided
+        if (!empty($filters['user_id'])) {
+            $query->where('id', $filters['user_id']);
+        }
+
         $users = $query->get();
 
         $rankings = $users->map(function ($user) use ($filters) {
