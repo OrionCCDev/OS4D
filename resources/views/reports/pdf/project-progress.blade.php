@@ -397,23 +397,39 @@
                 <table>
                     <thead>
                         <tr>
-                            <th style="width: 100%;" colspan="9">Task Details</th>
+                            <th style="width: 100%;" colspan="8">Task Details</th>
+                        </tr>
+                        <tr style="background-color: #f8f9fa; font-weight: bold; font-size: 10px;">
+                            <th style="width: 12%; text-align: center; padding: 8px; border: 1px solid #dee2e6;">Status & Progress</th>
+                            <th style="width: 8%; text-align: center; padding: 8px; border: 1px solid #dee2e6;">Priority</th>
+                            <th style="width: 15%; padding: 8px; border: 1px solid #dee2e6;">Assignee</th>
+                            <th style="width: 10%; text-align: center; padding: 8px; border: 1px solid #dee2e6;">Created</th>
+                            <th style="width: 10%; text-align: center; padding: 8px; border: 1px solid #dee2e6;">Due Date</th>
+                            <th style="width: 10%; text-align: center; padding: 8px; border: 1px solid #dee2e6;">Completed</th>
+                            <th style="width: 11%; text-align: center; padding: 8px; border: 1px solid #dee2e6;">Duration</th>
+                            <th style="width: 10%; text-align: center; padding: 8px; border: 1px solid #dee2e6;">Time Left</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach($project['recent_tasks'] as $task)
-                            <!-- Task Separator (except for first task) -->
+                            <!-- Enhanced Task Separator (except for first task) -->
                             @if(!$loop->first)
                             <tr>
-                                <td colspan="9" style="padding: 8px 0; background-color: #f8f9fa;">
-                                    <div style="height: 1px; background-color: #dee2e6;"></div>
+                                <td colspan="8" style="padding: 12px 0; background-color: #f8f9fa;">
+                                    <div style="display: flex; align-items: center; justify-content: center; margin: 8px 0;">
+                                        <div style="flex: 1; height: 2px; background: linear-gradient(90deg, transparent, #007bff, transparent);"></div>
+                                        <div style="margin: 0 15px; padding: 4px 12px; background-color: #007bff; color: white; border-radius: 15px; font-size: 10px; font-weight: bold;">
+                                            Task {{ $loop->iteration }}
+                                        </div>
+                                        <div style="flex: 1; height: 2px; background: linear-gradient(90deg, transparent, #007bff, transparent);"></div>
+                                    </div>
                                 </td>
                             </tr>
                             @endif
 
                             <!-- Task Name & Description Row -->
                             <tr class="task-row" style="{{ $task['is_overdue'] ? 'background-color: #fff5f5;' : 'background-color: #fafbfc;' }} border-left: 4px solid {{ $task['is_overdue'] ? '#dc3545' : '#007bff' }};">
-                                <td colspan="9" style="font-weight: bold; {{ $task['is_overdue'] ? 'color: #dc3545;' : '' }}; vertical-align: top; padding: 15px; border-bottom: 1px solid #e9ecef; border-radius: 0 5px 5px 0;">
+                                <td colspan="8" style="font-weight: bold; {{ $task['is_overdue'] ? 'color: #dc3545;' : '' }}; vertical-align: top; padding: 15px; border-bottom: 1px solid #e9ecef; border-radius: 0 5px 5px 0;">
                                     <div style="margin-bottom: 6px; font-size: 14px; font-weight: bold; color: #2c3e50;">{{ $task['name'] }}</div>
                                     @if($task['description'])
                                         <div style="font-size: 11px; color: #555; font-weight: normal; margin-top: 4px; line-height: 1.5; margin-bottom: 8px;">
@@ -439,27 +455,6 @@
                             <!-- Task Details Row -->
                             <tr class="task-details-row" style="{{ $task['is_overdue'] ? 'background-color: #fff5f5;' : 'background-color: #fafbfc;' }} border-left: 4px solid {{ $task['is_overdue'] ? '#dc3545' : '#007bff' }};">
                                 <td style="text-align: center; font-size: 9px; vertical-align: top; padding: 12px; border-bottom: 1px solid #e9ecef; border-radius: 0 5px 5px 0;">
-                                    <span style="
-                                        display: inline-block;
-                                        padding: 2px 6px;
-                                        border-radius: 3px;
-                                        font-size: 9px;
-                                        font-weight: bold;
-                                        background-color: {{ $task['status'] === 'completed' ? '#28c76f' : ($task['status'] === 'in_progress' || $task['status'] === 'workingon' ? '#ff9f43' : ($task['status'] === 'assigned' ? '#17a2b8' : '#6c757d')) }};
-                                        color: white;
-                                    ">
-                                        {{ ucfirst(str_replace('_', ' ', $task['status'])) }}
-                                    </span>
-                                    <div style="margin-top: 4px;">
-                                        <div style="background-color: #e9ecef; height: 4px; border-radius: 2px; width: 100%;">
-                                            <div style="background-color: {{ $task['progress_stage'] === 'completed' ? '#28c76f' : ($task['progress_stage'] === 'client_review' ? '#ff9f43' : '#007bff') }}; height: 4px; border-radius: 2px; width: {{ $task['progress_percentage'] ?? 0 }}%;"></div>
-                                        </div>
-                                        <div style="font-size: 8px; color: #666; margin-top: 2px;">
-                                            {{ $task['progress_percentage'] ?? 0 }}% - {{ $task['progress_status'] ?? 'Unknown' }}
-                                        </div>
-                                    </div>
-                                </td>
-                                <td style="text-align: center;">
                                     <span style="
                                         display: inline-block;
                                         padding: 2px 6px;
@@ -640,7 +635,7 @@
                             <!-- Task Separator (except for last task) -->
                             @if(!$loop->last)
                             <tr>
-                                <td colspan="9" style="padding: 15px 0; border-bottom: 2px solid #e9ecef; background-color: #f8f9fa;">
+                                <td colspan="8" style="padding: 15px 0; border-bottom: 2px solid #e9ecef; background-color: #f8f9fa;">
                                     <div style="display: flex; align-items: center; justify-content: center;">
                                         <div style="flex: 1; height: 1px; background-color: #dee2e6; margin: 0 10px;"></div>
                                         <div style="background-color: #f8f9fa; padding: 0 15px; color: #6c757d; font-size: 10px; font-weight: 500;">

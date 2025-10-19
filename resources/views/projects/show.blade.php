@@ -33,6 +33,26 @@
         ]"
     />
 
+    <!-- Project Actions -->
+    <div class="card mb-4">
+        <div class="card-body py-3">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <h6 class="mb-1">Project Actions</h6>
+                    <small class="text-muted">Export comprehensive project report with all data, tasks, and history</small>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="{{ route('reports.projects.full-report', $project) }}" class="btn btn-primary">
+                        <i class="bx bx-download me-1"></i>Export Full Report
+                    </a>
+                    <a href="{{ route('reports.projects.progress', ['project_id' => $project->id]) }}" class="btn btn-outline-primary">
+                        <i class="bx bx-chart me-1"></i>View Progress Report
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Current Folder Breadcrumb -->
     @if($selectedFolder)
     <div class="card mb-4">

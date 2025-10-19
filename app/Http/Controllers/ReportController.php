@@ -98,8 +98,6 @@ class ReportController extends Controller
         $projects = Project::select('id', 'name', 'short_code')->orderBy('name')->get();
         $users = User::where('role', '!=', 'admin')->select('id', 'name', 'email')->orderBy('name')->get();
 
-        // Debug: Log the task report data
-        \Log::info('Task Report Data:', $taskReport);
 
         return view('reports.tasks.completion', compact('taskReport', 'filters', 'projects', 'users'));
     }
@@ -361,6 +359,115 @@ class ReportController extends Controller
             'project_id' => $request->get('project_id'),
             'status' => $status,
             'priority' => $request->get('priority', []),
+        ];
+    }
+
+    /**
+     * Export comprehensive project report with all data, tasks, and history
+     */
+    public function exportFullProjectReport(Project $project)
+    {
+        try {
+            // Get comprehensive project data
+            $projectData = $this->getComprehensiveProjectData($project);
+            
+            // Generate PDF
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('reports.pdf.full-project-report', $projectData);
+            $pdf->setPaper('A4', 'portrait');
+            
+            $filename = 'Full_Project_Report_' . $project->short_code . '_' . now()->format('Y-m-d_H-i-s') . '.pdf';
+            
+            return $pdf->download($filename);
+            
+        } catch (\Exception $e) {
+            \Log::error('Failed to export full project report: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Failed to generate project report. Please try again.');
+        }
+    }
+
+    /**
+     * Get comprehensive project data including all tasks and history
+     */
+    private function getComprehensiveProjectData(Project $project)
+    {
+        // Load project with all relationships
+        $project->load([
+            'folders.children',
+            'tasks.assignee',
+            'tasks.creator',
+            'tasks.attachments',
+            'tasks.history.user',
+            'manager',
+            'createdBy'
+        ]);
+
+        // Get all tasks with full details
+        $allTasks = $project->tasks()->with([
+            'assignee',
+            'creator',
+            'attachments',
+            'history.user',
+            'project'
+        ])->get();
+
+        // Calculate project statistics
+        $projectStats = [
+            'total_tasks' => $allTasks->count(),
+            'completed_tasks' => $allTasks->where('status', 'completed')->count(),
+            'in_progress_tasks' => $allTasks->where('status', 'in_progress')->count(),
+            'pending_tasks' => $allTasks->where('status', 'pending')->count(),
+            'overdue_tasks' => $allTasks->where('due_date', '<', now())->where('status', '!=', 'completed')->count(),
+            'completion_rate' => $allTasks->count() > 0 ? round(($allTasks->where('status', 'completed')->count() / $allTasks->count()) * 100, 2) : 0,
+        ];
+
+        // Get task history for all tasks
+        $allTaskHistory = \App\Models\TaskHistory::whereIn('task_id', $allTasks->pluck('id'))
+            ->with('user')
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->groupBy('task_id');
+
+        // Get team performance data
+        $teamMembers = $allTasks->pluck('assignee')->filter()->unique('id');
+        $teamPerformance = [];
+        
+        foreach ($teamMembers as $member) {
+            $memberTasks = $allTasks->where('assigned_to', $member->id);
+            $teamPerformance[] = [
+                'user' => $member,
+                'total_tasks' => $memberTasks->count(),
+                'completed_tasks' => $memberTasks->where('status', 'completed')->count(),
+                'in_progress_tasks' => $memberTasks->where('status', 'in_progress')->count(),
+                'completion_rate' => $memberTasks->count() > 0 ? round(($memberTasks->where('status', 'completed')->count() / $memberTasks->count()) * 100, 2) : 0,
+            ];
+        }
+
+        // Get project timeline
+        $projectTimeline = [
+            'created_at' => $project->created_at,
+            'start_date' => $project->start_date,
+            'end_date' => $project->end_date,
+            'updated_at' => $project->updated_at,
+        ];
+
+        // Calculate project duration
+        $projectDuration = null;
+        if ($project->start_date && $project->end_date) {
+            $start = \Carbon\Carbon::parse($project->start_date);
+            $end = \Carbon\Carbon::parse($project->end_date);
+            $projectDuration = $start->diffInDays($end);
+        }
+
+        return [
+            'project' => $project,
+            'projectStats' => $projectStats,
+            'allTasks' => $allTasks,
+            'allTaskHistory' => $allTaskHistory,
+            'teamPerformance' => $teamPerformance,
+            'projectTimeline' => $projectTimeline,
+            'projectDuration' => $projectDuration,
+            'folders' => $project->folders,
+            'exportDate' => now(),
         ];
     }
 }

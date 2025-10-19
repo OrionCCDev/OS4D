@@ -378,9 +378,9 @@
                                         <span class="avatar-initial rounded-circle {{ $rankBadge }} text-white fw-bold rank-badge" style="font-size: 18px; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
                                             {{ $index + 1 }}
                                         </span>
-                                    </div>
-                                    <div class="d-flex w-100 flex-wrap align-items-center justify-content-between gap-2">
-                                        <div class="me-2">
+                            </div>
+                            <div class="d-flex w-100 flex-wrap align-items-center justify-content-between gap-2">
+                                <div class="me-2">
                                             <h6 class="mb-0 {{ $rankColor }} fw-bold">
                                                 {{ $user->name }}
                                                 @if($index === 0)
@@ -548,7 +548,7 @@
                                 <small class="text-muted">Start assigning tasks to see competition results</small>
                             </div>
                         @endif
-                    </div>
+                        </div>
                 </div>
             </div>
         </div>
@@ -953,7 +953,7 @@
 
            // You could also make an AJAX call here to fetch fresh data for the selected period
            console.log(`Switched to ${periodNames[period]} view`);
-       }
+    }
 </script>
 @endpush
 @endsection

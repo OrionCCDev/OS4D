@@ -2012,6 +2012,56 @@ private function sendApprovalEmailViaGmail(Task $task, User $approver)
             Log::error("Failed to notify user about review start: " . $e->getMessage());
         }
     }
+
+    /**
+     * Get task history for AJAX requests
+     */
+    public function getTaskHistory(Task $task)
+    {
+        try {
+            // Check if user has access to this task
+            $user = Auth::user();
+            if (!$user->isManager() && $task->assigned_to !== $user->id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Access denied'
+                ], 403);
+            }
+
+            // Get task history
+            $history = TaskHistory::where('task_id', $task->id)
+                ->with('user')
+                ->orderBy('created_at', 'desc')
+                ->get()
+                ->map(function ($entry) {
+                    return [
+                        'id' => $entry->id,
+                        'title' => $entry->title,
+                        'description' => $entry->description,
+                        'type' => $entry->type,
+                        'created_at' => $entry->created_at->toISOString(),
+                        'user' => $entry->user ? [
+                            'id' => $entry->user->id,
+                            'name' => $entry->user->name,
+                            'email' => $entry->user->email
+                        ] : null
+                    ];
+                });
+
+            return response()->json([
+                'success' => true,
+                'history' => $history
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error("Failed to get task history: " . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error loading task history'
+            ], 500);
+        }
+    }
 }
 
 

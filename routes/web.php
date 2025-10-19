@@ -76,6 +76,7 @@ Route::middleware('auth')->group(function () {
         // Project reports
         Route::get('/projects', [App\Http\Controllers\ReportController::class, 'projects'])->name('projects');
         Route::get('/projects/progress', [App\Http\Controllers\ReportController::class, 'projectProgress'])->name('projects.progress');
+        Route::get('/projects/{project}/full-report', [App\Http\Controllers\ReportController::class, 'exportFullProjectReport'])->name('projects.full-report');
 
         // Task reports
         Route::get('/tasks', [App\Http\Controllers\ReportController::class, 'tasks'])->name('tasks');
@@ -352,8 +353,11 @@ Route::middleware('auth')->group(function () {
         Route::delete('tasks/{task}', [TaskController::class, 'destroy'])->name('tasks.destroy');
     });
 
-    // Task attachment download - Available to assigned users and managers
-    Route::get('tasks/attachments/{attachment}/download', [TaskController::class, 'downloadAttachment'])->name('tasks.attachments.download');
+        // Task attachment download - Available to assigned users and managers
+        Route::get('tasks/attachments/{attachment}/download', [TaskController::class, 'downloadAttachment'])->name('tasks.attachments.download');
+        
+        // Task history - Available to assigned users and managers
+        Route::get('tasks/{task}/history', [TaskController::class, 'getTaskHistory'])->name('tasks.history');
 
     // Notification routes - Available to all authenticated users
     Route::get('notifications', [TaskController::class, 'notifications'])->name('notifications.index');

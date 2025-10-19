@@ -98,13 +98,6 @@
         </div>
     </div>
 
-    <!-- Debug Information (remove in production) -->
-    @if(config('app.debug'))
-    <div class="alert alert-info mb-4">
-        <h6>Debug Information:</h6>
-        <pre>{{ json_encode($taskReport, JSON_PRETTY_PRINT) }}</pre>
-    </div>
-    @endif
 
     <!-- Summary Cards -->
     <div class="row g-4 mb-4">
