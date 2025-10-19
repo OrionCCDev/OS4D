@@ -154,20 +154,51 @@ class ReportController extends Controller
      */
     public function generateMonthlyEvaluation(Request $request)
     {
-        $request->validate([
-            'user_id' => 'required|exists:users,id',
-            'year' => 'required|integer|min:2020|max:2030',
-            'month' => 'required|integer|min:1|max:12',
-        ]);
+        try {
+            $request->validate([
+                'user_id' => 'required|exists:users,id',
+                'year' => 'required|integer|min:2020|max:2030',
+                'month' => 'required|integer|min:1|max:12',
+            ]);
 
-        $evaluation = $this->performanceCalculator->generateMonthlyEvaluation(
-            $request->user_id,
-            $request->year,
-            $request->month
-        );
+            $user = User::findOrFail($request->user_id);
+            
+            // Calculate performance metrics for the month
+            $startDate = Carbon::create($request->year, $request->month, 1)->startOfMonth();
+            $endDate = Carbon::create($request->year, $request->month, 1)->endOfMonth();
+            
+            $metrics = $this->calculateUserMetrics($user, $startDate, $endDate);
+            
+            // Create evaluation record
+            $evaluation = EmployeeEvaluation::create([
+                'user_id' => $request->user_id,
+                'evaluator_id' => auth()->id(),
+                'evaluation_type' => 'monthly',
+                'period_start' => $startDate,
+                'period_end' => $endDate,
+                'performance_score' => $metrics['performance_score'],
+                'completion_rate' => $metrics['completion_rate'],
+                'on_time_rate' => $metrics['on_time_rate'],
+                'total_tasks' => $metrics['total_tasks'],
+                'completed_tasks' => $metrics['completed_tasks'],
+                'overdue_tasks' => $metrics['overdue_tasks'],
+                'notes' => "Monthly evaluation for " . $startDate->format('F Y'),
+                'status' => 'completed'
+            ]);
 
-        return redirect()->route('reports.evaluations')
-            ->with('success', 'Monthly evaluation generated successfully.');
+            return response()->json([
+                'success' => true,
+                'message' => 'Monthly evaluation generated successfully',
+                'evaluation_id' => $evaluation->id
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('Error generating monthly evaluation: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error generating evaluation: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
@@ -175,20 +206,61 @@ class ReportController extends Controller
      */
     public function generateQuarterlyEvaluation(Request $request)
     {
-        $request->validate([
-            'user_id' => 'required|exists:users,id',
-            'year' => 'required|integer|min:2020|max:2030',
-            'quarter' => 'required|integer|min:1|max:4',
-        ]);
+        try {
+            $request->validate([
+                'user_id' => 'required|exists:users,id',
+                'year' => 'required|integer|min:2020|max:2030',
+                'quarter' => 'required|integer|min:1|max:4',
+            ]);
 
-        $evaluation = $this->performanceCalculator->generateQuarterlyEvaluation(
-            $request->user_id,
-            $request->year,
-            $request->quarter
-        );
+            $user = User::findOrFail($request->user_id);
+            
+            // Calculate quarter dates
+            $quarterMonths = [
+                1 => [1, 3],   // Q1: Jan-Mar
+                2 => [4, 6],   // Q2: Apr-Jun
+                3 => [7, 9],   // Q3: Jul-Sep
+                4 => [10, 12]  // Q4: Oct-Dec
+            ];
+            
+            $startMonth = $quarterMonths[$request->quarter][0];
+            $endMonth = $quarterMonths[$request->quarter][1];
+            
+            $startDate = Carbon::create($request->year, $startMonth, 1)->startOfMonth();
+            $endDate = Carbon::create($request->year, $endMonth, 1)->endOfMonth();
+            
+            $metrics = $this->calculateUserMetrics($user, $startDate, $endDate);
+            
+            // Create evaluation record
+            $evaluation = EmployeeEvaluation::create([
+                'user_id' => $request->user_id,
+                'evaluator_id' => auth()->id(),
+                'evaluation_type' => 'quarterly',
+                'period_start' => $startDate,
+                'period_end' => $endDate,
+                'performance_score' => $metrics['performance_score'],
+                'completion_rate' => $metrics['completion_rate'],
+                'on_time_rate' => $metrics['on_time_rate'],
+                'total_tasks' => $metrics['total_tasks'],
+                'completed_tasks' => $metrics['completed_tasks'],
+                'overdue_tasks' => $metrics['overdue_tasks'],
+                'notes' => "Quarterly evaluation for Q{$request->quarter} {$request->year}",
+                'status' => 'completed'
+            ]);
 
-        return redirect()->route('reports.evaluations')
-            ->with('success', 'Quarterly evaluation generated successfully.');
+            return response()->json([
+                'success' => true,
+                'message' => 'Quarterly evaluation generated successfully',
+                'evaluation_id' => $evaluation->id
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('Error generating quarterly evaluation: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error generating evaluation: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
@@ -196,18 +268,50 @@ class ReportController extends Controller
      */
     public function generateAnnualEvaluation(Request $request)
     {
-        $request->validate([
-            'user_id' => 'required|exists:users,id',
-            'year' => 'required|integer|min:2020|max:2030',
-        ]);
+        try {
+            $request->validate([
+                'user_id' => 'required|exists:users,id',
+                'year' => 'required|integer|min:2020|max:2030',
+            ]);
 
-        $evaluation = $this->performanceCalculator->generateAnnualEvaluation(
-            $request->user_id,
-            $request->year
-        );
+            $user = User::findOrFail($request->user_id);
+            
+            // Calculate year dates
+            $startDate = Carbon::create($request->year, 1, 1)->startOfYear();
+            $endDate = Carbon::create($request->year, 12, 31)->endOfYear();
+            
+            $metrics = $this->calculateUserMetrics($user, $startDate, $endDate);
+            
+            // Create evaluation record
+            $evaluation = EmployeeEvaluation::create([
+                'user_id' => $request->user_id,
+                'evaluator_id' => auth()->id(),
+                'evaluation_type' => 'annual',
+                'period_start' => $startDate,
+                'period_end' => $endDate,
+                'performance_score' => $metrics['performance_score'],
+                'completion_rate' => $metrics['completion_rate'],
+                'on_time_rate' => $metrics['on_time_rate'],
+                'total_tasks' => $metrics['total_tasks'],
+                'completed_tasks' => $metrics['completed_tasks'],
+                'overdue_tasks' => $metrics['overdue_tasks'],
+                'notes' => "Annual evaluation for {$request->year}",
+                'status' => 'completed'
+            ]);
 
-        return redirect()->route('reports.evaluations')
-            ->with('success', 'Annual evaluation generated successfully.');
+            return response()->json([
+                'success' => true,
+                'message' => 'Annual evaluation generated successfully',
+                'evaluation_id' => $evaluation->id
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('Error generating annual evaluation: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error generating evaluation: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
@@ -496,165 +600,6 @@ class ReportController extends Controller
             'folders' => $project->folders,
             'exportDate' => now(),
         ];
-    }
-
-    /**
-     * Generate monthly evaluation for a user
-     */
-    public function generateMonthlyEvaluation(Request $request)
-    {
-        try {
-            $userId = $request->input('user_id');
-            $year = $request->input('year');
-            $month = $request->input('month');
-            
-            $user = User::findOrFail($userId);
-            
-            // Calculate performance metrics for the month
-            $startDate = Carbon::create($year, $month, 1)->startOfMonth();
-            $endDate = Carbon::create($year, $month, 1)->endOfMonth();
-            
-            $metrics = $this->calculateUserMetrics($user, $startDate, $endDate);
-            
-            // Create evaluation record
-            $evaluation = EmployeeEvaluation::create([
-                'user_id' => $userId,
-                'evaluator_id' => auth()->id(),
-                'evaluation_type' => 'monthly',
-                'period_start' => $startDate,
-                'period_end' => $endDate,
-                'performance_score' => $metrics['performance_score'],
-                'completion_rate' => $metrics['completion_rate'],
-                'on_time_rate' => $metrics['on_time_rate'],
-                'total_tasks' => $metrics['total_tasks'],
-                'completed_tasks' => $metrics['completed_tasks'],
-                'overdue_tasks' => $metrics['overdue_tasks'],
-                'notes' => "Monthly evaluation for " . $startDate->format('F Y'),
-                'status' => 'completed'
-            ]);
-            
-            return response()->json([
-                'success' => true,
-                'message' => 'Monthly evaluation generated successfully',
-                'evaluation_id' => $evaluation->id
-            ]);
-            
-        } catch (\Exception $e) {
-            \Log::error('Error generating monthly evaluation: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Error generating evaluation: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * Generate quarterly evaluation for a user
-     */
-    public function generateQuarterlyEvaluation(Request $request)
-    {
-        try {
-            $userId = $request->input('user_id');
-            $year = $request->input('year');
-            $quarter = $request->input('quarter');
-            
-            $user = User::findOrFail($userId);
-            
-            // Calculate quarter dates
-            $quarterMonths = [
-                1 => [1, 3],   // Q1: Jan-Mar
-                2 => [4, 6],   // Q2: Apr-Jun
-                3 => [7, 9],   // Q3: Jul-Sep
-                4 => [10, 12]  // Q4: Oct-Dec
-            ];
-            
-            $startMonth = $quarterMonths[$quarter][0];
-            $endMonth = $quarterMonths[$quarter][1];
-            
-            $startDate = Carbon::create($year, $startMonth, 1)->startOfMonth();
-            $endDate = Carbon::create($year, $endMonth, 1)->endOfMonth();
-            
-            $metrics = $this->calculateUserMetrics($user, $startDate, $endDate);
-            
-            // Create evaluation record
-            $evaluation = EmployeeEvaluation::create([
-                'user_id' => $userId,
-                'evaluator_id' => auth()->id(),
-                'evaluation_type' => 'quarterly',
-                'period_start' => $startDate,
-                'period_end' => $endDate,
-                'performance_score' => $metrics['performance_score'],
-                'completion_rate' => $metrics['completion_rate'],
-                'on_time_rate' => $metrics['on_time_rate'],
-                'total_tasks' => $metrics['total_tasks'],
-                'completed_tasks' => $metrics['completed_tasks'],
-                'overdue_tasks' => $metrics['overdue_tasks'],
-                'notes' => "Quarterly evaluation for Q{$quarter} {$year}",
-                'status' => 'completed'
-            ]);
-            
-            return response()->json([
-                'success' => true,
-                'message' => 'Quarterly evaluation generated successfully',
-                'evaluation_id' => $evaluation->id
-            ]);
-            
-        } catch (\Exception $e) {
-            \Log::error('Error generating quarterly evaluation: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Error generating evaluation: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * Generate annual evaluation for a user
-     */
-    public function generateAnnualEvaluation(Request $request)
-    {
-        try {
-            $userId = $request->input('user_id');
-            $year = $request->input('year');
-            
-            $user = User::findOrFail($userId);
-            
-            // Calculate year dates
-            $startDate = Carbon::create($year, 1, 1)->startOfYear();
-            $endDate = Carbon::create($year, 12, 31)->endOfYear();
-            
-            $metrics = $this->calculateUserMetrics($user, $startDate, $endDate);
-            
-            // Create evaluation record
-            $evaluation = EmployeeEvaluation::create([
-                'user_id' => $userId,
-                'evaluator_id' => auth()->id(),
-                'evaluation_type' => 'annual',
-                'period_start' => $startDate,
-                'period_end' => $endDate,
-                'performance_score' => $metrics['performance_score'],
-                'completion_rate' => $metrics['completion_rate'],
-                'on_time_rate' => $metrics['on_time_rate'],
-                'total_tasks' => $metrics['total_tasks'],
-                'completed_tasks' => $metrics['completed_tasks'],
-                'overdue_tasks' => $metrics['overdue_tasks'],
-                'notes' => "Annual evaluation for {$year}",
-                'status' => 'completed'
-            ]);
-            
-            return response()->json([
-                'success' => true,
-                'message' => 'Annual evaluation generated successfully',
-                'evaluation_id' => $evaluation->id
-            ]);
-            
-        } catch (\Exception $e) {
-            \Log::error('Error generating annual evaluation: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Error generating evaluation: ' . $e->getMessage()
-            ], 500);
-        }
     }
 
     /**
