@@ -1,6 +1,82 @@
 @extends('layouts.app')
 
 @section('content')
+<style>
+    .competition-card {
+        transition: all 0.3s ease;
+        border: 2px solid transparent;
+    }
+
+    .competition-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+
+    .medal-animation {
+        animation: pulse 2s infinite;
+    }
+
+    .gold-medal {
+        animation: goldGlow 3s ease-in-out infinite alternate;
+    }
+
+    .silver-medal {
+        animation: silverShine 2.5s ease-in-out infinite alternate;
+    }
+
+    .bronze-medal {
+        animation: bronzeGlow 2s ease-in-out infinite alternate;
+    }
+
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+        100% { transform: scale(1); }
+    }
+
+    @keyframes goldGlow {
+        0% { color: #ffd700; text-shadow: 0 0 5px #ffd700; }
+        100% { color: #ffed4e; text-shadow: 0 0 15px #ffd700; }
+    }
+
+    @keyframes silverShine {
+        0% { color: #c0c0c0; text-shadow: 0 0 3px #c0c0c0; }
+        100% { color: #e8e8e8; text-shadow: 0 0 10px #c0c0c0; }
+    }
+
+    @keyframes bronzeGlow {
+        0% { color: #cd7f32; text-shadow: 0 0 3px #cd7f32; }
+        100% { color: #daa520; text-shadow: 0 0 8px #cd7f32; }
+    }
+
+    .rank-badge {
+        position: relative;
+        overflow: hidden;
+    }
+
+    .rank-badge::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: linear-gradient(45deg, transparent, rgba(255,255,255,0.3), transparent);
+        transform: rotate(45deg);
+        transition: all 0.6s;
+        opacity: 0;
+    }
+
+    .rank-badge:hover::before {
+        animation: shine 0.6s ease-in-out;
+    }
+
+    @keyframes shine {
+        0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); opacity: 0; }
+        50% { opacity: 1; }
+        100% { transform: translateX(100%) translateY(100%) rotate(45deg); opacity: 0; }
+    }
+</style>
 <div class="container flex-grow-1 container-p-y">
     <!-- Header -->
     <div class="row">
@@ -114,31 +190,120 @@
 
     <!-- Performance and Activity Row -->
     <div class="row">
-        <!-- Top Performers -->
+        <!-- Top 3 Competition Board -->
         <div class="col-lg-6 col-md-6 col-12 mb-4">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">Top Performers</h5>
+            <div class="card competition-card">
+                <div class="card-header d-flex align-items-center justify-content-between">
+                    <h5 class="card-title mb-0">
+                        <i class="bx bx-trophy me-2 text-warning medal-animation"></i>Top 3 Competition
+                    </h5>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge bg-label-info">
+                            <i class="bx bx-calendar me-1"></i>This Month
+                        </span>
+                        <button class="btn btn-sm btn-outline-primary" onclick="refreshCompetition()" title="Refresh Competition Data">
+                            <i class="bx bx-refresh"></i>
+                        </button>
+                    </div>
                 </div>
                 <div class="card-body">
-                    @forelse($data['top_performers'] as $index => $user)
-                        <div class="d-flex align-items-center mb-3">
-                            <div class="avatar flex-shrink-0 me-3">
-                                <span class="avatar-initial rounded bg-label-primary">{{ $index + 1 }}</span>
-                            </div>
-                            <div class="d-flex w-100 flex-wrap align-items-center justify-content-between gap-2">
-                                <div class="me-2">
-                                    <h6 class="mb-0">{{ $user->name }}</h6>
-                                    <small class="text-muted">{{ $user->completed_tasks_count }} completed</small>
+                    @if($data['monthly_top_performers']->count() > 0)
+                        @foreach($data['monthly_top_performers']->take(3) as $index => $user)
+                            @php
+                                $medalClass = '';
+                                $medalIcon = '';
+                                $rankColor = '';
+                                $bgClass = '';
+
+                                switch($index) {
+                                    case 0:
+                                        $medalClass = 'gold-medal';
+                                        $medalIcon = 'bx-trophy';
+                                        $rankColor = 'text-warning';
+                                        $bgClass = 'bg-warning bg-opacity-10';
+                                        $rankBadge = 'bg-warning';
+                                        break;
+                                    case 1:
+                                        $medalClass = 'silver-medal';
+                                        $medalIcon = 'bx-medal';
+                                        $rankColor = 'text-secondary';
+                                        $bgClass = 'bg-secondary bg-opacity-10';
+                                        $rankBadge = 'bg-secondary';
+                                        break;
+                                    case 2:
+                                        $medalClass = 'bronze-medal';
+                                        $medalIcon = 'bx-award';
+                                        $rankColor = 'text-warning';
+                                        $bgClass = 'bg-warning bg-opacity-10';
+                                        $rankBadge = 'bg-warning';
+                                        break;
+                                }
+                            @endphp
+
+                            <div class="d-flex align-items-center mb-3 p-3 rounded {{ $bgClass }}">
+                                <div class="avatar flex-shrink-0 me-3 position-relative">
+                                    @if($index < 3)
+                                        <div class="position-absolute top-0 start-100 translate-middle">
+                                            <i class="bx {{ $medalIcon }} {{ $medalClass }}" style="font-size: 24px;"></i>
+                                        </div>
+                                    @endif
+                                    <span class="avatar-initial rounded-circle {{ $rankBadge }} text-white fw-bold rank-badge" style="font-size: 18px; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                                        {{ $index + 1 }}
+                                    </span>
                                 </div>
-                                <div class="user-progress d-flex align-items-center gap-1">
-                                    <h6 class="mb-0">{{ $user->completion_rate }}%</h6>
+                                <div class="d-flex w-100 flex-wrap align-items-center justify-content-between gap-2">
+                                    <div class="me-2">
+                                        <h6 class="mb-0 {{ $rankColor }} fw-bold">
+                                            {{ $user->name }}
+                                            @if($index === 0)
+                                                <i class="bx bx-crown text-warning ms-1 gold-medal" style="font-size: 16px;"></i>
+                                            @endif
+                                        </h6>
+                                        <small class="text-muted">
+                                            <i class="bx bx-task me-1"></i>{{ $user->completed_tasks_count }} completed tasks
+                                            @if($user->total_tasks_count > 0)
+                                                <span class="ms-2">
+                                                    <i class="bx bx-target-lock me-1"></i>{{ $user->total_tasks_count }} total
+                                                </span>
+                                            @endif
+                                        </small>
+                                    </div>
+                                    <div class="user-progress d-flex flex-column align-items-end">
+                                        <h6 class="mb-0 {{ $rankColor }} fw-bold">{{ $user->completion_rate }}%</h6>
+                                        <small class="text-muted">Completion Rate</small>
+                                        @if($index === 0)
+                                            <small class="text-success fw-semibold">
+                                                <i class="bx bx-star me-1"></i>Champion
+                                            </small>
+                                        @elseif($index === 1)
+                                            <small class="text-info fw-semibold">
+                                                <i class="bx bx-medal me-1"></i>Runner-up
+                                            </small>
+                                        @elseif($index === 2)
+                                            <small class="text-warning fw-semibold">
+                                                <i class="bx bx-award me-1"></i>Third Place
+                                            </small>
+                                        @endif
+                                    </div>
                                 </div>
                             </div>
+                        @endforeach
+
+                        @if($data['monthly_top_performers']->count() > 3)
+                            <div class="text-center mt-3">
+                                <small class="text-muted">
+                                    <i class="bx bx-info-circle me-1"></i>
+                                    Showing top 3 of {{ $data['monthly_top_performers']->count() }} performers
+                                </small>
+                            </div>
+                        @endif
+                    @else
+                        <div class="text-center py-4">
+                            <i class="bx bx-trophy text-muted" style="font-size: 48px;"></i>
+                            <p class="text-muted mt-2">No performance data available</p>
+                            <small class="text-muted">Start assigning tasks to see competition results</small>
                         </div>
-                    @empty
-                        <p class="text-muted text-center py-4">No performance data available</p>
-                    @endforelse
+                    @endif
                 </div>
             </div>
         </div>
@@ -470,6 +635,48 @@
                 console.log('No valid URL provided for navigation');
             }
         };
+    }
+
+    // Competition refresh function
+    function refreshCompetition() {
+        const refreshBtn = document.querySelector('button[onclick="refreshCompetition()"]');
+        const icon = refreshBtn.querySelector('i');
+
+        // Add loading animation
+        icon.classList.add('bx-spin');
+        refreshBtn.disabled = true;
+
+        // Simulate refresh (in real implementation, this would make an AJAX call)
+        setTimeout(() => {
+            // Remove loading animation
+            icon.classList.remove('bx-spin');
+            refreshBtn.disabled = false;
+
+            // Show success message
+            const toast = document.createElement('div');
+            toast.className = 'toast align-items-center text-white bg-success border-0 position-fixed top-0 end-0 m-3';
+            toast.style.zIndex = '9999';
+            toast.innerHTML = `
+                <div class="d-flex">
+                    <div class="toast-body">
+                        <i class="bx bx-check-circle me-2"></i>Competition data refreshed!
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            `;
+            document.body.appendChild(toast);
+
+            const bsToast = new bootstrap.Toast(toast);
+            bsToast.show();
+
+            // Remove toast after it's hidden
+            toast.addEventListener('hidden.bs.toast', () => {
+                document.body.removeChild(toast);
+            });
+
+            // In a real implementation, you would reload the page or update the data via AJAX
+            // window.location.reload();
+        }, 1500);
     }
 </script>
 @endpush

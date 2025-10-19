@@ -219,7 +219,7 @@ class DashboardController extends Controller
             ->pluck('count', 'status')
             ->toArray();
 
-        // Top performers (users with most completed tasks)
+        // Top performers (users with most completed tasks) - Overall
         $topPerformers = User::withCount(['assignedTasks as completed_tasks_count' => function($query) {
                 $query->where('status', 'completed');
             }])
@@ -232,6 +232,28 @@ class DashboardController extends Controller
                 $user->completion_rate = $user->total_tasks_count > 0
                     ? round(($user->completed_tasks_count / $user->total_tasks_count) * 100, 1)
                     : 0;
+                return $user;
+            });
+
+        // Top performers for current month
+        $monthlyTopPerformers = User::withCount(['assignedTasks as completed_tasks_count' => function($query) {
+                $query->where('status', 'completed')
+                      ->whereMonth('completed_at', now()->month)
+                      ->whereYear('completed_at', now()->year);
+            }])
+            ->withCount(['assignedTasks as total_tasks_count' => function($query) {
+                $query->whereMonth('created_at', now()->month)
+                      ->whereYear('created_at', now()->year);
+            }])
+            ->having('completed_tasks_count', '>', 0)
+            ->orderBy('completed_tasks_count', 'desc')
+            ->limit(10)
+            ->get()
+            ->map(function($user) {
+                $user->completion_rate = $user->total_tasks_count > 0
+                    ? round(($user->completed_tasks_count / $user->total_tasks_count) * 100, 1)
+                    : 0;
+                $user->monthly_performance_score = $user->completed_tasks_count * 10 + $user->completion_rate;
                 return $user;
             });
 
@@ -330,6 +352,7 @@ class DashboardController extends Controller
             'tasks_by_priority' => $tasksByPriority,
             'tasks_by_status' => $tasksByStatus,
             'top_performers' => $topPerformers,
+            'monthly_top_performers' => $monthlyTopPerformers,
             'tasks_per_user' => $tasksPerUser,
             'recent_activity' => $recentActivity,
             'upcoming_due_dates' => $upcomingDueDates,
