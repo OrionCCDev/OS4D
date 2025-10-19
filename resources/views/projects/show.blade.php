@@ -1,22 +1,6 @@
 @extends('layouts.app')
 
-@php
-    $priorityColors = [
-        1 => 'bg-danger',
-        2 => 'bg-warning',
-        3 => 'bg-info',
-        4 => 'bg-primary',
-        5 => 'bg-secondary'
-    ];
-    $statusColors = [
-        'todo' => 'bg-label-secondary',
-        'in_progress' => 'bg-label-warning',
-        'in_review' => 'bg-label-info',
-        'approved' => 'bg-label-success',
-        'rejected' => 'bg-label-danger',
-        'done' => 'bg-label-primary'
-    ];
-@endphp
+{{-- Using standardized Task model color methods --}}
 
 @section('content')
 <div class="container flex-grow-1 container-p-y">
@@ -253,7 +237,7 @@
                                         <td class="align-middle">
                                             <div class="d-flex align-items-center">
                                                 <div class="me-3">
-                                                    <div class="rounded-circle {{ $priorityColors[$task->priority ?? 5] ?? 'bg-secondary' }}" style="width: 8px; height: 8px;"></div>
+                                                    <div class="rounded-circle {{ $task->priority_badge_class }}" style="width: 8px; height: 8px;"></div>
                                                 </div>
                     <div>
                                                     <div class="fw-semibold">{{ $task->title }}</div>
@@ -277,13 +261,13 @@
                 </div>
                                         </td>
                                         <td class="align-middle">
-                                            <span class="badge {{ $statusColors[$task->status] ?? 'bg-label-secondary' }}">
+                                            <span class="badge {{ $task->status_badge_class }} text-white px-2 py-1 rounded-pill" style="font-size: 11px; font-weight: 600;">
                                                 {{ ucfirst(str_replace('_', ' ', $task->status)) }}
                                             </span>
                                         </td>
                                         <td class="align-middle">
-                                            <span class="badge {{ $priorityColors[$task->priority ?? 5] ?? 'bg-secondary' }}">
-                                                {{ $task->priority ?? 5 }}
+                                            <span class="badge {{ $task->priority_badge_class }} text-white px-2 py-1 rounded-pill" style="font-size: 11px; font-weight: 600;">
+                                                {{ ucfirst($task->priority ?? 'Normal') }}
                                             </span>
                                         </td>
                                         <td class="align-middle">
