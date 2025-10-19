@@ -224,6 +224,145 @@
         </div>
     </div>
 
+    <!-- Urgent Tasks Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="card-title mb-0 text-dark fw-semibold">
+                            <i class="bx bx-error-circle me-2 text-danger"></i>Urgent Tasks
+                        </h5>
+                        <small class="text-muted">Tasks approaching or exceeding due date</small>
+                    </div>
+                    <small class="text-muted">{{ $data['urgent_tasks']->total() }} urgent tasks</small>
+                </div>
+                <div class="card-body p-0">
+                    @if($data['urgent_tasks']->count() > 0)
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th class="text-dark fw-semibold">Task</th>
+                                        <th class="text-dark fw-semibold">Status</th>
+                                        <th class="text-dark fw-semibold">Priority</th>
+                                        <th class="text-dark fw-semibold">Assignee</th>
+                                        <th class="text-dark fw-semibold">Due Date</th>
+                                        <th class="text-dark fw-semibold">Urgency</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($data['urgent_tasks'] as $task)
+                                    @php
+                                        $isOverdue = $task->due_date < now();
+                                        $diff = now()->diff($task->due_date);
+                                        
+                                        // Calculate days and hours
+                                        if ($isOverdue) {
+                                            $days = abs(now()->diffInDays($task->due_date));
+                                            $hours = abs(now()->copy()->addDays($days)->diffInHours($task->due_date));
+                                            $urgencyText = 'Overdue by ';
+                                            if ($days > 0) {
+                                                $urgencyText .= $days . 'd ';
+                                            }
+                                            if ($hours > 0 || $days == 0) {
+                                                $urgencyText .= $hours . 'h';
+                                            }
+                                        } else {
+                                            $days = now()->diffInDays($task->due_date);
+                                            $hours = now()->copy()->addDays($days)->diffInHours($task->due_date);
+                                            $urgencyText = 'Due in ';
+                                            if ($days > 0) {
+                                                $urgencyText .= $days . 'd ';
+                                            }
+                                            if ($hours > 0 || $days == 0) {
+                                                $urgencyText .= $hours . 'h';
+                                            }
+                                        }
+                                        
+                                        $urgencyClass = $isOverdue ? 'danger' : ($days <= 2 ? 'warning' : 'info');
+                                    @endphp
+                                    <tr style="cursor: pointer; transition: background-color 0.2s;" 
+                                        onclick="window.location.href='{{ route('tasks.show', $task->id) }}'"
+                                        onmouseover="this.style.backgroundColor='#f8f9fa'" 
+                                        onmouseout="this.style.backgroundColor='transparent'">
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="me-2">
+                                                    @if($isOverdue)
+                                                        <i class="bx bx-error-circle text-danger" style="font-size: 1.2rem;"></i>
+                                                    @else
+                                                        <i class="bx bx-time-five text-warning" style="font-size: 1.2rem;"></i>
+                                                    @endif
+                                                </div>
+                                                <div>
+                                                    <h6 class="mb-0 text-dark fw-semibold">{{ Str::limit($task->title, 40) }}</h6>
+                                                    <small class="text-muted">{{ $task->project->name ?? 'No Project' }}</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge {{ $task->status_badge_class }} text-white px-2 py-1 rounded-pill" style="font-size: 11px; font-weight: 600;">
+                                                {{ ucfirst(str_replace('_', ' ', $task->status)) }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="badge {{ $task->priority_badge_class }} text-white px-2 py-1 rounded-pill" style="font-size: 11px; font-weight: 600;">
+                                                {{ ucfirst($task->priority ?? 'Normal') }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            @if($task->assignee)
+                                                <div class="d-flex align-items-center">
+                                                    <div class="avatar avatar-xs me-2">
+                                                        <span class="avatar-initial rounded-circle bg-label-primary">
+                                                            {{ substr($task->assignee->name, 0, 1) }}
+                                                        </span>
+                                                    </div>
+                                                    <span class="text-dark fw-semibold">{{ $task->assignee->name }}</span>
+                                                </div>
+                                            @else
+                                                <span class="text-muted">Unassigned</span>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            <span class="text-dark fw-semibold {{ $isOverdue ? 'text-danger' : '' }}">
+                                                {{ $task->due_date->format('M j, Y') }}
+                                            </span>
+                                            <br><small class="text-muted">{{ $task->due_date->format('h:i A') }}</small>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-{{ $urgencyClass }} text-white px-2 py-1 rounded-pill" style="font-size: 11px; font-weight: 600;">
+                                                @if($isOverdue)
+                                                    <i class="bx bx-error-circle me-1"></i>
+                                                @else
+                                                    <i class="bx bx-time-five me-1"></i>
+                                                @endif
+                                                {{ $urgencyText }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                        @if($data['urgent_tasks']->hasPages())
+                            <div class="card-footer">
+                                {{ $data['urgent_tasks']->appends(request()->except('urgent_page'))->links() }}
+                            </div>
+                        @endif
+                    @else
+                        <div class="text-center py-4">
+                            <i class="bx bx-check-circle fs-1 text-success opacity-50"></i>
+                            <p class="text-muted mt-2">No urgent tasks</p>
+                            <small class="text-muted">All tasks are on track!</small>
+                        </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Charts Row -->
     <div class="row mb-4">
         <!-- Tasks by Status List -->
@@ -523,124 +662,6 @@
                         <div class="text-center py-4">
                             <i class="bx bx-activity fs-1 text-muted opacity-50"></i>
                             <p class="text-muted mt-2">No recent activity</p>
-                        </div>
-                    @endif
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Urgent Tasks Section -->
-    <div class="row">
-        <div class="col-12 mb-4">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <div>
-                        <h5 class="card-title mb-0 text-dark fw-semibold">
-                            <i class="bx bx-error-circle me-2 text-danger"></i>Urgent Tasks
-                        </h5>
-                        <small class="text-muted">Tasks approaching or exceeding due date</small>
-                    </div>
-                    <small class="text-muted">{{ $data['urgent_tasks']->total() }} urgent tasks</small>
-                </div>
-                <div class="card-body p-0">
-                    @if($data['urgent_tasks']->count() > 0)
-                        <div class="table-responsive">
-                            <table class="table table-hover mb-0">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th class="text-dark fw-semibold">Task</th>
-                                        <th class="text-dark fw-semibold">Status</th>
-                                        <th class="text-dark fw-semibold">Priority</th>
-                                        <th class="text-dark fw-semibold">Assignee</th>
-                                        <th class="text-dark fw-semibold">Due Date</th>
-                                        <th class="text-dark fw-semibold">Urgency</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach($data['urgent_tasks'] as $task)
-                                    @php
-                                        $isOverdue = $task->due_date < now();
-                                        $daysUntilDue = now()->diffInDays($task->due_date, false);
-                                        $urgencyClass = $isOverdue ? 'danger' : ($daysUntilDue <= 2 ? 'warning' : 'info');
-                                        $urgencyText = $isOverdue 
-                                            ? 'Overdue by ' . abs($daysUntilDue) . ' day(s)' 
-                                            : 'Due in ' . $daysUntilDue . ' day(s)';
-                                    @endphp
-                                    <tr style="cursor: pointer; transition: background-color 0.2s;" 
-                                        onclick="window.location.href='{{ route('tasks.show', $task->id) }}'"
-                                        onmouseover="this.style.backgroundColor='#f8f9fa'" 
-                                        onmouseout="this.style.backgroundColor='transparent'">
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <div class="me-2">
-                                                    @if($isOverdue)
-                                                        <i class="bx bx-error-circle text-danger" style="font-size: 1.2rem;"></i>
-                                                    @else
-                                                        <i class="bx bx-time-five text-warning" style="font-size: 1.2rem;"></i>
-                                                    @endif
-                                                </div>
-                                                <div>
-                                                    <h6 class="mb-0 text-dark fw-semibold">{{ Str::limit($task->title, 40) }}</h6>
-                                                    <small class="text-muted">{{ $task->project->name ?? 'No Project' }}</small>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <span class="badge {{ $task->status_badge_class }} text-white px-2 py-1 rounded-pill" style="font-size: 11px; font-weight: 600;">
-                                                {{ ucfirst(str_replace('_', ' ', $task->status)) }}
-                                            </span>
-                                        </td>
-                                        <td>
-                                            <span class="badge {{ $task->priority_badge_class }} text-white px-2 py-1 rounded-pill" style="font-size: 11px; font-weight: 600;">
-                                                {{ ucfirst($task->priority ?? 'Normal') }}
-                                            </span>
-                                        </td>
-                                        <td>
-                                            @if($task->assignee)
-                                                <div class="d-flex align-items-center">
-                                                    <div class="avatar avatar-xs me-2">
-                                                        <span class="avatar-initial rounded-circle bg-label-primary">
-                                                            {{ substr($task->assignee->name, 0, 1) }}
-                                                        </span>
-                                                    </div>
-                                                    <span class="text-dark fw-semibold">{{ $task->assignee->name }}</span>
-                                                </div>
-                                            @else
-                                                <span class="text-muted">Unassigned</span>
-                                            @endif
-                                        </td>
-                                        <td>
-                                            <span class="text-dark fw-semibold {{ $isOverdue ? 'text-danger' : '' }}">
-                                                {{ $task->due_date->format('M j, Y') }}
-                                            </span>
-                                            <br><small class="text-muted">{{ $task->due_date->format('h:i A') }}</small>
-                                        </td>
-                                        <td>
-                                            <span class="badge bg-{{ $urgencyClass }} text-white px-2 py-1 rounded-pill" style="font-size: 11px; font-weight: 600;">
-                                                @if($isOverdue)
-                                                    <i class="bx bx-error-circle me-1"></i>
-                                                @else
-                                                    <i class="bx bx-time-five me-1"></i>
-                                                @endif
-                                                {{ $urgencyText }}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                        @if($data['urgent_tasks']->hasPages())
-                            <div class="card-footer">
-                                {{ $data['urgent_tasks']->appends(request()->except('urgent_page'))->links() }}
-                            </div>
-                        @endif
-                    @else
-                        <div class="text-center py-4">
-                            <i class="bx bx-check-circle fs-1 text-success opacity-50"></i>
-                            <p class="text-muted mt-2">No urgent tasks</p>
-                            <small class="text-muted">All tasks are on track!</small>
                         </div>
                     @endif
                 </div>
