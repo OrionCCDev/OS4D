@@ -375,31 +375,8 @@ class ReportController extends Controller
             $projectData = $this->getComprehensiveProjectData($project);
             \Log::info('Project data retrieved successfully', ['project_id' => $project->id]);
             
-            // Test with minimal data first
-            $testData = [
-                'project' => $project,
-                'projectStats' => [
-                    'total_tasks' => 0,
-                    'completed_tasks' => 0,
-                    'in_progress_tasks' => 0,
-                    'pending_tasks' => 0,
-                    'overdue_tasks' => 0,
-                    'completion_rate' => 0,
-                ],
-                'allTasks' => collect([]),
-                'allTaskHistory' => collect([]),
-                'teamPerformance' => collect([]),
-                'projectTimeline' => [
-                    'created_at' => $project->created_at,
-                    'start_date' => $project->start_date,
-                    'end_date' => $project->end_date,
-                    'updated_at' => $project->updated_at,
-                ],
-                'projectDuration' => 0
-            ];
-            
             // Generate PDF
-            $pdf = Pdf::loadView('reports.pdf.full-project-report', $testData);
+            $pdf = Pdf::loadView('reports.pdf.full-project-report', $projectData);
             $pdf->setPaper('A4', 'portrait');
             \Log::info('PDF generated successfully');
             
@@ -415,7 +392,17 @@ class ReportController extends Controller
                 'line' => $e->getLine(),
                 'trace' => $e->getTraceAsString()
             ]);
-            return redirect()->back()->with('error', 'Failed to generate project report: ' . $e->getMessage());
+            
+            // Return a more detailed error response
+            return response()->json([
+                'error' => true,
+                'message' => 'Failed to generate project report: ' . $e->getMessage(),
+                'details' => [
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
+                    'project_id' => $project->id
+                ]
+            ], 500);
         }
     }
 
@@ -424,6 +411,8 @@ class ReportController extends Controller
      */
     private function getComprehensiveProjectData(Project $project)
     {
+        \Log::info('Loading project relationships for project: ' . $project->id);
+        
         // Load project with all relationships
         $project->load([
             'folders.children',
@@ -434,8 +423,11 @@ class ReportController extends Controller
             'manager',
             'createdBy'
         ]);
+        
+        \Log::info('Project relationships loaded successfully');
 
         // Get all tasks with full details
+        \Log::info('Loading tasks for project: ' . $project->id);
         $allTasks = $project->tasks()->with([
             'assignee',
             'creator',
@@ -443,6 +435,8 @@ class ReportController extends Controller
             'history.user',
             'project'
         ])->get();
+        
+        \Log::info('Tasks loaded successfully', ['task_count' => $allTasks->count()]);
 
         // Calculate project statistics
         $projectStats = [
