@@ -2236,14 +2236,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Task Reassignment Functions
 function showReassignModal() {
-    // Load available users
-    fetch('{{ route("users.index") }}')
-        .then(response => response.text())
-        .then(() => {
-            // Show modal
-            const modal = new bootstrap.Modal(document.getElementById('reassignTaskModal'));
-            modal.show();
-        });
+    // Show modal directly
+    const modal = new bootstrap.Modal(document.getElementById('reassignTaskModal'));
+    modal.show();
 }
 
 document.getElementById('reassignTaskForm').addEventListener('submit', function(e) {
