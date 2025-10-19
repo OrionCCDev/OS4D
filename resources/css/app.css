@@ -1,3 +1,179 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Custom Color Scheme - Secondary Color #12242E with Gradient */
+:root {
+  --bs-secondary: #12242E;
+  --bs-dark: #12242E;
+  --bs-gradient-start: #12242E;
+  --bs-gradient-end: #254659;
+  --bs-gradient: linear-gradient(135deg, #12242E 0%, #254659 100%);
+}
+
+/* Gradient Utility Classes */
+.bg-gradient {
+  background: var(--bs-gradient) !important;
+}
+
+.bg-gradient-start {
+  background-color: var(--bs-gradient-start) !important;
+}
+
+.bg-gradient-end {
+  background-color: var(--bs-gradient-end) !important;
+}
+
+.text-gradient {
+  background: var(--bs-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.border-gradient {
+  border: 2px solid transparent;
+  background: linear-gradient(white, white) padding-box, var(--bs-gradient) border-box;
+}
+
+/* Override Bootstrap secondary color */
+.btn-secondary {
+  background-color: var(--bs-secondary) !important;
+  border-color: var(--bs-secondary) !important;
+}
+
+.btn-secondary:hover {
+  background-color: #0f1e28 !important;
+  border-color: #0f1e28 !important;
+}
+
+.btn-outline-secondary {
+  color: var(--bs-secondary) !important;
+  border-color: var(--bs-secondary) !important;
+}
+
+.btn-outline-secondary:hover {
+  background-color: var(--bs-secondary) !important;
+  border-color: var(--bs-secondary) !important;
+}
+
+.bg-secondary {
+  background-color: var(--bs-secondary) !important;
+}
+
+.text-secondary {
+  color: var(--bs-secondary) !important;
+}
+
+.border-secondary {
+  border-color: var(--bs-secondary) !important;
+}
+
+/* Dark theme overrides */
+.bg-dark {
+  background-color: var(--bs-dark) !important;
+}
+
+.text-dark {
+  color: var(--bs-dark) !important;
+}
+
+/* Gradient text for headings */
+.gradient-text {
+  background: var(--bs-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Gradient backgrounds for cards */
+.card-gradient {
+  background: var(--bs-gradient);
+  color: white;
+}
+
+.card-gradient .card-title,
+.card-gradient .card-text,
+.card-gradient h1,
+.card-gradient h2,
+.card-gradient h3,
+.card-gradient h4,
+.card-gradient h5,
+.card-gradient h6 {
+  color: white !important;
+}
+
+/* Navbar gradient */
+.navbar-gradient {
+  background: var(--bs-gradient) !important;
+}
+
+.navbar-gradient .navbar-brand,
+.navbar-gradient .navbar-nav .nav-link {
+  color: white !important;
+}
+
+/* Footer gradient */
+.footer-gradient {
+  background: var(--bs-gradient) !important;
+  color: white;
+}
+
+/* Button gradient */
+.btn-gradient {
+  background: var(--bs-gradient) !important;
+  border: none !important;
+  color: white !important;
+}
+
+.btn-gradient:hover {
+  background: linear-gradient(135deg, #0f1e28 0%, #1e3a47 100%) !important;
+  color: white !important;
+}
+
+/* Progress bar gradient */
+.progress-gradient .progress-bar {
+  background: var(--bs-gradient) !important;
+}
+
+/* Badge gradient */
+.badge-gradient {
+  background: var(--bs-gradient) !important;
+  color: white !important;
+}
+
+/* Alert gradient */
+.alert-gradient {
+  background: var(--bs-gradient) !important;
+  color: white !important;
+  border: none !important;
+}
+
+/* Table gradient header */
+.table-gradient thead th {
+  background: var(--bs-gradient) !important;
+  color: white !important;
+  border: none !important;
+}
+
+/* Modal gradient header */
+.modal-gradient .modal-header {
+  background: var(--bs-gradient) !important;
+  color: white !important;
+  border-bottom: none !important;
+}
+
+/* Sidebar gradient */
+.sidebar-gradient {
+  background: var(--bs-gradient) !important;
+}
+
+.sidebar-gradient .nav-link {
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.sidebar-gradient .nav-link:hover,
+.sidebar-gradient .nav-link.active {
+  color: white !important;
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}

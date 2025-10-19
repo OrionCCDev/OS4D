@@ -39,7 +39,7 @@
     <div class="row mb-4">
         <!-- Overall Ranking -->
         <div class="col-lg-6 col-md-6 col-12 mb-4">
-            <div class="card h-100">
+            <div class="card h-100 card-gradient">
                 <div class="card-body">
                     <div class="d-flex align-items-center justify-content-between">
                         <div class="d-flex align-items-center">
@@ -89,7 +89,7 @@
 
         <!-- Monthly Ranking -->
         <div class="col-lg-6 col-md-6 col-12 mb-4">
-            <div class="card h-100">
+            <div class="card h-100 card-gradient">
                 <div class="card-body">
                     <div class="d-flex align-items-center justify-content-between">
                         <div class="d-flex align-items-center">

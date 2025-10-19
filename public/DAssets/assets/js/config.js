@@ -11,17 +11,20 @@
 let config = {
   colors: {
     primary: '#696cff',
-    secondary: '#8592a3',
+    secondary: '#12242E',
     success: '#71dd37',
     info: '#03c3ec',
     warning: '#ffab00',
     danger: '#ff3e1d',
-    dark: '#233446',
+    dark: '#12242E',
     black: '#000',
     white: '#fff',
     body: '#f4f5fb',
-    headingColor: '#566a7f',
+    headingColor: '#12242E',
     axisColor: '#a1acb8',
-    borderColor: '#eceef1'
+    borderColor: '#eceef1',
+    gradient: 'linear-gradient(135deg, #12242E 0%, #254659 100%)',
+    gradientStart: '#12242E',
+    gradientEnd: '#254659'
   }
 };

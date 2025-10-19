@@ -192,9 +192,9 @@
     <div class="row">
         <!-- Top 3 Competition Board -->
         <div class="col-lg-6 col-md-6 col-12 mb-4">
-            <div class="card competition-card">
+            <div class="card competition-card card-gradient">
                 <div class="card-header d-flex align-items-center justify-content-between">
-                    <h5 class="card-title mb-0">
+                    <h5 class="card-title mb-0 text-white">
                         <i class="bx bx-trophy me-2 text-warning medal-animation"></i>Top 3 Competition
                     </h5>
                     <div class="d-flex align-items-center gap-2">

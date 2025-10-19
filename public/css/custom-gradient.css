@@ -1,0 +1,279 @@
+/* Custom Gradient Color Scheme - #12242E to #254659 */
+
+:root {
+  --bs-secondary: #12242E;
+  --bs-dark: #12242E;
+  --bs-gradient-start: #12242E;
+  --bs-gradient-end: #254659;
+  --bs-gradient: linear-gradient(135deg, #12242E 0%, #254659 100%);
+  --bs-gradient-hover: linear-gradient(135deg, #0f1e28 0%, #1e3a47 100%);
+}
+
+/* Override all secondary color references */
+.bg-secondary,
+.btn-secondary,
+.badge-secondary,
+.alert-secondary {
+  background-color: var(--bs-secondary) !important;
+}
+
+.text-secondary {
+  color: var(--bs-secondary) !important;
+}
+
+.border-secondary {
+  border-color: var(--bs-secondary) !important;
+}
+
+/* Dark theme overrides */
+.bg-dark {
+  background-color: var(--bs-dark) !important;
+}
+
+.text-dark {
+  color: var(--bs-dark) !important;
+}
+
+/* Gradient utility classes */
+.bg-gradient {
+  background: var(--bs-gradient) !important;
+}
+
+.bg-gradient-start {
+  background-color: var(--bs-gradient-start) !important;
+}
+
+.bg-gradient-end {
+  background-color: var(--bs-gradient-end) !important;
+}
+
+.text-gradient {
+  background: var(--bs-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Button gradient */
+.btn-gradient {
+  background: var(--bs-gradient) !important;
+  border: none !important;
+  color: white !important;
+}
+
+.btn-gradient:hover {
+  background: var(--bs-gradient-hover) !important;
+  color: white !important;
+}
+
+/* Card gradient */
+.card-gradient {
+  background: var(--bs-gradient) !important;
+  color: white !important;
+}
+
+.card-gradient .card-title,
+.card-gradient .card-text,
+.card-gradient h1,
+.card-gradient h2,
+.card-gradient h3,
+.card-gradient h4,
+.card-gradient h5,
+.card-gradient h6,
+.card-gradient .text-muted {
+  color: white !important;
+}
+
+.card-gradient .text-white-50 {
+  color: rgba(255, 255, 255, 0.5) !important;
+}
+
+/* Sidebar gradient */
+.sidebar-gradient {
+  background: var(--bs-gradient) !important;
+}
+
+.sidebar-gradient .nav-link {
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.sidebar-gradient .nav-link:hover,
+.sidebar-gradient .nav-link.active {
+  color: white !important;
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Navbar gradient */
+.navbar-gradient {
+  background: var(--bs-gradient) !important;
+}
+
+.navbar-gradient .navbar-brand,
+.navbar-gradient .navbar-nav .nav-link {
+  color: white !important;
+}
+
+/* Progress bar gradient */
+.progress-gradient .progress-bar {
+  background: var(--bs-gradient) !important;
+}
+
+/* Badge gradient */
+.badge-gradient {
+  background: var(--bs-gradient) !important;
+  color: white !important;
+}
+
+/* Table gradient header */
+.table-gradient thead th {
+  background: var(--bs-gradient) !important;
+  color: white !important;
+  border: none !important;
+}
+
+/* Modal gradient header */
+.modal-gradient .modal-header {
+  background: var(--bs-gradient) !important;
+  color: white !important;
+  border-bottom: none !important;
+}
+
+/* Footer gradient */
+.footer-gradient {
+  background: var(--bs-gradient) !important;
+  color: white !important;
+}
+
+/* Competition board specific styles */
+.competition-card.card-gradient {
+  background: var(--bs-gradient) !important;
+  color: white !important;
+}
+
+.competition-card.card-gradient .card-title {
+  color: white !important;
+}
+
+.competition-card.card-gradient .text-muted {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.competition-card.card-gradient .text-white-50 {
+  color: rgba(255, 255, 255, 0.5) !important;
+}
+
+/* User ranking cards */
+.user-ranking-card.card-gradient {
+  background: var(--bs-gradient) !important;
+  color: white !important;
+}
+
+.user-ranking-card.card-gradient .card-title,
+.user-ranking-card.card-gradient h6,
+.user-ranking-card.card-gradient .fw-semibold {
+  color: white !important;
+}
+
+.user-ranking-card.card-gradient .text-muted {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.user-ranking-card.card-gradient .text-white-50 {
+  color: rgba(255, 255, 255, 0.5) !important;
+}
+
+/* Navbar ranking display */
+.navbar-ranking.bg-gradient {
+  background: var(--bs-gradient) !important;
+  color: white !important;
+}
+
+.navbar-ranking.bg-gradient .text-white {
+  color: white !important;
+}
+
+.navbar-ranking.bg-gradient .text-white-50 {
+  color: rgba(255, 255, 255, 0.5) !important;
+}
+
+/* Override Bootstrap's secondary color in all contexts */
+.btn-secondary {
+  background-color: var(--bs-secondary) !important;
+  border-color: var(--bs-secondary) !important;
+}
+
+.btn-secondary:hover {
+  background-color: #0f1e28 !important;
+  border-color: #0f1e28 !important;
+}
+
+.btn-outline-secondary {
+  color: var(--bs-secondary) !important;
+  border-color: var(--bs-secondary) !important;
+}
+
+.btn-outline-secondary:hover {
+  background-color: var(--bs-secondary) !important;
+  border-color: var(--bs-secondary) !important;
+  color: white !important;
+}
+
+/* Form controls with secondary color */
+.form-control:focus {
+  border-color: var(--bs-secondary) !important;
+  box-shadow: 0 0 0 0.2rem rgba(18, 36, 46, 0.25) !important;
+}
+
+.form-select:focus {
+  border-color: var(--bs-secondary) !important;
+  box-shadow: 0 0 0 0.2rem rgba(18, 36, 46, 0.25) !important;
+}
+
+/* Links with secondary color */
+a {
+  color: var(--bs-secondary) !important;
+}
+
+a:hover {
+  color: #0f1e28 !important;
+}
+
+/* Active states */
+.nav-pills .nav-link.active {
+  background-color: var(--bs-secondary) !important;
+}
+
+.page-link.active {
+  background-color: var(--bs-secondary) !important;
+  border-color: var(--bs-secondary) !important;
+}
+
+/* Custom gradient animations */
+@keyframes gradient-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.gradient-animated {
+  background: linear-gradient(-45deg, #12242E, #254659, #1e3a47, #0f1e28);
+  background-size: 400% 400%;
+  animation: gradient-shift 15s ease infinite;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .card-gradient .card-body {
+    padding: 1rem;
+  }
+
+  .sidebar-gradient .nav-link {
+    padding: 0.75rem 1rem;
+  }
+}

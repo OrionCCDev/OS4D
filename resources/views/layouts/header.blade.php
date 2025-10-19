@@ -48,6 +48,8 @@
     <!-- Core CSS -->
     <link rel="stylesheet" href="{{ asset('DAssets/assets/vendor/css/core.css') }}" class="template-customizer-core-css" />
     <link rel="stylesheet" href="{{ asset('DAssets/assets/vendor/css/theme-default.css') }}" class="template-customizer-theme-css" />
+    <!-- Custom Gradient CSS -->
+    <link rel="stylesheet" href="{{ asset('css/custom-gradient.css') }}" />
     <link rel="stylesheet" href="{{ asset('DAssets/assets/css/demo.css') }}" />
     <link rel="stylesheet" href="{{ asset('DAssets/assets/css/task-files.css') }}" />
 
@@ -72,7 +74,7 @@
       <div class="layout-container">
         <!-- Menu -->
 
-        <aside id="layout-menu" class="layout-menu menu-vertical menu bg-menu-theme">
+        <aside id="layout-menu" class="layout-menu menu-vertical menu sidebar-gradient">
           <div class="app-brand demo">
             <a href="{{ url('/') }}" class="app-brand-link">
               <span class="app-brand-logo demo">
@@ -721,31 +723,31 @@
                     $reportService = new \App\Services\ReportService();
                     $userRanking = $reportService->getUserRankings(Auth::user()->id, 'overall');
                 @endphp
-                <li class="nav-item me-3 me-xl-1">
-                  <div class="nav-link d-flex align-items-center" style="cursor: default; padding: 0.5rem 0.75rem;">
-                    <div class="d-flex align-items-center">
-                      <div class="avatar avatar-sm me-2">
-                        <div class="avatar-initial rounded bg-label-{{ $userRanking['user_ranking']['rank'] <= 3 ? 'success' : ($userRanking['user_ranking']['rank'] <= 10 ? 'warning' : 'primary') }}">
-                          @if($userRanking['user_ranking']['rank'] == 1)
-                            <i class="bx bx-trophy text-white" style="font-size: 12px;"></i>
-                          @elseif($userRanking['user_ranking']['rank'] == 2)
-                            <i class="bx bx-medal text-white" style="font-size: 12px;"></i>
-                          @elseif($userRanking['user_ranking']['rank'] == 3)
-                            <i class="bx bx-award text-white" style="font-size: 12px;"></i>
-                          @else
-                            <i class="bx bx-user text-white" style="font-size: 12px;"></i>
-                          @endif
-                        </div>
-                      </div>
-                      <div class="d-flex flex-column">
-                        <span class="fw-semibold text-{{ $userRanking['user_ranking']['rank'] <= 3 ? 'success' : ($userRanking['user_ranking']['rank'] <= 10 ? 'warning' : 'primary') }}" style="font-size: 12px; line-height: 1;">
-                          #{{ $userRanking['user_ranking']['rank'] }}
-                        </span>
-                        <small class="text-muted" style="font-size: 10px; line-height: 1;">Overall</small>
-                      </div>
-                    </div>
-                  </div>
-                </li>
+       <li class="nav-item me-3 me-xl-1">
+         <div class="nav-link d-flex align-items-center bg-gradient rounded" style="cursor: default; padding: 0.5rem 0.75rem;">
+           <div class="d-flex align-items-center">
+             <div class="avatar avatar-sm me-2">
+               <div class="avatar-initial rounded bg-white text-secondary">
+                 @if($userRanking['user_ranking']['rank'] == 1)
+                   <i class="bx bx-trophy" style="font-size: 12px;"></i>
+                 @elseif($userRanking['user_ranking']['rank'] == 2)
+                   <i class="bx bx-medal" style="font-size: 12px;"></i>
+                 @elseif($userRanking['user_ranking']['rank'] == 3)
+                   <i class="bx bx-award" style="font-size: 12px;"></i>
+                 @else
+                   <i class="bx bx-user" style="font-size: 12px;"></i>
+                 @endif
+               </div>
+             </div>
+             <div class="d-flex flex-column">
+               <span class="fw-semibold text-white" style="font-size: 12px; line-height: 1;">
+                 #{{ $userRanking['user_ranking']['rank'] }}
+               </span>
+               <small class="text-white-50" style="font-size: 10px; line-height: 1;">Overall</small>
+             </div>
+           </div>
+         </div>
+       </li>
                 @endif
 
                 <!-- User -->
