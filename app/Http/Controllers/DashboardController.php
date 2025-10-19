@@ -538,6 +538,30 @@ class DashboardController extends Controller
             ->limit(5)
             ->get();
 
+        // Urgent Tasks - Tasks approaching or exceeding due date
+        $now = now();
+        $urgentTasks = Task::with(['assignee', 'project', 'folder'])
+            ->where(function($query) use ($now) {
+                // Tasks that are overdue (past due date and not completed)
+                $query->where(function($q) use ($now) {
+                    $q->where('due_date', '<', $now)
+                      ->whereNotIn('status', ['completed', 'cancelled']);
+                })
+                // OR tasks approaching due date (within next 7 days)
+                ->orWhere(function($q) use ($now) {
+                    $q->whereBetween('due_date', [$now, $now->copy()->addDays(7)])
+                      ->whereNotIn('status', ['completed', 'cancelled']);
+                });
+            })
+            ->orderByRaw("
+                CASE 
+                    WHEN due_date < NOW() THEN 1
+                    ELSE 2
+                END
+            ")
+            ->orderBy('due_date', 'asc')
+            ->paginate(6, ['*'], 'urgent_page');
+
         // Debug: Log competition data
         \Log::info('Competition Board Data:', [
             'monthly_top_performers_count' => $monthlyTopPerformers->count(),
@@ -572,6 +596,7 @@ class DashboardController extends Controller
             'monthly_trend' => $monthlyTrend,
             'tasks_by_project' => $tasksByProject,
             'recent_notifications' => $recentNotifications,
+            'urgent_tasks' => $urgentTasks,
         ];
     }
 
