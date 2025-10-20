@@ -47,11 +47,26 @@ class ReportService
 
         // Transform the data
         $transformedProjects = $projects->getCollection()->map(function ($project) {
-            $totalTasks = $project->tasks->count();
-            $completedTasks = $project->tasks->where('status', 'completed')->count();
-            $overdueTasks = $project->tasks->where('status', '!=', 'completed')
+            // Build a robust task set: include any task linked to this project OR to any folder within it
+            $allFolderIds = \App\Models\ProjectFolder::where('project_id', $project->id)->pluck('id');
+            $tasks = \App\Models\Task::query()
+                ->where('project_id', $project->id)
+                ->orWhereIn('folder_id', $allFolderIds)
+                ->get();
+
+            $totalTasks = $tasks->count();
+            $completedTasks = $tasks->where('status', 'completed')->count();
+            $overdueTasks = $tasks->where('status', '!=', 'completed')
                 ->where('due_date', '<', now())
                 ->count();
+
+            // Team members based on assigned users across tasks (fallback if pivot table unused)
+            $assignedUserIds = $tasks->pluck('assigned_to')->filter()->unique();
+            $usersInvolved = \App\Models\User::whereIn('id', $assignedUserIds)->pluck('name')->toArray();
+            $teamSize = count($assignedUserIds);
+
+            // Due date fallback: earliest task due date if project due date missing
+            $derivedDueDate = $project->due_date ?: $tasks->filter(fn($t) => !empty($t->due_date))->min('due_date');
 
             // Count sub-folders (only direct children, not nested)
             $subFoldersCount = $project->folders()->whereNull('parent_id')->count();
@@ -63,14 +78,14 @@ class ReportService
                 'status' => $project->status,
                 'owner' => $project->owner->name ?? 'N/A',
                 'start_date' => $project->start_date,
-                'due_date' => $project->due_date,
+                'due_date' => $derivedDueDate,
                 'total_tasks' => $totalTasks,
                 'completed_tasks' => $completedTasks,
                 'overdue_tasks' => $overdueTasks,
                 'completion_percentage' => $totalTasks > 0 ? round(($completedTasks / $totalTasks) * 100, 2) : 0,
-                'team_size' => $project->users->count(),
+                'team_size' => $teamSize,
                 'sub_folders_count' => $subFoldersCount,
-                'users_involved' => $project->users->pluck('name')->toArray(),
+                'users_involved' => $usersInvolved,
                 'created_at' => $project->created_at,
             ];
         });
@@ -121,7 +136,12 @@ class ReportService
 
         // Transform the data with detailed information
         $transformedProjects = $projects->getCollection()->map(function ($project) {
-            $tasks = $project->tasks;
+            // Use same robust task set as overview to keep numbers consistent
+            $allFolderIds = \App\Models\ProjectFolder::where('project_id', $project->id)->pluck('id');
+            $tasks = \App\Models\Task::query()
+                ->where('project_id', $project->id)
+                ->orWhereIn('folder_id', $allFolderIds)
+                ->get();
             $totalTasks = $tasks->count();
             $completedTasks = $tasks->where('status', 'completed');
             $completedTasksCount = $completedTasks->count();
@@ -145,7 +165,7 @@ class ReportService
             $mediumPriorityTasks = $tasks->where('priority', 'medium')->count();
             $lowPriorityTasks = $tasks->where('priority', 'low')->count();
 
-            // Team performance - Get users from tasks instead of project->users
+            // Team performance - users derived from assignments
             $assignedUserIds = $tasks->pluck('assigned_to')->filter()->unique();
             $teamMembers = User::whereIn('id', $assignedUserIds)->get();
 
@@ -249,8 +269,8 @@ class ReportService
                 'on_time_completion_rate' => $completedTasksCount > 0 ? round(($onTimeTasks / $completedTasksCount) * 100, 2) : 0,
 
                 // Team information
-                'team_size' => $project->users->count(),
-                'users_involved' => $project->users->pluck('name')->toArray(),
+                'team_size' => $assignedUserIds->count(),
+                'users_involved' => $teamMembers->pluck('name')->toArray(),
                 'team_performance' => $teamPerformance,
 
                 // Timeline data

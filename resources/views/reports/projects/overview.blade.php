@@ -43,9 +43,10 @@
                     </div>
                     <div class="col-md-2">
                         <label class="form-label">&nbsp;</label>
-                        <button type="button" class="btn btn-outline-info" onclick="testSearch()">
+                        {{-- Debug button hidden per request --}}
+                        {{-- <button type="button" class="btn btn-outline-info" onclick="testSearch()">
                             <i class="bx bx-bug me-1"></i>Debug
-                        </button>
+                        </button> --}}
                     </div>
                 </div>
 
