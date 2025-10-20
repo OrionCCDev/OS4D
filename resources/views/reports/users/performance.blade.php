@@ -12,6 +12,9 @@
             <button class="btn btn-outline-primary" onclick="refreshReport()">
                 <i class="bx bx-refresh me-1"></i>Refresh
             </button>
+            <button class="btn btn-warning" onclick="generateBulkEvaluation()">
+                <i class="bx bx-file-plus me-1"></i>Evaluate All Users
+            </button>
             <div class="d-flex gap-2">
                 <button class="btn btn-primary" onclick="exportReport('pdf', 'users')">
                     <i class="bx bx-file-pdf me-1"></i>Export PDF
@@ -170,6 +173,67 @@
 </div>
 <!-- / Content -->
 
+<!-- Bulk Evaluation Modal -->
+<div class="modal fade" id="bulkEvaluationModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Generate Bulk Evaluation for All Users</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="bulkEvaluationForm">
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="bx bx-info-circle me-2"></i>
+                        This will generate evaluations for all users and automatically download a comprehensive PDF report.
+                    </div>
+                    <div class="mb-3">
+                        <label for="bulk_evaluation_type" class="form-label">Evaluation Type</label>
+                        <select class="form-select" id="bulk_evaluation_type" name="evaluation_type" required>
+                            <option value="monthly">Monthly</option>
+                            <option value="quarterly">Quarterly</option>
+                            <option value="annual">Annual</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="bulk_evaluation_year" class="form-label">Year</label>
+                        <select class="form-select" id="bulk_evaluation_year" name="year" required>
+                            @for($year = date('Y'); $year >= 2020; $year--)
+                                <option value="{{ $year }}" {{ $year == date('Y') ? 'selected' : '' }}>{{ $year }}</option>
+                            @endfor
+                        </select>
+                    </div>
+                    <div class="mb-3" id="bulk_month_quarter_field">
+                        <label for="bulk_evaluation_month" class="form-label">Month</label>
+                        <select class="form-select" id="bulk_evaluation_month" name="month">
+                            @for($month = 1; $month <= 12; $month++)
+                                <option value="{{ $month }}" {{ $month == date('n') ? 'selected' : '' }}>
+                                    {{ date('F', mktime(0, 0, 0, $month, 1)) }}
+                                </option>
+                            @endfor
+                        </select>
+                    </div>
+                    <div class="mb-3" id="bulk_quarter_field" style="display: none;">
+                        <label for="bulk_evaluation_quarter" class="form-label">Quarter</label>
+                        <select class="form-select" id="bulk_evaluation_quarter" name="quarter">
+                            <option value="1">Q1 (Jan-Mar)</option>
+                            <option value="2">Q2 (Apr-Jun)</option>
+                            <option value="3">Q3 (Jul-Sep)</option>
+                            <option value="4">Q4 (Oct-Dec)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning">
+                        <i class="bx bx-file-plus me-1"></i>Generate & Download PDF
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <!-- Evaluation Modal -->
 <div class="modal fade" id="evaluationModal" tabindex="-1">
     <div class="modal-dialog">
@@ -235,9 +299,16 @@ function refreshReport() {
 function clearFilters() {
     // Clear all form fields
     document.getElementById('filterForm').reset();
-    
+
     // Redirect to clean URL without any parameters
     window.location.href = '{{ route("reports.users") }}';
+}
+
+function generateBulkEvaluation() {
+    document.getElementById('bulkEvaluationForm').reset();
+    document.getElementById('bulk_evaluation_year').value = new Date().getFullYear();
+    document.getElementById('bulk_evaluation_month').value = new Date().getMonth() + 1;
+    new bootstrap.Modal(document.getElementById('bulkEvaluationModal')).show();
 }
 
 // Auto-submit form when filters change
@@ -246,21 +317,21 @@ document.addEventListener('DOMContentLoaded', function() {
     const userSelect = document.getElementById('user_id');
     const dateFromInput = document.getElementById('date_from');
     const dateToInput = document.getElementById('date_to');
-    
+
     // Auto-submit on user selection change
     if (userSelect) {
         userSelect.addEventListener('change', function() {
             filterForm.submit();
         });
     }
-    
+
     // Auto-submit on date changes
     if (dateFromInput) {
         dateFromInput.addEventListener('change', function() {
             filterForm.submit();
         });
     }
-    
+
     if (dateToInput) {
         dateToInput.addEventListener('change', function() {
             filterForm.submit();
@@ -328,10 +399,10 @@ document.getElementById('evaluationForm').addEventListener('submit', function(e)
         // Restore button state
         submitButton.innerHTML = originalText;
         submitButton.disabled = false;
-        
+
         if (data.success) {
             bootstrap.Modal.getInstance(document.getElementById('evaluationModal')).hide();
-            
+
             // Show success message
             const successAlert = document.createElement('div');
             successAlert.className = 'alert alert-success alert-dismissible fade show position-fixed';
@@ -342,7 +413,7 @@ document.getElementById('evaluationForm').addEventListener('submit', function(e)
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             `;
             document.body.appendChild(successAlert);
-            
+
             // Auto-hide after 3 seconds and reload
             setTimeout(() => {
                 if (successAlert.parentNode) {
@@ -358,9 +429,117 @@ document.getElementById('evaluationForm').addEventListener('submit', function(e)
         // Restore button state
         submitButton.innerHTML = originalText;
         submitButton.disabled = false;
-        
+
         console.error('Error:', error);
         alert('Error generating evaluation');
+    });
+});
+
+// Bulk evaluation type change handler
+document.getElementById('bulk_evaluation_type').addEventListener('change', function() {
+    const monthField = document.getElementById('bulk_month_quarter_field');
+    const quarterField = document.getElementById('bulk_quarter_field');
+
+    if (this.value === 'quarterly') {
+        monthField.style.display = 'none';
+        quarterField.style.display = 'block';
+    } else if (this.value === 'annual') {
+        monthField.style.display = 'none';
+        quarterField.style.display = 'none';
+    } else {
+        monthField.style.display = 'block';
+        quarterField.style.display = 'none';
+    }
+});
+
+// Bulk evaluation form submission
+document.getElementById('bulkEvaluationForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const formData = new FormData(this);
+
+    // Show loading state
+    const submitButton = this.querySelector('button[type="submit"]');
+    const originalText = submitButton.innerHTML;
+    submitButton.innerHTML = '<i class="bx bx-loader-alt bx-spin me-2"></i>Generating PDF...';
+    submitButton.disabled = true;
+
+    const url = '{{ route("reports.evaluations.bulk.pdf") }}';
+
+    fetch(url, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            return response.json().then(err => { throw err; });
+        }
+        return response.blob();
+    })
+    .then(blob => {
+        // Create a download link and trigger download
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+
+        // Get filename from form data
+        const evaluationType = formData.get('evaluation_type');
+        const year = formData.get('year');
+        const month = formData.get('month') || '';
+        const quarter = formData.get('quarter') || '';
+        let periodLabel = year;
+
+        if (evaluationType === 'monthly') {
+            const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                              'July', 'August', 'September', 'October', 'November', 'December'];
+            periodLabel = monthNames[month - 1] + '_' + year;
+        } else if (evaluationType === 'quarterly') {
+            periodLabel = 'Q' + quarter + '_' + year;
+        }
+
+        a.download = 'All_Users_Evaluation_' + evaluationType + '_' + periodLabel + '_' + new Date().toISOString().split('T')[0] + '.pdf';
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+
+        // Restore button state
+        submitButton.innerHTML = originalText;
+        submitButton.disabled = false;
+
+        // Close modal
+        bootstrap.Modal.getInstance(document.getElementById('bulkEvaluationModal')).hide();
+
+        // Show success message
+        const successAlert = document.createElement('div');
+        successAlert.className = 'alert alert-success alert-dismissible fade show position-fixed';
+        successAlert.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+        successAlert.innerHTML = `
+            <i class="bx bx-check-circle me-2"></i>
+            <strong>Success!</strong> Bulk evaluation generated and downloaded successfully!
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        document.body.appendChild(successAlert);
+
+        // Auto-hide after 5 seconds and reload
+        setTimeout(() => {
+            if (successAlert.parentNode) {
+                successAlert.remove();
+            }
+            location.reload();
+        }, 5000);
+    })
+    .catch(error => {
+        // Restore button state
+        submitButton.innerHTML = originalText;
+        submitButton.disabled = false;
+
+        console.error('Error:', error);
+        alert('Error generating bulk evaluation: ' + (error.message || 'Unknown error'));
     });
 });
 </script>

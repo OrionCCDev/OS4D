@@ -803,4 +803,119 @@ class ReportController extends Controller
         if ($totalTasks >= 5) return 0.9;       // New
         return 0.8;                             // Very new
     }
+
+    /**
+     * Generate bulk evaluations for all users and download PDF
+     */
+    public function generateBulkEvaluationPdf(Request $request)
+    {
+        try {
+            $request->validate([
+                'evaluation_type' => 'required|in:monthly,quarterly,annual',
+                'year' => 'required|integer|min:2020|max:2030',
+                'month' => 'required_if:evaluation_type,monthly|integer|min:1|max:12',
+                'quarter' => 'required_if:evaluation_type,quarterly|integer|min:1|max:4',
+            ]);
+
+            // Determine the date range based on evaluation type
+            switch ($request->evaluation_type) {
+                case 'monthly':
+                    $startDate = Carbon::create($request->year, $request->month, 1)->startOfMonth();
+                    $endDate = Carbon::create($request->year, $request->month, 1)->endOfMonth();
+                    $periodLabel = $startDate->format('F Y');
+                    break;
+
+                case 'quarterly':
+                    $quarterMonths = [
+                        1 => [1, 3],   // Q1: Jan-Mar
+                        2 => [4, 6],   // Q2: Apr-Jun
+                        3 => [7, 9],   // Q3: Jul-Sep
+                        4 => [10, 12]  // Q4: Oct-Dec
+                    ];
+                    $startMonth = $quarterMonths[$request->quarter][0];
+                    $endMonth = $quarterMonths[$request->quarter][1];
+                    $startDate = Carbon::create($request->year, $startMonth, 1)->startOfMonth();
+                    $endDate = Carbon::create($request->year, $endMonth, 1)->endOfMonth();
+                    $periodLabel = 'Q' . $request->quarter . ' ' . $request->year;
+                    break;
+
+                case 'annual':
+                    $startDate = Carbon::create($request->year, 1, 1)->startOfYear();
+                    $endDate = Carbon::create($request->year, 12, 31)->endOfYear();
+                    $periodLabel = $request->year;
+                    break;
+            }
+
+            // Get all non-admin users
+            $users = User::where('role', '!=', 'admin')->get();
+
+            $evaluations = [];
+            $totalEvaluations = 0;
+
+            // Generate or update evaluation for each user
+            foreach ($users as $user) {
+                $metrics = $this->calculateUserMetrics($user, $startDate, $endDate);
+
+                // Create or update evaluation
+                $evaluation = EmployeeEvaluation::updateOrCreate(
+                    [
+                        'user_id' => $user->id,
+                        'evaluation_type' => $request->evaluation_type,
+                        'evaluation_period_start' => $startDate,
+                    ],
+                    [
+                        'evaluation_period_end' => $endDate,
+                        'evaluated_by' => auth()->id(),
+                        'performance_score' => $metrics['performance_score'],
+                        'tasks_completed' => $metrics['completed_tasks'],
+                        'on_time_completion_rate' => $metrics['on_time_rate'],
+                        'overdue_tasks' => $metrics['overdue_tasks'],
+                        'status' => 'completed'
+                    ]
+                );
+
+                $evaluations[] = [
+                    'user' => $user,
+                    'evaluation' => $evaluation,
+                    'metrics' => $metrics,
+                ];
+
+                $totalEvaluations++;
+            }
+
+            // Sort evaluations by performance score (highest first)
+            usort($evaluations, function($a, $b) {
+                return $b['metrics']['performance_score'] <=> $a['metrics']['performance_score'];
+            });
+
+            // Add ranking to each evaluation
+            foreach ($evaluations as $index => &$evalData) {
+                $evalData['rank'] = $index + 1;
+            }
+
+            // Generate PDF
+            $pdf = Pdf::loadView('reports.pdf.bulk-evaluations', [
+                'evaluations' => $evaluations,
+                'periodLabel' => $periodLabel,
+                'evaluationType' => $request->evaluation_type,
+                'startDate' => $startDate,
+                'endDate' => $endDate,
+                'totalEvaluations' => $totalEvaluations,
+                'evaluatedBy' => auth()->user(),
+                'generatedAt' => now(),
+            ]);
+
+            $pdf->setPaper('a4', 'portrait');
+            $filename = 'All_Users_Evaluation_' . $request->evaluation_type . '_' . $periodLabel . '_' . now()->format('Y-m-d') . '.pdf';
+
+            return $pdf->download($filename);
+
+        } catch (\Exception $e) {
+            \Log::error('Error generating bulk evaluation PDF: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error generating evaluation: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }

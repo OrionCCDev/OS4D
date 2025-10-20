@@ -91,6 +91,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/evaluations/quarterly', [App\Http\Controllers\ReportController::class, 'generateQuarterlyEvaluation'])->name('evaluations.quarterly');
         Route::post('/evaluations/annual', [App\Http\Controllers\ReportController::class, 'generateAnnualEvaluation'])->name('evaluations.annual');
         Route::post('/evaluations/rankings', [App\Http\Controllers\ReportController::class, 'calculateRankings'])->name('evaluations.rankings');
+        Route::post('/evaluations/bulk-pdf', [App\Http\Controllers\ReportController::class, 'generateBulkEvaluationPdf'])->name('evaluations.bulk.pdf');
 
         // Export routes
         Route::get('/export/pdf/{type}', [App\Http\Controllers\ReportController::class, 'exportPdf'])->name('export.pdf');
