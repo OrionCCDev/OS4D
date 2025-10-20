@@ -238,11 +238,12 @@ class TaskController extends Controller
         // Handle task reassignment
         if ($isReassignment) {
             $newAssignee = $task->assignee;
+            $currentUser = Auth::user();
             
             // Create reassignment history
             TaskHistory::create([
                 'task_id' => $task->id,
-                'user_id' => Auth::id(),
+                'user_id' => $currentUser->id,
                 'action' => 'reassigned',
                 'old_value' => $oldAssignee ? $oldAssignee->name : 'Unassigned',
                 'new_value' => $newAssignee ? $newAssignee->name : 'Unassigned',
@@ -250,12 +251,13 @@ class TaskController extends Controller
             ]);
             
             // Send notification to OLD assignee (task removed from their list)
-            if ($oldAssignee) {
+            // Only send if the old assignee exists and is NOT the current user (manager doing the reassignment)
+            if ($oldAssignee && $oldAssignee->id !== $currentUser->id) {
                 \App\Models\UnifiedNotification::createTaskNotification(
                     $oldAssignee->id,
                     'task_reassigned_away',
                     'Task Reassigned',
-                    'Task "' . $task->title . '" has been reassigned from you to ' . ($newAssignee ? $newAssignee->name : 'another user') . ' by ' . Auth::user()->name,
+                    'Task "' . $task->title . '" has been reassigned from you to ' . ($newAssignee ? $newAssignee->name : 'another user') . ' by ' . $currentUser->name,
                     [
                         'task_id' => $task->id,
                         'project_id' => $task->project_id,
@@ -267,12 +269,13 @@ class TaskController extends Controller
             }
             
             // Send notification to NEW assignee (task assigned to them)
-            if ($newAssignee) {
+            // Only send if the new assignee exists and is NOT the current user (manager doing the reassignment)
+            if ($newAssignee && $newAssignee->id !== $currentUser->id) {
                 \App\Models\UnifiedNotification::createTaskNotification(
                     $newAssignee->id,
                     'task_assigned',
                     'New Task Assigned to You',
-                    'You have been assigned a task: "' . $task->title . '"' . ($oldAssignee ? ' (reassigned from ' . $oldAssignee->name . ')' : '') . ' by ' . Auth::user()->name,
+                    'You have been assigned a task: "' . $task->title . '"' . ($oldAssignee ? ' (reassigned from ' . $oldAssignee->name . ')' : '') . ' by ' . $currentUser->name,
                     [
                         'task_id' => $task->id,
                         'project_id' => $task->project_id,
