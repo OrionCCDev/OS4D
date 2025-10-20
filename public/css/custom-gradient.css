@@ -145,14 +145,14 @@
 .navbar-gradient .navbar-nav .nav-link,
 .navbar-gradient .nav-link,
 .navbar-gradient .nav-item,
-.navbar-gradient i
-{
+.navbar-gradient i,
+.navbar-gradient .bx {
   color: white !important;
 }
 
-.navbar-gradient .bx {
-  color: #1c3644 !important;
-}
+.navbar-gradient .bx i.bx.bx-trophy{
+    color: #1c3644 !important;
+  }
 
 /* Search input in navbar */
 .navbar-gradient .form-control {
