@@ -89,10 +89,10 @@ class ReportController extends Controller
     public function tasks(Request $request): View
     {
         $filters = $this->getFiltersFromRequest($request);
-        
+
         // Add search parameter to filters
         $filters['search'] = $request->get('search');
-        
+
         $taskReport = $this->reportService->getTaskCompletionReport($filters);
 
         // Get all projects and users for filter dropdowns
@@ -162,21 +162,21 @@ class ReportController extends Controller
         ]);
 
             $user = User::findOrFail($request->user_id);
-            
+
             // Calculate performance metrics for the month
             $startDate = Carbon::create($request->year, $request->month, 1)->startOfMonth();
             $endDate = Carbon::create($request->year, $request->month, 1)->endOfMonth();
-            
+
             // Check if evaluation already exists for this user and period
             $existingEvaluation = EmployeeEvaluation::where('user_id', $request->user_id)
                 ->where('evaluation_type', 'monthly')
                 ->where('evaluation_period_start', $startDate)
                 ->first();
-            
+
             if ($existingEvaluation) {
                 // Update existing evaluation instead of creating a new one
                 $metrics = $this->calculateUserMetrics($user, $startDate, $endDate);
-                
+
                 $existingEvaluation->update([
                     'evaluated_by' => auth()->id(),
                     'performance_score' => $metrics['performance_score'],
@@ -185,16 +185,16 @@ class ReportController extends Controller
                     'overdue_tasks' => $metrics['overdue_tasks'],
                     'status' => 'completed'
                 ]);
-                
+
                 return response()->json([
                     'success' => true,
                     'message' => 'Monthly evaluation for ' . $startDate->format('F Y') . ' updated successfully',
                     'evaluation_id' => $existingEvaluation->id
                 ]);
             }
-            
+
             $metrics = $this->calculateUserMetrics($user, $startDate, $endDate);
-            
+
             // Create evaluation record
             $evaluation = EmployeeEvaluation::create([
                 'user_id' => $request->user_id,
@@ -214,7 +214,7 @@ class ReportController extends Controller
                 'message' => 'Monthly evaluation generated successfully',
                 'evaluation_id' => $evaluation->id
             ]);
-            
+
         } catch (\Exception $e) {
             \Log::error('Error generating monthly evaluation: ' . $e->getMessage());
             return response()->json([
@@ -237,7 +237,7 @@ class ReportController extends Controller
         ]);
 
             $user = User::findOrFail($request->user_id);
-            
+
             // Calculate quarter dates
             $quarterMonths = [
                 1 => [1, 3],   // Q1: Jan-Mar
@@ -245,23 +245,23 @@ class ReportController extends Controller
                 3 => [7, 9],   // Q3: Jul-Sep
                 4 => [10, 12]  // Q4: Oct-Dec
             ];
-            
+
             $startMonth = $quarterMonths[$request->quarter][0];
             $endMonth = $quarterMonths[$request->quarter][1];
-            
+
             $startDate = Carbon::create($request->year, $startMonth, 1)->startOfMonth();
             $endDate = Carbon::create($request->year, $endMonth, 1)->endOfMonth();
-            
+
             // Check if evaluation already exists for this user and period
             $existingEvaluation = EmployeeEvaluation::where('user_id', $request->user_id)
                 ->where('evaluation_type', 'quarterly')
                 ->where('evaluation_period_start', $startDate)
                 ->first();
-            
+
             if ($existingEvaluation) {
                 // Update existing evaluation instead of creating a new one
                 $metrics = $this->calculateUserMetrics($user, $startDate, $endDate);
-                
+
                 $existingEvaluation->update([
                     'evaluated_by' => auth()->id(),
                     'performance_score' => $metrics['performance_score'],
@@ -270,16 +270,16 @@ class ReportController extends Controller
                     'overdue_tasks' => $metrics['overdue_tasks'],
                     'status' => 'completed'
                 ]);
-                
+
                 return response()->json([
                     'success' => true,
                     'message' => 'Quarterly evaluation for Q' . $request->quarter . ' ' . $request->year . ' updated successfully',
                     'evaluation_id' => $existingEvaluation->id
                 ]);
             }
-            
+
             $metrics = $this->calculateUserMetrics($user, $startDate, $endDate);
-            
+
             // Create evaluation record
             $evaluation = EmployeeEvaluation::create([
                 'user_id' => $request->user_id,
@@ -299,7 +299,7 @@ class ReportController extends Controller
                 'message' => 'Quarterly evaluation generated successfully',
                 'evaluation_id' => $evaluation->id
             ]);
-            
+
         } catch (\Exception $e) {
             \Log::error('Error generating quarterly evaluation: ' . $e->getMessage());
             return response()->json([
@@ -321,21 +321,21 @@ class ReportController extends Controller
         ]);
 
             $user = User::findOrFail($request->user_id);
-            
+
             // Calculate year dates
             $startDate = Carbon::create($request->year, 1, 1)->startOfYear();
             $endDate = Carbon::create($request->year, 12, 31)->endOfYear();
-            
+
             // Check if evaluation already exists for this user and period
             $existingEvaluation = EmployeeEvaluation::where('user_id', $request->user_id)
                 ->where('evaluation_type', 'annual')
                 ->where('evaluation_period_start', $startDate)
                 ->first();
-            
+
             if ($existingEvaluation) {
                 // Update existing evaluation instead of creating a new one
                 $metrics = $this->calculateUserMetrics($user, $startDate, $endDate);
-                
+
                 $existingEvaluation->update([
                     'evaluated_by' => auth()->id(),
                     'performance_score' => $metrics['performance_score'],
@@ -344,16 +344,16 @@ class ReportController extends Controller
                     'overdue_tasks' => $metrics['overdue_tasks'],
                     'status' => 'completed'
                 ]);
-                
+
                 return response()->json([
                     'success' => true,
                     'message' => 'Annual evaluation for ' . $request->year . ' updated successfully',
                     'evaluation_id' => $existingEvaluation->id
                 ]);
             }
-            
+
             $metrics = $this->calculateUserMetrics($user, $startDate, $endDate);
-            
+
             // Create evaluation record
             $evaluation = EmployeeEvaluation::create([
                 'user_id' => $request->user_id,
@@ -373,7 +373,7 @@ class ReportController extends Controller
                 'message' => 'Annual evaluation generated successfully',
                 'evaluation_id' => $evaluation->id
             ]);
-            
+
         } catch (\Exception $e) {
             \Log::error('Error generating annual evaluation: ' . $e->getMessage());
             return response()->json([
@@ -443,6 +443,22 @@ class ReportController extends Controller
                 return $pdf->download($filename);
 
             default:
+                // Check if it's a user performance report (format: user-{id})
+                if (preg_match('/^user-(\d+)$/', $reportType, $matches)) {
+                    $userId = $matches[1];
+                    $userReport = $this->reportService->getUserPerformanceReport($userId, $filters);
+
+                    $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('reports.pdf.user-performance', [
+                        'userReport' => $userReport,
+                        'filters' => $filters,
+                    ]);
+
+                    $pdf->setPaper('a4', 'portrait');
+                    $filename = 'user-performance-' . $userReport['user']['name'] . '-' . now()->format('Y-m-d') . '.pdf';
+
+                    return $pdf->download($filename);
+                }
+
                 return response()->json(['message' => 'Report type not supported'], 400);
         }
     }
@@ -469,6 +485,19 @@ class ReportController extends Controller
                 );
 
             default:
+                // Check if it's a user performance report (format: user-{id})
+                if (preg_match('/^user-(\d+)$/', $reportType, $matches)) {
+                    $userId = $matches[1];
+                    $userReport = $this->reportService->getUserPerformanceReport($userId, $filters);
+
+                    $filename = 'user-performance-' . $userReport['user']['name'] . '-' . now()->format('Y-m-d') . '.xlsx';
+
+                    return \Maatwebsite\Excel\Facades\Excel::download(
+                        new \App\Exports\UserPerformanceExport($userReport),
+                        $filename
+                    );
+                }
+
                 return response()->json(['message' => 'Report type not supported'], 400);
         }
     }
@@ -543,21 +572,21 @@ class ReportController extends Controller
     {
         try {
             \Log::info('Starting full project report export for project: ' . $project->id);
-            
+
             // Get comprehensive project data
             $projectData = $this->getComprehensiveProjectData($project);
             \Log::info('Project data retrieved successfully', ['project_id' => $project->id]);
-            
+
             // Generate PDF
             $pdf = Pdf::loadView('reports.pdf.full-project-report', $projectData);
             $pdf->setPaper('A4', 'portrait');
             \Log::info('PDF generated successfully');
-            
+
             $filename = 'Full_Project_Report_' . $project->short_code . '_' . now()->format('Y-m-d_H-i-s') . '.pdf';
-            
+
             \Log::info('Downloading PDF with filename: ' . $filename);
             return $pdf->download($filename);
-            
+
         } catch (\Exception $e) {
             \Log::error('Failed to export full project report: ' . $e->getMessage(), [
                 'project_id' => $project->id,
@@ -565,7 +594,7 @@ class ReportController extends Controller
                 'line' => $e->getLine(),
                 'trace' => $e->getTraceAsString()
             ]);
-            
+
             // Return a more detailed error response
             return response()->json([
                 'error' => true,
@@ -585,7 +614,7 @@ class ReportController extends Controller
     private function getComprehensiveProjectData(Project $project)
     {
         \Log::info('Loading project relationships for project: ' . $project->id);
-        
+
         // Load project with all relationships
         $project->load([
             'folders.children',
@@ -595,7 +624,7 @@ class ReportController extends Controller
             'tasks.histories.user',
             'owner'
         ]);
-        
+
         \Log::info('Project relationships loaded successfully');
 
         // Get all tasks with full details
@@ -607,7 +636,7 @@ class ReportController extends Controller
             'histories.user',
             'project'
         ])->get();
-        
+
         \Log::info('Tasks loaded successfully', ['task_count' => $allTasks->count()]);
 
         // Calculate project statistics
@@ -630,7 +659,7 @@ class ReportController extends Controller
         // Get team performance data
         $teamMembers = $allTasks->pluck('assignee')->filter()->unique('id');
         $teamPerformance = [];
-        
+
         foreach ($teamMembers as $member) {
             $memberTasks = $allTasks->where('assignee_id', $member->id);
             $teamPerformance[] = [
@@ -679,25 +708,25 @@ class ReportController extends Controller
         $tasks = $user->assignedTasks()
             ->whereBetween('created_at', [$startDate, $endDate])
             ->get();
-        
+
         $totalTasks = $tasks->count();
         $completedTasks = $tasks->where('status', 'completed')->count();
         $overdueTasks = $tasks->where('due_date', '<', now())
             ->whereNotIn('status', ['completed', 'cancelled'])
             ->count();
-        
+
         $onTimeTasks = $tasks->where('status', 'completed')
             ->filter(function($task) {
-                return $task->completed_at && $task->due_date && 
+                return $task->completed_at && $task->due_date &&
                        $task->completed_at <= $task->due_date;
             })->count();
-        
+
         $completionRate = $totalTasks > 0 ? round(($completedTasks / $totalTasks) * 100, 1) : 0;
         $onTimeRate = $completedTasks > 0 ? round(($onTimeTasks / $completedTasks) * 100, 1) : 0;
-        
+
         // Calculate performance score (similar to dashboard logic)
         $performanceScore = $this->calculateAdvancedPerformanceScore($user, $startDate, $endDate);
-        
+
         return [
             'total_tasks' => $totalTasks,
             'completed_tasks' => $completedTasks,
@@ -714,17 +743,17 @@ class ReportController extends Controller
     private function calculateAdvancedPerformanceScore($user, $startDate = null, $endDate = null)
     {
         $query = $user->assignedTasks();
-        
+
         if ($startDate && $endDate) {
             $query->whereBetween('created_at', [$startDate, $endDate]);
         }
-        
+
         $tasks = $query->get();
-        
+
         if ($tasks->isEmpty()) {
             return 0;
         }
-        
+
         $completedTasks = $tasks->where('status', 'completed')->count();
         $inProgressTasks = $tasks->whereIn('status', ['in_progress', 'workingon', 'assigned'])->count();
         $rejectedTasks = $tasks->where('status', 'rejected')->count();
@@ -733,33 +762,33 @@ class ReportController extends Controller
             ->count();
         $onTimeCompleted = $tasks->where('status', 'completed')
             ->filter(function($task) {
-                return $task->completed_at && $task->due_date && 
+                return $task->completed_at && $task->due_date &&
                        $task->completed_at <= $task->due_date;
             })->count();
-        
+
         $totalTasks = $tasks->count();
         $completionRate = $totalTasks > 0 ? ($completedTasks / $totalTasks) * 100 : 0;
-        
+
         // Base score from completed tasks
         $baseScore = $completedTasks * 10;
-        
+
         // Bonus for in-progress tasks
         $progressBonus = $inProgressTasks * 5;
-        
+
         // Penalties
         $rejectionPenalty = $rejectedTasks * 15;
         $overduePenalty = $overdueTasks * 10;
-        
+
         // On-time bonus
         $onTimeBonus = $onTimeCompleted * 5;
-        
+
         // Experience multiplier
         $experienceMultiplier = $this->calculateExperienceMultiplier($totalTasks);
-        
+
         // Calculate final score
         $rawScore = ($baseScore + $progressBonus + $onTimeBonus - $rejectionPenalty - $overduePenalty) * $experienceMultiplier;
         $finalScore = max(0, min(100, $rawScore));
-        
+
         return round($finalScore, 1);
     }
 

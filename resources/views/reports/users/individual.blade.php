@@ -474,12 +474,10 @@ document.getElementById('evaluationForm').addEventListener('submit', function(e)
             `;
             document.body.appendChild(successAlert);
 
-            // Auto-hide after 3 seconds
+            // Redirect to evaluations page after 2 seconds
             setTimeout(() => {
-                if (successAlert.parentNode) {
-                    successAlert.remove();
-                }
-            }, 5000);
+                window.location.href = '{{ route("reports.evaluations") }}';
+            }, 2000);
         } else {
             alert('Error generating evaluation: ' + (data.message || 'Unknown error'));
         }
