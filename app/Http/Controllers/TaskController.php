@@ -249,6 +249,16 @@ class TaskController extends Controller
             // Send notification to OLD assignee (task removed from their list)
             // Only send if the old assignee exists and is NOT the current user (manager doing the reassignment)
             if ($oldAssignee && $oldAssignee->id !== $currentUser->id) {
+                // Debug: Log the notification details
+                Log::info('Sending task_reassigned_away notification', [
+                    'old_assignee_id' => $oldAssignee->id,
+                    'old_assignee_name' => $oldAssignee->name,
+                    'new_assignee_id' => $newAssignee ? $newAssignee->id : null,
+                    'new_assignee_name' => $newAssignee ? $newAssignee->name : null,
+                    'task_id' => $task->id,
+                    'task_title' => $task->title
+                ]);
+
                 \App\Models\UnifiedNotification::createTaskNotification(
                     $oldAssignee->id,
                     'task_reassigned_away',
@@ -267,6 +277,16 @@ class TaskController extends Controller
             // Send notification to NEW assignee (task assigned to them)
             // Only send if the new assignee exists and is NOT the current user (manager doing the reassignment)
             if ($newAssignee && $newAssignee->id !== $currentUser->id) {
+                // Debug: Log the notification details
+                Log::info('Sending task_assigned notification', [
+                    'new_assignee_id' => $newAssignee->id,
+                    'new_assignee_name' => $newAssignee->name,
+                    'old_assignee_id' => $oldAssignee ? $oldAssignee->id : null,
+                    'old_assignee_name' => $oldAssignee ? $oldAssignee->name : null,
+                    'task_id' => $task->id,
+                    'task_title' => $task->title
+                ]);
+
                 \App\Models\UnifiedNotification::createTaskNotification(
                     $newAssignee->id,
                     'task_assigned',

@@ -355,10 +355,10 @@ Route::middleware('auth')->group(function () {
 
     // Task attachment download - Available to assigned users and managers
     Route::get('tasks/attachments/{attachment}/download', [TaskController::class, 'downloadAttachment'])->name('tasks.attachments.download');
-    
+
     // Task history - Available to assigned users and managers
     Route::get('tasks/{task}/history', [TaskController::class, 'getTaskHistory'])->name('tasks.history');
-    
+
     // Task reassignment routes
     Route::post('tasks/{task}/reassign', [App\Http\Controllers\TaskReassignmentController::class, 'reassignTask'])->name('tasks.reassign');
 
@@ -369,6 +369,10 @@ Route::middleware('auth')->group(function () {
         Route::post('users/{user}/status', [App\Http\Controllers\TaskReassignmentController::class, 'updateUserStatus'])->name('users.update-status');
         Route::get('users/{user}/active-tasks', [App\Http\Controllers\TaskReassignmentController::class, 'getUserActiveTasks'])->name('users.active-tasks');
     });
+
+    // Debug routes (temporary)
+    Route::get('debug/notifications', [App\Http\Controllers\DebugController::class, 'showReassignmentDebug'])->name('debug.notifications');
+    Route::get('debug/test-reassignment', [App\Http\Controllers\DebugController::class, 'testReassignment'])->name('debug.test-reassignment');
 
     // Notification routes - Available to all authenticated users
     Route::get('notifications', [TaskController::class, 'notifications'])->name('notifications.index');
