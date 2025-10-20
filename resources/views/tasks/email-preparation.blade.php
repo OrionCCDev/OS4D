@@ -762,7 +762,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 '• Provide your feedback or approval\n' +
                 '• Request any modifications if needed\n\n' +
                 'Thank you for choosing ' + companyName + '. We look forward to your feedback!\n\n' +
-                '<!-- Professional Signature will be added here by EmailSignatureService -->',
+                'Best regards,\n' +
+                '{{ $task->assignedUser->name ?? "Task Manager" }}\n' +
+                '{{ $task->assignedUser->position ?? "Project Manager" }}\n' +
+                'Orion Contracting\n' +
+                'Mobile: {{ $task->assignedUser->mobile ?? "N/A" }}\n' +
+                'Email: {{ $task->assignedUser->email ?? "engineering@orion-contracting.com" }}\n' +
+                'Website: www.orioncc.com',
             body: '<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f4f6f9; padding: 20px;">' +
                 '<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 20px; text-align: center; border-radius: 12px 12px 0 0;">' +
                     '<img src="' + logoUrl + '" alt="' + companyName + '" style="max-width: 200px; height: auto; margin-bottom: 20px;">' +
@@ -787,8 +793,23 @@ document.addEventListener('DOMContentLoaded', function() {
                         '<li>Request any modifications if needed</li>' +
                     '</ul>' +
                     '<p>Thank you for choosing ' + companyName + '. We look forward to your feedback!</p>' +
-                    '<div style="margin-top: 30px;">' +
-                        '<!-- Professional Signature will be added here by EmailSignatureService -->' +
+                    '<div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #e2e8f0;">' +
+                        '<table style="width: 100%; border-collapse: collapse;">' +
+                            '<tr>' +
+                                '<td style="width: 80px; vertical-align: top; padding-right: 15px;">' +
+                                    '<img src="{{ asset("storage/" . ($task->assignedUser->image ?? "default.png")) }}" alt="{{ $task->assignedUser->name ?? "User" }}" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid #667eea;">' +
+                                '</td>' +
+                                '<td style="vertical-align: top;">' +
+                                    '<p style="margin: 0; font-size: 11px; color: #718096;">Best regards,</p>' +
+                                    '<p style="margin: 5px 0 0 0; font-size: 18px; font-weight: bold; color: #2d3748;">{{ $task->assignedUser->name ?? "Task Manager" }}</p>' +
+                                    '<p style="margin: 3px 0; font-size: 14px; color: #667eea; font-weight: 600;">{{ $task->assignedUser->position ?? "Project Manager" }}</p>' +
+                                    '<p style="margin: 8px 0 3px 0; font-size: 14px; font-weight: bold; color: #764ba2;">Orion Contracting</p>' +
+                                    '<p style="margin: 3px 0; font-size: 13px; color: #718096;">📱 Mobile: {{ $task->assignedUser->mobile ?? "N/A" }}</p>' +
+                                    '<p style="margin: 3px 0; font-size: 13px; color: #718096;">📧 Email: <a href="mailto:{{ $task->assignedUser->email ?? "engineering@orion-contracting.com" }}" style="color: #667eea; text-decoration: none;">{{ $task->assignedUser->email ?? "engineering@orion-contracting.com" }}</a></p>' +
+                                    '<p style="margin: 3px 0; font-size: 13px; color: #718096;">🌐 Website: <a href="http://www.orioncc.com" style="color: #667eea; text-decoration: none;">www.orioncc.com</a></p>' +
+                                '</td>' +
+                            '</tr>' +
+                        '</table>' +
                     '</div>' +
                 '</div>' +
             '</div>'
@@ -810,7 +831,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 '• [Expected completion timeline]\n\n' +
                 'If you have any questions or concerns, please don\'t hesitate to reach out to us.\n\n' +
                 'Best regards,\n' +
-                '<!-- Professional Signature will be added here by EmailSignatureService -->',
+                '{{ $task->assignedUser->name ?? "Task Manager" }}\n' +
+                '{{ $task->assignedUser->position ?? "Project Manager" }}\n' +
+                'Orion Contracting\n' +
+                'Mobile: {{ $task->assignedUser->mobile ?? "N/A" }}\n' +
+                'Email: {{ $task->assignedUser->email ?? "engineering@orion-contracting.com" }}\n' +
+                'Website: www.orioncc.com',
             body: '<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f4f6f9; padding: 20px;">' +
                 '<div style="background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%); padding: 40px 20px; text-align: center; border-radius: 12px 12px 0 0;">' +
                     '<img src="' + logoUrl + '" alt="' + companyName + '" style="max-width: 200px; height: auto; margin-bottom: 20px;">' +
@@ -835,7 +861,24 @@ document.addEventListener('DOMContentLoaded', function() {
                         '<li>[Expected completion timeline]</li>' +
                     '</ul>' +
                     '<p>If you have any questions or concerns, please don\'t hesitate to reach out to us.</p>' +
-                    '<p style="margin-top: 30px;"><strong>Best regards,</strong><br><!-- Professional Signature will be added here by EmailSignatureService --></p>' +
+                    '<div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #e2e8f0;">' +
+                        '<table style="width: 100%; border-collapse: collapse;">' +
+                            '<tr>' +
+                                '<td style="width: 80px; vertical-align: top; padding-right: 15px;">' +
+                                    '<img src="{{ asset("storage/" . ($task->assignedUser->image ?? "default.png")) }}" alt="{{ $task->assignedUser->name ?? "User" }}" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid #667eea;">' +
+                                '</td>' +
+                                '<td style="vertical-align: top;">' +
+                                    '<p style="margin: 0; font-size: 11px; color: #718096;">Best regards,</p>' +
+                                    '<p style="margin: 5px 0 0 0; font-size: 18px; font-weight: bold; color: #2d3748;">{{ $task->assignedUser->name ?? "Task Manager" }}</p>' +
+                                    '<p style="margin: 3px 0; font-size: 14px; color: #667eea; font-weight: 600;">{{ $task->assignedUser->position ?? "Project Manager" }}</p>' +
+                                    '<p style="margin: 8px 0 3px 0; font-size: 14px; font-weight: bold; color: #764ba2;">Orion Contracting</p>' +
+                                    '<p style="margin: 3px 0; font-size: 13px; color: #718096;">📱 Mobile: {{ $task->assignedUser->mobile ?? "N/A" }}</p>' +
+                                    '<p style="margin: 3px 0; font-size: 13px; color: #718096;">📧 Email: <a href="mailto:{{ $task->assignedUser->email ?? "engineering@orion-contracting.com" }}" style="color: #667eea; text-decoration: none;">{{ $task->assignedUser->email ?? "engineering@orion-contracting.com" }}</a></p>' +
+                                    '<p style="margin: 3px 0; font-size: 13px; color: #718096;">🌐 Website: <a href="http://www.orioncc.com" style="color: #667eea; text-decoration: none;">www.orioncc.com</a></p>' +
+                                '</td>' +
+                            '</tr>' +
+                        '</table>' +
+                    '</div>' +
                 '</div>' +
             '</div>'
         },
@@ -854,7 +897,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 '• Notify us of any required changes\n\n' +
                 'Please review and respond at your earliest convenience.\n\n' +
                 'Thank you,\n' +
-                '<!-- Professional Signature will be added here by EmailSignatureService -->',
+                '{{ $task->assignedUser->name ?? "Task Manager" }}\n' +
+                '{{ $task->assignedUser->position ?? "Project Manager" }}\n' +
+                'Orion Contracting\n' +
+                'Mobile: {{ $task->assignedUser->mobile ?? "N/A" }}\n' +
+                'Email: {{ $task->assignedUser->email ?? "engineering@orion-contracting.com" }}\n' +
+                'Website: www.orioncc.com',
             body: '<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f4f6f9; padding: 20px;">' +
                 '<div style="background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%); padding: 40px 20px; text-align: center; border-radius: 12px 12px 0 0;">' +
                     '<img src="' + logoUrl + '" alt="' + companyName + '" style="max-width: 200px; height: auto; margin-bottom: 20px;">' +
@@ -877,7 +925,24 @@ document.addEventListener('DOMContentLoaded', function() {
                         '<li>Notify us of any required changes</li>' +
                     '</ul>' +
                     '<p><strong>Please review and respond at your earliest convenience.</strong></p>' +
-                    '<p style="margin-top: 30px;"><strong>Thank you,</strong><br><!-- Professional Signature will be added here by EmailSignatureService --></p>' +
+                    '<div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #e2e8f0;">' +
+                        '<table style="width: 100%; border-collapse: collapse;">' +
+                            '<tr>' +
+                                '<td style="width: 80px; vertical-align: top; padding-right: 15px;">' +
+                                    '<img src="{{ asset("storage/" . ($task->assignedUser->image ?? "default.png")) }}" alt="{{ $task->assignedUser->name ?? "User" }}" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid #667eea;">' +
+                                '</td>' +
+                                '<td style="vertical-align: top;">' +
+                                    '<p style="margin: 0; font-size: 11px; color: #718096;">Thank you,</p>' +
+                                    '<p style="margin: 5px 0 0 0; font-size: 18px; font-weight: bold; color: #2d3748;">{{ $task->assignedUser->name ?? "Task Manager" }}</p>' +
+                                    '<p style="margin: 3px 0; font-size: 14px; color: #667eea; font-weight: 600;">{{ $task->assignedUser->position ?? "Project Manager" }}</p>' +
+                                    '<p style="margin: 8px 0 3px 0; font-size: 14px; font-weight: bold; color: #764ba2;">Orion Contracting</p>' +
+                                    '<p style="margin: 3px 0; font-size: 13px; color: #718096;">📱 Mobile: {{ $task->assignedUser->mobile ?? "N/A" }}</p>' +
+                                    '<p style="margin: 3px 0; font-size: 13px; color: #718096;">📧 Email: <a href="mailto:{{ $task->assignedUser->email ?? "engineering@orion-contracting.com" }}" style="color: #667eea; text-decoration: none;">{{ $task->assignedUser->email ?? "engineering@orion-contracting.com" }}</a></p>' +
+                                    '<p style="margin: 3px 0; font-size: 13px; color: #718096;">🌐 Website: <a href="http://www.orioncc.com" style="color: #667eea; text-decoration: none;">www.orioncc.com</a></p>' +
+                                '</td>' +
+                            '</tr>' +
+                        '</table>' +
+                    '</div>' +
                 '</div>' +
             '</div>'
         },
@@ -897,7 +962,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 '📝 NEXT STEPS:\n' +
                 'Please review the attached designs and let us know your thoughts. We\'re happy to make any adjustments you need!\n\n' +
                 'Looking forward to your feedback,\n' +
-                '<!-- Professional Signature will be added here by EmailSignatureService -->',
+                '{{ $task->assignedUser->name ?? "Task Manager" }}\n' +
+                '{{ $task->assignedUser->position ?? "Project Manager" }}\n' +
+                'Orion Contracting\n' +
+                'Mobile: {{ $task->assignedUser->mobile ?? "N/A" }}\n' +
+                'Email: {{ $task->assignedUser->email ?? "engineering@orion-contracting.com" }}\n' +
+                'Website: www.orioncc.com',
             body: '<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f4f6f9; padding: 20px;">' +
                 '<div style="background: linear-gradient(135deg, #9f7aea 0%, #805ad5 100%); padding: 40px 20px; text-align: center; border-radius: 12px 12px 0 0;">' +
                     '<img src="' + logoUrl + '" alt="' + companyName + '" style="max-width: 200px; height: auto; margin-bottom: 20px;">' +
@@ -921,7 +991,24 @@ document.addEventListener('DOMContentLoaded', function() {
                     '</ul>' +
                     '<h3>📝 Next Steps:</h3>' +
                     '<p>Please review the attached designs and let us know your thoughts. We\'re happy to make any adjustments you need!</p>' +
-                    '<p style="margin-top: 30px;"><strong>Looking forward to your feedback,</strong><br><!-- Professional Signature will be added here by EmailSignatureService --></p>' +
+                    '<div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #e2e8f0;">' +
+                        '<table style="width: 100%; border-collapse: collapse;">' +
+                            '<tr>' +
+                                '<td style="width: 80px; vertical-align: top; padding-right: 15px;">' +
+                                    '<img src="{{ asset("storage/" . ($task->assignedUser->image ?? "default.png")) }}" alt="{{ $task->assignedUser->name ?? "User" }}" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid #667eea;">' +
+                                '</td>' +
+                                '<td style="vertical-align: top;">' +
+                                    '<p style="margin: 0; font-size: 11px; color: #718096;">Looking forward to your feedback,</p>' +
+                                    '<p style="margin: 5px 0 0 0; font-size: 18px; font-weight: bold; color: #2d3748;">{{ $task->assignedUser->name ?? "Task Manager" }}</p>' +
+                                    '<p style="margin: 3px 0; font-size: 14px; color: #667eea; font-weight: 600;">{{ $task->assignedUser->position ?? "Project Manager" }}</p>' +
+                                    '<p style="margin: 8px 0 3px 0; font-size: 14px; font-weight: bold; color: #764ba2;">Orion Contracting</p>' +
+                                    '<p style="margin: 3px 0; font-size: 13px; color: #718096;">📱 Mobile: {{ $task->assignedUser->mobile ?? "N/A" }}</p>' +
+                                    '<p style="margin: 3px 0; font-size: 13px; color: #718096;">📧 Email: <a href="mailto:{{ $task->assignedUser->email ?? "engineering@orion-contracting.com" }}" style="color: #667eea; text-decoration: none;">{{ $task->assignedUser->email ?? "engineering@orion-contracting.com" }}</a></p>' +
+                                    '<p style="margin: 3px 0; font-size: 13px; color: #718096;">🌐 Website: <a href="http://www.orioncc.com" style="color: #667eea; text-decoration: none;">www.orioncc.com</a></p>' +
+                                '</td>' +
+                            '</tr>' +
+                        '</table>' +
+                    '</div>' +
                 '</div>' +
             '</div>'
         }
