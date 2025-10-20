@@ -1403,6 +1403,11 @@ private function sendApprovalEmailViaGmail(Task $task, User $approver)
 
             Log::info('Sending general email for user: ' . $user->id . ' - Gmail OAuth: ' . ($useGmailOAuth ? 'Yes' : 'No'));
 
+            // Add signature to email body
+            $signatureService = app(\App\Services\EmailSignatureService::class);
+            $signature = $signatureService->getSignatureForEmail($user, 'html');
+            $bodyWithSignature = nl2br(e($validated['body'])) . '<br><br>' . $signature;
+
             // Prepare email data (same structure as confirmation emails)
             $emailData = [
                 'from' => $user->email,
@@ -1410,7 +1415,7 @@ private function sendApprovalEmailViaGmail(Task $task, User $approver)
                 'to' => $toEmails,
                 'subject' => $validated['subject'],
                 'body' => view('emails.user-general-email-gmail', [
-                    'bodyContent' => $validated['body'],
+                    'bodyContent' => $bodyWithSignature,
                     'senderName' => $user->name,
                     'senderEmail' => $user->email,
                     'toRecipients' => $toEmails,
@@ -1442,9 +1447,12 @@ private function sendApprovalEmailViaGmail(Task $task, User $approver)
                 // Use Laravel Mail with simple tracking (fallback)
                 Log::info('Using simple email tracking for general email - CC to engineering@orion-contracting.com');
 
+                // Add signature for SMTP emails as well
+                $bodyWithSignatureForSMTP = nl2br(e($validated['body'])) . '<br><br>' . $signature;
+
                 $email = new \App\Mail\UserGeneralEmail(
                     $validated['subject'],
-                    $validated['body'],
+                    $bodyWithSignatureForSMTP,
                     $user,
                     $toEmails
                 );
@@ -1902,6 +1910,11 @@ private function sendApprovalEmailViaGmail(Task $task, User $approver)
         try {
             Log::info('Sending general email notification to engineering@orion-contracting.com');
 
+            // Add signature to notification email body
+            $signatureService = app(\App\Services\EmailSignatureService::class);
+            $signature = $signatureService->getSignatureForEmail($user, 'html');
+            $bodyWithSignature = nl2br(e($emailData['body'])) . '<br><br>' . $signature;
+
             // Create a copy of the email for engineering notification
             $engineeringEmailData = [
                 'from' => 'engineering@orion-contracting.com',
@@ -1909,7 +1922,7 @@ private function sendApprovalEmailViaGmail(Task $task, User $approver)
                 'to' => ['engineering@orion-contracting.com'],
                 'subject' => '[NOTIFICATION] ' . $emailData['subject'],
                 'body' => view('emails.user-general-email-gmail', [
-                    'bodyContent' => $emailData['body'],
+                    'bodyContent' => $bodyWithSignature,
                     'senderName' => $user->name,
                     'senderEmail' => $user->email,
                     'toRecipients' => $toEmails,
@@ -1920,7 +1933,7 @@ private function sendApprovalEmailViaGmail(Task $task, User $approver)
             // Send via Laravel Mail (SMTP)
             $mail = new \App\Mail\UserGeneralEmail(
                 $emailData['subject'],
-                $emailData['body'],
+                $bodyWithSignature,
                 $user,
                 $toEmails
             );

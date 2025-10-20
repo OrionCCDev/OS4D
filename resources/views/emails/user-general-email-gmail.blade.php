@@ -58,7 +58,7 @@
             <h1>Orion Contracting</h1>
         </div>
         <div class="content">
-            {!! nl2br(e($bodyContent)) !!}
+            {!! $bodyContent !!}
         </div>
     </div>
 </body>

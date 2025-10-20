@@ -118,7 +118,7 @@
 
             <p><strong>Message:</strong></p>
             <div style="border: 1px solid #eeeeee; padding: 15px; border-radius: 5px; background-color: #f9f9f9;">
-                {!! nl2br(e($bodyContent)) !!}
+                {!! nl2br($bodyContent) !!}
             </div>
 
             <p style="margin-top: 20px; font-size: 0.9em; color: #555555;">

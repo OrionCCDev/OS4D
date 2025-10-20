@@ -124,7 +124,7 @@
 
             <!-- Email Content -->
             <div class="email-content">
-                {!! nl2br(e($body)) !!}
+                {!! nl2br($body) !!}
             </div>
 
             <!-- CC Note -->
