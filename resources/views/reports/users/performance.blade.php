@@ -15,15 +15,9 @@
             <button class="btn btn-warning" onclick="generateBulkEvaluation()">
                 <i class="bx bx-file-plus me-1"></i>Evaluate All Users
             </button>
-            <button class="btn btn-info" onclick="sendTestMonthlyReport()">
-                <i class="bx bx-envelope me-1"></i>Test Monthly Email
-            </button>
             <div class="d-flex gap-2">
                 <button class="btn btn-primary" onclick="exportReport('pdf', 'users')">
                     <i class="bx bx-file-pdf me-1"></i>Export PDF
-                </button>
-                <button class="btn btn-success" onclick="exportReport('excel', 'users')">
-                    <i class="bx bx-file-excel me-1"></i>Export Excel
                 </button>
             </div>
         </div>
@@ -34,7 +28,7 @@
         <div class="card-body">
             <form method="GET" action="{{ route('reports.users') }}" id="filterForm">
                 <div class="row g-3">
-                    <div class="col-md-3">
+                    <div class="col-md-6">
                         <label for="user_id" class="form-label">User</label>
                         <select class="form-select" id="user_id" name="user_id">
                             <option value="">All Users</option>
@@ -45,15 +39,7 @@
                             @endforeach
                         </select>
                     </div>
-                    <div class="col-md-3">
-                        <label for="date_from" class="form-label">From Date</label>
-                        <input type="date" class="form-control" id="date_from" name="date_from" value="{{ $filters['date_from'] ?? '' }}">
-                    </div>
-                    <div class="col-md-3">
-                        <label for="date_to" class="form-label">To Date</label>
-                        <input type="date" class="form-control" id="date_to" name="date_to" value="{{ $filters['date_to'] ?? '' }}">
-                    </div>
-                    <div class="col-md-3">
+                    <div class="col-md-6">
                         <label class="form-label">&nbsp;</label>
                         <div class="d-flex gap-2">
                             <button type="submit" class="btn btn-primary">
@@ -314,95 +300,15 @@ function generateBulkEvaluation() {
     new bootstrap.Modal(document.getElementById('bulkEvaluationModal')).show();
 }
 
-function sendTestMonthlyReport() {
-    const email = prompt('Enter email address to send test monthly report:', 'a.sayed.xc@gmail.com');
-
-    if (!email) {
-        return;
-    }
-
-    if (!email.includes('@')) {
-        alert('Please enter a valid email address');
-        return;
-    }
-
-    // Show loading state
-    const button = event.target;
-    const originalText = button.innerHTML;
-    button.innerHTML = '<i class="bx bx-loader-alt bx-spin me-1"></i>Sending...';
-    button.disabled = true;
-
-    fetch('{{ route("reports.evaluations.test.monthly") }}', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-        },
-        body: JSON.stringify({
-            email: email
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        // Restore button state
-        button.innerHTML = originalText;
-        button.disabled = false;
-
-        if (data.success) {
-            // Show success message
-            const successAlert = document.createElement('div');
-            successAlert.className = 'alert alert-success alert-dismissible fade show position-fixed';
-            successAlert.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
-            successAlert.innerHTML = `
-                <i class="bx bx-check-circle me-2"></i>
-                <strong>Success!</strong> ${data.message}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            `;
-            document.body.appendChild(successAlert);
-
-            // Auto-hide after 5 seconds
-            setTimeout(() => {
-                if (successAlert.parentNode) {
-                    successAlert.remove();
-                }
-            }, 5000);
-        } else {
-            alert('Error: ' + (data.message || 'Unknown error'));
-        }
-    })
-    .catch(error => {
-        // Restore button state
-        button.innerHTML = originalText;
-        button.disabled = false;
-
-        console.error('Error:', error);
-        alert('Error sending test email: ' + error.message);
-    });
-}
 
 // Auto-submit form when filters change
 document.addEventListener('DOMContentLoaded', function() {
     const filterForm = document.getElementById('filterForm');
     const userSelect = document.getElementById('user_id');
-    const dateFromInput = document.getElementById('date_from');
-    const dateToInput = document.getElementById('date_to');
 
     // Auto-submit on user selection change
     if (userSelect) {
         userSelect.addEventListener('change', function() {
-            filterForm.submit();
-        });
-    }
-
-    // Auto-submit on date changes
-    if (dateFromInput) {
-        dateFromInput.addEventListener('change', function() {
-            filterForm.submit();
-        });
-    }
-
-    if (dateToInput) {
-        dateToInput.addEventListener('change', function() {
             filterForm.submit();
         });
     }
