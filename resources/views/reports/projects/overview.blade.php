@@ -151,24 +151,14 @@
                                         <span class="badge bg-secondary">{{ $project['sub_folders_count'] }} folders</span>
                                     </td>
                                     <td>
-                                        <div class="d-flex flex-column">
-                                            <span class="badge bg-light text-dark">{{ $project['team_size'] }} members</span>
-                                            @if(count($project['users_involved']) > 0)
-                                                <small class="text-muted mt-1">
-                                                    {{ implode(', ', array_slice($project['users_involved'], 0, 2)) }}
-                                                    @if(count($project['users_involved']) > 2)
-                                                        <span class="text-primary"
-                                                              data-bs-toggle="popover"
-                                                              data-bs-placement="top"
-                                                              data-bs-trigger="click"
-                                                              data-bs-content="{{ implode('<br>', array_slice($project['users_involved'], 2)) }}"
-                                                              style="cursor: pointer;">
-                                                            +{{ count($project['users_involved']) - 2 }} more
-                                                        </span>
-                                                    @endif
-                                                </small>
-                                            @endif
-                                        </div>
+                                        <span class="badge bg-light text-dark"
+                                              data-bs-toggle="popover"
+                                              data-bs-placement="top"
+                                              data-bs-trigger="click"
+                                              data-bs-content="{{ count($project['users_involved']) > 0 ? implode('<br>', $project['users_involved']) : 'No team members' }}"
+                                              style="cursor: pointer;">
+                                            {{ $project['team_size'] }} members
+                                        </span>
                                     </td>
                                     <td>
                                         @if($project['due_date'])
