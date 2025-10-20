@@ -208,6 +208,9 @@ class TaskController extends Controller
 
         $task->update($validated);
 
+        // IMPORTANT: Refresh the task model to ensure relationships are up-to-date
+        $task->refresh();
+
         // Handle attachments on update (append)
         if ($request->hasFile('attachments')) {
             foreach ($request->file('attachments') as $file) {
