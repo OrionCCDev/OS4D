@@ -346,3 +346,10 @@ a:hover {
     padding: 0.75rem 1rem;
   }
 }
+
+/* Navbar trophy icon override - ensure visible on white background */
+.navbar-gradient .navbar-ranking .bx.bx-trophy,
+.navbar-gradient .avatar-initial .bx.bx-trophy,
+.navbar-gradient .bx.bx-trophy {
+  color: #1c3644 !important;
+}
