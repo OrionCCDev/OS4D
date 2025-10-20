@@ -130,12 +130,8 @@ class TaskController extends Controller
             }
         }
 
-        // If task is assigned, handle assignment and notify
-        if (!empty($task->assigned_to)) {
-            if ($assignee = User::find($task->assigned_to)) {
-                $task->assignTo($assignee);
-            }
-        }
+        // Note: Assignment notifications are handled in the reassignment logic below
+        // The assignTo() method should only be called for new task creation, not updates
 
         // Handle contractor assignments
         if ($request->has('contractors') && is_array($request->contractors)) {
@@ -205,7 +201,7 @@ class TaskController extends Controller
         }
 
         $validated = $request->validate($rules);
-        
+
         // Check if task is being reassigned
         $isReassignment = $request->has('assigned_to') && $request->assigned_to != $task->assignee_id;
         $oldAssignee = $task->assignee;
@@ -234,12 +230,12 @@ class TaskController extends Controller
                 ]);
             }
         }
-        
+
         // Handle task reassignment
         if ($isReassignment) {
             $newAssignee = $task->assignee;
             $currentUser = Auth::user();
-            
+
             // Create reassignment history
             TaskHistory::create([
                 'task_id' => $task->id,
@@ -249,7 +245,7 @@ class TaskController extends Controller
                 'new_value' => $newAssignee ? $newAssignee->name : 'Unassigned',
                 'description' => 'Task reassigned during edit from ' . ($oldAssignee ? $oldAssignee->name : 'Unassigned') . ' to ' . ($newAssignee ? $newAssignee->name : 'Unassigned')
             ]);
-            
+
             // Send notification to OLD assignee (task removed from their list)
             // Only send if the old assignee exists and is NOT the current user (manager doing the reassignment)
             if ($oldAssignee && $oldAssignee->id !== $currentUser->id) {
@@ -267,7 +263,7 @@ class TaskController extends Controller
                     'normal'
                 );
             }
-            
+
             // Send notification to NEW assignee (task assigned to them)
             // Only send if the new assignee exists and is NOT the current user (manager doing the reassignment)
             if ($newAssignee && $newAssignee->id !== $currentUser->id) {
@@ -287,7 +283,7 @@ class TaskController extends Controller
                 );
             }
         }
-        
+
         return redirect()->route('tasks.index')->with('success', 'Task updated' . ($isReassignment ? ' and reassigned' : ''));
     }
 
@@ -2097,7 +2093,7 @@ private function sendApprovalEmailViaGmail(Task $task, User $approver)
                     $title = $this->generateHistoryTitle($entry);
                     $description = $entry->description ?? '';
                     $type = $this->determineHistoryType($entry);
-                    
+
                     return [
                         'id' => $entry->id,
                         'title' => $title,
@@ -2122,7 +2118,7 @@ private function sendApprovalEmailViaGmail(Task $task, User $approver)
 
         } catch (\Exception $e) {
             Log::error("Failed to get task history: " . $e->getMessage());
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Error loading task history'
@@ -2138,62 +2134,62 @@ private function sendApprovalEmailViaGmail(Task $task, User $approver)
         $action = $entry->action ?? '';
         $oldValue = $entry->old_value;
         $newValue = $entry->new_value;
-        
+
         switch ($action) {
             case 'status_changed':
                 return "Status Changed from " . ucfirst(str_replace('_', ' ', $oldValue)) . " to " . ucfirst(str_replace('_', ' ', $newValue));
-            
+
             case 'assigned':
                 return "Task Assigned to " . $newValue;
-            
+
             case 'created':
                 return "Task Created";
-            
+
             case 'updated':
                 return "Task Updated";
-            
+
             case 'completed':
                 return "Task Completed";
-            
+
             case 'approved':
                 return "Task Approved";
-            
+
             case 'rejected':
                 return "Task Rejected";
-            
+
             case 'review_started':
                 return "Review Started";
-            
+
             case 'review_completed':
                 return "Review Completed";
-            
+
             case 'submitted_for_review':
                 return "Submitted for Review";
-            
+
             case 'accepted':
                 return "Task Accepted";
-            
+
             case 'manager_override':
                 return "Manager Override Applied";
-            
+
             case 'client_approval':
                 return "Client Approval Updated";
-            
+
             case 'consultant_approval':
                 return "Consultant Approval Updated";
-            
+
             case 'internal_approval':
                 return "Internal Approval Updated";
-            
+
             case 'email_sent':
                 return "Email Sent";
-            
+
             case 'attachment_uploaded':
                 return "Attachment Uploaded";
-            
+
             case 'attachment_deleted':
                 return "Attachment Deleted";
-            
+
             default:
                 // Try to create a meaningful title from description
                 if ($entry->description) {
@@ -2222,51 +2218,51 @@ private function sendApprovalEmailViaGmail(Task $task, User $approver)
     private function determineHistoryType($entry)
     {
         $action = $entry->action ?? '';
-        
+
         switch ($action) {
             case 'created':
                 return 'created';
-            
+
             case 'status_changed':
                 return 'status_changed';
-            
+
             case 'assigned':
                 return 'assigned';
-            
+
             case 'completed':
                 return 'completed';
-            
+
             case 'approved':
                 return 'approved';
-            
+
             case 'rejected':
                 return 'rejected';
-            
+
             case 'review_started':
             case 'review_completed':
                 return 'review';
-            
+
             case 'submitted_for_review':
                 return 'submitted';
-            
+
             case 'accepted':
                 return 'accepted';
-            
+
             case 'manager_override':
                 return 'override';
-            
+
             case 'client_approval':
             case 'consultant_approval':
             case 'internal_approval':
                 return 'approval';
-            
+
             case 'email_sent':
                 return 'email';
-            
+
             case 'attachment_uploaded':
             case 'attachment_deleted':
                 return 'attachment';
-            
+
             default:
                 return 'updated';
         }
