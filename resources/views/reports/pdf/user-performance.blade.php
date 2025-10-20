@@ -29,7 +29,7 @@
             background-color: #f8f9fc;
             padding: 15px;
             margin-bottom: 20px;
-            border-radius: 5px;
+            border: 1px solid #e3e6f0;
         }
         .user-info h2 {
             margin: 0 0 10px 0;
@@ -39,22 +39,18 @@
         .user-info p {
             margin: 5px 0;
         }
-        .metrics-grid {
-            display: table;
-            width: 100%;
-            margin-bottom: 20px;
-        }
-        .metrics-row {
-            display: table-row;
-        }
         .metric-card {
-            display: table-cell;
-            width: 25%;
+            width: 48%;
             padding: 15px;
-            margin: 5px;
+            margin-bottom: 10px;
             background-color: #f8f9fc;
-            border-radius: 5px;
+            border: 1px solid #e3e6f0;
             text-align: center;
+            float: left;
+            margin-right: 4%;
+        }
+        .metric-card-right {
+            margin-right: 0;
         }
         .metric-card h3 {
             font-size: 28px;
@@ -65,6 +61,11 @@
             margin: 5px 0 0 0;
             color: #666;
             font-size: 11px;
+        }
+        .clearfix::after {
+            content: "";
+            display: table;
+            clear: both;
         }
         .section {
             margin-bottom: 25px;
@@ -93,23 +94,20 @@
             border-bottom: 1px solid #e3e6f0;
             font-size: 11px;
         }
-        table tr:nth-child(even) {
-            background-color: #f8f9fc;
-        }
         .progress-bar {
             width: 100%;
             height: 20px;
             background-color: #e3e6f0;
-            border-radius: 3px;
-            overflow: hidden;
+            border: 1px solid #d1d3e2;
         }
         .progress-fill {
-            height: 100%;
+            height: 20px;
             background-color: #4e73df;
             text-align: center;
             color: white;
             font-size: 10px;
             line-height: 20px;
+            float: left;
         }
         .progress-fill.success {
             background-color: #1cc88a;
@@ -123,7 +121,6 @@
         .badge {
             display: inline-block;
             padding: 3px 8px;
-            border-radius: 3px;
             font-size: 10px;
             font-weight: bold;
         }
@@ -155,15 +152,6 @@
             color: #666;
             font-size: 10px;
         }
-        .summary-grid {
-            width: 100%;
-            margin-bottom: 20px;
-        }
-        .summary-grid td {
-            width: 50%;
-            vertical-align: top;
-            padding: 10px;
-        }
     </style>
 </head>
 <body>
@@ -191,36 +179,26 @@
 
     <div class="section">
         <h3>Performance Summary</h3>
-        <table class="summary-grid">
-            <tr>
-                <td>
-                    <div class="metric-card">
-                        <h3>{{ $userReport['total_tasks'] }}</h3>
-                        <p>Total Tasks</p>
-                    </div>
-                </td>
-                <td>
-                    <div class="metric-card">
-                        <h3>{{ $userReport['completed_tasks'] }}</h3>
-                        <p>Completed Tasks</p>
-                    </div>
-                </td>
-            </tr>
-            <tr>
-                <td>
-                    <div class="metric-card">
-                        <h3>{{ $userReport['completion_rate'] }}%</h3>
-                        <p>Completion Rate</p>
-                    </div>
-                </td>
-                <td>
-                    <div class="metric-card">
-                        <h3>{{ $userReport['performance_score'] }}%</h3>
-                        <p>Performance Score</p>
-                    </div>
-                </td>
-            </tr>
-        </table>
+        <div class="clearfix">
+            <div class="metric-card">
+                <h3>{{ $userReport['total_tasks'] }}</h3>
+                <p>Total Tasks</p>
+            </div>
+            <div class="metric-card metric-card-right">
+                <h3>{{ $userReport['completed_tasks'] }}</h3>
+                <p>Completed Tasks</p>
+            </div>
+        </div>
+        <div class="clearfix">
+            <div class="metric-card">
+                <h3>{{ $userReport['completion_rate'] }}%</h3>
+                <p>Completion Rate</p>
+            </div>
+            <div class="metric-card metric-card-right">
+                <h3>{{ $userReport['performance_score'] }}%</h3>
+                <p>Performance Score</p>
+            </div>
+        </div>
     </div>
 
     <div class="section">
