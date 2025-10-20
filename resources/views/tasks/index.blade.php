@@ -4,12 +4,14 @@
 <div class="container flex-grow-1 container-p-y">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h4 class="mb-0">Tasks</h4>
+        @if(Auth::user()->isManager())
         <div class="d-flex gap-2">
             {{--  fm1.1  --}}
             <a href="{{ route('tasks.create') }}" class="btn btn-primary">
                 <i class="bx bx-plus me-1"></i>New Task
             </a>
         </div>
+        @endif
     </div>
 
 
