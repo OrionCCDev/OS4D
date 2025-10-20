@@ -157,7 +157,14 @@
                                                 <small class="text-muted mt-1">
                                                     {{ implode(', ', array_slice($project['users_involved'], 0, 2)) }}
                                                     @if(count($project['users_involved']) > 2)
-                                                        +{{ count($project['users_involved']) - 2 }} more
+                                                        <span class="text-primary"
+                                                              data-bs-toggle="popover"
+                                                              data-bs-placement="top"
+                                                              data-bs-trigger="click"
+                                                              data-bs-content="{{ implode('<br>', array_slice($project['users_involved'], 2)) }}"
+                                                              style="cursor: pointer;">
+                                                            +{{ count($project['users_involved']) - 2 }} more
+                                                        </span>
                                                     @endif
                                                 </small>
                                             @endif
@@ -290,6 +297,15 @@ document.addEventListener('DOMContentLoaded', function() {
         button.addEventListener('mouseleave', function() {
             this.style.transform = 'translateY(0)';
             this.style.boxShadow = 'none';
+        });
+    });
+
+    // Initialize popovers for team members
+    const popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
+    const popoverList = popoverTriggerList.map(function (popoverTriggerEl) {
+        return new bootstrap.Popover(popoverTriggerEl, {
+            html: true,
+            sanitize: false
         });
     });
 });

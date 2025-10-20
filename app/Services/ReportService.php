@@ -49,10 +49,15 @@ class ReportService
         $transformedProjects = $projects->getCollection()->map(function ($project) {
             // Build a robust task set: include any task linked to this project OR to any folder within it
             $allFolderIds = \App\Models\ProjectFolder::where('project_id', $project->id)->pluck('id');
-            $tasks = \App\Models\Task::query()
-                ->where('project_id', $project->id)
-                ->orWhereIn('folder_id', $allFolderIds)
-                ->get();
+
+            // Get tasks directly assigned to project
+            $projectTasks = \App\Models\Task::where('project_id', $project->id)->get();
+
+            // Get tasks assigned to any folder in this project
+            $folderTasks = \App\Models\Task::whereIn('folder_id', $allFolderIds)->get();
+
+            // Combine and deduplicate tasks
+            $tasks = $projectTasks->merge($folderTasks)->unique('id');
 
             $totalTasks = $tasks->count();
             $completedTasks = $tasks->where('status', 'completed')->count();
@@ -138,10 +143,15 @@ class ReportService
         $transformedProjects = $projects->getCollection()->map(function ($project) {
             // Use same robust task set as overview to keep numbers consistent
             $allFolderIds = \App\Models\ProjectFolder::where('project_id', $project->id)->pluck('id');
-            $tasks = \App\Models\Task::query()
-                ->where('project_id', $project->id)
-                ->orWhereIn('folder_id', $allFolderIds)
-                ->get();
+
+            // Get tasks directly assigned to project
+            $projectTasks = \App\Models\Task::where('project_id', $project->id)->get();
+
+            // Get tasks assigned to any folder in this project
+            $folderTasks = \App\Models\Task::whereIn('folder_id', $allFolderIds)->get();
+
+            // Combine and deduplicate tasks
+            $tasks = $projectTasks->merge($folderTasks)->unique('id');
             $totalTasks = $tasks->count();
             $completedTasks = $tasks->where('status', 'completed');
             $completedTasksCount = $completedTasks->count();
