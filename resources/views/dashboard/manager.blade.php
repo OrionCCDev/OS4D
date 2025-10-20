@@ -81,7 +81,7 @@
         position: relative;
         padding: 20px 0;
     }
-    
+
     .timeline::before {
         content: '';
         position: absolute;
@@ -91,13 +91,13 @@
         width: 2px;
         background: linear-gradient(to bottom, #e9ecef, #dee2e6);
     }
-    
+
     .timeline-item {
         position: relative;
         margin-bottom: 30px;
         padding-left: 60px;
     }
-    
+
     .timeline-marker {
         position: absolute;
         left: 20px;
@@ -112,7 +112,7 @@
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         z-index: 2;
     }
-    
+
     .timeline-content {
         background: #fff;
         border: 1px solid #e9ecef;
@@ -121,7 +121,7 @@
         box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         transition: all 0.3s ease;
     }
-    
+
     .timeline-content:hover {
         box-shadow: 0 4px 8px rgba(0,0,0,0.1);
         transform: translateY(-1px);
@@ -255,12 +255,14 @@
                                     @foreach($data['urgent_tasks'] as $task)
                                     @php
                                         $isOverdue = $task->due_date < now();
-                                        $diff = now()->diff($task->due_date);
-                                        
-                                        // Calculate days and hours
+
+                                        // Calculate total hours difference
+                                        $totalHours = now()->diffInHours($task->due_date, false);
+
+                                        // Calculate days and remaining hours
                                         if ($isOverdue) {
-                                            $days = abs(now()->diffInDays($task->due_date));
-                                            $hours = abs(now()->copy()->addDays($days)->diffInHours($task->due_date));
+                                            $days = abs(floor($totalHours / 24));
+                                            $hours = abs($totalHours % 24);
                                             $urgencyText = 'Overdue by ';
                                             if ($days > 0) {
                                                 $urgencyText .= $days . 'd ';
@@ -269,8 +271,8 @@
                                                 $urgencyText .= $hours . 'h';
                                             }
                                         } else {
-                                            $days = now()->diffInDays($task->due_date);
-                                            $hours = now()->copy()->addDays($days)->diffInHours($task->due_date);
+                                            $days = floor($totalHours / 24);
+                                            $hours = $totalHours % 24;
                                             $urgencyText = 'Due in ';
                                             if ($days > 0) {
                                                 $urgencyText .= $days . 'd ';
@@ -279,12 +281,12 @@
                                                 $urgencyText .= $hours . 'h';
                                             }
                                         }
-                                        
+
                                         $urgencyClass = $isOverdue ? 'danger' : ($days <= 2 ? 'warning' : 'info');
                                     @endphp
-                                    <tr style="cursor: pointer; transition: background-color 0.2s;" 
+                                    <tr style="cursor: pointer; transition: background-color 0.2s;"
                                         onclick="window.location.href='{{ route('tasks.show', $task->id) }}'"
-                                        onmouseover="this.style.backgroundColor='#f8f9fa'" 
+                                        onmouseover="this.style.backgroundColor='#f8f9fa'"
                                         onmouseout="this.style.backgroundColor='transparent'">
                                         <td>
                                             <div class="d-flex align-items-center">
@@ -386,9 +388,9 @@
                                 </thead>
                                 <tbody>
                                     @foreach($data['tasks_by_status'] as $task)
-                                    <tr style="cursor: pointer; transition: background-color 0.2s;" 
+                                    <tr style="cursor: pointer; transition: background-color 0.2s;"
                                         onclick="window.location.href='{{ route('tasks.show', $task->id) }}'"
-                                        onmouseover="this.style.backgroundColor='#f8f9fa'" 
+                                        onmouseover="this.style.backgroundColor='#f8f9fa'"
                                         onmouseout="this.style.backgroundColor='transparent'">
                                         <td>
                                             <div class="d-flex align-items-center">
@@ -473,9 +475,9 @@
                                 </thead>
                                 <tbody>
                                     @foreach($data['tasks_by_priority'] as $task)
-                                    <tr style="cursor: pointer; transition: background-color 0.2s;" 
+                                    <tr style="cursor: pointer; transition: background-color 0.2s;"
                                         onclick="window.location.href='{{ route('tasks.show', $task->id) }}'"
-                                        onmouseover="this.style.backgroundColor='#f8f9fa'" 
+                                        onmouseover="this.style.backgroundColor='#f8f9fa'"
                                         onmouseout="this.style.backgroundColor='transparent'">
                                         <td>
                                             <div class="d-flex align-items-center">
@@ -742,13 +744,13 @@
         document.querySelectorAll('[data-period]').forEach(btn => {
             btn.classList.remove('active');
         });
-        
+
         // Add active class to clicked button
         event.target.closest('button').classList.add('active');
-        
+
         // Update content based on period
         const content = document.getElementById('competitionContent');
-        
+
         // You can implement AJAX calls here to fetch different period data
         // For now, we'll just show a loading state
         content.innerHTML = `
@@ -759,14 +761,14 @@
                 <p class="text-white-50 mt-2">Loading ${period} data...</p>
             </div>
         `;
-        
+
         // Simulate loading (replace with actual AJAX call)
         setTimeout(() => {
             // Reload the page to show updated data
             window.location.reload();
         }, 1000);
     }
-    
+
     // Debug data
     console.log('Recent Activity Data:', @json($data['recent_activity']));
     console.log('Tasks by Status:', @json($data['tasks_by_status']));
