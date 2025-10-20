@@ -145,9 +145,13 @@
 .navbar-gradient .navbar-nav .nav-link,
 .navbar-gradient .nav-link,
 .navbar-gradient .nav-item,
-.navbar-gradient i,
-.navbar-gradient .bx {
+.navbar-gradient i
+{
   color: white !important;
+}
+
+.navbar-gradient .bx {
+  color: #1c3644 !important;
 }
 
 /* Search input in navbar */
