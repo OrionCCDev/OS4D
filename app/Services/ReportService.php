@@ -65,12 +65,8 @@ class ReportService
             ]);
 
             $totalTasks = $tasks->count();
-
-            // Consider multiple statuses as "completed" for project overview
-            $completedStatuses = ['completed', 'approved', 'ready_for_email', 'on_client_consultant_review', 'in_review_after_client_consultant_reply'];
-            $completedTasks = $tasks->whereIn('status', $completedStatuses)->count();
-
-            $overdueTasks = $tasks->whereNotIn('status', $completedStatuses)
+            $completedTasks = $tasks->where('status', 'completed')->count();
+            $overdueTasks = $tasks->where('status', '!=', 'completed')
                 ->where('due_date', '<', now())
                 ->count();
 
@@ -167,10 +163,7 @@ class ReportService
                       ->orWhereIn('folder_id', $allFolderIds);
             })->get();
             $totalTasks = $tasks->count();
-
-            // Consider multiple statuses as "completed" for project overview
-            $completedStatuses = ['completed', 'approved', 'ready_for_email', 'on_client_consultant_review', 'in_review_after_client_consultant_reply'];
-            $completedTasks = $tasks->whereIn('status', $completedStatuses);
+            $completedTasks = $tasks->where('status', 'completed');
             $completedTasksCount = $completedTasks->count();
 
             // Task status breakdown
@@ -179,7 +172,7 @@ class ReportService
             $onHoldTasks = $tasks->where('status', 'on_hold')->count();
 
             // Overdue and on-time analysis
-            $overdueTasks = $tasks->whereNotIn('status', $completedStatuses)
+            $overdueTasks = $tasks->where('status', '!=', 'completed')
                 ->where('due_date', '<', now())
                 ->count();
 
@@ -196,9 +189,9 @@ class ReportService
             $assignedUserIds = $tasks->pluck('assigned_to')->filter()->unique();
             $teamMembers = User::whereIn('id', $assignedUserIds)->get();
 
-            $teamPerformance = $teamMembers->map(function ($user) use ($tasks, $completedStatuses) {
+            $teamPerformance = $teamMembers->map(function ($user) use ($tasks) {
                 $userTasks = $tasks->where('assigned_to', $user->id);
-                $userCompletedTasks = $userTasks->whereIn('status', $completedStatuses)->count();
+                $userCompletedTasks = $userTasks->where('status', 'completed')->count();
                 $userTotalTasks = $userTasks->count();
 
                 return [
@@ -208,7 +201,7 @@ class ReportService
                     'total_tasks' => $userTotalTasks,
                     'completed_tasks' => $userCompletedTasks,
                     'pending_tasks' => $userTasks->whereIn('status', ['pending', 'assigned', 'in_progress', 'workingon'])->count(),
-                    'overdue_tasks' => $userTasks->whereNotIn('status', $completedStatuses)
+                    'overdue_tasks' => $userTasks->where('status', '!=', 'completed')
                         ->where('due_date', '<', now())
                         ->count(),
                     'completion_rate' => $userTotalTasks > 0 ? round(($userCompletedTasks / $userTotalTasks) * 100, 2) : 0,
