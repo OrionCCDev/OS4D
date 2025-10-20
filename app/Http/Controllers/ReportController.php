@@ -805,6 +805,32 @@ class ReportController extends Controller
     }
 
     /**
+     * Send test monthly report to specific user
+     */
+    public function sendTestMonthlyReport(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email|exists:users,email'
+        ]);
+
+        try {
+            $monthlyReportService = app(\App\Services\MonthlyReportEmailService::class);
+            $result = $monthlyReportService->sendTestMonthlyReport($request->email);
+
+            return response()->json([
+                'success' => true,
+                'message' => $result
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error sending test monthly report: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error sending test report: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Generate bulk evaluations for all users and download PDF
      */
     public function generateBulkEvaluationPdf(Request $request)

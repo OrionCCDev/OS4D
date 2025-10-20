@@ -15,6 +15,9 @@
             <button class="btn btn-warning" onclick="generateBulkEvaluation()">
                 <i class="bx bx-file-plus me-1"></i>Evaluate All Users
             </button>
+            <button class="btn btn-info" onclick="sendTestMonthlyReport()">
+                <i class="bx bx-envelope me-1"></i>Test Monthly Email
+            </button>
             <div class="d-flex gap-2">
                 <button class="btn btn-primary" onclick="exportReport('pdf', 'users')">
                     <i class="bx bx-file-pdf me-1"></i>Export PDF
@@ -311,6 +314,72 @@ function generateBulkEvaluation() {
     new bootstrap.Modal(document.getElementById('bulkEvaluationModal')).show();
 }
 
+function sendTestMonthlyReport() {
+    const email = prompt('Enter email address to send test monthly report:', 'a.sayed.xc@gmail.com');
+
+    if (!email) {
+        return;
+    }
+
+    if (!email.includes('@')) {
+        alert('Please enter a valid email address');
+        return;
+    }
+
+    // Show loading state
+    const button = event.target;
+    const originalText = button.innerHTML;
+    button.innerHTML = '<i class="bx bx-loader-alt bx-spin me-1"></i>Sending...';
+    button.disabled = true;
+
+    fetch('{{ route("reports.evaluations.test.monthly") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        body: JSON.stringify({
+            email: email
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Restore button state
+        button.innerHTML = originalText;
+        button.disabled = false;
+
+        if (data.success) {
+            // Show success message
+            const successAlert = document.createElement('div');
+            successAlert.className = 'alert alert-success alert-dismissible fade show position-fixed';
+            successAlert.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+            successAlert.innerHTML = `
+                <i class="bx bx-check-circle me-2"></i>
+                <strong>Success!</strong> ${data.message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.body.appendChild(successAlert);
+
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+                if (successAlert.parentNode) {
+                    successAlert.remove();
+                }
+            }, 5000);
+        } else {
+            alert('Error: ' + (data.message || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        // Restore button state
+        button.innerHTML = originalText;
+        button.disabled = false;
+
+        console.error('Error:', error);
+        alert('Error sending test email: ' + error.message);
+    });
+}
+
 // Auto-submit form when filters change
 document.addEventListener('DOMContentLoaded', function() {
     const filterForm = document.getElementById('filterForm');
@@ -474,17 +543,36 @@ document.getElementById('bulkEvaluationForm').addEventListener('submit', functio
         }
     })
     .then(response => {
+        // Check if response is ok
         if (!response.ok) {
-            return response.json().then(err => { throw err; });
+            // If it's not ok, try to get error message
+            return response.text().then(text => {
+                throw new Error(`HTTP ${response.status}: ${text}`);
+            });
         }
-        return response.blob();
+
+        // Check if response is a PDF (content-type should be application/pdf)
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/pdf')) {
+            return response.blob();
+        } else {
+            // If it's not a PDF, it might be an error response
+            return response.text().then(text => {
+                try {
+                    const errorData = JSON.parse(text);
+                    throw new Error(errorData.message || 'Unknown error occurred');
+                } catch (e) {
+                    throw new Error(text || 'Unknown error occurred');
+                }
+            });
+        }
     })
     .then(blob => {
         // Create a download link and trigger download
-        const url = window.URL.createObjectURL(blob);
+        const downloadUrl = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.style.display = 'none';
-        a.href = url;
+        a.href = downloadUrl;
 
         // Get filename from form data
         const evaluationType = formData.get('evaluation_type');
@@ -504,8 +592,12 @@ document.getElementById('bulkEvaluationForm').addEventListener('submit', functio
         a.download = 'All_Users_Evaluation_' + evaluationType + '_' + periodLabel + '_' + new Date().toISOString().split('T')[0] + '.pdf';
         document.body.appendChild(a);
         a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
+
+        // Clean up
+        setTimeout(() => {
+            window.URL.revokeObjectURL(downloadUrl);
+            document.body.removeChild(a);
+        }, 100);
 
         // Restore button state
         submitButton.innerHTML = originalText;
@@ -539,7 +631,24 @@ document.getElementById('bulkEvaluationForm').addEventListener('submit', functio
         submitButton.disabled = false;
 
         console.error('Error:', error);
-        alert('Error generating bulk evaluation: ' + (error.message || 'Unknown error'));
+
+        // Show error message in a more user-friendly way
+        const errorAlert = document.createElement('div');
+        errorAlert.className = 'alert alert-danger alert-dismissible fade show position-fixed';
+        errorAlert.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+        errorAlert.innerHTML = `
+            <i class="bx bx-error-circle me-2"></i>
+            <strong>Error!</strong> ${error.message || 'Failed to generate evaluation'}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        document.body.appendChild(errorAlert);
+
+        // Auto-hide after 5 seconds
+        setTimeout(() => {
+            if (errorAlert.parentNode) {
+                errorAlert.remove();
+            }
+        }, 5000);
     });
 });
 </script>
