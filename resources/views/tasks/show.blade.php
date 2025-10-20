@@ -73,11 +73,12 @@
                             </button>
                         </form>
                     @endif
-                    @if(Auth::user()->id === $task->assigned_to || Auth::user()->isManager())
+                    {{-- Send Free Mail button hidden as requested --}}
+                    {{-- @if(Auth::user()->id === $task->assigned_to || Auth::user()->isManager())
                         <a href="{{ route('tasks.free-mail', $task) }}" class="btn btn-outline-primary">
                             <i class="bx bx-mail-send me-1"></i>Send Free Mail
                         </a>
-                    @endif
+                    @endif --}}
                 </div>
             </div>
         </div>
@@ -839,11 +840,12 @@
                                     <a href="{{ route('tasks.prepare-email', $task) }}" class="btn btn-primary">
                                         <i class="bx bx-envelope me-2"></i>Prepare Confirmation Email
                                     </a>
-                                    @if(Auth::user()->id === $task->assigned_to || Auth::user()->isManager())
+                                    {{-- Send Free Mail button hidden as requested --}}
+                                    {{-- @if(Auth::user()->id === $task->assigned_to || Auth::user()->isManager())
                                     <a href="{{ route('tasks.free-mail', $task) }}" class="btn btn-outline-primary">
                                         <i class="bx bx-mail-send me-2"></i>Send Free Mail
                                     </a>
-                                    @endif
+                                    @endif --}}
                                 </div>
                                 <small class="text-muted text-center mt-2 d-block">You can also assign contractors during email preparation</small>
 
@@ -1257,14 +1259,54 @@
                         @if($task->started_at)
                             <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
                                 <small class="text-muted">Started</small>
-                                <span class="fw-semibold">{{ $task->started_at->format('M d, Y') }}</span>
+                                <div class="text-end">
+                                    <span class="fw-semibold">{{ $task->started_at->format('M d, Y') }}</span>
+                                    @if($task->assigned_at)
+                                        @php
+                                            $assignedToStarted = $task->assigned_at->diffInDays($task->started_at);
+                                            $assignedToStartedHours = $task->assigned_at->diffInHours($task->started_at) % 24;
+                                        @endphp
+                                        <br><small class="text-info">+{{ $assignedToStarted }}d {{ $assignedToStartedHours }}h from assignment</small>
+                                    @endif
+                                </div>
                             </div>
                         @endif
 
                         @if($task->completed_at)
                             <div class="d-flex justify-content-between align-items-center py-2">
                                 <small class="text-muted">Completed</small>
-                                <span class="fw-semibold text-success">{{ $task->completed_at->format('M d, Y') }}</span>
+                                <div class="text-end">
+                                    <span class="fw-semibold text-success">{{ $task->completed_at->format('M d, Y') }}</span>
+                                    @if($task->started_at)
+                                        @php
+                                            $startedToCompleted = $task->started_at->diffInDays($task->completed_at);
+                                            $startedToCompletedHours = $task->started_at->diffInHours($task->completed_at) % 24;
+                                        @endphp
+                                        <br><small class="text-success">+{{ $startedToCompleted }}d {{ $startedToCompletedHours }}h from start</small>
+                                    @endif
+                                    @if($task->assigned_at)
+                                        @php
+                                            $totalDuration = $task->assigned_at->diffInDays($task->completed_at);
+                                            $totalDurationHours = $task->assigned_at->diffInHours($task->completed_at) % 24;
+                                        @endphp
+                                        <br><small class="text-primary"><strong>Total: {{ $totalDuration }}d {{ $totalDurationHours }}h</strong></small>
+                                    @endif
+                                </div>
+                            </div>
+                        @elseif($task->started_at)
+                            {{-- Show current duration for in-progress tasks --}}
+                            <div class="d-flex justify-content-between align-items-center py-2">
+                                <small class="text-muted">Current Duration</small>
+                                <div class="text-end">
+                                    @if($task->assigned_at)
+                                        @php
+                                            $currentDuration = $task->assigned_at->diffInDays(now());
+                                            $currentDurationHours = $task->assigned_at->diffInHours(now()) % 24;
+                                        @endphp
+                                        <span class="fw-semibold text-warning">{{ $currentDuration }}d {{ $currentDurationHours }}h</span>
+                                        <br><small class="text-muted">since assignment</small>
+                                    @endif
+                                </div>
                             </div>
                         @endif
                     </div>
@@ -2243,21 +2285,21 @@ function showReassignModal() {
 
 document.getElementById('reassignTaskForm').addEventListener('submit', function(e) {
     e.preventDefault();
-    
+
     const newAssigneeId = document.getElementById('new_assignee_id').value;
     if (!newAssigneeId) {
         alert('Please select a user to reassign the task to');
         return;
     }
-    
+
     // Show loading state
     const submitButton = this.querySelector('button[type="submit"]');
     const originalText = submitButton.innerHTML;
     submitButton.innerHTML = '<i class="bx bx-loader-alt bx-spin me-1"></i>Reassigning...';
     submitButton.disabled = true;
-    
+
     const formData = new FormData(this);
-    
+
     fetch('{{ route("tasks.reassign", $task) }}', {
         method: 'POST',
         body: formData,
@@ -2270,10 +2312,10 @@ document.getElementById('reassignTaskForm').addEventListener('submit', function(
         // Restore button state
         submitButton.innerHTML = originalText;
         submitButton.disabled = false;
-        
+
         if (data.success) {
             bootstrap.Modal.getInstance(document.getElementById('reassignTaskModal')).hide();
-            
+
             // Show success message
             const successAlert = document.createElement('div');
             successAlert.className = 'alert alert-success alert-dismissible fade show position-fixed';
@@ -2284,7 +2326,7 @@ document.getElementById('reassignTaskForm').addEventListener('submit', function(
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             `;
             document.body.appendChild(successAlert);
-            
+
             // Reload after 2 seconds
             setTimeout(() => {
                 location.reload();
@@ -2297,7 +2339,7 @@ document.getElementById('reassignTaskForm').addEventListener('submit', function(
         // Restore button state
         submitButton.innerHTML = originalText;
         submitButton.disabled = false;
-        
+
         console.error('Error:', error);
         alert('An error occurred while reassigning the task');
     });
@@ -2334,7 +2376,7 @@ document.getElementById('reassignTaskForm').addEventListener('submit', function(
                         <label for="reassignment_reason" class="form-label">
                             Reason for Reassignment
                         </label>
-                        <textarea class="form-control" id="reassignment_reason" name="reassignment_reason" rows="3" 
+                        <textarea class="form-control" id="reassignment_reason" name="reassignment_reason" rows="3"
                                   placeholder="Optional: Explain why this task is being reassigned"></textarea>
                     </div>
                     <div class="alert alert-info">
