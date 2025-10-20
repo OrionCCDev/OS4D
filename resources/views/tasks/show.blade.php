@@ -1263,8 +1263,9 @@
                                     <span class="fw-semibold">{{ $task->started_at->format('M d, Y') }}</span>
                                     @if($task->assigned_at)
                                         @php
-                                            $assignedToStarted = $task->assigned_at->diffInDays($task->started_at);
-                                            $assignedToStartedHours = $task->assigned_at->diffInHours($task->started_at) % 24;
+                                            $totalHours = $task->assigned_at->diffInHours($task->started_at);
+                                            $assignedToStarted = floor($totalHours / 24);
+                                            $assignedToStartedHours = $totalHours % 24;
                                         @endphp
                                         <br><small class="text-info">+{{ $assignedToStarted }}d {{ $assignedToStartedHours }}h from assignment</small>
                                     @endif
@@ -1279,15 +1280,17 @@
                                     <span class="fw-semibold text-success">{{ $task->completed_at->format('M d, Y') }}</span>
                                     @if($task->started_at)
                                         @php
-                                            $startedToCompleted = $task->started_at->diffInDays($task->completed_at);
-                                            $startedToCompletedHours = $task->started_at->diffInHours($task->completed_at) % 24;
+                                            $totalHours = $task->started_at->diffInHours($task->completed_at);
+                                            $startedToCompleted = floor($totalHours / 24);
+                                            $startedToCompletedHours = $totalHours % 24;
                                         @endphp
                                         <br><small class="text-success">+{{ $startedToCompleted }}d {{ $startedToCompletedHours }}h from start</small>
                                     @endif
                                     @if($task->assigned_at)
                                         @php
-                                            $totalDuration = $task->assigned_at->diffInDays($task->completed_at);
-                                            $totalDurationHours = $task->assigned_at->diffInHours($task->completed_at) % 24;
+                                            $totalHours = $task->assigned_at->diffInHours($task->completed_at);
+                                            $totalDuration = floor($totalHours / 24);
+                                            $totalDurationHours = $totalHours % 24;
                                         @endphp
                                         <br><small class="text-primary"><strong>Total: {{ $totalDuration }}d {{ $totalDurationHours }}h</strong></small>
                                     @endif
@@ -1300,8 +1303,9 @@
                                 <div class="text-end">
                                     @if($task->assigned_at)
                                         @php
-                                            $currentDuration = $task->assigned_at->diffInDays(now());
-                                            $currentDurationHours = $task->assigned_at->diffInHours(now()) % 24;
+                                            $totalHours = $task->assigned_at->diffInHours(now());
+                                            $currentDuration = floor($totalHours / 24);
+                                            $currentDurationHours = $totalHours % 24;
                                         @endphp
                                         <span class="fw-semibold text-warning">{{ $currentDuration }}d {{ $currentDurationHours }}h</span>
                                         <br><small class="text-muted">since assignment</small>
