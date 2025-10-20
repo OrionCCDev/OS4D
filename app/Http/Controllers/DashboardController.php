@@ -9,6 +9,7 @@ use App\Models\CustomNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 
 class DashboardController extends Controller
@@ -69,24 +70,57 @@ class DashboardController extends Controller
             ->orderBy('due_date', 'asc')
             ->get();
 
-        // Overdue tasks
+        // Overdue tasks with pagination
         $overdueTasks = $user->assignedTasks()->with(['project', 'folder'])
             ->where('due_date', '<', $now)
             ->whereNotIn('status', ['completed', 'approved'])
             ->orderBy('due_date', 'asc')
-            ->get();
+            ->paginate(5, ['*'], 'overdue_page');
 
-        // Tasks by priority
-        $tasksByPriority = $user->assignedTasks()->select('priority', DB::raw('count(*) as count'))
-            ->groupBy('priority')
-            ->pluck('count', 'priority')
-            ->toArray();
+        // Upcoming due dates with pagination
+        $upcomingTasksPaginated = $user->assignedTasks()->with(['project', 'folder'])
+            ->whereBetween('due_date', [$now, $now->copy()->addDays(7)])
+            ->whereNotIn('status', ['completed', 'approved'])
+            ->orderBy('due_date', 'asc')
+            ->paginate(5, ['*'], 'upcoming_page');
 
-        // Tasks by status
-        $tasksByStatus = $user->assignedTasks()->select('status', DB::raw('count(*) as count'))
-            ->groupBy('status')
-            ->pluck('count', 'status')
-            ->toArray();
+        // Tasks by priority - get actual tasks ordered by priority (like manager dashboard)
+        $tasksByPriority = $user->assignedTasks()->with(['project', 'folder'])
+            ->orderByRaw("
+                CASE
+                    WHEN priority = 'urgent' THEN 1
+                    WHEN priority = 'high' THEN 2
+                    WHEN priority = 'medium' THEN 3
+                    WHEN priority = 'normal' THEN 4
+                    WHEN priority = 'low' THEN 5
+                    ELSE 6
+                END
+            ")
+            ->orderBy('due_date', 'asc')
+            ->orderBy('created_at', 'desc')
+            ->paginate(4, ['*'], 'priority_page');
+
+        // Tasks by status - get actual tasks ordered by status priority (like manager dashboard)
+        $tasksByStatus = $user->assignedTasks()->with(['project', 'folder'])
+            ->orderByRaw("
+                CASE
+                    WHEN due_date < NOW() AND status != 'completed' THEN 1
+                    WHEN status = 'in_progress' THEN 2
+                    WHEN status = 'assigned' THEN 3
+                    WHEN status = 'pending' THEN 4
+                    WHEN status = 'submitted_for_review' THEN 5
+                    WHEN status = 'in_review' THEN 6
+                    WHEN status = 'waiting_sending_client_consultant_approve' THEN 7
+                    WHEN status = 'waiting_client_consultant_approve' THEN 8
+                    WHEN status = 'approved' THEN 9
+                    WHEN status = 'completed' THEN 10
+                    WHEN status = 'cancelled' THEN 11
+                    ELSE 12
+                END
+            ")
+            ->orderBy('due_date', 'asc')
+            ->orderBy('created_at', 'desc')
+            ->paginate(4, ['*'], 'status_page');
 
         // Weekly completion trend (last 8 weeks)
         $weeklyTrend = [];
@@ -94,7 +128,8 @@ class DashboardController extends Controller
             $weekStart = $now->copy()->subWeeks($i)->startOfWeek();
             $weekEnd = $weekStart->copy()->endOfWeek();
 
-            $completed = $userTasks->where('status', 'completed')
+            $completed = $user->assignedTasks()
+                ->where('status', 'completed')
                 ->whereBetween('completed_at', [$weekStart, $weekEnd])
                 ->count();
 
@@ -137,6 +172,7 @@ class DashboardController extends Controller
             'task_stats' => $taskStats,
             'recent_tasks' => $recentTasks,
             'upcoming_tasks' => $upcomingTasks,
+            'upcoming_tasks_paginated' => $upcomingTasksPaginated,
             'overdue_tasks' => $overdueTasks,
             'tasks_by_priority' => $tasksByPriority,
             'tasks_by_status' => $tasksByStatus,
@@ -178,7 +214,7 @@ class DashboardController extends Controller
     {
         $status = ucfirst(str_replace('_', ' ', $task->status));
         $projectName = $task->project ? $task->project->name : 'Unknown Project';
-        
+
         switch($task->status) {
             case 'completed':
                 return "Task Completed: {$task->title}";
@@ -203,7 +239,7 @@ class DashboardController extends Controller
         $projectName = $task->project ? $task->project->name : 'Unknown Project';
         $assigneeName = $task->assignee ? $task->assignee->name : 'Unassigned';
         $status = ucfirst(str_replace('_', ' ', $task->status));
-        
+
         return "Project: {$projectName} | Assigned to: {$assigneeName} | Status: {$status}";
     }
 
@@ -272,10 +308,10 @@ class DashboardController extends Controller
             'normal' => 4,
             'low' => 5
         ];
-        
+
         $tasksByPriority = Task::with(['assignee', 'project', 'folder'])
             ->orderByRaw("
-                CASE 
+                CASE
                     WHEN priority = 'urgent' THEN 1
                     WHEN priority = 'high' THEN 2
                     WHEN priority = 'medium' THEN 3
@@ -291,7 +327,7 @@ class DashboardController extends Controller
         // Tasks by status - get actual tasks ordered by status priority
         $tasksByStatus = Task::with(['assignee', 'project', 'folder'])
             ->orderByRaw("
-                CASE 
+                CASE
                     WHEN due_date < NOW() AND status != 'completed' THEN 1
                     WHEN status = 'in_progress' THEN 2
                     WHEN status = 'assigned' THEN 3
@@ -377,10 +413,10 @@ class DashboardController extends Controller
                 $user->completion_rate = $user->total_tasks_count > 0
                     ? round(($user->completed_tasks_count / $user->total_tasks_count) * 100, 1)
                     : 0;
-                
+
                 // Enhanced performance scoring system
                 $user->monthly_performance_score = $this->calculateAdvancedPerformanceScore($user);
-                
+
                 // Additional metrics for display
                 $user->rejection_rate = $user->total_tasks_count > 0
                     ? round(($user->rejected_tasks_count / $user->total_tasks_count) * 100, 1)
@@ -391,7 +427,7 @@ class DashboardController extends Controller
                 $user->on_time_rate = $user->completed_tasks_count > 0
                     ? round(($user->on_time_completed_count / $user->completed_tasks_count) * 100, 1)
                     : 0;
-                
+
                 return $user;
             });
 
@@ -429,10 +465,10 @@ class DashboardController extends Controller
                     $user->completion_rate = $user->total_tasks_count > 0
                         ? round(($user->completed_tasks_count / $user->total_tasks_count) * 100, 1)
                         : 0;
-                    
+
                     // Enhanced performance scoring system
                     $user->monthly_performance_score = $this->calculateAdvancedPerformanceScore($user);
-                    
+
                     // Additional metrics for display
                     $user->rejection_rate = $user->total_tasks_count > 0
                         ? round(($user->rejected_tasks_count / $user->total_tasks_count) * 100, 1)
@@ -443,7 +479,7 @@ class DashboardController extends Controller
                     $user->on_time_rate = $user->completed_tasks_count > 0
                         ? round(($user->on_time_completed_count / $user->completed_tasks_count) * 100, 1)
                         : 0;
-                    
+
                     return $user;
                 });
         }
@@ -554,7 +590,7 @@ class DashboardController extends Controller
                 });
             })
             ->orderByRaw("
-                CASE 
+                CASE
                     WHEN due_date < NOW() THEN 1
                     ELSE 2
                 END
@@ -563,7 +599,7 @@ class DashboardController extends Controller
             ->paginate(6, ['*'], 'urgent_page');
 
         // Debug: Log competition data
-        \Log::info('Competition Board Data:', [
+        Log::info('Competition Board Data:', [
             'monthly_top_performers_count' => $monthlyTopPerformers->count(),
             'monthly_top_performers' => $monthlyTopPerformers->toArray(),
             'quarterly_top_performers_count' => $this->getTopPerformersForPeriod('quarter')->count(),
@@ -672,10 +708,10 @@ class DashboardController extends Controller
                 $user->completion_rate = $user->total_tasks_count > 0
                     ? round(($user->completed_tasks_count / $user->total_tasks_count) * 100, 1)
                     : 0;
-                
+
                 // Enhanced performance scoring system
                 $user->performance_score = $this->calculateAdvancedPerformanceScore($user);
-                
+
                 // Additional metrics for display
                 $user->rejection_rate = $user->total_tasks_count > 0
                     ? round(($user->rejected_tasks_count / $user->total_tasks_count) * 100, 1)
@@ -686,7 +722,7 @@ class DashboardController extends Controller
                 $user->on_time_rate = $user->completed_tasks_count > 0
                     ? round(($user->on_time_completed_count / $user->completed_tasks_count) * 100, 1)
                     : 0;
-                
+
                 return $user;
             });
     }
@@ -699,30 +735,30 @@ class DashboardController extends Controller
         // Base scores
         $completedScore = $user->completed_tasks_count * 10;
         $inProgressScore = $user->in_progress_tasks_count * 5;
-        
+
         // Quality bonuses
         $onTimeBonus = $user->on_time_completed_count * 3; // Bonus for on-time completion
         $completionRateBonus = $user->completion_rate * 0.5; // Completion rate bonus
-        
+
         // Penalties
         $rejectionPenalty = $user->rejected_tasks_count * 8; // Heavy penalty for rejections
         $overduePenalty = $user->overdue_tasks_count * 5; // Penalty for overdue tasks
         $lateCompletionPenalty = $user->late_completed_count * 2; // Penalty for late completion
-        
+
         // User experience factor (more tasks = more experience = higher multiplier)
         $experienceMultiplier = $this->calculateExperienceMultiplier($user->total_tasks_count);
-        
+
         // Calculate base score
         $baseScore = $completedScore + $inProgressScore + $onTimeBonus + $completionRateBonus;
         $penalties = $rejectionPenalty + $overduePenalty + $lateCompletionPenalty;
-        
+
         // Apply experience multiplier and subtract penalties
         $finalScore = ($baseScore * $experienceMultiplier) - $penalties;
-        
+
         // Ensure score is not negative
         return max(0, round($finalScore, 2));
     }
-    
+
     /**
      * Calculate experience multiplier based on total tasks
      */
