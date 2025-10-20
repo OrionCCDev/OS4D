@@ -7,13 +7,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
-use Spatie\MediaLibrary\HasMedia;
-use Spatie\MediaLibrary\InteractsWithMedia;
 
-class User extends Authenticatable implements HasMedia
+class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, HasRoles, InteractsWithMedia;
+    use HasFactory, Notifiable, HasRoles;
 
     /**
      * The attributes that are mass assignable.
@@ -65,7 +63,7 @@ class User extends Authenticatable implements HasMedia
             'deactivated_at' => 'datetime',
         ];
     }
-    
+
     /**
      * Check if user is active
      */
@@ -73,7 +71,7 @@ class User extends Authenticatable implements HasMedia
     {
         return $this->status === 'active';
     }
-    
+
     /**
      * Scope to only get active users
      */
