@@ -50,16 +50,9 @@
             </td>
             <td>{{ $user->created_at->format('Y-m-d') }}</td>
             <td class="text-end">
-              <div class="btn-group">
-                <a href="{{ route('admin.users.edit', $user) }}" class="btn btn-sm btn-outline-secondary">
-                  <i class="bx bx-edit"></i> Edit
-                </a>
-                @if(auth()->user()->role === 'manager' || auth()->user()->role === 'admin')
-                  <a href="{{ route('users.bulk-reassignment', $user) }}" class="btn btn-sm btn-outline-primary" title="Reassign Tasks">
-                    <i class="bx bx-transfer"></i> Reassign
-                  </a>
-                @endif
-              </div>
+              <a href="{{ route('admin.users.edit', $user) }}" class="btn btn-sm btn-outline-secondary">
+                <i class="bx bx-edit"></i> Edit
+              </a>
               <form action="{{ route('admin.users.destroy', $user) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete this user?')">
                 @csrf
                 @method('DELETE')
