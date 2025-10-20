@@ -331,7 +331,8 @@ class MonthlyReportEmailService
             'startDate' => $startDate,
             'endDate' => $endDate,
             'monthYear' => $monthYear,
-            'pdfPath' => $pdfPath
+            'pdfPath' => $pdfPath,
+            'generatedAt' => now()
         ];
 
         // Send to user
