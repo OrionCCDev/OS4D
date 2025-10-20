@@ -115,7 +115,7 @@
                 <div class="col-md-4 mb-3">
                     <label class="form-label">Status</label>
                     <select name="status" class="form-select">
-                        @foreach(['todo','in_progress','in_review','approved','rejected','done'] as $status)
+                        @foreach(['pending','assigned','in_progress','in_review','approved','rejected','completed'] as $status)
                             <option value="{{ $status }}" @selected(old('status', $task->status)===$status)>{{ ucfirst(str_replace('_',' ', $status)) }}</option>
                         @endforeach
                     </select>
@@ -127,7 +127,7 @@
                 <small class="text-muted">You can select multiple files. Max size 1GB per file.</small>
             </div>
             <div class="d-flex gap-2">
-                <a href="{{ route('tasks.index') }}" class="btn btn-secondary">
+                <a href="{{ route('tasks.index') }}" class="btn btn-outline-secondary">
                     <i class="bx bx-x me-1"></i>Cancel
                 </a>
                 <button class="btn btn-primary">
@@ -151,26 +151,26 @@
 // Show reassignment warning when changing assignee
 document.addEventListener('DOMContentLoaded', function() {
     const assignedToSelect = document.getElementById('assigned_to');
-    
+
     if (assignedToSelect) {
         const originalAssignee = {{ $task->assignee_id ?? 'null' }};
-        
+
         assignedToSelect.addEventListener('change', function() {
             const newAssignee = parseInt(this.value) || null;
             const form = this.closest('form');
             const submitButton = form.querySelector('button[type="submit"]');
-            
+
             if (newAssignee !== originalAssignee) {
                 // Show reassignment indicator
                 submitButton.innerHTML = '<i class="bx bx-transfer me-1"></i>Update & Reassign';
                 submitButton.classList.remove('btn-primary');
                 submitButton.classList.add('btn-warning');
-                
+
                 // Show confirmation
                 form.addEventListener('submit', function(e) {
                     const selectedOption = assignedToSelect.options[assignedToSelect.selectedIndex];
                     const newUserName = selectedOption.text;
-                    
+
                     if (!confirm(`Are you sure you want to reassign this task to ${newUserName}?`)) {
                         e.preventDefault();
                     }
