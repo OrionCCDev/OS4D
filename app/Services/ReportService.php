@@ -17,7 +17,7 @@ class ReportService
      */
     public function getProjectOverviewReport($filters = [], $request = null)
     {
-        $query = Project::with(['tasks', 'users', 'owner', 'folders']);
+        $query = Project::with(['users', 'owner', 'folders']);
 
         // Apply search filter
         if ($request && $request->filled('search')) {
@@ -47,17 +47,22 @@ class ReportService
 
         // Transform the data
         $transformedProjects = $projects->getCollection()->map(function ($project) {
-            // Build a robust task set: include any task linked to this project OR to any folder within it
+            // Get all folder IDs for this project (including nested folders)
             $allFolderIds = \App\Models\ProjectFolder::where('project_id', $project->id)->pluck('id');
 
-            // Get tasks directly assigned to project
-            $projectTasks = \App\Models\Task::where('project_id', $project->id)->get();
+            // Use a single query to get all tasks for this project
+            $tasks = \App\Models\Task::where(function($query) use ($project, $allFolderIds) {
+                $query->where('project_id', $project->id)
+                      ->orWhereIn('folder_id', $allFolderIds);
+            })->get();
 
-            // Get tasks assigned to any folder in this project
-            $folderTasks = \App\Models\Task::whereIn('folder_id', $allFolderIds)->get();
-
-            // Combine and deduplicate tasks
-            $tasks = $projectTasks->merge($folderTasks)->unique('id');
+            // Debug logging
+            \Illuminate\Support\Facades\Log::info("Project {$project->id} ({$project->name}):", [
+                'project_id' => $project->id,
+                'folder_ids' => $allFolderIds->toArray(),
+                'total_tasks_count' => $tasks->count(),
+                'tasks_sample' => $tasks->take(3)->pluck('title', 'id')->toArray()
+            ]);
 
             $totalTasks = $tasks->count();
             $completedTasks = $tasks->where('status', 'completed')->count();
@@ -106,7 +111,7 @@ class ReportService
      */
     public function getDetailedProjectProgress($filters = [], $request = null)
     {
-        $query = Project::with(['tasks.assignee', 'tasks.creator', 'users', 'owner', 'folders']);
+        $query = Project::with(['users', 'owner', 'folders']);
 
         // Apply project_id filter if specified
         if (isset($filters['project_id']) && $filters['project_id']) {
@@ -144,14 +149,11 @@ class ReportService
             // Use same robust task set as overview to keep numbers consistent
             $allFolderIds = \App\Models\ProjectFolder::where('project_id', $project->id)->pluck('id');
 
-            // Get tasks directly assigned to project
-            $projectTasks = \App\Models\Task::where('project_id', $project->id)->get();
-
-            // Get tasks assigned to any folder in this project
-            $folderTasks = \App\Models\Task::whereIn('folder_id', $allFolderIds)->get();
-
-            // Combine and deduplicate tasks
-            $tasks = $projectTasks->merge($folderTasks)->unique('id');
+            // Use a single query to get all tasks for this project
+            $tasks = \App\Models\Task::where(function($query) use ($project, $allFolderIds) {
+                $query->where('project_id', $project->id)
+                      ->orWhereIn('folder_id', $allFolderIds);
+            })->get();
             $totalTasks = $tasks->count();
             $completedTasks = $tasks->where('status', 'completed');
             $completedTasksCount = $completedTasks->count();
