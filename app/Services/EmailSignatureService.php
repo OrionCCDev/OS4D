@@ -91,58 +91,49 @@ class EmailSignatureService
     protected function buildSignatureHTML($name, $email, $mobile, $position, $department, $logoUrl, $logoColor, $userImage = null)
     {
         $textColor = $logoColor === 'white' ? '#ffffff' : '#333333';
-        $accentColor = '#2563eb'; // Blue accent
+        $primaryColor = '#1e40af'; // Deep blue
+        $secondaryColor = '#3b82f6'; // Bright blue
+        $accentOrange = '#f59e0b'; // Orange accent
+        $lightBlue = '#dbeafe'; // Light blue background
         $lightGray = '#6b7280';
 
-        return "
-        <div style='font-family: Arial, sans-serif; font-size: 12px; line-height: 1.4; color: {$textColor}; max-width: 500px;'>
-            <table cellpadding='0' cellspacing='0' border='0' style='border-collapse: collapse;'>
-                <tr>
-                    <td style='padding-right: 15px; vertical-align: top;'>
-                        <img src='{$logoUrl}' alt='Orion Contracting' style='width: 80px; height: auto; max-height: 60px;' />
-                    </td>
-                    <td style='vertical-align: top;'>
-                        <div style='margin-bottom: 8px;'>";
+        $signature = '<div style="font-family: Arial, sans-serif; font-size: 13px; line-height: 1.5; color: ' . $textColor . '; max-width: 600px; margin: 20px 0;">';
+        $signature .= '<table style="width: 100%; border-collapse: collapse; background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">';
+        $signature .= '<tr>';
+        $signature .= '<td style="vertical-align: top; padding: 0;">';
+        $signature .= '<div style="display: flex; align-items: center; margin-bottom: 15px;">';
+        $signature .= '<div style="width: 50px; height: 50px; border-radius: 50%; background: linear-gradient(135deg, ' . $primaryColor . ' 0%, ' . $secondaryColor . ' 100%); display: flex; align-items: center; justify-content: center; margin-right: 15px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">';
+        $signature .= '<span style="color: white; font-weight: bold; font-size: 18px;">' . strtoupper(substr($name, 0, 1)) . '</span>';
+        $signature .= '</div>';
+        $signature .= '<div>';
+        $signature .= '<div style="font-size: 16px; font-weight: bold; color: ' . $primaryColor . '; margin-bottom: 2px;">' . $name . '</div>';
+        $signature .= '<div style="font-size: 12px; color: ' . $accentOrange . '; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">' . $position . '</div>';
+        $signature .= '</div>';
+        $signature .= '</div>';
 
-        // Add user image if available
-        if ($userImage) {
-            $signature .= "
-                            <div style='display: flex; align-items: center; margin-bottom: 8px;'>
-                                <img src='{$userImage}' alt='{$name}' style='width: 40px; height: 40px; border-radius: 50%; margin-right: 10px; object-fit: cover;' />
-                                <div>
-                                    <strong style='color: {$accentColor}; font-size: 14px;'>{$name}</strong>
-                                </div>
-                            </div>";
-        } else {
-            $signature .= "
-                            <strong style='color: {$accentColor}; font-size: 14px;'>{$name}</strong>";
-        }
-
-        $signature .= "
-                        </div>
-                        <div style='margin-bottom: 4px; color: {$lightGray};'>
-                            <strong>{$position}</strong> | {$department}
-                        </div>
-                        <div style='margin-bottom: 2px;'>
-                            📧 <a href='mailto:{$email}' style='color: {$accentColor}; text-decoration: none;'>{$email}</a>
-                        </div>";
+        $signature .= '<div style="background: white; border-radius: 8px; padding: 15px; margin-bottom: 15px; border-left: 4px solid ' . $accentOrange . ';">';
+        $signature .= '<div style="margin-bottom: 8px;">';
+        $signature .= '<span style="color: ' . $primaryColor . '; font-weight: bold;">📧</span>';
+        $signature .= '<a href="mailto:' . $email . '" style="color: ' . $secondaryColor . '; text-decoration: none; margin-left: 8px; font-weight: 500;">' . $email . '</a>';
+        $signature .= '</div>';
 
         if ($mobile) {
-            $signature .= "
-                        <div style='margin-bottom: 2px;'>
-                            📱 <a href='tel:{$mobile}' style='color: {$accentColor}; text-decoration: none;'>{$mobile}</a>
-                        </div>";
+            $signature .= '<div style="margin-bottom: 8px;">';
+            $signature .= '<span style="color: ' . $primaryColor . '; font-weight: bold;">📱</span>';
+            $signature .= '<a href="tel:' . $mobile . '" style="color: ' . $secondaryColor . '; text-decoration: none; margin-left: 8px; font-weight: 500;">' . $mobile . '</a>';
+            $signature .= '</div>';
         }
 
-        $signature .= "
-                        <div style='margin-top: 8px; padding-top: 8px; border-top: 1px solid #e5e7eb; font-size: 11px; color: {$lightGray};'>
-                            <strong>Orion Contracting Company</strong><br>
-                            Engineering Department | Professional Services
-                        </div>
-                    </td>
-                </tr>
-            </table>
-        </div>";
+        $signature .= '</div>';
+
+        $signature .= '<div style="background: linear-gradient(135deg, ' . $primaryColor . ' 0%, ' . $secondaryColor . ' 100%); color: white; padding: 12px 15px; border-radius: 8px; text-align: center;">';
+        $signature .= '<div style="font-weight: bold; font-size: 14px; margin-bottom: 4px;">🏢 Orion Contracting Company</div>';
+        $signature .= '<div style="font-size: 11px; opacity: 0.9;">Engineering Department | Professional Services</div>';
+        $signature .= '</div>';
+        $signature .= '</td>';
+        $signature .= '</tr>';
+        $signature .= '</table>';
+        $signature .= '</div>';
 
         return $signature;
     }

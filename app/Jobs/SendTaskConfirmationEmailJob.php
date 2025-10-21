@@ -86,6 +86,7 @@ class SendTaskConfirmationEmailJob implements ShouldQueue
 
             // Process email preparation body to replace signature placeholder
             $processedEmailPreparation = $this->processEmailPreparationBody();
+            $signatureService = app(EmailSignatureService::class);
 
             $emailData = [
                 'from' => $this->user->email,
@@ -96,6 +97,7 @@ class SendTaskConfirmationEmailJob implements ShouldQueue
                     'task' => $this->task,
                     'emailPreparation' => $processedEmailPreparation,
                     'sender' => $this->user,
+                    'signature' => $signatureService->getSignatureForEmail($this->user, 'html'),
                 ])->render(),
                 'task_id' => $this->task->id,
             ];
