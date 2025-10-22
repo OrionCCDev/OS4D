@@ -380,10 +380,7 @@ Route::middleware('auth')->group(function () {
     Route::get('debug/notifications', [App\Http\Controllers\DebugController::class, 'showReassignmentDebug'])->name('debug.notifications');
     Route::get('debug/test-reassignment', [App\Http\Controllers\DebugController::class, 'testReassignment'])->name('debug.test-reassignment');
 
-    // Notification routes - Available to all authenticated users
-    Route::get('notifications', [TaskController::class, 'notifications'])->name('notifications.index');
-    Route::post('notifications/{notification}/read', [TaskController::class, 'markNotificationAsRead'])->name('notifications.read');
-    Route::post('notifications/read-all', [TaskController::class, 'markAllNotificationsAsRead'])->name('notifications.read-all');
+    // Notification routes - Available to all authenticated users (moved to unified notification system below)
 
     // API routes for live notifications - Available to all authenticated users
     Route::get('api/notifications/unread', [TaskController::class, 'getUnreadNotifications'])->name('api.notifications.unread');

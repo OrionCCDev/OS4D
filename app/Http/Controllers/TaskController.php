@@ -107,6 +107,26 @@ class TaskController extends Controller
         }
         $task = Task::create($validated);
 
+        // Create notification for task assignment if assigned to someone
+        if ($task->assigned_to) {
+            \App\Models\UnifiedNotification::createTaskNotification(
+                $task->assigned_to,
+                'task_assigned',
+                'New Task Assigned to You',
+                'You have been assigned a new task: "' . $task->title . '" by ' . Auth::user()->name,
+                [
+                    'task_id' => $task->id,
+                    'task_title' => $task->title,
+                    'project_id' => $task->project_id,
+                    'project_name' => $task->project->name ?? 'Unknown Project',
+                    'assigned_by' => Auth::user()->name,
+                    'due_date' => $task->due_date ? $task->due_date->format('Y-m-d') : null
+                ],
+                $task->id,
+                'high'
+            );
+        }
+
         // Handle attachments on create
         if ($request->hasFile('attachments')) {
             foreach ($request->file('attachments') as $file) {
