@@ -151,7 +151,7 @@
                                 </div>
                                 <div>
                                     <h6 class="mb-1 text-muted">Folder</h6>
-                                    <p class="mb-0 fw-semibold">{{ $task->folder?->name ?? 'No Folder' }}</p>
+                                    <p class="mb-0 fw-semibold">{{ $task->folder?->name ?? 'Main Folder' }}</p>
                                 </div>
                             </div>
                         </div>

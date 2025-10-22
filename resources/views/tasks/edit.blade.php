@@ -48,7 +48,7 @@
                 </div>
                 <div class="col-md-6 mb-3">
                     <label class="form-label">Folder</label>
-                    <input type="text" class="form-control" value="{{ $task->folder->name ?? 'None' }}" readonly>
+                    <input type="text" class="form-control" value="{{ $task->folder->name ?? 'Main Folder' }}" readonly>
                 </div>
             </div>
             <div class="mb-3">

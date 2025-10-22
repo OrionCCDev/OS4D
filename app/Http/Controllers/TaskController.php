@@ -147,6 +147,12 @@ class TaskController extends Controller
             }
         }
 
+        // Check if we came from a project page and redirect back
+        $redirectToProject = $request->input('redirect_to_project');
+        if ($redirectToProject) {
+            return redirect()->route('projects.show', $redirectToProject)->with('success', 'Task created');
+        }
+
         return redirect()->route('tasks.index')->with('success', 'Task created');
     }
 

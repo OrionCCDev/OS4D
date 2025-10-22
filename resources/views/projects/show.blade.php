@@ -249,7 +249,7 @@
                                         </td>
                                         <td class="align-middle">
                                             <span class="badge bg-label-info">
-                                                <i class="bx bx-folder me-1"></i>{{ $task->folder?->name ?? 'No Folder' }}
+                                                <i class="bx bx-folder me-1"></i>{{ $task->folder?->name ?? 'Main Folder' }}
                                             </span>
                                         </td>
                                         <td class="align-middle">

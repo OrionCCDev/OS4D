@@ -6,6 +6,9 @@
     <div class="card p-3">
         <form method="POST" action="{{ route('tasks.store') }}" enctype="multipart/form-data">
             @csrf
+            @if($selectedProjectId)
+                <input type="hidden" name="redirect_to_project" value="{{ $selectedProjectId }}">
+            @endif
             <div class="row">
                 <div class="col-md-3 mb-3">
                     <label class="form-label">Project</label>
