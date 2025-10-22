@@ -925,11 +925,11 @@
 
                                 <form action="{{ route('tasks.resubmit', $task) }}" method="POST">
                                     @csrf
-                                    <button type="submit" class="btn btn-primary w-100">
-                                        <i class="bx bx-send me-2"></i>Resubmit for Review
+                                    <button type="submit" class="btn btn-success w-100">
+                                        <i class="bx bx-edit me-2"></i>Start Working on Changes
                                     </button>
                                 </form>
-                                <small class="text-muted text-center mt-2 d-block">Make necessary changes and resubmit to continue the workflow</small>
+                                <small class="text-muted text-center mt-2 d-block">Click to return to in-progress status and make the requested changes</small>
 
                             {{-- Basic task states for non-assigned users --}}
                             @elseif(in_array($task->status, ['pending', 'assigned', null]) && $task->assigned_to !== auth()->id())

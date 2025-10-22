@@ -1142,8 +1142,7 @@ class Task extends Model
     public function resubmitTask()
     {
         $this->update([
-            'status' => 'submitted_for_review',
-            'submitted_at' => now(),
+            'status' => 'in_progress',
             'manager_override_status' => 'none',
             'manager_override_notes' => null,
         ]);
@@ -1152,8 +1151,8 @@ class Task extends Model
         $this->histories()->create([
             'user_id' => auth()->id(),
             'action' => 'resubmitted',
-            'description' => 'Task re-submitted for review after manager requested changes',
-            'metadata' => ['submitted_at' => now()]
+            'description' => 'Task returned to in-progress status after manager requested changes. User can now make changes and resubmit for review.',
+            'metadata' => ['status_changed_to' => 'in_progress', 'resubmitted_at' => now()]
         ]);
 
         // Notify manager about re-submission
