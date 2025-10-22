@@ -118,6 +118,7 @@
 
                         <div class="card-body">
                             <!-- Quick Stats -->
+                            <h6 class="mb-3 text-primary"><i class="bx bx-bar-chart me-2"></i>Project Statistics</h6>
                             <div class="row mb-4">
                                 <div class="col-md-3 col-sm-6 mb-3">
                                     <div class="stat-card bg-primary-subtle p-3 rounded">

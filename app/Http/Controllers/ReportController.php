@@ -674,6 +674,9 @@ class ReportController extends Controller
             'owner'
         ]);
 
+        // Load folders with counts
+        $folders = $project->folders()->withCount(['tasks', 'children'])->get();
+
         Log::info('Project relationships loaded successfully');
 
         // Get all tasks with full details
@@ -744,7 +747,7 @@ class ReportController extends Controller
             'teamPerformance' => $teamPerformance,
             'projectTimeline' => $projectTimeline,
             'projectDuration' => $projectDuration,
-            'folders' => $project->folders,
+            'folders' => $folders,
             'exportDate' => now(),
         ];
     }
