@@ -560,7 +560,7 @@ class DashboardController extends Controller
         $avgCompletionTime = Task::where('status', 'completed')
             ->whereNotNull('completed_at')
             ->whereNotNull('assigned_at')
-            ->selectRaw('AVG(julianday(completed_at) - julianday(assigned_at)) as avg_days')
+            ->selectRaw('AVG(DATEDIFF(completed_at, assigned_at)) as avg_days')
             ->value('avg_days');
 
         // Task distribution by project
