@@ -215,6 +215,12 @@
                                        onclick="event.preventDefault(); event.stopPropagation(); window.location.href='{{ route('projects.edit', $project) }}';">
                                         <i class="bx bx-edit"></i>
                                     </a>
+                                    <button type="button"
+                                            class="btn btn-outline-danger position-relative"
+                                            style="z-index: 2;"
+                                            onclick="event.preventDefault(); event.stopPropagation(); confirmDeleteProject('{{ $project->id }}', '{{ addslashes($project->name) }}', {{ $project->tasks()->count() }}, {{ $project->folders()->count() }});">
+                                        <i class="bx bx-trash"></i>
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -277,16 +283,24 @@
 
                             <!-- Actions Column -->
                             <div class="actions-column">
-                                <button class="btn btn-primary btn-sm position-relative" style="z-index: 2;">
+                                <a href="{{ route('projects.show', $project) }}"
+                                   class="btn btn-primary btn-sm position-relative"
+                                   style="z-index: 2;"
+                                   onclick="event.preventDefault(); event.stopPropagation(); window.location.href='{{ route('projects.show', $project) }}';">
                                     <i class="bx bxs-show"></i>
-                                </button>
+                                </a>
                                 <a href="{{ route('projects.edit', $project) }}"
                                    class="btn btn-outline-secondary btn-sm position-relative"
                                    style="z-index: 2;"
                                    onclick="event.preventDefault(); event.stopPropagation(); window.location.href='{{ route('projects.edit', $project) }}';">
                                     <i class="bx bx-edit"></i>
                                 </a>
-
+                                <button type="button"
+                                        class="btn btn-outline-danger btn-sm position-relative"
+                                        style="z-index: 2;"
+                                        onclick="event.preventDefault(); event.stopPropagation(); confirmDeleteProject('{{ $project->id }}', '{{ addslashes($project->name) }}', {{ $project->tasks()->count() }}, {{ $project->folders()->count() }});">
+                                    <i class="bx bx-trash"></i>
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -312,6 +326,46 @@
     <!-- Pagination -->
     <div class="d-flex justify-content-center mt-4">
         {{ $projects->links('vendor.pagination.bootstrap-5') }}
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteProjectModal" tabindex="-1" aria-labelledby="deleteProjectModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteProjectModalLabel">
+                    <i class="bx bx-error-circle text-danger me-2"></i>Confirm Project Deletion
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger">
+                    <strong>Warning:</strong> This action cannot be undone!
+                </div>
+                <p>You are about to delete the project <strong id="projectNameToDelete"></strong>.</p>
+                <p>This will permanently delete:</p>
+                <ul class="list-unstyled">
+                    <li><i class="bx bx-task text-primary me-2"></i><span id="tasksCountToDelete">0</span> tasks</li>
+                    <li><i class="bx bx-folder text-warning me-2"></i><span id="foldersCountToDelete">0</span> folders</li>
+                    <li><i class="bx bx-group text-info me-2"></i>All team member associations</li>
+                    <li><i class="bx bx-folder-open text-secondary me-2"></i>Project files and directories</li>
+                </ul>
+                <p class="text-muted small">All data associated with this project will be permanently removed from the system.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bx bx-x me-1"></i>Cancel
+                </button>
+                <form id="deleteProjectForm" method="POST" style="display: inline;">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bx bx-trash me-1"></i>Delete Project
+                    </button>
+                </form>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -832,5 +886,21 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 });
+
+// Function to confirm project deletion
+function confirmDeleteProject(projectId, projectName, tasksCount, foldersCount) {
+    // Update modal content
+    document.getElementById('projectNameToDelete').textContent = projectName;
+    document.getElementById('tasksCountToDelete').textContent = tasksCount;
+    document.getElementById('foldersCountToDelete').textContent = foldersCount;
+
+    // Update form action
+    const form = document.getElementById('deleteProjectForm');
+    form.action = `/projects/${projectId}`;
+
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('deleteProjectModal'));
+    modal.show();
+}
 </script>
 @endsection

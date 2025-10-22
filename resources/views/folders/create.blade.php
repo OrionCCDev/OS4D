@@ -30,7 +30,7 @@
                 <input type="text" name="name" class="form-control" value="{{ old('name') }}" required>
             </div>
             <div class="d-flex gap-2">
-                <a href="{{ route('folders.index') }}" class="btn btn-secondary">Cancel</a>
+                <a href="{{ route('folders.index') }}" class="btn btn-outline-secondary">Cancel</a>
                 <button class="btn btn-primary">Save</button>
             </div>
         </form>
@@ -46,6 +46,22 @@
     @endif
 </div>
 @endsection
+
+@push('styles')
+<style>
+.btn-outline-secondary {
+    color: #6c757d !important;
+    border-color: #6c757d !important;
+    background-color: transparent !important;
+}
+
+.btn-outline-secondary:hover {
+    color: #fff !important;
+    background-color: #6c757d !important;
+    border-color: #6c757d !important;
+}
+</style>
+@endpush
 
 @push('scripts')
 <script>

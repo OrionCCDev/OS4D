@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Project;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use App\Models\ProjectFolder;
@@ -163,8 +164,88 @@ class ProjectController extends Controller
 
     public function destroy(Project $project)
     {
-        $project->delete();
-        return redirect()->route('projects.index')->with('success', 'Project deleted');
+        try {
+            // Get project details for logging
+            $projectName = $project->name;
+            $projectId = $project->id;
+
+            // Count related data before deletion
+            $tasksCount = $project->tasks()->count();
+            $foldersCount = $project->folders()->count();
+            $teamMembersCount = $project->users()->count();
+
+            // Delete all tasks associated with this project
+            $project->tasks()->delete();
+
+            // Delete all folders associated with this project
+            $project->folders()->delete();
+
+            // Remove all team members from the project
+            $project->users()->detach();
+
+            // Delete the project's physical directory
+            $this->deleteProjectDirectory($project);
+
+            // Finally, delete the project itself
+            $project->delete();
+
+            return redirect()->route('projects.index')->with('success',
+                "Project '{$projectName}' and all its associated data ({$tasksCount} tasks, {$foldersCount} folders, {$teamMembersCount} team members) have been successfully deleted."
+            );
+
+        } catch (\Exception $e) {
+            Log::error('Failed to delete project: ' . $e->getMessage(), [
+                'project_id' => $project->id,
+                'project_name' => $project->name,
+                'error' => $e->getMessage()
+            ]);
+
+            return redirect()->back()->with('error',
+                'Failed to delete project. Please try again or contact support if the problem persists.'
+            );
+        }
+    }
+
+    /**
+     * Delete the project's physical directory
+     */
+    private function deleteProjectDirectory(Project $project)
+    {
+        try {
+            $slug = Str::slug($project->name);
+            $path = 'projectsofus/' . $project->id . '-' . $slug;
+            $fullPath = public_path($path);
+
+            if (file_exists($fullPath)) {
+                $this->deleteDirectory($fullPath);
+            }
+        } catch (\Exception $e) {
+            Log::warning('Failed to delete project directory: ' . $e->getMessage(), [
+                'project_id' => $project->id,
+                'path' => $path ?? 'unknown'
+            ]);
+        }
+    }
+
+    /**
+     * Recursively delete a directory and all its contents
+     */
+    private function deleteDirectory($dir)
+    {
+        if (!file_exists($dir)) {
+            return;
+        }
+
+        $files = array_diff(scandir($dir), ['.', '..']);
+        foreach ($files as $file) {
+            $path = $dir . DIRECTORY_SEPARATOR . $file;
+            if (is_dir($path)) {
+                $this->deleteDirectory($path);
+            } else {
+                unlink($path);
+            }
+        }
+        rmdir($dir);
     }
 }
 
