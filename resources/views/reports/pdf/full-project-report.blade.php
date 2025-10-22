@@ -22,17 +22,11 @@
         }
 
         .company-logo {
-            width: 80px;
-            height: 80px;
+            width: 210px;
             margin: 0 auto 15px;
-            background: #1c3644;
-            border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: white;
-            font-size: 24px;
-            font-weight: bold;
         }
 
         .project-title {
@@ -250,7 +244,7 @@
     <!-- Header Section -->
     <div class="header">
         <div class="company-logo">
-            <img src="{{ public_path('DAssets/logo-blue.webp') }}" alt="Company Logo" style="max-width: 80px; max-height: 80px;">
+            <img src="{{ public_path('DAssets/logo-blue.webp') }}" alt="Company Logo" style="width: 210px; height: auto;">
         </div>
         <div class="project-title">{{ $project->name }}</div>
         <div class="project-subtitle">Project Code: {{ $project->short_code }}</div>

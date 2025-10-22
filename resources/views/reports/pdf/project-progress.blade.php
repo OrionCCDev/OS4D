@@ -174,14 +174,10 @@
             text-align: center;
             margin-bottom: 20px;
             padding: 20px 0;
-            background: linear-gradient(135deg, #12242E 0%, #254659 100%);
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
         }
         .company-logo img {
-            max-height: 80px;
-            max-width: 300px;
-            filter: brightness(0) invert(1);
+            width: 210px;
+            height: auto;
         }
         .company-logo .logo-text {
             color: white;
