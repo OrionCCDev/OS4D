@@ -158,15 +158,14 @@ class Project extends Model
     }
 
     /**
-     * Get the project duration in days
+     * Get the project duration in days (creation to due date)
      */
     public function getDurationAttribute()
     {
-        if (!$this->start_date || !$this->end_date) {
-            return null;
+        if ($this->created_at && $this->due_date) {
+            return $this->created_at->diffInDays($this->due_date);
         }
-
-        return Carbon::parse($this->start_date)->diffInDays(Carbon::parse($this->end_date), false);
+        return null;
     }
 
     /**

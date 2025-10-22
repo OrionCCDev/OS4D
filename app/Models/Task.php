@@ -503,6 +503,17 @@ class Task extends Model
         return null;
     }
 
+    /**
+     * Get the planned duration of the task (creation to due date)
+     */
+    public function getPlannedDurationAttribute()
+    {
+        if ($this->created_at && $this->due_date) {
+            return $this->created_at->diffInDays($this->due_date);
+        }
+        return null;
+    }
+
     public function getDaysRemainingAttribute()
     {
         if ($this->status !== 'completed' && $this->due_date) {

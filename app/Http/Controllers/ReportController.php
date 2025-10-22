@@ -1014,9 +1014,10 @@ class ReportController extends Controller
 
             // Add tasks for this folder
             foreach ($folderTasks as $task) {
+                // Calculate planned duration (creation to due date)
                 $taskDuration = null;
-                if ($task->assigned_at && $task->completed_at) {
-                    $taskDuration = $task->assigned_at->diffInDays($task->completed_at);
+                if ($task->created_at && $task->due_date) {
+                    $taskDuration = $task->created_at->diffInDays($task->due_date);
                 }
 
                 $folderData['tasks'][] = [

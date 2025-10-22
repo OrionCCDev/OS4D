@@ -244,11 +244,11 @@ class PerformanceCalculator
             return 0;
         }
 
-        $totalHours = $validTasks->sum(function ($task) {
-            return $task->assigned_at->diffInHours($task->completed_at);
+        $totalDays = $validTasks->sum(function ($task) {
+            return $task->assigned_at->diffInDays($task->completed_at);
         });
 
-        return round($totalHours / $validTasks->count(), 2);
+        return round($totalDays / $validTasks->count(), 1);
     }
 
     /**
@@ -258,7 +258,7 @@ class PerformanceCalculator
     {
         // Base efficiency on completion time and task complexity
         $baseScore = 80;
-        $timeBonus = max(0, 20 - ($averageCompletionTime / 24)); // Bonus for faster completion
+        $timeBonus = max(0, 20 - ($averageCompletionTime / 7)); // Bonus for faster completion (days-based)
         return min(100, $baseScore + $timeBonus);
     }
 

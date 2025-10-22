@@ -201,7 +201,9 @@
 <body>
     <!-- Company Logo Header -->
     <div class="company-logo">
-        @if(file_exists(public_path('uploads/company/logo.png')))
+        @if(file_exists(public_path('DAssets/logo-blue.webp')))
+            <img src="{{ public_path('DAssets/logo-blue.webp') }}" alt="Company Logo">
+        @elseif(file_exists(public_path('uploads/company/logo.png')))
             <img src="{{ public_path('uploads/company/logo.png') }}" alt="Company Logo">
         @elseif(file_exists(public_path('uploads/company/logo.jpg')))
             <img src="{{ public_path('uploads/company/logo.jpg') }}" alt="Company Logo">
@@ -538,39 +540,19 @@
                                         @php
                                             $assignedDate = \Carbon\Carbon::parse($task['assigned_at']);
                                             $completedDate = \Carbon\Carbon::parse($task['completed_at']);
-                                            $totalHours = $assignedDate->diffInHours($completedDate);
-                                            $days = floor($totalHours / 24);
-                                            $hours = $totalHours % 24;
+                                            $days = $assignedDate->diffInDays($completedDate);
                                         @endphp
                                         <div style="color: #155724; font-weight: bold; font-size: 10px; background-color: #d4edda; padding: 4px 6px; border-radius: 4px; display: inline-block; border: 1px solid #c3e6cb;">
-                                            @if($days > 0)
-                                                {{ $days }}d
-                                            @endif
-                                            @if($hours > 0)
-                                                {{ $hours }}h
-                                            @endif
-                                            @if($days == 0 && $hours == 0)
-                                                < 1h
-                                            @endif
+                                            {{ $days }}d
                                         </div>
                                         <div style="font-size: 8px; color: #155724; margin-top: 2px; font-weight: 500;">Duration</div>
                                     @elseif($task['assigned_at'] && $task['status'] !== 'completed')
                                         @php
                                             $assignedDate = \Carbon\Carbon::parse($task['assigned_at']);
-                                            $totalHours = $assignedDate->diffInHours(now());
-                                            $days = floor($totalHours / 24);
-                                            $hours = $totalHours % 24;
+                                            $days = $assignedDate->diffInDays(now());
                                         @endphp
                                         <div style="color: #856404; font-weight: bold; font-size: 10px; background-color: #fff3cd; padding: 4px 6px; border-radius: 4px; display: inline-block; border: 1px solid #ffeaa7;">
-                                            @if($days > 0)
-                                                {{ $days }}d
-                                            @endif
-                                            @if($hours > 0)
-                                                {{ $hours }}h
-                                            @endif
-                                            @if($days == 0 && $hours == 0)
-                                                < 1h
-                                            @endif
+                                            {{ $days }}d
                                         </div>
                                         <div style="font-size: 8px; color: #856404; margin-top: 2px; font-weight: 500;">Working</div>
                                     @else

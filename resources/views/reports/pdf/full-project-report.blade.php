@@ -13,14 +13,14 @@
             margin: 0;
             padding: 20px;
         }
-        
+
         .header {
             text-align: center;
             margin-bottom: 30px;
             border-bottom: 3px solid #1c3644;
             padding-bottom: 20px;
         }
-        
+
         .company-logo {
             width: 80px;
             height: 80px;
@@ -34,25 +34,25 @@
             font-size: 24px;
             font-weight: bold;
         }
-        
+
         .project-title {
             font-size: 24px;
             font-weight: bold;
             color: #1c3644;
             margin-bottom: 10px;
         }
-        
+
         .project-subtitle {
             font-size: 14px;
             color: #666;
             margin-bottom: 5px;
         }
-        
+
         .section {
             margin-bottom: 25px;
             page-break-inside: avoid;
         }
-        
+
         .section-title {
             font-size: 16px;
             font-weight: bold;
@@ -63,17 +63,17 @@
             color: white;
             border-radius: 4px;
         }
-        
+
         .stats-grid {
             display: table;
             width: 100%;
             margin-bottom: 20px;
         }
-        
+
         .stats-row {
             display: table-row;
         }
-        
+
         .stats-cell {
             display: table-cell;
             width: 25%;
@@ -82,49 +82,49 @@
             border: 1px solid #ddd;
             background: #f8f9fa;
         }
-        
+
         .stats-value {
             font-size: 18px;
             font-weight: bold;
             color: #1c3644;
         }
-        
+
         .stats-label {
             font-size: 9px;
             color: #666;
             margin-top: 5px;
         }
-        
+
         .info-table {
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 20px;
         }
-        
+
         .info-table th,
         .info-table td {
             padding: 8px 12px;
             text-align: left;
             border: 1px solid #ddd;
         }
-        
+
         .info-table th {
             background: #1c3644;
             color: white;
             font-weight: bold;
         }
-        
+
         .info-table tr:nth-child(even) {
             background: #f8f9fa;
         }
-        
+
         .task-table {
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 20px;
             font-size: 9px;
         }
-        
+
         .task-table th,
         .task-table td {
             padding: 6px 8px;
@@ -132,18 +132,18 @@
             border: 1px solid #ddd;
             vertical-align: top;
         }
-        
+
         .task-table th {
             background: #1c3644;
             color: white;
             font-weight: bold;
             font-size: 8px;
         }
-        
+
         .task-table tr:nth-child(even) {
             background: #f8f9fa;
         }
-        
+
         .task-separator {
             margin: 15px 0;
             padding: 10px;
@@ -151,7 +151,7 @@
             border-left: 4px solid #1c3644;
             border-radius: 0 4px 4px 0;
         }
-        
+
         .task-number {
             display: inline-block;
             background: #1c3644;
@@ -162,7 +162,7 @@
             font-weight: bold;
             margin-bottom: 8px;
         }
-        
+
         .status-badge {
             padding: 2px 6px;
             border-radius: 3px;
@@ -170,24 +170,24 @@
             font-weight: bold;
             text-transform: uppercase;
         }
-        
+
         .status-completed { background: #d4edda; color: #155724; }
         .status-in_progress { background: #fff3cd; color: #856404; }
         .status-pending { background: #d1ecf1; color: #0c5460; }
         .status-rejected { background: #f8d7da; color: #721c24; }
         .status-approved { background: #d4edda; color: #155724; }
-        
+
         .priority-badge {
             padding: 2px 6px;
             border-radius: 3px;
             font-size: 8px;
             font-weight: bold;
         }
-        
+
         .priority-high { background: #f8d7da; color: #721c24; }
         .priority-medium { background: #fff3cd; color: #856404; }
         .priority-low { background: #d1ecf1; color: #0c5460; }
-        
+
         .history-item {
             margin: 8px 0;
             padding: 8px;
@@ -195,19 +195,19 @@
             border-left: 3px solid #1c3644;
             border-radius: 0 4px 4px 0;
         }
-        
+
         .history-title {
             font-weight: bold;
             color: #1c3644;
             font-size: 9px;
         }
-        
+
         .history-meta {
             font-size: 8px;
             color: #666;
             margin-top: 4px;
         }
-        
+
         .team-member {
             display: inline-block;
             width: 48%;
@@ -217,22 +217,22 @@
             border-radius: 4px;
             background: #f8f9fa;
         }
-        
+
         .member-name {
             font-weight: bold;
             color: #1c3644;
             margin-bottom: 5px;
         }
-        
+
         .member-stats {
             font-size: 8px;
             color: #666;
         }
-        
+
         .page-break {
             page-break-before: always;
         }
-        
+
         .footer {
             position: fixed;
             bottom: 20px;
@@ -249,7 +249,9 @@
 <body>
     <!-- Header Section -->
     <div class="header">
-        <div class="company-logo">OC</div>
+        <div class="company-logo">
+            <img src="{{ public_path('DAssets/logo-blue.webp') }}" alt="Company Logo" style="max-width: 80px; max-height: 80px;">
+        </div>
         <div class="project-title">{{ $project->name }}</div>
         <div class="project-subtitle">Project Code: {{ $project->short_code }}</div>
         <div class="project-subtitle">Status: {{ ucfirst(str_replace('_', ' ', $project->status)) }}</div>
@@ -259,7 +261,7 @@
     <!-- Project Overview Section -->
     <div class="section">
         <div class="section-title">📊 Project Overview</div>
-        
+
         <table class="info-table">
             <tr>
                 <th style="width: 30%;">Project Information</th>
@@ -319,7 +321,7 @@
     <!-- Project Statistics Section -->
     <div class="section">
         <div class="section-title">📈 Project Statistics</div>
-        
+
         <div class="stats-grid">
             <div class="stats-row">
                 <div class="stats-cell">
@@ -364,14 +366,14 @@
     @if(count($teamPerformance) > 0)
     <div class="section">
         <div class="section-title">👥 Team Performance</div>
-        
+
         @foreach($teamPerformance as $member)
         <div class="team-member">
             <div class="member-name">{{ $member['user']->name }}</div>
             <div class="member-stats">
-                <strong>Total Tasks:</strong> {{ $member['total_tasks'] }} | 
-                <strong>Completed:</strong> {{ $member['completed_tasks'] }} | 
-                <strong>In Progress:</strong> {{ $member['in_progress_tasks'] }} | 
+                <strong>Total Tasks:</strong> {{ $member['total_tasks'] }} |
+                <strong>Completed:</strong> {{ $member['completed_tasks'] }} |
+                <strong>In Progress:</strong> {{ $member['in_progress_tasks'] }} |
                 <strong>Completion Rate:</strong> {{ $member['completion_rate'] }}%
             </div>
         </div>
@@ -383,7 +385,7 @@
     @if(count($folders) > 0)
     <div class="section">
         <div class="section-title">📁 Project Structure</div>
-        
+
         <table class="info-table">
             <tr>
                 <th>Folder Name</th>
@@ -406,12 +408,12 @@
     <!-- All Tasks Section -->
     <div class="section page-break">
         <div class="section-title">📋 Complete Tasks Details</div>
-        
+
         @if($allTasks->count() > 0)
             @foreach($allTasks as $task)
             <div class="task-separator">
                 <div class="task-number">Task {{ $loop->iteration }}</div>
-                
+
                 <!-- Task Name & Description Row -->
                 <table class="task-table">
                     <tr>
@@ -468,12 +470,12 @@
                             @endif
                         </td>
                         <td>
-                            @if($task->created_at && $task->updated_at)
+                            @if($task->created_at && $task->due_date)
                                 @php
-                                    $duration = $task->created_at->diffInDays($task->updated_at);
-                                    $hours = $task->created_at->diffInHours($task->updated_at) % 24;
+                                    $duration = $task->created_at->diffInDays($task->due_date);
+                                    $hours = $task->created_at->diffInHours($task->due_date) % 24;
                                 @endphp
-                                {{ $duration }}d {{ $hours }}h
+                                {{ round($duration) }}d {{ round($hours) }}h
                             @else
                                 N/A
                             @endif
@@ -485,7 +487,7 @@
                                     $hoursLeft = now()->diffInHours($task->due_date) % 24;
                                 @endphp
                                 @if($timeLeft >= 0)
-                                    {{ $timeLeft }}d {{ $hoursLeft }}h
+                                    {{ round($timeLeft) }}d {{ round($hoursLeft) }}h
                                 @else
                                     <span style="color: #dc3545;">Overdue</span>
                                 @endif
@@ -519,8 +521,8 @@
                             <div style="margin: 4px 0; font-size: 8px;">{{ $history->description }}</div>
                         @endif
                         <div class="history-meta">
-                            <strong>Type:</strong> {{ ucfirst(str_replace('_', ' ', $history->type)) }} | 
-                            <strong>By:</strong> {{ $history->user->name ?? 'System' }} | 
+                            <strong>Type:</strong> {{ ucfirst(str_replace('_', ' ', $history->type)) }} |
+                            <strong>By:</strong> {{ $history->user->name ?? 'System' }} |
                             <strong>Date:</strong> {{ $history->created_at->format('M j, Y g:i A') }}
                         </div>
                     </div>
