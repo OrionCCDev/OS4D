@@ -144,6 +144,12 @@ class UnifiedNotification extends Model
                 'task_overdue' => 'bx-error-circle',
                 'task_updated' => 'bx-edit',
                 'task_comment' => 'bx-message',
+                'task_status_changed' => 'bx-edit',
+                'task_resubmit_required' => 'bx-refresh',
+                'task_resubmit_enhanced' => 'bx-refresh',
+                'task_submitted_for_review' => 'bx-send',
+                'task_waiting_for_review' => 'bx-time',
+                'test_notification' => 'bx-bell',
                 default => 'bx-task'
             },
             'email' => match($this->type) {
@@ -152,6 +158,7 @@ class UnifiedNotification extends Model
                 'email_sent' => 'bx-send',
                 'email_attachment' => 'bx-paperclip',
                 'email_urgent' => 'bx-error',
+                'engineering_inbox_received' => 'bx-inbox',
                 default => 'bx-envelope'
             },
             default => 'bx-bell'
@@ -160,6 +167,26 @@ class UnifiedNotification extends Model
 
     public function getColorAttribute()
     {
+        // First check for type-based colors
+        $typeColorMap = [
+            'task_assigned' => 'primary',
+            'task_completed' => 'success',
+            'task_overdue' => 'danger',
+            'task_status_changed' => 'info',
+            'task_resubmit_required' => 'warning',
+            'task_resubmit_enhanced' => 'warning',
+            'task_submitted_for_review' => 'info',
+            'task_waiting_for_review' => 'info',
+            'email_received' => 'info',
+            'engineering_inbox_received' => 'purple',
+            'test_notification' => 'secondary',
+        ];
+
+        if (isset($typeColorMap[$this->type])) {
+            return $typeColorMap[$this->type];
+        }
+
+        // Fallback to priority-based colors
         return match($this->priority) {
             'urgent' => 'danger',
             'high' => 'warning',
@@ -273,63 +300,6 @@ class UnifiedNotification extends Model
     public function getRequiresActionAttribute()
     {
         return $this->requiresAction();
-    }
-
-    /**
-     * Get notification color for display
-     */
-    public function getColorAttribute()
-    {
-        $colorMap = [
-            'task_assigned' => 'primary',
-            'task_completed' => 'success',
-            'task_overdue' => 'danger',
-            'task_status_changed' => 'info',
-            'task_resubmit_required' => 'warning',
-            'task_resubmit_enhanced' => 'warning',
-            'task_submitted_for_review' => 'info',
-            'task_waiting_for_review' => 'info',
-            'email_received' => 'info',
-            'engineering_inbox_received' => 'purple',
-            'test_notification' => 'secondary',
-        ];
-
-        return $colorMap[$this->type] ?? 'secondary';
-    }
-
-    /**
-     * Get notification icon for display
-     */
-    public function getIconAttribute()
-    {
-        $iconMap = [
-            'task_assigned' => 'bx-task',
-            'task_completed' => 'bx-check-circle',
-            'task_overdue' => 'bx-error-circle',
-            'task_status_changed' => 'bx-edit',
-            'task_resubmit_required' => 'bx-refresh',
-            'task_resubmit_enhanced' => 'bx-refresh',
-            'task_submitted_for_review' => 'bx-send',
-            'task_waiting_for_review' => 'bx-time',
-            'email_received' => 'bx-envelope',
-            'engineering_inbox_received' => 'bx-inbox',
-            'test_notification' => 'bx-bell',
-        ];
-
-        return $iconMap[$this->type] ?? 'bx-bell';
-    }
-
-    /**
-     * Get notification badge color for display
-     */
-    public function getBadgeColorAttribute()
-    {
-        $badgeColorMap = [
-            'task' => 'primary',
-            'email' => 'info',
-        ];
-
-        return $badgeColorMap[$this->category] ?? 'secondary';
     }
 
     /**
