@@ -89,7 +89,7 @@ class TaskController extends Controller
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'due_date' => 'nullable|date',
-            'status' => 'nullable|in:pending,assigned,in_progress,in_review,approved,rejected,completed',
+            'status' => 'nullable|in:pending,assigned,in_progress,submitted_for_review,in_review,approved,ready_for_email,on_client_consultant_review,in_review_after_client_consultant_reply,re_submit_required,rejected,completed',
             'priority' => 'nullable|in:low,normal,medium,high,urgent,critical',
         ];
 
@@ -104,6 +104,10 @@ class TaskController extends Controller
         // Fallback default due date to +1 week if not provided
         if (empty($validated['due_date'])) {
             $validated['due_date'] = now()->addWeek();
+        }
+        // Set default status based on assignment
+        if (empty($validated['status'])) {
+            $validated['status'] = $validated['assigned_to'] ? 'assigned' : 'pending';
         }
         $task = Task::create($validated);
 
@@ -220,7 +224,7 @@ class TaskController extends Controller
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'due_date' => 'nullable|date',
-            'status' => 'nullable|in:pending,assigned,in_progress,in_review,approved,rejected,completed',
+            'status' => 'nullable|in:pending,assigned,in_progress,submitted_for_review,in_review,approved,ready_for_email,on_client_consultant_review,in_review_after_client_consultant_reply,re_submit_required,rejected,completed',
             'priority' => 'nullable|in:low,normal,medium,high,urgent,critical',
             'assigned_to' => 'nullable|exists:users,id',
         ];

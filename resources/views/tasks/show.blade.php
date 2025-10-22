@@ -849,6 +849,47 @@
                                 </div>
                                 <small class="text-muted text-center mt-2 d-block">You can also assign contractors during email preparation</small>
 
+                            {{-- Status: On Client/Consultant Review - Email sent, waiting for client response --}}
+                            @elseif($task->status === 'on_client_consultant_review')
+                                <div class="alert alert-info text-center mb-0">
+                                    <i class="bx bx-envelope me-2"></i>
+                                    <strong>Sent for Client Review</strong><br>
+                                    <small>Confirmation email sent to clients/consultants. Waiting for their response.</small>
+                                </div>
+
+                            {{-- Status: In Review After Client/Consultant Reply - Processing client feedback --}}
+                            @elseif($task->status === 'in_review_after_client_consultant_reply')
+                                <div class="alert alert-warning text-center mb-0">
+                                    <i class="bx bx-message-dots me-2"></i>
+                                    <strong>Processing Client Feedback</strong><br>
+                                    <small>Client/consultant has responded. Manager is processing the feedback.</small>
+                                </div>
+
+
+                            {{-- Status: Rejected - Task rejected --}}
+                            @elseif($task->status === 'rejected')
+                                <div class="alert alert-danger text-center mb-0">
+                                    <i class="bx bx-x-circle me-2"></i>
+                                    <strong>Task Rejected</strong><br>
+                                    <small>This task has been rejected. Please contact your manager for details.</small>
+                                </div>
+
+                            {{-- Status: Completed - Task completed --}}
+                            @elseif($task->status === 'completed')
+                                <div class="alert alert-success text-center mb-0">
+                                    <i class="bx bx-check-circle me-2"></i>
+                                    <strong>Task Completed</strong><br>
+                                    <small>Congratulations! This task has been successfully completed.</small>
+                                </div>
+
+                            {{-- Status: Pending - Not started yet --}}
+                            @elseif($task->status === 'pending')
+                                <div class="alert alert-secondary text-center mb-0">
+                                    <i class="bx bx-time me-2"></i>
+                                    <strong>Task Pending</strong><br>
+                                    <small>This task is pending assignment or approval.</small>
+                                </div>
+
                             {{-- Status: Re-Submit Required - Manager requested changes --}}
                             @elseif($task->status === 're_submit_required')
                                 <div class="alert alert-warning text-center mb-3">
@@ -957,13 +998,6 @@
                                         </form>
                                         <small class="text-muted text-center mt-2 d-block">Will automatically save current client & consultant responses</small>
                                     </div>
-                                </div>
-                            @else
-                                {{-- Default case for other statuses - show appropriate message --}}
-                                <div class="alert alert-secondary text-center mb-0">
-                                    <i class="bx bx-info-circle me-2"></i>
-                                    <strong>Task in Progress</strong><br>
-                                    <small>This task is currently being processed. Check back later for updates.</small>
                                 </div>
                             @endif
                         @endif
