@@ -104,7 +104,7 @@ class DashboardController extends Controller
         $tasksByStatus = $user->assignedTasks()->with(['project', 'folder'])
             ->orderByRaw("
                 CASE
-                    WHEN due_date < NOW() AND status != 'completed' THEN 1
+                    WHEN due_date < datetime('now') AND status != 'completed' THEN 1
                     WHEN status = 'in_progress' THEN 2
                     WHEN status = 'assigned' THEN 3
                     WHEN status = 'pending' THEN 4
@@ -328,7 +328,7 @@ class DashboardController extends Controller
         $tasksByStatus = Task::with(['assignee', 'project', 'folder'])
             ->orderByRaw("
                 CASE
-                    WHEN due_date < NOW() AND status != 'completed' THEN 1
+                    WHEN due_date < datetime('now') AND status != 'completed' THEN 1
                     WHEN status = 'in_progress' THEN 2
                     WHEN status = 'assigned' THEN 3
                     WHEN status = 'pending' THEN 4
@@ -351,10 +351,12 @@ class DashboardController extends Controller
                 $query->where('status', 'completed');
             }])
             ->withCount(['assignedTasks as total_tasks_count'])
-            ->having('completed_tasks_count', '>', 0)
             ->orderBy('completed_tasks_count', 'desc')
             ->limit(10)
             ->get()
+            ->filter(function($user) {
+                return $user->completed_tasks_count > 0;
+            })
             ->map(function($user) {
                 $user->completion_rate = $user->total_tasks_count > 0
                     ? round(($user->completed_tasks_count / $user->total_tasks_count) * 100, 1)
@@ -526,7 +528,7 @@ class DashboardController extends Controller
 
         // Monthly task completion trend (last 12 months)
         $monthlyTrend = Task::select(
-                DB::raw('DATE_FORMAT(completed_at, "%Y-%m") as month'),
+                DB::raw('strftime("%Y-%m", completed_at) as month'),
                 DB::raw('COUNT(*) as completed_count')
             )
             ->where('completed_at', '>=', $now->copy()->subMonths(12))
@@ -558,15 +560,17 @@ class DashboardController extends Controller
         $avgCompletionTime = Task::where('status', 'completed')
             ->whereNotNull('completed_at')
             ->whereNotNull('assigned_at')
-            ->selectRaw('AVG(DATEDIFF(completed_at, assigned_at)) as avg_days')
+            ->selectRaw('AVG(julianday(completed_at) - julianday(assigned_at)) as avg_days')
             ->value('avg_days');
 
         // Task distribution by project
         $tasksByProject = Project::withCount('tasks')
-            ->having('tasks_count', '>', 0)
             ->orderBy('tasks_count', 'desc')
             ->limit(10)
-            ->get();
+            ->get()
+            ->filter(function($project) {
+                return $project->tasks_count > 0;
+            });
 
         // Recent notifications
         $recentNotifications = CustomNotification::with('user')
@@ -591,7 +595,7 @@ class DashboardController extends Controller
             })
             ->orderByRaw("
                 CASE
-                    WHEN due_date < NOW() THEN 1
+                    WHEN due_date < datetime('now') THEN 1
                     ELSE 2
                 END
             ")
@@ -856,10 +860,12 @@ class DashboardController extends Controller
                 $query->where('status', 'completed');
             }])
             ->withCount(['assignedTasks as total_tasks_count'])
-            ->having('completed_tasks_count', '>', 0)
             ->orderBy('completed_tasks_count', 'desc')
             ->limit(10)
-            ->get();
+            ->get()
+            ->filter(function($user) {
+                return $user->completed_tasks_count > 0;
+            });
 
         $data = [];
         foreach ($users as $user) {
