@@ -291,10 +291,10 @@
                                         <td class="align-middle">
                                             <div class="d-flex align-items-center">
                                                 <div class="avatar avatar-sm me-2">
-                                                    <span class="avatar-initial rounded-circle bg-label-primary">{{ substr($task->creator?->name ?? 'U', 0, 1) }}</span>
+                                                    <span class="avatar-initial rounded-circle bg-label-primary">{{ substr($task->assignee?->name ?? 'U', 0, 1) }}</span>
                                                 </div>
-                                                <span>{{ $task->creator?->name ?? 'Unassigned' }}</span>
-                </div>
+                                                <span>{{ $task->assignee?->name ?? 'Unassigned' }}</span>
+                                            </div>
                                         </td>
                                         <td class="align-middle">
                                             <span class="badge {{ $task->status_badge_class }} text-white px-2 py-1 rounded-pill" style="font-size: 11px; font-weight: 600;">

@@ -138,7 +138,7 @@ class ProjectController extends Controller
         }
 
         // Load tasks: if a folder is selected, include tasks in that folder and all descendants
-        $tasksQuery = $project->tasks()->with(['folder', 'creator'])->latest();
+        $tasksQuery = $project->tasks()->with(['folder', 'creator', 'assignee'])->latest();
         if (!empty($descendantFolderIds)) {
             $tasksQuery->whereIn('folder_id', $descendantFolderIds);
         }
