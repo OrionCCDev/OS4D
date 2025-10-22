@@ -246,9 +246,16 @@
                         <small class="text-muted">({{ count($descendantFolderIds) }} folders included)</small>
                     @endif
                 </h5>
-                <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#tasksSection" aria-expanded="true" aria-controls="tasksSection">
-                    <i class="bx bx-chevron-down" id="tasksToggleIcon"></i>
-                </button>
+                <div class="d-flex gap-2">
+                    @if(Auth::user()->isManager())
+                    <a href="{{ route('tasks.create', ['project_id' => $project->id, 'folder_id' => $selectedFolder?->id]) }}" class="btn btn-sm btn-primary">
+                        <i class="bx bx-plus me-1"></i>Add New Task
+                    </a>
+                    @endif
+                    <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#tasksSection" aria-expanded="true" aria-controls="tasksSection">
+                        <i class="bx bx-chevron-down" id="tasksToggleIcon"></i>
+                    </button>
+                </div>
             </div>
         </div>
         <div class="collapse show" id="tasksSection">
