@@ -897,6 +897,14 @@
                                 </form>
                                 <small class="text-muted text-center mt-2 d-block">Make necessary changes and resubmit to continue the workflow</small>
 
+                            {{-- Basic task states for non-assigned users --}}
+                            @elseif(in_array($task->status, ['pending', 'assigned']) && $task->assigned_to !== auth()->id())
+                                <div class="alert alert-info text-center mb-0">
+                                    <i class="bx bx-info-circle me-2"></i>
+                                    <strong>Task Assigned</strong><br>
+                                    <small>This task has been assigned to {{ $task->assignee->name ?? 'another user' }}. Waiting for them to accept and start working.</small>
+                                </div>
+
                             {{-- Client/Consultant Response Tracking --}}
                             @else
                                 {{-- Show client/consultant response forms --}}
