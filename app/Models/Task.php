@@ -541,28 +541,28 @@ class Task extends Model
             'accepted' => 'bg-primary',       // 🟣 Purple - accepted by user
             'in_progress' => 'bg-warning',    // 🟡 Yellow/Orange - actively working
             'workingon' => 'bg-warning',      // 🟡 Yellow/Orange - working on (alias)
-            
+
             // Review workflow statuses
             'submitted_for_review' => 'bg-primary',  // 🟣 Purple - submitted for review
             'in_review' => 'bg-warning',             // 🟠 Yellow/Orange - under review
             'approved' => 'bg-success',              // 🟢 Green - approved
             'rejected' => 'bg-danger',               // 🔴 Red - rejected
-            
+
             // Email workflow statuses
             'ready_for_email' => 'bg-info',          // 🔵 Blue - ready to send email
             'waiting_sending_client_consultant_approve' => 'bg-warning',  // 🟠 Yellow/Orange - waiting to send approval
             'waiting_client_consultant_approve' => 'bg-info',             // 🔵 Blue - waiting for client/consultant approval
-            
+
             // Final statuses
             'completed' => 'bg-success',      // 🟢 Green - completed
             'cancelled' => 'bg-dark',         // ⚫ Black - cancelled
-            
+
             // Additional statuses
             'on_hold' => 'bg-secondary',      // ⚪ Gray - on hold
             'blocked' => 'bg-danger',         // 🔴 Red - blocked
             'draft' => 'bg-light',            // ⚪ Light gray - draft
             'archived' => 'bg-dark',          // ⚫ Black - archived
-            
+
             default => 'bg-secondary'         // ⚪ Gray - default unknown status
         };
     }
@@ -1050,7 +1050,7 @@ class Task extends Model
     {
         $this->update([
             'status' => 're_submit_required',
-            'manager_override_status' => 're_submit',
+            'manager_override_status' => 'reset_for_review',
             'manager_override_notes' => $notes,
             'manager_override_updated_at' => now(),
             'manager_override_by' => auth()->id(),
@@ -1080,7 +1080,7 @@ class Task extends Model
     {
         $this->update([
             'status' => 're_submit_required',
-            'manager_override_status' => 're_submit',
+            'manager_override_status' => 'reset_for_review',
             'manager_override_notes' => $notes,
             'manager_override_updated_at' => now(),
             'manager_override_by' => auth()->id(),
