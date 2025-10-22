@@ -849,13 +849,6 @@
                                 </div>
                                 <small class="text-muted text-center mt-2 d-block">You can also assign contractors during email preparation</small>
 
-                            {{-- Status: On Client/Consultant Review - Email sent, waiting for client response --}}
-                            @elseif($task->status === 'on_client_consultant_review')
-                                <div class="alert alert-info text-center mb-0">
-                                    <i class="bx bx-envelope me-2"></i>
-                                    <strong>Sent for Client Review</strong><br>
-                                    <small>Confirmation email sent to clients/consultants. Waiting for their response.</small>
-                                </div>
 
                             {{-- Status: In Review After Client/Consultant Reply - Processing client feedback --}}
                             @elseif($task->status === 'in_review_after_client_consultant_reply')
