@@ -17,7 +17,7 @@ class TaskReassignmentController extends Controller
     public function showBulkReassignment(User $user)
     {
         // Get all active tasks assigned to this user
-        $tasks = Task::where('assignee_id', $user->id)
+        $tasks = Task::where('assigned_to', $user->id)
             ->whereNotIn('status', ['completed', 'cancelled'])
             ->with(['project', 'folder'])
             ->get();
@@ -42,7 +42,7 @@ class TaskReassignmentController extends Controller
     public function reassignTask(Request $request, Task $task)
     {
         $request->validate([
-            'new_assignee_id' => 'required|exists:users,id',
+            'new_assigned_to' => 'required|exists:users,id',
             'reassignment_reason' => 'nullable|string|max:500'
         ]);
 
@@ -50,10 +50,10 @@ class TaskReassignmentController extends Controller
             DB::beginTransaction();
 
             $oldAssignee = $task->assignee;
-            $newAssignee = User::findOrFail($request->new_assignee_id);
+            $newAssignee = User::findOrFail($request->new_assigned_to);
 
             // Update the task
-            $task->assignee_id = $request->new_assignee_id;
+            $task->assigned_to = $request->new_assigned_to;
             $task->save();
 
             // Create task history entry
@@ -67,7 +67,7 @@ class TaskReassignmentController extends Controller
             ]);
 
             $currentUser = auth()->user();
-            
+
             // Send notification to OLD assignee (if exists and is not the current user)
             if ($oldAssignee && $oldAssignee->id !== $currentUser->id) {
                 \App\Models\UnifiedNotification::createTaskNotification(
@@ -115,7 +115,7 @@ class TaskReassignmentController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Task reassignment failed: ' . $e->getMessage());
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to reassign task: ' . $e->getMessage()
@@ -147,9 +147,9 @@ class TaskReassignmentController extends Controller
             $reassignedCount = 0;
 
             foreach ($tasks as $task) {
-                if ($task->assignee_id == $fromUser->id) {
+                if ($task->assigned_to == $fromUser->id) {
                     // Update the task
-                    $task->assignee_id = $toUser->id;
+                    $task->assigned_to = $toUser->id;
                     $task->save();
 
                     // Create task history entry
@@ -185,7 +185,7 @@ class TaskReassignmentController extends Controller
                     $reassignedCount++;
                 }
             }
-            
+
             // Send summary notification to OLD assignee after all tasks are reassigned
             // Only send if the old assignee is not the current user (manager doing the reassignment)
             if ($reassignedCount > 0 && $fromUser->id !== auth()->id()) {
@@ -224,7 +224,7 @@ class TaskReassignmentController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Bulk task reassignment failed: ' . $e->getMessage());
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to reassign tasks: ' . $e->getMessage()
@@ -244,7 +244,7 @@ class TaskReassignmentController extends Controller
 
         try {
             $user->status = $request->status;
-            
+
             if (in_array($request->status, ['inactive', 'resigned'])) {
                 $user->deactivated_at = now();
                 $user->deactivation_reason = $request->reason;
@@ -252,7 +252,7 @@ class TaskReassignmentController extends Controller
                 $user->deactivated_at = null;
                 $user->deactivation_reason = null;
             }
-            
+
             $user->save();
 
             return response()->json([
@@ -262,7 +262,7 @@ class TaskReassignmentController extends Controller
 
         } catch (\Exception $e) {
             Log::error('User status update failed: ' . $e->getMessage());
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to update user status: ' . $e->getMessage()
@@ -275,11 +275,11 @@ class TaskReassignmentController extends Controller
      */
     public function getUserActiveTasks(User $user)
     {
-        $activeTasks = Task::where('assignee_id', $user->id)
+        $activeTasks = Task::where('assigned_to', $user->id)
             ->whereNotIn('status', ['completed', 'cancelled'])
             ->count();
 
-        $completedTasks = Task::where('assignee_id', $user->id)
+        $completedTasks = Task::where('assigned_to', $user->id)
             ->where('status', 'completed')
             ->count();
 

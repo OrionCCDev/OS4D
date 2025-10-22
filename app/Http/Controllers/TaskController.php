@@ -209,7 +209,7 @@ class TaskController extends Controller
         $validated = $request->validate($rules);
 
         // Check if task is being reassigned
-        $isReassignment = $request->has('assigned_to') && $request->assigned_to != $task->assignee_id;
+        $isReassignment = $request->has('assigned_to') && $request->assigned_to != $task->assigned_to;
         $oldAssignee = $task->assignee;
 
         $task->update($validated);

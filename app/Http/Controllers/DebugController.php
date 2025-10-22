@@ -64,13 +64,13 @@ class DebugController extends Controller
 
         // Simulate the reassignment logic
         $oldAssignee = $task->assignee;
-        $isReassignment = $task->assignee_id != $toUserId;
+        $isReassignment = $task->assigned_to != $toUserId;
 
         return response()->json([
             'task' => [
                 'id' => $task->id,
                 'title' => $task->title,
-                'current_assignee_id' => $task->assignee_id,
+                'current_assignee_id' => $task->assigned_to,
                 'current_assignee_name' => $oldAssignee ? $oldAssignee->name : 'None'
             ],
             'from_user' => [

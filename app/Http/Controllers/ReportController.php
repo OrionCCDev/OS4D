@@ -710,7 +710,7 @@ class ReportController extends Controller
         $teamPerformance = [];
 
         foreach ($teamMembers as $member) {
-            $memberTasks = $allTasks->where('assignee_id', $member->id);
+            $memberTasks = $allTasks->where('assigned_to', $member->id);
             $teamPerformance[] = [
                 'user' => $member,
                 'total_tasks' => $memberTasks->count(),
