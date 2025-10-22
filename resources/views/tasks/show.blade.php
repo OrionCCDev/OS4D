@@ -898,15 +898,15 @@
                                 <small class="text-muted text-center mt-2 d-block">Make necessary changes and resubmit to continue the workflow</small>
 
                             {{-- Basic task states for non-assigned users --}}
-                            @elseif(in_array($task->status, ['pending', 'assigned']) && $task->assigned_to !== auth()->id())
+                            @elseif(in_array($task->status, ['pending', 'assigned', null]) && $task->assigned_to !== auth()->id())
                                 <div class="alert alert-info text-center mb-0">
                                     <i class="bx bx-info-circle me-2"></i>
                                     <strong>Task Assigned</strong><br>
                                     <small>This task has been assigned to {{ $task->assignee->name ?? 'another user' }}. Waiting for them to accept and start working.</small>
                                 </div>
 
-                            {{-- Client/Consultant Response Tracking --}}
-                            @else
+                            {{-- Client/Consultant Response Tracking - Only show after email has been sent --}}
+                            @elseif($task->status === 'on_client_consultant_review' || $task->combined_response_status)
                                 {{-- Show client/consultant response forms --}}
                                 <div class="card border-primary mb-3">
                                     <div class="card-header bg-primary text-white">
@@ -957,6 +957,13 @@
                                         </form>
                                         <small class="text-muted text-center mt-2 d-block">Will automatically save current client & consultant responses</small>
                                     </div>
+                                </div>
+                            @else
+                                {{-- Default case for other statuses - show appropriate message --}}
+                                <div class="alert alert-secondary text-center mb-0">
+                                    <i class="bx bx-info-circle me-2"></i>
+                                    <strong>Task in Progress</strong><br>
+                                    <small>This task is currently being processed. Check back later for updates.</small>
                                 </div>
                             @endif
                         @endif
