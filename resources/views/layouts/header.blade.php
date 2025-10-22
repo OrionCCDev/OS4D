@@ -1563,7 +1563,7 @@
                   // Mark all designers notifications as read
                   if (designersMarkAllBtn) {
                     designersMarkAllBtn.addEventListener('click', function() {
-                      fetch('{{ route("notifications.mark-all-read") }}', {
+                      fetch('{{ route("notifications.mark-all-read") }}?category=email', {
                         method: 'POST',
                         headers: {
                           'X-CSRF-TOKEN': '{{ csrf_token() }}',
@@ -1702,7 +1702,7 @@
                 if (emailMarkAllBtn) {
                   emailMarkAllBtn.addEventListener('click', async function() {
                     try {
-                      await fetch('{{ route('notifications.mark-all-read') }}', {
+                      await fetch('{{ route('notifications.mark-all-read') }}?category=email', {
                         method: 'POST',
                         headers: {
                           'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
@@ -1720,7 +1720,7 @@
                 if (taskMarkAllBtn) {
                   taskMarkAllBtn.addEventListener('click', async function() {
                     try {
-                      await fetch('{{ route('notifications.mark-all-read') }}', {
+                      await fetch('{{ route('notifications.mark-all-read') }}?category=task', {
                         method: 'POST',
                         headers: {
                           'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
