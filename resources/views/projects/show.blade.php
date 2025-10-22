@@ -93,6 +93,24 @@
                                     <!-- Colorful gradient background -->
                                     <div class="position-absolute top-0 start-0 w-100" style="height: 4px; background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);"></div>
 
+                                    <!-- Edit and Delete Icons -->
+                                    <div class="position-absolute top-0 end-0 p-2" style="z-index: 10;">
+                                        <div class="btn-group" role="group">
+                                            <a href="{{ route('folders.edit', $folder->id) }}"
+                                               class="btn btn-sm btn-outline-primary"
+                                               onclick="event.stopPropagation();"
+                                               title="Edit Folder">
+                                                <i class="bx bx-edit"></i>
+                                            </a>
+                                            <button type="button"
+                                                    class="btn btn-sm btn-outline-danger"
+                                                    onclick="event.stopPropagation(); confirmDeleteFolder('{{ $folder->id }}', '{{ addslashes($folder->name) }}');"
+                                                    title="Delete Folder">
+                                                <i class="bx bx-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+
                                     <div class="card-body p-4">
                                         <div class="d-flex align-items-center mb-3">
                                             <div class="folder-icon me-3" style="width: 48px; height: 48px; background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
@@ -141,6 +159,24 @@
                                 <div class="card folder-card h-100 position-relative overflow-hidden" style="transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); border: 1px solid #e5e7eb; cursor: pointer;" onclick="window.location.href='{{ route('projects.show', ['project' => $project->id, 'folder' => $folder->id]) }}'">
                                     <!-- Colorful gradient background -->
                                     <div class="position-absolute top-0 start-0 w-100" style="height: 4px; background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);"></div>
+
+                                    <!-- Edit and Delete Icons -->
+                                    <div class="position-absolute top-0 end-0 p-2" style="z-index: 10;">
+                                        <div class="btn-group" role="group">
+                                            <a href="{{ route('folders.edit', $folder->id) }}"
+                                               class="btn btn-sm btn-outline-primary"
+                                               onclick="event.stopPropagation();"
+                                               title="Edit Folder">
+                                                <i class="bx bx-edit"></i>
+                                            </a>
+                                            <button type="button"
+                                                    class="btn btn-sm btn-outline-danger"
+                                                    onclick="event.stopPropagation(); confirmDeleteFolder('{{ $folder->id }}', '{{ addslashes($folder->name) }}');"
+                                                    title="Delete Folder">
+                                                <i class="bx bx-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
 
                                     <div class="card-body p-4">
                                         <div class="d-flex align-items-center mb-3">
@@ -442,6 +478,45 @@
 }
 </style>
 
+    <!-- Delete Folder Confirmation Modal -->
+    <div class="modal fade" id="deleteFolderModal" tabindex="-1" aria-labelledby="deleteFolderModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteFolderModalLabel">
+                        <i class="bx bx-error-circle text-danger me-2"></i>Confirm Folder Deletion
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-danger">
+                        <strong>Warning:</strong> This action cannot be undone!
+                    </div>
+                    <p>You are about to delete the folder <strong id="folderNameToDelete"></strong>.</p>
+                    <p>This will permanently delete:</p>
+                    <ul class="list-unstyled">
+                        <li><i class="bx bx-folder text-warning me-2"></i>The folder and all its subfolders</li>
+                        <li><i class="bx bx-task text-primary me-2"></i>All tasks within this folder</li>
+                        <li><i class="bx bx-folder-open text-secondary me-2"></i>Associated files and directories</li>
+                    </ul>
+                    <p class="text-muted small">All data associated with this folder will be permanently removed from the system.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bx bx-x me-1"></i>Cancel
+                    </button>
+                    <form id="deleteFolderForm" method="POST" style="display: inline;">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bx bx-trash me-1"></i>Delete Folder
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Collapse/Expand functionality for sections
@@ -485,5 +560,14 @@ document.addEventListener('DOMContentLoaded', function() {
         tasksIcon.classList.add('bx-chevron-right');
     }
 });
+
+// Folder deletion confirmation function
+function confirmDeleteFolder(folderId, folderName) {
+    document.getElementById('folderNameToDelete').textContent = folderName;
+    const form = document.getElementById('deleteFolderForm');
+    form.action = `/folders/${folderId}`;
+    const modal = new bootstrap.Modal(document.getElementById('deleteFolderModal'));
+    modal.show();
+}
     </script>
 @endsection
