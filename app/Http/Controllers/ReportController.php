@@ -739,6 +739,12 @@ class ReportController extends Controller
             $projectDuration = $start->diffInDays($end);
         }
 
+        // Add folder paths to tasks
+        $allFolders = $project->folders()->with('parent')->get();
+        $allTasks->each(function ($task) use ($allFolders) {
+            $task->folder_path = $this->buildFolderPath($task, $allFolders);
+        });
+
         return [
             'project' => $project,
             'projectStats' => $projectStats,
@@ -975,8 +981,11 @@ class ReportController extends Controller
             $managerPlannedDuration = $projectDuration;
         }
 
+        // Get all folders for path building
+        $allFolders = $project->folders()->with('parent')->get();
+
         // Get folder structure with tasks
-        $folderStructure = $this->buildFolderStructure($project->folders, $allTasks);
+        $folderStructure = $this->buildFolderStructure($project->folders, $allTasks, $allFolders);
 
         // Get task history for all tasks
         $allTaskHistory = \App\Models\TaskHistory::whereIn('task_id', $allTasks->pluck('id'))
@@ -1002,7 +1011,7 @@ class ReportController extends Controller
     /**
      * Build folder structure with tasks
      */
-    private function buildFolderStructure($folders, $allTasks)
+    private function buildFolderStructure($folders, $allTasks, $allFolders)
     {
         $structure = [];
 
@@ -1023,6 +1032,9 @@ class ReportController extends Controller
                     $taskDuration = $task->created_at->diffInDays($task->due_date);
                 }
 
+                // Build folder path for this task
+                $folderPath = $this->buildFolderPath($task, $allFolders);
+
                 $folderData['tasks'][] = [
                     'id' => $task->id,
                     'title' => $task->title,
@@ -1033,12 +1045,13 @@ class ReportController extends Controller
                     'completed_at' => $task->completed_at,
                     'duration_days' => $taskDuration,
                     'priority' => $task->priority,
+                    'folder_path' => $folderPath,
                 ];
             }
 
             // Add sub-folders recursively
             if ($folder->children->count() > 0) {
-                $folderData['sub_folders'] = $this->buildFolderStructure($folder->children, $allTasks);
+                $folderData['sub_folders'] = $this->buildFolderStructure($folder->children, $allTasks, $allFolders);
             }
 
             $structure[] = $folderData;
@@ -1160,5 +1173,31 @@ class ReportController extends Controller
                 'message' => 'Error generating evaluation: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Build folder hierarchy path for a task
+     */
+    private function buildFolderPath($task, $allFolders)
+    {
+        if (!$task->folder_id) {
+            return ['Main Folder'];
+        }
+
+        $path = [];
+        $currentFolderId = $task->folder_id;
+
+        // Build path by traversing up the hierarchy
+        while ($currentFolderId) {
+            $folder = $allFolders->firstWhere('id', $currentFolderId);
+            if ($folder) {
+                array_unshift($path, $folder->name);
+                $currentFolderId = $folder->parent_id;
+            } else {
+                break;
+            }
+        }
+
+        return empty($path) ? ['Main Folder'] : $path;
     }
 }

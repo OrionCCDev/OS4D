@@ -434,7 +434,12 @@
                             <tbody>
                                 @foreach($folderData['tasks'] as $task)
                                     <tr>
-                                        <td>{{ $task['title'] }}</td>
+                                        <td>
+                                            <div style="font-weight: bold;">{{ $task['title'] }}</div>
+                                            <div style="font-size: 10px; color: #666; margin-top: 2px;">
+                                                📁 {{ implode(' → ', $task['folder_path']) }}
+                                            </div>
+                                        </td>
                                         <td>{{ $task['assignee'] }}</td>
                                         <td>
                                             <span class="status-badge status-{{ $task['status'] === 'completed' ? 'completed' : ($task['status'] === 'in_progress' ? 'in-progress' : 'pending') }}">
@@ -498,7 +503,12 @@
                                     <tbody>
                                         @foreach($subFolderData['tasks'] as $task)
                                             <tr>
-                                                <td>{{ $task['title'] }}</td>
+                                                <td>
+                                                    <div style="font-weight: bold;">{{ $task['title'] }}</div>
+                                                    <div style="font-size: 10px; color: #666; margin-top: 2px;">
+                                                        📁 {{ implode(' → ', $task['folder_path']) }}
+                                                    </div>
+                                                </td>
                                                 <td>{{ $task['assignee'] }}</td>
                                                 <td>
                                                     <span class="status-badge status-{{ $task['status'] === 'completed' ? 'completed' : ($task['status'] === 'in_progress' ? 'in-progress' : 'pending') }}">

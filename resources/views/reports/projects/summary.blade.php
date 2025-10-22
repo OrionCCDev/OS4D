@@ -243,7 +243,13 @@
                                     <tbody>
                                         @foreach($folderData['tasks'] as $task)
                                             <tr>
-                                                <td>{{ $task['title'] }}</td>
+                                                <td>
+                                                    <div class="fw-semibold">{{ $task['title'] }}</div>
+                                                    <small class="text-muted">
+                                                        <i class="bx bx-folder me-1"></i>
+                                                        {{ implode(' → ', $task['folder_path']) }}
+                                                    </small>
+                                                </td>
                                                 <td>{{ $task['assignee'] }}</td>
                                                 <td>
                                                     <span class="badge bg-{{ $task['status'] === 'completed' ? 'success' : ($task['status'] === 'in_progress' ? 'warning' : 'secondary') }}">
@@ -313,7 +319,13 @@
                                                     <tbody>
                                                         @foreach($subFolderData['tasks'] as $task)
                                                             <tr>
-                                                                <td>{{ $task['title'] }}</td>
+                                                                <td>
+                                                                    <div class="fw-semibold">{{ $task['title'] }}</div>
+                                                                    <small class="text-muted">
+                                                                        <i class="bx bx-folder me-1"></i>
+                                                                        {{ implode(' → ', $task['folder_path']) }}
+                                                                    </small>
+                                                                </td>
                                                                 <td>{{ $task['assignee'] }}</td>
                                                                 <td>
                                                                     <span class="badge bg-{{ $task['status'] === 'completed' ? 'success' : ($task['status'] === 'in_progress' ? 'warning' : 'secondary') }}">

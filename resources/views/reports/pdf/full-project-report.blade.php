@@ -416,6 +416,9 @@
                             @if($task->description)
                                 <br><small style="color: #666; font-weight: normal;">{{ $task->description }}</small>
                             @endif
+                            <br><small style="color: #007bff; font-weight: normal;">
+                                📁 {{ implode(' → ', $task->folder_path) }}
+                            </small>
                         </td>
                     </tr>
                     <tr>
