@@ -302,11 +302,4 @@ class UnifiedNotification extends Model
         return $this->requiresAction();
     }
 
-    /**
-     * Get time ago for display
-     */
-    public function getTimeAgoAttribute()
-    {
-        return $this->created_at->diffForHumans();
-    }
 }
