@@ -1076,10 +1076,15 @@
                     emailListEl.innerHTML = list.map(function(n){
                       const title = n.title || 'Email Notification';
                       const message = n.message || '';
-                      const timeAgo = getTimeAgo(n.created_at);
+                      const timeAgo = n.time_ago || getTimeAgo(n.created_at);
                       const viewUrl = n.email_id ? `{{ route('emails.show', ':id') }}`.replace(':id', n.email_id) : '';
-                      const typeIcon = 'bx-envelope';
-                      const typeColor = '#3b82f6';
+                      const typeIcon = n.icon || 'bx-envelope';
+                      const typeColor = n.color === 'primary' ? '#3b82f6' :
+                                       n.color === 'success' ? '#10b981' :
+                                       n.color === 'danger' ? '#dc3545' :
+                                       n.color === 'warning' ? '#ffc107' :
+                                       n.color === 'info' ? '#0dcaf0' :
+                                       n.color === 'purple' ? '#8b5cf6' : '#3b82f6';
 
                       return `
                         <div class="notification-message p-3 border-bottom" style="transition: all 0.2s ease; cursor: pointer; background: ${n.is_read ? '#f8f9fa' : '#e3f2fd'}; border-left: 3px solid ${n.is_read ? '#e0e0e0' : '#2196f3'};" onclick="handleEmailNotificationClick(${n.id}, '${viewUrl}')">
@@ -1090,7 +1095,7 @@
                             <div class="flex-grow-1" style="min-width: 0;">
                               <div class="d-flex align-items-center justify-content-between mb-1">
                                 <h6 class="mb-0 fw-semibold text-dark" style="font-size: 14px;">
-                                  <span class="badge bg-primary me-2" style="font-size: 10px;">email</span>
+                                  <span class="badge bg-${n.badge_color || 'primary'} me-2" style="font-size: 10px;">${n.category || 'email'}</span>
                                   ${title}
                                   ${!n.is_read ? '<span class="badge bg-danger ms-2" style="font-size: 8px;">NEW</span>' : ''}
                                 </h6>
@@ -1144,10 +1149,15 @@
                     taskListEl.innerHTML = list.map(function(n){
                       const title = n.title || 'Task Notification';
                       const message = n.message || '';
-                      const timeAgo = getTimeAgo(n.created_at);
+                      const timeAgo = n.time_ago || getTimeAgo(n.created_at);
                       const viewUrl = n.action_url || (n.task_id ? `{{ url('tasks') }}/${n.task_id}` : '');
-                      const typeIcon = 'bx-task';
-                      const typeColor = '#10b981';
+                      const typeIcon = n.icon || 'bx-task';
+                      const typeColor = n.color === 'primary' ? '#3b82f6' :
+                                       n.color === 'success' ? '#10b981' :
+                                       n.color === 'danger' ? '#dc3545' :
+                                       n.color === 'warning' ? '#ffc107' :
+                                       n.color === 'info' ? '#0dcaf0' :
+                                       n.color === 'purple' ? '#8b5cf6' : '#10b981';
 
                       return `
                         <div class="notification-message p-3 border-bottom" style="transition: all 0.2s ease; cursor: pointer; background: ${n.is_read ? '#f8f9fa' : '#e3f2fd'}; border-left: 3px solid ${n.is_read ? '#e0e0e0' : '#10b981'};" onclick="handleTaskNotificationClick(${n.id}, '${viewUrl}')">
@@ -1158,7 +1168,7 @@
                             <div class="flex-grow-1" style="min-width: 0;">
                               <div class="d-flex align-items-center justify-content-between mb-1">
                                 <h6 class="mb-0 fw-semibold text-dark" style="font-size: 14px;">
-                                  <span class="badge bg-success me-2" style="font-size: 10px;">task</span>
+                                  <span class="badge bg-${n.badge_color || 'success'} me-2" style="font-size: 10px;">${n.category || 'task'}</span>
                                   ${title}
                                   ${!n.is_read ? '<span class="badge bg-danger ms-2" style="font-size: 8px;">NEW</span>' : ''}
                                 </h6>
@@ -1415,7 +1425,7 @@
                       designersListEl.innerHTML = list.map(function(n){
                         const title = n.title || 'Notification';
                         const message = n.message || '';
-                        const timeAgo = getTimeAgo(n.created_at);
+                        const timeAgo = n.time_ago || getTimeAgo(n.created_at);
                         const viewUrl = n.action_url ||
                                        (n.category === 'task' && n.task_id ? `{{ url('tasks') }}/${n.task_id}` :
                                        n.category === 'email' && n.email_id ? `{{ route('emails.show', ':id') }}`.replace(':id', n.email_id) :
@@ -1900,7 +1910,7 @@
                     bottomChatMessages.innerHTML = list.map(function(n) {
                       const title = n.title || 'Notification';
                       const message = n.message || '';
-                      const timeAgo = getTimeAgo(n.created_at);
+                      const timeAgo = n.time_ago || getTimeAgo(n.created_at);
                       const viewUrl = n.action_url ||
                                      (n.category === 'task' && n.task_id ? `{{ url('tasks') }}/${n.task_id}` :
                                      n.category === 'email' && n.email_id ? `{{ route('emails.show', ':id') }}`.replace(':id', n.email_id) :
