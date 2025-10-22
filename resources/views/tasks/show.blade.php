@@ -62,7 +62,7 @@
                 </div>
                 <div class="d-flex gap-2">
                     @if(Auth::user()->isManager() || ($task->status !== 'submitted_for_review' && $task->status !== 'in_review' && $task->status !== 'approved' && $task->status !== 'completed'))
-                        <a href="{{ route('tasks.edit', $task) }}" class="btn btn-primary">
+                        <a href="{{ route('tasks.edit', ['task' => $task, 'redirect_to' => 'project.show']) }}" class="btn btn-primary">
                             <i class="bx bx-edit me-1"></i>Edit Task
                         </a>
                         <form action="{{ route('tasks.destroy', $task) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this task?')" class="d-inline">

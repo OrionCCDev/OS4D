@@ -170,9 +170,13 @@ class TaskController extends Controller
             abort(403, 'Access denied. This task is under review and cannot be edited.');
         }
 
+        // Determine redirect URL based on the redirect_to parameter
+        $redirectTo = request()->query('redirect_to', 'tasks.index');
+        $redirectUrl = $this->getRedirectUrl($redirectTo, $task, request());
+
         $projects = Project::orderBy('name')->get();
         $folders = ProjectFolder::orderBy('name')->get();
-        return view('tasks.edit', compact('task', 'projects', 'folders'));
+        return view('tasks.edit', compact('task', 'projects', 'folders', 'redirectUrl'));
     }
 
     public function update(Request $request, Task $task)
@@ -313,7 +317,17 @@ class TaskController extends Controller
             }
         }
 
-        return redirect()->route('tasks.index')->with('success', 'Task updated' . ($isReassignment ? ' and reassigned' : ''));
+        // Handle redirect based on where the user came from
+        $redirectTo = $request->input('redirect_to', 'tasks.index');
+
+        if ($redirectTo === 'project.show') {
+            return redirect()->route('projects.show', $task->project_id)->with('success', 'Task updated' . ($isReassignment ? ' and reassigned' : ''));
+        } elseif ($redirectTo === 'project.folder') {
+            $folderId = $request->input('folder_id', $task->folder_id);
+            return redirect()->route('projects.show', ['project' => $task->project_id, 'folder' => $folderId])->with('success', 'Task updated' . ($isReassignment ? ' and reassigned' : ''));
+        } else {
+            return redirect()->route('tasks.index')->with('success', 'Task updated' . ($isReassignment ? ' and reassigned' : ''));
+        }
     }
 
     public function destroy(Task $task)
@@ -2307,6 +2321,23 @@ private function sendApprovalEmailViaGmail(Task $task, User $approver)
 
             default:
                 return 'updated';
+        }
+    }
+
+    /**
+     * Get the redirect URL based on the redirect_to parameter
+     */
+    private function getRedirectUrl($redirectTo, $task, $request)
+    {
+        switch ($redirectTo) {
+            case 'project.show':
+                return route('projects.show', $task->project_id);
+            case 'project.folder':
+                $folderId = $request->query('folder_id', $task->folder_id);
+                return route('projects.show', ['project' => $task->project_id, 'folder' => $folderId]);
+            case 'tasks.index':
+            default:
+                return route('tasks.index');
         }
     }
 }

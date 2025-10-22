@@ -320,7 +320,7 @@
                                                 <a href="{{ route('tasks.show', $task) }}" class="btn btn-sm btn-outline-primary" title="View Details">
                                                     <i class="bx bxs-show"></i>
                                                 </a>
-                                                <a href="{{ route('tasks.edit', $task) }}" class="btn btn-sm btn-outline-secondary">
+                                                <a href="{{ route('tasks.edit', ['task' => $task, 'redirect_to' => 'project.folder', 'folder_id' => $selectedFolder ? $selectedFolder->id : null]) }}" class="btn btn-sm btn-outline-secondary">
                                                     <i class="bx bx-edit"></i>
                                                 </a>
                                     <form action="{{ route('tasks.destroy', $task) }}" method="POST" class="d-inline">

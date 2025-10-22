@@ -456,7 +456,7 @@
                                                                         <i class="bx bx-show"></i>
                                                                     </a>
                                                                     @if(auth()->user()->isManager() || auth()->user()->isSubAdmin())
-                                                                        <a href="{{ route('tasks.edit', $task['id']) }}" class="btn btn-outline-secondary" title="Edit Task">
+                                                                        <a href="{{ route('tasks.edit', ['task' => $task['id'], 'redirect_to' => 'project.show']) }}" class="btn btn-outline-secondary" title="Edit Task">
                                                                             <i class="bx bx-edit"></i>
                                                                         </a>
                                                                     @endif

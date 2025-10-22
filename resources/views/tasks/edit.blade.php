@@ -15,6 +15,7 @@
         <form method="POST" action="{{ route('tasks.update', $task) }}" enctype="multipart/form-data">
             @csrf
             @method('PUT')
+            <input type="hidden" name="redirect_to" value="{{ request()->query('redirect_to', 'tasks.index') }}">
             @if(Auth::user()->isManager())
             <div class="row">
                 <div class="col-md-6 mb-3">
@@ -127,7 +128,7 @@
                 <small class="text-muted">You can select multiple files. Max size 1GB per file.</small>
             </div>
             <div class="d-flex gap-2">
-                <a href="{{ route('tasks.index') }}" class="btn btn-outline-secondary">
+                <a href="{{ $redirectUrl }}" class="btn btn-outline-secondary">
                     <i class="bx bx-x me-1"></i>Cancel
                 </a>
                 <button class="btn btn-primary">
