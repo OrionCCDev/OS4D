@@ -8,12 +8,12 @@
     <x-modern-breadcrumb
         title="{{ $project->name }}"
         subtitle="Status: {{ ucfirst(str_replace('_',' ', $project->status)) }}"
-        icon="bx-folder-open"
+        icon="bx bx-folder-open"
         theme="projects"
         :breadcrumbs="[
-            ['title' => 'Dashboard', 'url' => route('dashboard'), 'icon' => 'bx-home'],
-            ['title' => 'Projects', 'url' => route('projects.index'), 'icon' => 'bx-folder'],
-            ['title' => $project->name, 'url' => '#', 'icon' => 'bx-folder-open']
+            ['title' => 'Dashboard', 'url' => route('dashboard'), 'icon' => 'bx bx-home'],
+            ['title' => 'Projects', 'url' => route('projects.index'), 'icon' => 'bx bx-folder'],
+            ['title' => $project->name, 'url' => '#', 'icon' => 'bx bx-folder-open']
         ]"
     />
 

@@ -726,22 +726,22 @@
                                     $mimeType = $attachment['mime_type'] ?? '';
 
                                     // Determine icon based on file type
-                                    $icon = 'bx-file';
+                                    $icon = 'bx bx-file';
                                     if (in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'])) {
-                                        $icon = 'bx-image';
+                                        $icon = 'bx bx-image';
                                     } elseif (in_array($extension, ['pdf'])) {
-                                        $icon = 'bx-file-blank';
+                                        $icon = 'bx bx-file-blank';
                                     } elseif (in_array($extension, ['doc', 'docx'])) {
-                                        $icon = 'bx-file-doc';
+                                        $icon = 'bx bx-file-doc';
                                     } elseif (in_array($extension, ['xls', 'xlsx'])) {
-                                        $icon = 'bx-file-blank';
+                                        $icon = 'bx bx-file-blank';
                                     } elseif (in_array($extension, ['zip', 'rar', '7z'])) {
-                                        $icon = 'bx-archive';
+                                        $icon = 'bx bx-archive';
                                     } elseif (in_array($extension, ['txt', 'log'])) {
-                                        $icon = 'bx-file-blank';
+                                        $icon = 'bx bx-file-blank';
                                     }
                                 @endphp
-                                <i class='bx {{ $icon }}'></i>
+                                <i class='{{ $icon }}'></i>
                             </div>
                             <div class="attachment-details">
                                 <div class="attachment-name">{{ $filename }}</div>

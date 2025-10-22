@@ -1,7 +1,7 @@
 @props([
     'title' => 'Page Title',
     'subtitle' => null,
-    'icon' => 'bx-home',
+    'icon' => 'bx bx-home',
     'theme' => 'default',
     'breadcrumbs' => []
 ])

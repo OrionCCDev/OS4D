@@ -9,11 +9,11 @@
             <x-modern-breadcrumb
                 title="Email Management"
                 subtitle="Manage and track all email communications"
-                icon="bx-envelope"
+                icon="bx bx-envelope"
                 theme="emails"
                 :breadcrumbs="[
-                    ['title' => 'Dashboard', 'url' => route('dashboard'), 'icon' => 'bx-home'],
-                    ['title' => 'Emails', 'url' => '#', 'icon' => 'bx-envelope']
+                    ['title' => 'Dashboard', 'url' => route('dashboard'), 'icon' => 'bx bx-home'],
+                    ['title' => 'Emails', 'url' => '#', 'icon' => 'bx bx-envelope']
                 ]"
             />
         </div>

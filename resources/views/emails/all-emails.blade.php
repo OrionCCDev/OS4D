@@ -9,11 +9,11 @@
             <x-modern-breadcrumb
                 title="Designers Inbox"
                 subtitle="Monitor emails from engineering@orion-contracting.com"
-                icon="bx-inbox"
+                icon="bx bx-inbox"
                 theme="emails"
                 :breadcrumbs="[
-                    ['title' => 'Dashboard', 'url' => route('dashboard'), 'icon' => 'bx-home'],
-                    ['title' => 'Designers Inbox', 'url' => '#', 'icon' => 'bx-inbox']
+                    ['title' => 'Dashboard', 'url' => route('dashboard'), 'icon' => 'bx bx-home'],
+                    ['title' => 'Designers Inbox', 'url' => '#', 'icon' => 'bx bx-inbox']
                 ]"
             />
         </div>

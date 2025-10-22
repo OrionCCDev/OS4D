@@ -9,10 +9,10 @@
             <x-modern-breadcrumb
                 title="Sub-Admin Dashboard"
                 subtitle="Manage projects and tasks with limited access"
-                icon="bx-shield"
+                icon="bx bx-shield"
                 theme="admin"
                 :breadcrumbs="[
-                    ['title' => 'Dashboard', 'url' => route('dashboard'), 'icon' => 'bx-home']
+                    ['title' => 'Dashboard', 'url' => route('dashboard'), 'icon' => 'bx bx-home']
                 ]"
             />
         </div>

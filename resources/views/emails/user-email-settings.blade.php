@@ -9,11 +9,11 @@
             <x-modern-breadcrumb
                 title="Email Settings"
                 subtitle="Configure your email account for sending emails"
-                icon="bx-envelope"
+                icon="bx bx-envelope"
                 theme="emails"
                 :breadcrumbs="[
-                    ['title' => 'Dashboard', 'url' => route('dashboard'), 'icon' => 'bx-home'],
-                    ['title' => 'Email Settings', 'url' => '#', 'icon' => 'bx-envelope']
+                    ['title' => 'Dashboard', 'url' => route('dashboard'), 'icon' => 'bx bx-home'],
+                    ['title' => 'Email Settings', 'url' => '#', 'icon' => 'bx bx-envelope']
                 ]"
             />
         </div>

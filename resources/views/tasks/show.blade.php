@@ -8,12 +8,12 @@
             <x-modern-breadcrumb
                 title="{{ $task->title }}"
                 subtitle="Task details and management"
-                icon="bx-task"
+                icon="bx bx-task"
                 theme="tasks"
                 :breadcrumbs="[
-                    ['title' => 'Dashboard', 'url' => route('dashboard'), 'icon' => 'bx-home'],
-                    ['title' => 'Tasks', 'url' => route('tasks.index'), 'icon' => 'bx-list-ul'],
-                    ['title' => Str::limit($task->title, 30), 'url' => '#', 'icon' => 'bx-task']
+                    ['title' => 'Dashboard', 'url' => route('dashboard'), 'icon' => 'bx bx-home'],
+                    ['title' => 'Tasks', 'url' => route('tasks.index'), 'icon' => 'bx bx-list-ul'],
+                    ['title' => Str::limit($task->title, 30), 'url' => '#', 'icon' => 'bx bx-task']
                 ]"
             />
                     <div class="d-flex align-items-center gap-3 flex-wrap">

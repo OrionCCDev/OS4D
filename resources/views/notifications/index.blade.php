@@ -9,11 +9,11 @@
             <x-modern-breadcrumb
                 title="Notifications"
                 subtitle="Manage your notifications and alerts"
-                icon="bx-bell"
+                icon="bx bx-bell"
                 theme="notifications"
                 :breadcrumbs="[
-                    ['title' => 'Dashboard', 'url' => route('dashboard'), 'icon' => 'bx-home'],
-                    ['title' => 'Notifications', 'url' => '#', 'icon' => 'bx-bell']
+                    ['title' => 'Dashboard', 'url' => route('dashboard'), 'icon' => 'bx bx-home'],
+                    ['title' => 'Notifications', 'url' => '#', 'icon' => 'bx bx-bell']
                 ]"
             />
         </div>

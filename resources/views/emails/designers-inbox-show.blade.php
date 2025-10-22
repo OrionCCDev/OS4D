@@ -158,12 +158,12 @@
                 <x-modern-breadcrumb
                     title="Engineering Inbox Email"
                     subtitle="View and manage email details from designers inbox"
-                    icon="bx-envelope-open"
+                    icon="bx bx-envelope-open"
                     theme="emails"
                     :breadcrumbs="[
-                        ['title' => 'Dashboard', 'url' => route('dashboard'), 'icon' => 'bx-home'],
-                        ['title' => 'Inbox', 'url' => route('emails.all'), 'icon' => 'bx-inbox'],
-                        ['title' => 'Details', 'url' => '#', 'icon' => 'bx-envelope']
+                        ['title' => 'Dashboard', 'url' => route('dashboard'), 'icon' => 'bx bx-home'],
+                        ['title' => 'Inbox', 'url' => route('emails.all'), 'icon' => 'bx bx-inbox'],
+                        ['title' => 'Details', 'url' => '#', 'icon' => 'bx bx-envelope']
                     ]"
                 />
             </div>
@@ -336,26 +336,26 @@
                                             <div class="avatar-sm bg-light rounded-circle d-flex align-items-center justify-content-center me-3">
                                                 @php
                                                     $ext = strtolower(pathinfo($attachment['filename'] ?? '', PATHINFO_EXTENSION));
-                                                    $iconClass = 'bx-file';
+                                                    $iconClass = 'bx bx-file';
                                                     $iconColor = 'text-muted';
                                                     if (in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp'])) {
-                                                        $iconClass = 'bx-image';
+                                                        $iconClass = 'bx bx-image';
                                                         $iconColor = 'text-success';
                                                     } elseif (in_array($ext, ['pdf'])) {
-                                                        $iconClass = 'bx-file-pdf';
+                                                        $iconClass = 'bx bx-file-pdf';
                                                         $iconColor = 'text-danger';
                                                     } elseif (in_array($ext, ['doc', 'docx'])) {
-                                                        $iconClass = 'bx-file-doc';
+                                                        $iconClass = 'bx bx-file-doc';
                                                         $iconColor = 'text-primary';
                                                     } elseif (in_array($ext, ['xls', 'xlsx'])) {
-                                                        $iconClass = 'bx-file-excel';
+                                                        $iconClass = 'bx bx-file-excel';
                                                         $iconColor = 'text-success';
                                                     } elseif (in_array($ext, ['zip', 'rar', '7z'])) {
-                                                        $iconClass = 'bx-archive';
+                                                        $iconClass = 'bx bx-archive';
                                                         $iconColor = 'text-warning';
                                                     }
                                                 @endphp
-                                                <i class="bx {{ $iconClass }} {{ $iconColor }} fs-4"></i>
+                                                <i class="{{ $iconClass }} {{ $iconColor }} fs-4"></i>
                                             </div>
                                             <div class="flex-grow-1 text-break">
                                                 <div class="fw-semibold">{{ $attachment['filename'] ?? 'Unknown File' }}</div>
