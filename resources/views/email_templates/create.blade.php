@@ -33,7 +33,7 @@
                 <textarea name="variables" class="form-control" rows="3" placeholder='{"task":"","project":""}'>{{ old('variables') }}</textarea>
             </div>
             <div class="d-flex gap-2">
-                <a href="{{ route('email-templates.index') }}" class="btn btn-secondary">Cancel</a>
+                <a href="{{ route('email-templates.index') }}" class="btn btn-outline-secondary">Cancel</a>
                 <button class="btn btn-primary">Save</button>
             </div>
         </form>

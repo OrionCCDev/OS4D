@@ -34,7 +34,7 @@
                 <textarea name="variables" class="form-control" rows="3">{{ old('variables', json_encode($template->variables)) }}</textarea>
             </div>
             <div class="d-flex gap-2">
-                <a href="{{ route('email-templates.index') }}" class="btn btn-secondary">Cancel</a>
+                <a href="{{ route('email-templates.index') }}" class="btn btn-outline-secondary">Cancel</a>
                 <button class="btn btn-primary">Update</button>
             </div>
         </form>

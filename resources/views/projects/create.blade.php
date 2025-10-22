@@ -40,7 +40,7 @@
                 </div>
             </div>
             <div class="d-flex gap-2">
-                <a href="{{ route('projects.index') }}" class="btn btn-secondary">Cancel</a>
+                <a href="{{ route('projects.index') }}" class="btn btn-outline-secondary">Cancel</a>
                 <button class="btn btn-primary">Save</button>
             </div>
         </form>
@@ -56,5 +56,28 @@
     @endif
 </div>
 @endsection
+
+@push('styles')
+<style>
+.btn-outline-secondary {
+    color: #6c757d !important;
+    border-color: #6c757d !important;
+    background-color: transparent !important;
+}
+
+.btn-outline-secondary:hover {
+    color: #fff !important;
+    background-color: #6c757d !important;
+    border-color: #6c757d !important;
+}
+
+.btn-outline-secondary:focus {
+    color: #6c757d !important;
+    border-color: #6c757d !important;
+    background-color: transparent !important;
+    box-shadow: 0 0 0 0.2rem rgba(108, 117, 125, 0.25) !important;
+}
+</style>
+@endpush
 
 

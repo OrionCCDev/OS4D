@@ -52,6 +52,8 @@
     <link rel="stylesheet" href="{{ asset('css/custom-gradient.css') }}" />
     <!-- Status and Priority Badge CSS -->
     <link rel="stylesheet" href="{{ asset('css/status-priority-badges.css') }}" />
+    <!-- Cancel Button Styling CSS -->
+    <link rel="stylesheet" href="{{ asset('css/cancel-buttons.css') }}" />
     <link rel="stylesheet" href="{{ asset('DAssets/assets/css/demo.css') }}" />
     <link rel="stylesheet" href="{{ asset('DAssets/assets/css/task-files.css') }}" />
 

@@ -29,7 +29,7 @@
                 <input type="text" name="name" class="form-control" value="{{ old('name', $folder->name) }}" required>
             </div>
             <div class="d-flex gap-2">
-                <a href="{{ route('folders.index') }}" class="btn btn-secondary">Cancel</a>
+                <a href="{{ route('folders.index') }}" class="btn btn-outline-secondary">Cancel</a>
                 <button class="btn btn-primary">Update</button>
             </div>
         </form>

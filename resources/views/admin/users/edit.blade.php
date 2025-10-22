@@ -19,7 +19,7 @@
         @include('admin.users._form', ['user' => $user])
         <div class="mt-3 d-flex gap-2">
           <button type="submit" class="btn btn-primary">Update</button>
-          <a href="{{ route('admin.users.index') }}" class="btn btn-secondary">Cancel</a>
+          <a href="{{ route('admin.users.index') }}" class="btn btn-outline-secondary">Cancel</a>
         </div>
       </form>
     </div>

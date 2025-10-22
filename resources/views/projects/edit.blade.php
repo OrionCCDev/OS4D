@@ -39,7 +39,7 @@
                 </div>
             </div>
             <div class="d-flex gap-2">
-                <a href="{{ route('projects.index') }}" class="btn btn-secondary">Cancel</a>
+                <a href="{{ route('projects.index') }}" class="btn btn-outline-secondary">Cancel</a>
                 <button class="btn btn-primary">Update</button>
             </div>
         </form>
