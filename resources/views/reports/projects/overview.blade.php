@@ -179,6 +179,11 @@
                                                title="View Progress">
                                                 <i class="bx bx-trending-up me-1"></i>Progress
                                             </a>
+                                            <a href="{{ route('reports.projects.summary', $project['id']) }}"
+                                               class="btn btn-sm btn-outline-success"
+                                               title="Summarize Project Report">
+                                                <i class="bx bx-file-blank me-1"></i>Summarize
+                                            </a>
                                         </div>
                                     </td>
                                 </tr>

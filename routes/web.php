@@ -6,6 +6,8 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Http\Controllers\Admin\UsersController;
@@ -76,6 +78,8 @@ Route::middleware('auth')->group(function () {
         // Project reports
         Route::get('/projects', [App\Http\Controllers\ReportController::class, 'projects'])->name('projects');
         Route::get('/projects/progress', [App\Http\Controllers\ReportController::class, 'projectProgress'])->name('projects.progress');
+        Route::get('/projects/{project}/summary', [App\Http\Controllers\ReportController::class, 'projectSummary'])->name('projects.summary');
+        Route::get('/projects/{project}/summary/pdf', [App\Http\Controllers\ReportController::class, 'projectSummaryPdf'])->name('projects.summary.pdf');
         Route::get('/projects/{project}/full-report', [App\Http\Controllers\ReportController::class, 'exportFullProjectReport'])->name('projects.full-report');
 
         // Task reports

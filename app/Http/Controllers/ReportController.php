@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\Log;
 
 class ReportController extends Controller
 {
@@ -81,6 +82,54 @@ class ReportController extends Controller
         $allProjects = Project::select('id', 'name', 'short_code')->orderBy('name')->get();
 
         return view('reports.projects.progress', compact('projects', 'filters', 'allProjects'));
+    }
+
+    /**
+     * Display project summary report
+     */
+    public function projectSummary(Project $project): View
+    {
+        // Get comprehensive project data
+        $projectData = $this->getProjectSummaryData($project);
+
+        return view('reports.projects.summary', compact('projectData'));
+    }
+
+    /**
+     * Export project summary report to PDF
+     */
+    public function projectSummaryPdf(Project $project)
+    {
+        try {
+            // Get comprehensive project data
+            $projectData = $this->getProjectSummaryData($project);
+
+            // Generate PDF
+            $pdf = Pdf::loadView('reports.pdf.project-summary', $projectData);
+            $pdf->setPaper('A4', 'portrait');
+
+            $filename = 'Project_Summary_' . $project->short_code . '_' . now()->format('Y-m-d_H-i-s') . '.pdf';
+
+            return $pdf->download($filename);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to export project summary report: ' . $e->getMessage(), [
+                'project_id' => $project->id,
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'error' => true,
+                'message' => 'Failed to generate project summary report: ' . $e->getMessage(),
+                'details' => [
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
+                    'project_id' => $project->id
+                ]
+            ], 500);
+        }
     }
 
     /**
@@ -216,7 +265,7 @@ class ReportController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            \Log::error('Error generating monthly evaluation: ' . $e->getMessage());
+            Log::error('Error generating monthly evaluation: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Error generating evaluation: ' . $e->getMessage()
@@ -301,7 +350,7 @@ class ReportController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            \Log::error('Error generating quarterly evaluation: ' . $e->getMessage());
+            Log::error('Error generating quarterly evaluation: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Error generating evaluation: ' . $e->getMessage()
@@ -375,7 +424,7 @@ class ReportController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            \Log::error('Error generating annual evaluation: ' . $e->getMessage());
+            Log::error('Error generating annual evaluation: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Error generating evaluation: ' . $e->getMessage()
@@ -571,24 +620,24 @@ class ReportController extends Controller
     public function exportFullProjectReport(Project $project)
     {
         try {
-            \Log::info('Starting full project report export for project: ' . $project->id);
+            Log::info('Starting full project report export for project: ' . $project->id);
 
             // Get comprehensive project data
             $projectData = $this->getComprehensiveProjectData($project);
-            \Log::info('Project data retrieved successfully', ['project_id' => $project->id]);
+            Log::info('Project data retrieved successfully', ['project_id' => $project->id]);
 
             // Generate PDF
             $pdf = Pdf::loadView('reports.pdf.full-project-report', $projectData);
             $pdf->setPaper('A4', 'portrait');
-            \Log::info('PDF generated successfully');
+            Log::info('PDF generated successfully');
 
             $filename = 'Full_Project_Report_' . $project->short_code . '_' . now()->format('Y-m-d_H-i-s') . '.pdf';
 
-            \Log::info('Downloading PDF with filename: ' . $filename);
+            Log::info('Downloading PDF with filename: ' . $filename);
             return $pdf->download($filename);
 
         } catch (\Exception $e) {
-            \Log::error('Failed to export full project report: ' . $e->getMessage(), [
+            Log::error('Failed to export full project report: ' . $e->getMessage(), [
                 'project_id' => $project->id,
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
@@ -613,7 +662,7 @@ class ReportController extends Controller
      */
     private function getComprehensiveProjectData(Project $project)
     {
-        \Log::info('Loading project relationships for project: ' . $project->id);
+        Log::info('Loading project relationships for project: ' . $project->id);
 
         // Load project with all relationships
         $project->load([
@@ -625,10 +674,10 @@ class ReportController extends Controller
             'owner'
         ]);
 
-        \Log::info('Project relationships loaded successfully');
+        Log::info('Project relationships loaded successfully');
 
         // Get all tasks with full details
-        \Log::info('Loading tasks for project: ' . $project->id);
+        Log::info('Loading tasks for project: ' . $project->id);
         $allTasks = $project->tasks()->with([
             'assignee',
             'creator',
@@ -637,7 +686,7 @@ class ReportController extends Controller
             'project'
         ])->get();
 
-        \Log::info('Tasks loaded successfully', ['task_count' => $allTasks->count()]);
+        Log::info('Tasks loaded successfully', ['task_count' => $allTasks->count()]);
 
         // Calculate project statistics
         $projectStats = [
@@ -822,12 +871,176 @@ class ReportController extends Controller
                 'message' => $result
             ]);
         } catch (\Exception $e) {
-            \Log::error('Error sending test monthly report: ' . $e->getMessage());
+            Log::error('Error sending test monthly report: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Error sending test report: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Get comprehensive project summary data
+     */
+    private function getProjectSummaryData(Project $project)
+    {
+        Log::info('Loading project summary data for project: ' . $project->id);
+
+        // Load project with all relationships
+        $project->load([
+            'folders.children',
+            'tasks.assignee',
+            'tasks.creator',
+            'tasks.attachments',
+            'tasks.histories.user',
+            'owner',
+            'users'
+        ]);
+
+        Log::info('Project relationships loaded successfully');
+
+        // Get all tasks with full details
+        Log::info('Loading tasks for project: ' . $project->id);
+        $allTasks = $project->tasks()->with([
+            'assignee',
+            'creator',
+            'attachments',
+            'histories.user',
+            'project',
+            'folder'
+        ])->get();
+
+        Log::info('Tasks loaded successfully', ['task_count' => $allTasks->count()]);
+
+        // Calculate project statistics
+        $projectStats = [
+            'total_tasks' => $allTasks->count(),
+            'completed_tasks' => $allTasks->where('status', 'completed')->count(),
+            'in_progress_tasks' => $allTasks->whereIn('status', ['in_progress', 'workingon', 'assigned'])->count(),
+            'pending_tasks' => $allTasks->where('status', 'pending')->count(),
+            'overdue_tasks' => $allTasks->where('due_date', '<', now())->where('status', '!=', 'completed')->count(),
+            'completion_rate' => $allTasks->count() > 0 ? round(($allTasks->where('status', 'completed')->count() / $allTasks->count()) * 100, 2) : 0,
+        ];
+
+        // Get team performance data
+        $teamMembers = $allTasks->pluck('assignee')->filter()->unique('id');
+        $teamPerformance = [];
+
+        foreach ($teamMembers as $member) {
+            $memberTasks = $allTasks->where('assigned_to', $member->id);
+            $completedTasks = $memberTasks->where('status', 'completed');
+
+            // Calculate task completion time for completed tasks
+            $avgCompletionTime = 0;
+            if ($completedTasks->count() > 0) {
+                $totalDays = 0;
+                foreach ($completedTasks as $task) {
+                    if ($task->assigned_at && $task->completed_at) {
+                        $totalDays += $task->assigned_at->diffInDays($task->completed_at);
+                    }
+                }
+                $avgCompletionTime = round($totalDays / $completedTasks->count(), 1);
+            }
+
+            $teamPerformance[] = [
+                'user' => $member,
+                'total_tasks' => $memberTasks->count(),
+                'completed_tasks' => $completedTasks->count(),
+                'in_progress_tasks' => $memberTasks->whereIn('status', ['in_progress', 'workingon', 'assigned'])->count(),
+                'completion_rate' => $memberTasks->count() > 0 ? round(($completedTasks->count() / $memberTasks->count()) * 100, 2) : 0,
+                'avg_completion_time' => $avgCompletionTime,
+                'last_activity' => $memberTasks->max('updated_at'),
+            ];
+        }
+
+        // Get project timeline
+        $projectTimeline = [
+            'created_at' => $project->created_at,
+            'start_date' => $project->start_date,
+            'due_date' => $project->due_date,
+            'end_date' => $project->end_date,
+            'updated_at' => $project->updated_at,
+        ];
+
+        // Calculate project duration
+        $projectDuration = null;
+        $managerPlannedDuration = null;
+        if ($project->start_date && $project->due_date) {
+            $start = \Carbon\Carbon::parse($project->start_date);
+            $end = \Carbon\Carbon::parse($project->due_date);
+            $projectDuration = $start->diffInDays($end);
+            $managerPlannedDuration = $projectDuration;
+        }
+
+        // Get folder structure with tasks
+        $folderStructure = $this->buildFolderStructure($project->folders, $allTasks);
+
+        // Get task history for all tasks
+        $allTaskHistory = \App\Models\TaskHistory::whereIn('task_id', $allTasks->pluck('id'))
+            ->with('user')
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->groupBy('task_id');
+
+        return [
+            'project' => $project,
+            'projectStats' => $projectStats,
+            'allTasks' => $allTasks,
+            'allTaskHistory' => $allTaskHistory,
+            'teamPerformance' => $teamPerformance,
+            'projectTimeline' => $projectTimeline,
+            'projectDuration' => $projectDuration,
+            'managerPlannedDuration' => $managerPlannedDuration,
+            'folderStructure' => $folderStructure,
+            'exportDate' => now(),
+        ];
+    }
+
+    /**
+     * Build folder structure with tasks
+     */
+    private function buildFolderStructure($folders, $allTasks)
+    {
+        $structure = [];
+
+        foreach ($folders as $folder) {
+            $folderTasks = $allTasks->where('folder_id', $folder->id);
+
+            $folderData = [
+                'folder' => $folder,
+                'tasks' => [],
+                'sub_folders' => []
+            ];
+
+            // Add tasks for this folder
+            foreach ($folderTasks as $task) {
+                $taskDuration = null;
+                if ($task->assigned_at && $task->completed_at) {
+                    $taskDuration = $task->assigned_at->diffInDays($task->completed_at);
+                }
+
+                $folderData['tasks'][] = [
+                    'id' => $task->id,
+                    'title' => $task->title,
+                    'status' => $task->status,
+                    'assignee' => $task->assignee ? $task->assignee->name : 'Unassigned',
+                    'created_at' => $task->created_at,
+                    'due_date' => $task->due_date,
+                    'completed_at' => $task->completed_at,
+                    'duration_days' => $taskDuration,
+                    'priority' => $task->priority,
+                ];
+            }
+
+            // Add sub-folders recursively
+            if ($folder->children->count() > 0) {
+                $folderData['sub_folders'] = $this->buildFolderStructure($folder->children, $allTasks);
+            }
+
+            $structure[] = $folderData;
+        }
+
+        return $structure;
     }
 
     /**
@@ -937,7 +1150,7 @@ class ReportController extends Controller
             return $pdf->download($filename);
 
         } catch (\Exception $e) {
-            \Log::error('Error generating bulk evaluation PDF: ' . $e->getMessage());
+            Log::error('Error generating bulk evaluation PDF: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Error generating evaluation: ' . $e->getMessage()
