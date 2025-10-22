@@ -1831,6 +1831,14 @@ private function sendApprovalEmailViaGmail(Task $task, User $approver)
      */
     public function markAsCompleted(Request $request, Task $task)
     {
+        \Log::info('Mark as completed request', [
+            'task_id' => $task->id,
+            'task_status' => $task->status,
+            'user_id' => Auth::id(),
+            'is_manager' => Auth::user()->isManager(),
+            'is_ajax' => $request->ajax()
+        ]);
+
         // Only managers can mark as completed
         if (!Auth::user()->isManager()) {
             abort(403, 'Access denied. Only managers can mark tasks as completed.');
@@ -1838,6 +1846,10 @@ private function sendApprovalEmailViaGmail(Task $task, User $approver)
 
         // Only tasks in review after client/consultant reply can be marked as completed
         if ($task->status !== 'in_review_after_client_consultant_reply') {
+            \Log::error('Task status mismatch', [
+                'expected' => 'in_review_after_client_consultant_reply',
+                'actual' => $task->status
+            ]);
             abort(403, 'Task must be in review after client/consultant reply to be marked as completed.');
         }
 
@@ -1846,9 +1858,39 @@ private function sendApprovalEmailViaGmail(Task $task, User $approver)
         ]);
 
         try {
+            \Log::info('Attempting to mark task as completed', [
+                'task_id' => $task->id,
+                'completion_notes' => $request->completion_notes
+            ]);
+
             $task->markAsCompleted($request->completion_notes);
+
+            \Log::info('Task marked as completed successfully', [
+                'task_id' => $task->id
+            ]);
+
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Task marked as completed successfully.'
+                ]);
+            }
+
             return redirect()->back()->with('success', 'Task marked as completed successfully.');
         } catch (\Exception $e) {
+            \Log::error('Error marking task as completed', [
+                'task_id' => $task->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $e->getMessage()
+                ], 500);
+            }
+
             return redirect()->back()->with('error', $e->getMessage());
         }
     }

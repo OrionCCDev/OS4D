@@ -2035,35 +2035,91 @@ function sendForClientConsultantApproval(taskId) {
 
 // Mark task as completed (Manager action after client/consultant review)
 function markAsCompleted(taskId) {
-    // Prompt for optional completion notes
-    const notes = prompt('Optional completion notes:');
-
-    if (notes !== null) { // null means user clicked cancel
-        const formData = new FormData();
-        if (notes) {
-            formData.append('completion_notes', notes);
+    // Show modal for completion notes
+    const modal = document.getElementById('markCompletedModal');
+    if (modal) {
+        // Set up form submission
+        const form = document.getElementById('markCompletedForm');
+        if (form) {
+            form.onsubmit = function(e) {
+                e.preventDefault();
+                submitMarkCompleted(taskId);
+            };
         }
 
-        fetch(`/tasks/${taskId}/mark-completed`, {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-            },
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert('Task marked as completed successfully!');
-                location.reload();
-            } else {
-                alert('Failed to mark task as completed: ' + (data.message || 'Unknown error'));
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Error marking task as completed. Please try again.');
-        });
+        // Show Bootstrap modal
+        const bootstrapModal = new bootstrap.Modal(modal);
+        bootstrapModal.show();
+    } else {
+        // Fallback to prompt if modal doesn't exist
+        const notes = prompt('Optional completion notes:');
+        if (notes !== null) {
+            submitMarkCompleted(taskId, notes);
+        }
+    }
+}
+
+function submitMarkCompleted(taskId, notes = null) {
+    const formData = new FormData();
+
+    if (notes === null) {
+        // Get notes from modal form
+        const notesInput = document.getElementById('completion_notes');
+        if (notesInput) {
+            notes = notesInput.value;
+        }
+    }
+
+    if (notes) {
+        formData.append('completion_notes', notes);
+    }
+
+    fetch(`/tasks/${taskId}/mark-completed`, {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json',
+        },
+        body: formData
+    })
+    .then(response => {
+        console.log('Response status:', response.status);
+        console.log('Response headers:', response.headers);
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        return response.json();
+    })
+    .then(data => {
+        console.log('Response data:', data);
+
+        if (data.success) {
+            // Close modal
+            closeMarkCompletedModal();
+
+            // Show success message
+            alert('Task marked as completed successfully!');
+            location.reload();
+        } else {
+            alert('Failed to mark task as completed: ' + (data.message || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error marking task as completed. Please try again. Error: ' + error.message);
+    });
+}
+
+function closeMarkCompletedModal() {
+    const modal = document.getElementById('markCompletedModal');
+    if (modal) {
+        const bootstrapModal = bootstrap.Modal.getInstance(modal);
+        if (bootstrapModal) {
+            bootstrapModal.hide();
+        }
     }
 }
 
@@ -2426,6 +2482,50 @@ document.getElementById('reassignTaskForm').addEventListener('submit', function(
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-primary">
                         <i class="bx bx-transfer me-1"></i>Reassign Task
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Mark as Completed Modal -->
+<div class="modal fade" id="markCompletedModal" tabindex="-1" aria-labelledby="markCompletedModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="markCompletedModalLabel">
+                    <i class="bx bx-check-circle me-2"></i>Mark Task as Completed
+                </h5>
+                <button type="button" class="btn-close btn-close-white" onclick="closeMarkCompletedModal()" aria-label="Close"></button>
+            </div>
+            <form id="markCompletedForm">
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="bx bx-info-circle me-2"></i>
+                        <strong>Task Completion:</strong> You are about to mark this task as completed. This action will finalize the task and notify all stakeholders.
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="completion_notes" class="form-label">
+                            <i class="bx bx-note me-1"></i>Completion Notes (Optional)
+                        </label>
+                        <textarea
+                            class="form-control"
+                            id="completion_notes"
+                            name="completion_notes"
+                            rows="4"
+                            placeholder="Add any final notes about the task completion..."
+                        ></textarea>
+                        <div class="form-text">These notes will be recorded in the task history and visible to all team members.</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" onclick="closeMarkCompletedModal()">
+                        <i class="bx bx-x me-1"></i>Cancel
+                    </button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="bx bx-check-circle me-1"></i>Mark as Completed
                     </button>
                 </div>
             </form>
