@@ -496,7 +496,7 @@ class DashboardController extends Controller
         $recentActivity = Task::with(['assignee', 'project', 'creator'])
             ->where('created_at', '>=', $now->copy()->subDays(30))
             ->orderBy('created_at', 'desc')
-            ->limit(10)
+            ->limit(5)
             ->get()
             ->map(function($task) {
                 return [

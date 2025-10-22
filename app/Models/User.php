@@ -101,6 +101,11 @@ class User extends Authenticatable
         return $this->hasMany(CustomNotification::class);
     }
 
+    public function unifiedNotifications()
+    {
+        return $this->hasMany(UnifiedNotification::class);
+    }
+
     public function unreadNotifications()
     {
         return $this->customNotifications()->unread();

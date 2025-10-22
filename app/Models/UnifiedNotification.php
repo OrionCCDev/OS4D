@@ -191,6 +191,7 @@ class UnifiedNotification extends Model
             'data' => $data,
             'task_id' => $taskId,
             'priority' => $priority,
+            'status' => 'active',
         ]);
     }
 
@@ -205,6 +206,7 @@ class UnifiedNotification extends Model
             'data' => $data,
             'email_id' => $emailId,
             'priority' => $priority,
+            'status' => 'active',
         ]);
     }
 
@@ -246,18 +248,18 @@ class UnifiedNotification extends Model
             'task_resubmit_required',
             'task_resubmit_enhanced',
             'task_overdue',
-            
+
             // Manager actionable tasks
             'task_submitted_for_review',
             'task_waiting_for_review',
-            
+
             // Email notifications that may require action
             'email_reply',
             'email_received'
         ];
 
         // Check if type requires action OR priority is high/urgent
-        return in_array($this->type, $actionableTypes) || 
+        return in_array($this->type, $actionableTypes) ||
                in_array($this->priority, ['high', 'urgent']);
     }
 
