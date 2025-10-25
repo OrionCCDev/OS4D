@@ -9,10 +9,10 @@
                 <div class="d-flex align-items-end row">
                     <div class="col-sm-12">
                         <div class="card-body">
-                            <h5 class="card-title text-primary">Welcome back, {{ $userData['user']->name }}!</h5>
+                            <h5 class="card-title text-primary">Welcome back, malekahmd!</h5>
                             <p class="mb-4">Here's your personal task overview and progress summary.</p>
                             <div class="d-flex gap-2">
-                                <a href="{{ route('tasks.index') }}" class="btn btn-primary">
+                                <a href="https://odc.com.orion-contracting.com/tasks" class="btn btn-primary">
                                     <i class="bx bx-task me-1"></i>View All Tasks
                                 </a>
                             </div>
@@ -741,20 +741,7 @@
                                     return $isInRange;
                                 })->sortBy('start_date');
 
-                                // Debug information - temporarily enabled to debug the issue
-                                if ($allTasks->count() > 0) {
-                                    echo '<div style="background: #f8f9fa; padding: 10px; margin: 10px 0; border: 1px solid #dee2e6; border-radius: 4px;">';
-                                    echo '<strong>Debug Info:</strong><br>';
-                                    echo 'Today: ' . $today->format('Y-m-d') . '<br>';
-                                    echo 'Next 20 days: ' . $next20Days->format('Y-m-d') . '<br>';
-                                    echo 'All tasks count: ' . $allTasks->count() . '<br>';
-                                    echo 'Timeline tasks count: ' . $timelineTasks->count() . '<br>';
-                                    echo '<strong>All tasks:</strong><br>';
-                                    foreach($allTasks as $task) {
-                                        echo '- ' . $task->title . ' (start_date: ' . ($task->start_date ?? 'null') . ')<br>';
-                                    }
-                                    echo '</div>';
-                                }
+                                // Debug information removed
                             @endphp
 
                             @foreach($timelineTasks as $task)
@@ -789,7 +776,7 @@
 
                                 <div class="timeline-event" style="left: {{ $position }}%;">
                                     <div class="timeline-marker {{ $taskColor }}"></div>
-                                    <div class="timeline-content">
+                                    <a href="{{ route('tasks.show', $task->id) }}" class="timeline-content timeline-clickable">
                                         <div class="timeline-date">{{ $startDate->format('M d') }}</div>
                                         <div class="timeline-task">
                                             <div class="timeline-task-title">{{ Str::limit($task->title, 20) }}</div>
@@ -800,7 +787,7 @@
                                                 @endif
                                             </div>
                                         </div>
-                                    </div>
+                                    </a>
                                 </div>
                             @endforeach
 
@@ -927,6 +914,20 @@
     min-width: 120px;
     text-align: center;
     border: 1px solid #e9ecef;
+    text-decoration: none;
+    color: inherit;
+    display: block;
+}
+
+.timeline-clickable {
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.timeline-clickable:hover {
+    transform: translateX(-50%) translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    background: #f8f9fa;
 }
 
 .timeline-date {
