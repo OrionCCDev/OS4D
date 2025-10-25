@@ -109,14 +109,53 @@
                                 <span class="badge bg-success">
                                     <i class="bx bx-check"></i> Completed
                                 </span>
-                            @elseif($task->days_remaining !== null)
-                                <span class="badge {{ $task->is_overdue ? 'bg-danger' : 'bg-info' }}">
-                                    <i class="bx bx-{{ $task->is_overdue ? 'time-five' : 'timer' }}"></i>
-                                    {{ abs($task->days_remaining) }}d
-                                    @if($task->is_overdue) overdue @endif
-                                </span>
                             @else
-                                <span class="text-muted">—</span>
+                                <div class="d-flex flex-column gap-1">
+                                    {{-- Days Until Start --}}
+                                    @if($task->start_date)
+                                        @php
+                                            $now = now()->startOfDay();
+                                            $startDate = \Carbon\Carbon::parse($task->start_date)->startOfDay();
+                                            $daysUntilStart = $now->diffInDays($startDate, false);
+                                            $isAccepted = in_array($task->status, ['accepted', 'in_progress', 'workingon', 'submitted_for_review', 'in_review', 'approved', 'completed']);
+                                            $isApproaching = $daysUntilStart <= 3 && $daysUntilStart >= 0;
+                                            $isOverdue = $daysUntilStart < 0;
+                                        @endphp
+
+                                        @if(!($isAccepted && $daysUntilStart <= 0))
+                                            <span class="badge {{ $isOverdue ? 'bg-danger' : ($isApproaching && !$isAccepted ? 'bg-warning' : 'bg-info') }} badge-sm">
+                                                <i class="bx bx-calendar"></i>
+                                                @if($isOverdue)
+                                                    {{ abs($daysUntilStart) }}d overdue
+                                                @elseif($daysUntilStart == 0)
+                                                    Starts today
+                                                @elseif($daysUntilStart == 1)
+                                                    Starts tomorrow
+                                                @else
+                                                    {{ $daysUntilStart }}d until start
+                                                @endif
+                                            </span>
+                                        @endif
+                                    @endif
+
+                                    {{-- Task Duration --}}
+                                    @if($task->start_date && $task->due_date)
+                                        @php
+                                            $startDate = \Carbon\Carbon::parse($task->start_date)->startOfDay();
+                                            $dueDate = \Carbon\Carbon::parse($task->due_date)->startOfDay();
+                                            $taskDuration = $startDate->diffInDays($dueDate);
+                                        @endphp
+                                        <span class="badge bg-primary badge-sm">
+                                            <i class="bx bx-time"></i>
+                                            {{ $taskDuration }}d duration
+                                        </span>
+                                    @elseif($task->start_date || $task->due_date)
+                                        <span class="badge bg-secondary badge-sm">
+                                            <i class="bx bx-time"></i>
+                                            Duration N/A
+                                        </span>
+                                    @endif
+                                </div>
                             @endif
                         </td>
                         <td>
