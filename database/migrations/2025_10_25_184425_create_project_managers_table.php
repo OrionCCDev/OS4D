@@ -14,8 +14,8 @@ return new class extends Migration
         Schema::create('project_managers', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->string('orion_id')->unique();
-            $table->string('email')->unique();
+            $table->string('orion_id')->unique()->nullable();
+            $table->string('email')->unique()->nullable();
             $table->string('mobile')->nullable();
             $table->timestamps();
             $table->softDeletes();

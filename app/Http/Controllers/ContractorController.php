@@ -26,7 +26,7 @@ class ContractorController extends Controller
             'mobile' => 'nullable|string|max:50',
             'position' => 'nullable|string|max:255',
             'company_name' => 'nullable|string|max:255',
-            'type' => 'required|in:client,consultant,other',
+            'type' => 'required|in:client,consultant,other,orion staff',
         ]);
         Contractor::create($validated);
         return redirect()->route('contractors.index')->with('success', 'Contractor created');
@@ -45,7 +45,7 @@ class ContractorController extends Controller
             'mobile' => 'nullable|string|max:50',
             'position' => 'nullable|string|max:255',
             'company_name' => 'nullable|string|max:255',
-            'type' => 'required|in:client,consultant,other',
+            'type' => 'required|in:client,consultant,other,orion staff',
         ]);
         $contractor->update($validated);
         return redirect()->route('contractors.index')->with('success', 'Contractor updated');

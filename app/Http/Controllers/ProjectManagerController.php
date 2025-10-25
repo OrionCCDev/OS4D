@@ -31,8 +31,8 @@ class ProjectManagerController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'orion_id' => 'required|string|max:255|unique:project_managers,orion_id',
-            'email' => 'required|email|unique:project_managers,email',
+            'orion_id' => 'nullable|string|max:255|unique:project_managers,orion_id',
+            'email' => 'nullable|email|unique:project_managers,email',
             'mobile' => 'nullable|string|max:50',
         ]);
 
@@ -64,8 +64,8 @@ class ProjectManagerController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'orion_id' => 'required|string|max:255|unique:project_managers,orion_id,' . $project_manager->id,
-            'email' => 'required|email|unique:project_managers,email,' . $project_manager->id,
+            'orion_id' => 'nullable|string|max:255|unique:project_managers,orion_id,' . $project_manager->id,
+            'email' => 'nullable|email|unique:project_managers,email,' . $project_manager->id,
             'mobile' => 'nullable|string|max:50',
         ]);
 

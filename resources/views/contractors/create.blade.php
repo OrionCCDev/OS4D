@@ -37,6 +37,7 @@
                         <option value="client" {{ old('type') == 'client' ? 'selected' : '' }}>Client</option>
                         <option value="consultant" {{ old('type') == 'consultant' ? 'selected' : '' }}>Consultant</option>
                         <option value="other" {{ old('type') == 'other' ? 'selected' : '' }}>Other</option>
+                        <option value="orion staff" {{ old('type') == 'orion staff' ? 'selected' : '' }}>Orion Staff</option>
                     </select>
                 </div>
             </div>
