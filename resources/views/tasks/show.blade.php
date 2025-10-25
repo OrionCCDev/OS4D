@@ -1312,8 +1312,18 @@
                         </div>
                         <div class="col-6">
                             <div class="bg-light rounded p-3">
-                                <h4 class="mb-1 text-info">{{ $task->created_at->diffInDays(now()) }}</h4>
-                                <small class="text-muted">Days Old</small>
+                                @if($task->start_date && $task->due_date)
+                                    @php
+                                        $startDate = \Carbon\Carbon::parse($task->start_date)->startOfDay();
+                                        $dueDate = \Carbon\Carbon::parse($task->due_date)->startOfDay();
+                                        $taskDuration = $startDate->diffInDays($dueDate);
+                                    @endphp
+                                    <h4 class="mb-1 text-info">{{ $taskDuration }}</h4>
+                                    <small class="text-muted">Task Duration (Days)</small>
+                                @else
+                                    <h4 class="mb-1 text-muted">N/A</h4>
+                                    <small class="text-muted">Duration Not Set</small>
+                                @endif
                             </div>
                         </div>
                     </div>
