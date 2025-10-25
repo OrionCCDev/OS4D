@@ -22,7 +22,126 @@
             </div>
         </div>
     </div>
+    <!-- Task Timeline -->
+    <div class="row">
+        <div class="col-12 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Task Timeline</h5>
+                    <p class="text-muted mb-0">Next 20 days: {{ now()->format('M d') }} - {{ now()->addDays(19)->format('M d, Y') }}</p>
+                </div>
+                <div class="card-body">
+                    <div class="timeline-container">
+                        <!-- Next 20 Days Header -->
+                        <div class="timeline-header">
+                            <div class="timeline-months">
+                                @php
+                                    $today = now();
+                                    $next20Days = $today->copy()->addDays(19); // 19 days from today = 20 days total
+                                @endphp
+                                @for($i = 0; $i < 20; $i++)
+                                    @php
+                                        $day = $today->copy()->addDays($i);
+                                    @endphp
+                                    <div class="timeline-month">
+                                        {{ $day->format('M d') }}
+                                    </div>
+                                @endfor
+                            </div>
+                        </div>
 
+                        <!-- Timeline Body -->
+                        <div class="timeline-body">
+                            <div class="timeline-line"></div>
+
+                            @php
+                                $today = now();
+                                $next20Days = $today->copy()->addDays(19); // 19 days from today = 20 days total
+
+                                // Debug: Let's see what tasks we have
+                                $allTasks = collect($userData['recent_tasks'] ?? []);
+
+                                // If no tasks from recent_tasks, try to get all user tasks
+                                if ($allTasks->isEmpty()) {
+                                    $allTasks = collect(\App\Models\Task::where('assigned_to', auth()->id())
+                                        ->whereNotNull('start_date')
+                                        ->get());
+                                }
+
+                                $timelineTasks = $allTasks->filter(function($task) use ($today, $next20Days) {
+                                    if (!$task->start_date) {
+                                        return false;
+                                    }
+
+                                    $startDate = \Carbon\Carbon::parse($task->start_date);
+                                    $isInRange = $startDate >= $today->startOfDay() && $startDate <= $next20Days->endOfDay();
+
+                                    return $isInRange;
+                                })->sortBy('start_date');
+
+                                // Debug information removed
+                            @endphp
+
+                            @foreach($timelineTasks as $task)
+                                @php
+                                    $startDate = \Carbon\Carbon::parse($task->start_date);
+
+                                    // Calculate position based on days from today
+                                    $daysFromToday = $today->startOfDay()->diffInDays($startDate->startOfDay());
+                                    $position = ($daysFromToday / 19) * 100; // 19 because we have 20 days (0-19)
+
+                                    // Ensure position is within bounds
+                                    $position = max(0, min(100, $position));
+
+                                    $isOverdue = $startDate < now();
+                                    $isToday = $startDate->isToday();
+                                    $isTomorrow = $startDate->isTomorrow();
+
+                                    // Color coding based on status and urgency
+                                    $statusColors = [
+                                        'pending' => 'bg-secondary',
+                                        'assigned' => 'bg-info',
+                                        'accepted' => 'bg-primary',
+                                        'in_progress' => 'bg-warning',
+                                        'completed' => 'bg-success'
+                                    ];
+
+                                    $taskColor = $statusColors[$task->status] ?? 'bg-secondary';
+                                    if ($isOverdue) $taskColor = 'bg-danger';
+                                    if ($isToday) $taskColor = 'bg-warning';
+                                    if ($isTomorrow) $taskColor = 'bg-info';
+                                @endphp
+
+                                <div class="timeline-event" style="left: {{ $position }}%;">
+                                    <div class="timeline-marker {{ $taskColor }}"></div>
+                                    <a href="{{ route('tasks.show', $task->id) }}" class="timeline-content timeline-clickable">
+                                        <div class="timeline-date">{{ $startDate->format('M d') }}</div>
+                                        <div class="timeline-task">
+                                            <div class="timeline-task-title">{{ Str::limit($task->title, 20) }}</div>
+                                            <div class="timeline-task-meta">
+                                                <span class="badge badge-sm {{ $taskColor }}">{{ ucfirst($task->status) }}</span>
+                                                @if($task->priority <= 2)
+                                                    <span class="badge badge-sm bg-danger">High Priority</span>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </a>
+                                </div>
+                            @endforeach
+
+                            @if($timelineTasks->isEmpty())
+                                <div class="text-center py-4">
+                                    <i class="bx bx-calendar-x fs-1 text-muted"></i>
+                                    <h6 class="mt-3 text-muted">No Tasks Scheduled</h6>
+                                    <p class="text-muted mb-0">No tasks are scheduled to start in the next 20 days.</p>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
     <!-- User Ranking Cards -->
     <div class="row mb-4">
         <!-- Overall Ranking -->
@@ -684,126 +803,7 @@
 
     </div>
 
-    <!-- Task Timeline -->
-    <div class="row">
-        <div class="col-12 mb-4">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">Task Timeline</h5>
-                    <p class="text-muted mb-0">Next 20 days: {{ now()->format('M d') }} - {{ now()->addDays(19)->format('M d, Y') }}</p>
-                </div>
-                <div class="card-body">
-                    <div class="timeline-container">
-                        <!-- Next 20 Days Header -->
-                        <div class="timeline-header">
-                            <div class="timeline-months">
-                                @php
-                                    $today = now();
-                                    $next20Days = $today->copy()->addDays(19); // 19 days from today = 20 days total
-                                @endphp
-                                @for($i = 0; $i < 20; $i++)
-                                    @php
-                                        $day = $today->copy()->addDays($i);
-                                    @endphp
-                                    <div class="timeline-month">
-                                        {{ $day->format('M d') }}
-                                    </div>
-                                @endfor
-                            </div>
-                        </div>
 
-                        <!-- Timeline Body -->
-                        <div class="timeline-body">
-                            <div class="timeline-line"></div>
-
-                            @php
-                                $today = now();
-                                $next20Days = $today->copy()->addDays(19); // 19 days from today = 20 days total
-
-                                // Debug: Let's see what tasks we have
-                                $allTasks = collect($userData['recent_tasks'] ?? []);
-
-                                // If no tasks from recent_tasks, try to get all user tasks
-                                if ($allTasks->isEmpty()) {
-                                    $allTasks = collect(\App\Models\Task::where('assigned_to', auth()->id())
-                                        ->whereNotNull('start_date')
-                                        ->get());
-                                }
-
-                                $timelineTasks = $allTasks->filter(function($task) use ($today, $next20Days) {
-                                    if (!$task->start_date) {
-                                        return false;
-                                    }
-
-                                    $startDate = \Carbon\Carbon::parse($task->start_date);
-                                    $isInRange = $startDate >= $today->startOfDay() && $startDate <= $next20Days->endOfDay();
-
-                                    return $isInRange;
-                                })->sortBy('start_date');
-
-                                // Debug information removed
-                            @endphp
-
-                            @foreach($timelineTasks as $task)
-                                @php
-                                    $startDate = \Carbon\Carbon::parse($task->start_date);
-
-                                    // Calculate position based on days from today
-                                    $daysFromToday = $today->startOfDay()->diffInDays($startDate->startOfDay());
-                                    $position = ($daysFromToday / 19) * 100; // 19 because we have 20 days (0-19)
-
-                                    // Ensure position is within bounds
-                                    $position = max(0, min(100, $position));
-
-                                    $isOverdue = $startDate < now();
-                                    $isToday = $startDate->isToday();
-                                    $isTomorrow = $startDate->isTomorrow();
-
-                                    // Color coding based on status and urgency
-                                    $statusColors = [
-                                        'pending' => 'bg-secondary',
-                                        'assigned' => 'bg-info',
-                                        'accepted' => 'bg-primary',
-                                        'in_progress' => 'bg-warning',
-                                        'completed' => 'bg-success'
-                                    ];
-
-                                    $taskColor = $statusColors[$task->status] ?? 'bg-secondary';
-                                    if ($isOverdue) $taskColor = 'bg-danger';
-                                    if ($isToday) $taskColor = 'bg-warning';
-                                    if ($isTomorrow) $taskColor = 'bg-info';
-                                @endphp
-
-                                <div class="timeline-event" style="left: {{ $position }}%;">
-                                    <div class="timeline-marker {{ $taskColor }}"></div>
-                                    <a href="{{ route('tasks.show', $task->id) }}" class="timeline-content timeline-clickable">
-                                        <div class="timeline-date">{{ $startDate->format('M d') }}</div>
-                                        <div class="timeline-task">
-                                            <div class="timeline-task-title">{{ Str::limit($task->title, 20) }}</div>
-                                            <div class="timeline-task-meta">
-                                                <span class="badge badge-sm {{ $taskColor }}">{{ ucfirst($task->status) }}</span>
-                                                @if($task->priority <= 2)
-                                                    <span class="badge badge-sm bg-danger">High Priority</span>
-                                                @endif
-                                            </div>
-                                        </div>
-                                    </a>
-                                </div>
-                            @endforeach
-
-                            @if($timelineTasks->isEmpty())
-                                <div class="text-center py-4">
-                                    <i class="bx bx-calendar-x fs-1 text-muted"></i>
-                                    <h6 class="mt-3 text-muted">No Tasks Scheduled</h6>
-                                    <p class="text-muted mb-0">No tasks are scheduled to start in the next 20 days.</p>
-                                </div>
-                            @endif
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <!-- Weekly Trend Chart -->
     <div class="row">
