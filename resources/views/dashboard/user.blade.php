@@ -720,13 +720,41 @@
                                 $today = now();
                                 $next10Days = $today->copy()->addDays(10);
 
-                                $timelineTasks = collect($userData['recent_tasks'] ?? [])
-                                    ->filter(function($task) use ($today, $next10Days) {
-                                        return $task->start_date &&
-                                               $task->start_date >= $today->startOfDay() &&
-                                               $task->start_date <= $next10Days->endOfDay();
-                                    })
-                                    ->sortBy('start_date');
+                                // Debug: Let's see what tasks we have
+                                $allTasks = collect($userData['recent_tasks'] ?? []);
+
+                                // If no tasks from recent_tasks, try to get all user tasks
+                                if ($allTasks->isEmpty()) {
+                                    $allTasks = collect(\App\Models\Task::where('assigned_to', auth()->id())
+                                        ->whereNotNull('start_date')
+                                        ->get());
+                                }
+
+                                $timelineTasks = $allTasks->filter(function($task) use ($today, $next10Days) {
+                                    if (!$task->start_date) {
+                                        return false;
+                                    }
+
+                                    $startDate = \Carbon\Carbon::parse($task->start_date);
+                                    $isInRange = $startDate >= $today->startOfDay() && $startDate <= $next10Days->endOfDay();
+
+                                    return $isInRange;
+                                })->sortBy('start_date');
+
+                                // Debug information - temporarily enabled to debug the issue
+                                if ($allTasks->count() > 0) {
+                                    echo '<div style="background: #f8f9fa; padding: 10px; margin: 10px 0; border: 1px solid #dee2e6; border-radius: 4px;">';
+                                    echo '<strong>Debug Info:</strong><br>';
+                                    echo 'Today: ' . $today->format('Y-m-d') . '<br>';
+                                    echo 'Next 10 days: ' . $next10Days->format('Y-m-d') . '<br>';
+                                    echo 'All tasks count: ' . $allTasks->count() . '<br>';
+                                    echo 'Timeline tasks count: ' . $timelineTasks->count() . '<br>';
+                                    echo '<strong>All tasks:</strong><br>';
+                                    foreach($allTasks as $task) {
+                                        echo '- ' . $task->title . ' (start_date: ' . ($task->start_date ?? 'null') . ')<br>';
+                                    }
+                                    echo '</div>';
+                                }
                             @endphp
 
                             @foreach($timelineTasks as $task)
