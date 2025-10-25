@@ -609,7 +609,9 @@
                                     <th>Project</th>
                                     <th>Status</th>
                                     <th>Priority</th>
+                                    <th>Start Date</th>
                                     <th>Due Date</th>
+                                    <th>Duration</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -642,16 +644,35 @@
                                             </span>
                                         </td>
                                         <td>
+                                            @if($task->start_date)
+                                                <small class="text-info">{{ $task->start_date->format('M d, Y') }}</small>
+                                            @else
+                                                <small class="text-muted">No start date</small>
+                                            @endif
+                                        </td>
+                                        <td>
                                             @if($task->due_date)
                                                 <small class="text-muted">{{ $task->due_date->format('M d, Y') }}</small>
                                             @else
                                                 <small class="text-muted">No due date</small>
                                             @endif
                                         </td>
+                                        <td>
+                                            @if($task->start_date && $task->due_date)
+                                                @php
+                                                    $duration = $task->start_date->diffInDays($task->due_date);
+                                                @endphp
+                                                <small class="text-primary fw-semibold">
+                                                    {{ $duration }} {{ $duration == 1 ? 'day' : 'days' }}
+                                                </small>
+                                            @else
+                                                <small class="text-muted">N/A</small>
+                                            @endif
+                                        </td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="5" class="text-center text-muted py-4">No tasks found</td>
+                                        <td colspan="7" class="text-center text-muted py-4">No tasks found</td>
                                     </tr>
                                 @endforelse
                             </tbody>

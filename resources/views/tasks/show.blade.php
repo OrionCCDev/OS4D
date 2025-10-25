@@ -200,12 +200,30 @@
                                 <small class="text-muted">Created</small>
                                 <p class="mb-0 fw-semibold">{{ $task->created_at->format('M d, Y') }}</p>
                             </div>
+                            @if($task->start_date)
+                                <div class="mb-2">
+                                    <small class="text-muted">Start Date</small>
+                                    <p class="mb-0 fw-semibold">{{ $task->start_date->format('M d, Y') }}</p>
+                                </div>
+                            @endif
                             @if($task->due_date)
                                 <div class="mb-2">
                                     <small class="text-muted">Due Date</small>
                                     <p class="mb-0 fw-semibold {{ $task->due_date < now() && $task->status !== 'completed' ? 'text-danger' : '' }}">
                                         {{ $task->due_date->format('M d, Y') }}
                                     </p>
+                                </div>
+                            @endif
+                            @if($task->start_date && $task->due_date)
+                                <div class="mb-2">
+                                    <small class="text-muted">Planned Duration</small>
+                                    <p class="mb-0 fw-semibold text-info">{{ $task->duration_formatted }}</p>
+                                </div>
+                            @endif
+                            @if($task->start_date && $task->completed_at)
+                                <div class="mb-2">
+                                    <small class="text-muted">Actual Duration</small>
+                                    <p class="mb-0 fw-semibold text-success">{{ $task->actual_duration_formatted }}</p>
                                 </div>
                             @endif
                             @if($task->completed_at)

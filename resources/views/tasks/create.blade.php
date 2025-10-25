@@ -63,7 +63,15 @@
                 <textarea name="description" class="form-control" rows="4">{{ old('description') }}</textarea>
             </div>
             <div class="row">
-                <div class="col-md-6 mb-3">
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Start Date</label>
+                    <input type="date" name="start_date" id="start_date" class="form-control @error('start_date') is-invalid @enderror" value="{{ old('start_date') }}">
+                    @error('start_date')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                    <small class="text-muted">Task start date cannot be before project start date</small>
+                </div>
+                <div class="col-md-4 mb-3">
                     <label class="form-label">Due Date</label>
                     <div class="d-flex gap-2">
                         <input type="date" name="due_date" id="due_date" class="form-control" value="{{ old('due_date', $defaultDueDate ?? '') }}">
@@ -75,7 +83,7 @@
                         <button type="button" class="btn btn-sm btn-outline-primary" data-add-months="1">+ 1 Month</button>
                     </div>
                 </div>
-                <div class="col-md-6 mb-3">
+                <div class="col-md-4 mb-3">
                     <label class="form-label">Priority</label>
                     <select name="priority" class="form-select">
                         @php($priorities = ['low'=>'Low','normal'=>'Normal','medium'=>'Medium','high'=>'High','urgent'=>'Urgent','critical'=>'Critical'])

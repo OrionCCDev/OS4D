@@ -235,9 +235,10 @@
                                             <th>Status</th>
                                             <th>Priority</th>
                                             <th>Created</th>
+                                            <th>Start Date</th>
                                             <th>Due Date</th>
-                                            <th>Completed</th>
                                             <th>Duration</th>
+                                            <th>Completed</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -263,6 +264,13 @@
                                                 </td>
                                                 <td>{{ $task['created_at']->format('M d, Y') }}</td>
                                                 <td>
+                                                    @if($task['start_date'])
+                                                        {{ \Carbon\Carbon::parse($task['start_date'])->format('M d, Y') }}
+                                                    @else
+                                                        <span class="text-muted">No start date</span>
+                                                    @endif
+                                                </td>
+                                                <td>
                                                     @if($task['due_date'])
                                                         {{ \Carbon\Carbon::parse($task['due_date'])->format('M d, Y') }}
                                                     @else
@@ -270,17 +278,22 @@
                                                     @endif
                                                 </td>
                                                 <td>
+                                                    @if($task['start_date'] && $task['due_date'])
+                                                        @php
+                                                            $startDate = \Carbon\Carbon::parse($task['start_date']);
+                                                            $dueDate = \Carbon\Carbon::parse($task['due_date']);
+                                                            $duration = $startDate->diffInDays($dueDate);
+                                                        @endphp
+                                                        {{ $duration }} {{ $duration == 1 ? 'day' : 'days' }}
+                                                    @else
+                                                        <span class="text-muted">N/A</span>
+                                                    @endif
+                                                </td>
+                                                <td>
                                                     @if($task['completed_at'])
                                                         {{ \Carbon\Carbon::parse($task['completed_at'])->format('M d, Y') }}
                                                     @else
                                                         <span class="text-muted">Not completed</span>
-                                                    @endif
-                                                </td>
-                                                <td>
-                                                    @if($task['duration_days'])
-                                                        {{ $task['duration_days'] }} days
-                                                    @else
-                                                        <span class="text-muted">N/A</span>
                                                     @endif
                                                 </td>
                                             </tr>
@@ -311,9 +324,10 @@
                                                             <th>Status</th>
                                                             <th>Priority</th>
                                                             <th>Created</th>
+                                                            <th>Start Date</th>
                                                             <th>Due Date</th>
-                                                            <th>Completed</th>
                                                             <th>Duration</th>
+                                                            <th>Completed</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody>
@@ -339,6 +353,13 @@
                                                                 </td>
                                                                 <td>{{ $task['created_at']->format('M d, Y') }}</td>
                                                                 <td>
+                                                                    @if($task['start_date'])
+                                                                        {{ \Carbon\Carbon::parse($task['start_date'])->format('M d, Y') }}
+                                                                    @else
+                                                                        <span class="text-muted">No start date</span>
+                                                                    @endif
+                                                                </td>
+                                                                <td>
                                                                     @if($task['due_date'])
                                                                         {{ \Carbon\Carbon::parse($task['due_date'])->format('M d, Y') }}
                                                                     @else
@@ -346,17 +367,22 @@
                                                                     @endif
                                                                 </td>
                                                                 <td>
+                                                                    @if($task['start_date'] && $task['due_date'])
+                                                                        @php
+                                                                            $startDate = \Carbon\Carbon::parse($task['start_date']);
+                                                                            $dueDate = \Carbon\Carbon::parse($task['due_date']);
+                                                                            $duration = $startDate->diffInDays($dueDate);
+                                                                        @endphp
+                                                                        {{ $duration }} {{ $duration == 1 ? 'day' : 'days' }}
+                                                                    @else
+                                                                        <span class="text-muted">N/A</span>
+                                                                    @endif
+                                                                </td>
+                                                                <td>
                                                                     @if($task['completed_at'])
                                                                         {{ \Carbon\Carbon::parse($task['completed_at'])->format('M d, Y') }}
                                                                     @else
                                                                         <span class="text-muted">Not completed</span>
-                                                                    @endif
-                                                                </td>
-                                                                <td>
-                                                                    @if($task['duration_days'])
-                                                                        {{ $task['duration_days'] }} days
-                                                                    @else
-                                                                        <span class="text-muted">N/A</span>
                                                                     @endif
                                                                 </td>
                                                             </tr>

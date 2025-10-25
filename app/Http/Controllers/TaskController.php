@@ -88,6 +88,7 @@ class TaskController extends Controller
             'contractors.*' => 'nullable|exists:contractors,id',
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
+            'start_date' => 'nullable|date|after_or_equal:project_start_date',
             'due_date' => 'nullable|date',
             'status' => 'nullable|in:pending,assigned,in_progress,submitted_for_review,in_review,approved,ready_for_email,on_client_consultant_review,in_review_after_client_consultant_reply,re_submit_required,rejected,completed',
             'priority' => 'nullable|in:low,normal,medium,high,urgent,critical',
@@ -99,6 +100,21 @@ class TaskController extends Controller
         }
 
         $validated = $request->validate($rules);
+
+        // Custom validation: Check if task start_date is not before project start_date
+        if ($request->has('start_date') && $request->start_date) {
+            $project = Project::find($validated['project_id']);
+            if ($project && $project->start_date) {
+                $taskStartDate = \Carbon\Carbon::parse($request->start_date);
+                $projectStartDate = \Carbon\Carbon::parse($project->start_date);
+
+                if ($taskStartDate->lt($projectStartDate)) {
+                    return redirect()->back()
+                        ->withErrors(['start_date' => 'Task start date cannot be before the project start date (' . $projectStartDate->format('M d, Y') . ')'])
+                        ->withInput();
+                }
+            }
+        }
 
         $validated['created_by'] = Auth::id();
         // Fallback default due date to +1 week if not provided
@@ -223,6 +239,7 @@ class TaskController extends Controller
             'folder_id' => 'nullable|exists:project_folders,id',
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
+            'start_date' => 'nullable|date',
             'due_date' => 'nullable|date',
             'status' => 'nullable|in:pending,assigned,in_progress,submitted_for_review,in_review,approved,ready_for_email,on_client_consultant_review,in_review_after_client_consultant_reply,re_submit_required,rejected,completed',
             'priority' => 'nullable|in:low,normal,medium,high,urgent,critical',
@@ -235,6 +252,21 @@ class TaskController extends Controller
         }
 
         $validated = $request->validate($rules);
+
+        // Custom validation: Check if task start_date is not before project start_date
+        if ($request->has('start_date') && $request->start_date) {
+            $project = Project::find($validated['project_id']);
+            if ($project && $project->start_date) {
+                $taskStartDate = \Carbon\Carbon::parse($request->start_date);
+                $projectStartDate = \Carbon\Carbon::parse($project->start_date);
+
+                if ($taskStartDate->lt($projectStartDate)) {
+                    return redirect()->back()
+                        ->withErrors(['start_date' => 'Task start date cannot be before the project start date (' . $projectStartDate->format('M d, Y') . ')'])
+                        ->withInput();
+                }
+            }
+        }
 
         // Check if task is being reassigned
         $isReassignment = $request->has('assigned_to') && $request->assigned_to != $task->assigned_to;

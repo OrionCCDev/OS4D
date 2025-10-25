@@ -78,8 +78,8 @@
                     </div>
                     <div class="col-md-3">
                         <label for="search" class="form-label">Search Tasks</label>
-                        <input type="text" class="form-control" id="search" name="search" 
-                               placeholder="Search by task name, description, project, or assignee..." 
+                        <input type="text" class="form-control" id="search" name="search"
+                               placeholder="Search by task name, description, project, or assignee..."
                                value="{{ $filters['search'] ?? '' }}">
                     </div>
                     <div class="col-md-3">
@@ -331,7 +331,9 @@
                                     <th>Assignee</th>
                                     <th>Status</th>
                                     <th>Priority</th>
+                                    <th>Start Date</th>
                                     <th>Due Date</th>
+                                    <th>Duration</th>
                                     <th>Created</th>
                                     <th>Actions</th>
                                 </tr>
@@ -358,7 +360,7 @@
                                         @if($task->assignee)
                                             <div class="d-flex align-items-center">
                                                 <div class="avatar avatar-xs me-2">
-                                                    <img src="{{ asset('uploads/users/' . ($task->assignee->img ?: 'default.png')) }}" 
+                                                    <img src="{{ asset('uploads/users/' . ($task->assignee->img ?: 'default.png')) }}"
                                                          alt="{{ $task->assignee->name }}" class="rounded-circle">
                                                 </div>
                                                 <div>
@@ -381,6 +383,16 @@
                                         </span>
                                     </td>
                                     <td>
+                                        @if($task->start_date)
+                                            <div class="d-flex flex-column">
+                                                <span class="fw-semibold text-info">{{ \Carbon\Carbon::parse($task->start_date)->format('M d, Y') }}</span>
+                                                <small class="text-muted">{{ \Carbon\Carbon::parse($task->start_date)->format('H:i') }}</small>
+                                            </div>
+                                        @else
+                                            <span class="text-muted">No start date</span>
+                                        @endif
+                                    </td>
+                                    <td>
                                         @if($task->due_date)
                                             <div class="d-flex flex-column">
                                                 <span class="fw-semibold">{{ \Carbon\Carbon::parse($task->due_date)->format('M d, Y') }}</span>
@@ -391,6 +403,20 @@
                                             </div>
                                         @else
                                             <span class="text-muted">No due date</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @if($task->start_date && $task->due_date)
+                                            @php
+                                                $startDate = \Carbon\Carbon::parse($task->start_date);
+                                                $dueDate = \Carbon\Carbon::parse($task->due_date);
+                                                $duration = $startDate->diffInDays($dueDate);
+                                            @endphp
+                                            <span class="fw-semibold text-primary">
+                                                {{ $duration }} {{ $duration == 1 ? 'day' : 'days' }}
+                                            </span>
+                                        @else
+                                            <span class="text-muted">N/A</span>
                                         @endif
                                     </td>
                                     <td>
@@ -445,23 +471,23 @@ function refreshReport() {
 function clearFilters() {
     // Clear all form fields
     document.getElementById('filterForm').reset();
-    
+
     // Clear multiple select fields explicitly
     const statusSelect = document.getElementById('status');
     const prioritySelect = document.getElementById('priority');
-    
+
     if (statusSelect) {
         Array.from(statusSelect.options).forEach(option => {
             option.selected = false;
         });
     }
-    
+
     if (prioritySelect) {
         Array.from(prioritySelect.options).forEach(option => {
             option.selected = false;
         });
     }
-    
+
     // Redirect to clean URL without any parameters
     window.location.href = '{{ route("reports.tasks") }}';
 }
@@ -501,7 +527,7 @@ function viewTaskHistory(taskId) {
                 position: relative;
                 padding: 20px 0;
             }
-            
+
             .timeline::before {
                 content: '';
                 position: absolute;
@@ -511,13 +537,13 @@ function viewTaskHistory(taskId) {
                 width: 2px;
                 background: linear-gradient(to bottom, #e9ecef, #dee2e6);
             }
-            
+
             .timeline-item {
                 position: relative;
                 margin-bottom: 30px;
                 padding-left: 60px;
             }
-            
+
             .timeline-marker {
                 position: absolute;
                 left: 20px;
@@ -532,7 +558,7 @@ function viewTaskHistory(taskId) {
                 box-shadow: 0 2px 4px rgba(0,0,0,0.1);
                 z-index: 2;
             }
-            
+
             .timeline-content {
                 background: #fff;
                 border: 1px solid #e9ecef;
@@ -541,30 +567,30 @@ function viewTaskHistory(taskId) {
                 box-shadow: 0 2px 4px rgba(0,0,0,0.05);
                 transition: all 0.3s ease;
             }
-            
+
             .timeline-content:hover {
                 box-shadow: 0 4px 8px rgba(0,0,0,0.1);
                 transform: translateY(-1px);
             }
-            
+
             .timeline-meta {
                 border-top: 1px solid #f8f9fa;
                 padding-top: 10px;
                 margin-top: 10px;
             }
-            
+
             .bg-gradient-primary {
                 background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
             }
-            
+
             .modal-lg {
                 max-width: 800px;
             }
-            
+
             .timeline-item:last-child {
                 margin-bottom: 0;
             }
-            
+
             .timeline-item:last-child::after {
                 content: '';
                 position: absolute;
@@ -577,20 +603,20 @@ function viewTaskHistory(taskId) {
             }
         </style>
     `;
-    
+
     // Remove existing modal if any
     const existingModal = document.getElementById('taskHistoryModal');
     if (existingModal) {
         existingModal.remove();
     }
-    
+
     // Add modal to body
     document.body.insertAdjacentHTML('beforeend', modalHtml);
-    
+
     // Show modal
     const modal = new bootstrap.Modal(document.getElementById('taskHistoryModal'));
     modal.show();
-    
+
     // Load task history via AJAX
     fetch(`/tasks/${taskId}/history`)
         .then(response => response.json())
@@ -605,13 +631,13 @@ function viewTaskHistory(taskId) {
                             const type = entry.type || 'updated';
                             const user = entry.user ? entry.user.name : 'System';
                             const date = new Date(entry.created_at);
-                            
+
                             // Get type-specific styling with better colors
                             let typeClass = 'secondary';
                             let typeIcon = 'bx-edit';
                             let typeLabel = 'Updated';
                             let typeColor = '#6c757d';
-                            
+
                             switch(type) {
                                 case 'created':
                                     typeClass = 'primary';
@@ -692,7 +718,7 @@ function viewTaskHistory(taskId) {
                                     typeColor = '#6c757d';
                                     break;
                             }
-                            
+
                             return `
                                 <div class="timeline-item">
                                     <div class="timeline-marker" style="background-color: ${typeColor};">
@@ -761,7 +787,7 @@ function viewTaskHistory(taskId) {
 document.addEventListener('DOMContentLoaded', function() {
     const filterForm = document.getElementById('filterForm');
     const filterInputs = filterForm.querySelectorAll('select, input[type="date"]');
-    
+
     filterInputs.forEach(input => {
         input.addEventListener('change', function() {
             filterForm.submit();

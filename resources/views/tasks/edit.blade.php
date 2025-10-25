@@ -63,11 +63,19 @@
             </div>
             <div class="row">
                 @if(Auth::user()->isManager())
-                <div class="col-md-4 mb-3">
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">Start Date</label>
+                    <input type="date" name="start_date" class="form-control @error('start_date') is-invalid @enderror" value="{{ old('start_date', optional($task->start_date)->format('Y-m-d')) }}">
+                    @error('start_date')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                    <small class="text-muted">Cannot be before project start date</small>
+                </div>
+                <div class="col-md-3 mb-3">
                     <label class="form-label">Due Date</label>
                     <input type="date" name="due_date" class="form-control" value="{{ old('due_date', optional($task->due_date)->format('Y-m-d')) }}">
                 </div>
-                <div class="col-md-4 mb-3">
+                <div class="col-md-3 mb-3">
                     <label class="form-label">Priority</label>
                     <select name="priority" class="form-select">
                         @php($priorities = ['low'=>'Low','normal'=>'Normal','medium'=>'Medium','high'=>'High','urgent'=>'Urgent','critical'=>'Critical'])
@@ -104,11 +112,15 @@
                     </small>
                 </div>
                 @else
-                <div class="col-md-4 mb-3">
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">Start Date</label>
+                    <input type="text" class="form-control" value="{{ optional($task->start_date)->format('M d, Y') ?? 'Not set' }}" readonly>
+                </div>
+                <div class="col-md-3 mb-3">
                     <label class="form-label">Due Date</label>
                     <input type="text" class="form-control" value="{{ optional($task->due_date)->format('M d, Y') ?? 'Not set' }}" readonly>
                 </div>
-                <div class="col-md-4 mb-3">
+                <div class="col-md-3 mb-3">
                     <label class="form-label">Priority</label>
                     <input type="text" class="form-control" value="{{ ucfirst($task->priority) }}" readonly>
                 </div>

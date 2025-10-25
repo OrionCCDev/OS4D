@@ -24,6 +24,7 @@ class Task extends Model
         'assigned_to',
         'title',
         'description',
+        'start_date',
         'due_date',
         'status',
         'priority',
@@ -69,6 +70,7 @@ class Task extends Model
     ];
 
     protected $casts = [
+        'start_date' => 'date',
         'due_date' => 'date',
         'assigned_at' => 'datetime',
         'started_at' => 'datetime',
@@ -504,14 +506,74 @@ class Task extends Model
     }
 
     /**
-     * Get the planned duration of the task (creation to due date)
+     * Get the planned duration of the task (start date to due date)
      */
     public function getPlannedDurationAttribute()
     {
-        if ($this->created_at && $this->due_date) {
-            return $this->created_at->diffInDays($this->due_date);
+        if ($this->start_date && $this->due_date) {
+            return $this->start_date->diffInDays($this->due_date);
         }
         return null;
+    }
+
+    /**
+     * Get the task duration in days (start date to due date)
+     */
+    public function getDurationAttribute()
+    {
+        if ($this->start_date && $this->due_date) {
+            return $this->start_date->diffInDays($this->due_date);
+        }
+        return null;
+    }
+
+    /**
+     * Get the task duration in a formatted string
+     */
+    public function getDurationFormattedAttribute()
+    {
+        $duration = $this->getDurationAttribute();
+        if ($duration === null) {
+            return 'Not set';
+        }
+
+        if ($duration == 0) {
+            return 'Same day';
+        } elseif ($duration == 1) {
+            return '1 day';
+        } else {
+            return $duration . ' days';
+        }
+    }
+
+    /**
+     * Get the actual duration from start to completion
+     */
+    public function getActualDurationAttribute()
+    {
+        if ($this->start_date && $this->completed_at) {
+            return $this->start_date->diffInDays($this->completed_at);
+        }
+        return null;
+    }
+
+    /**
+     * Get the actual duration formatted
+     */
+    public function getActualDurationFormattedAttribute()
+    {
+        $duration = $this->getActualDurationAttribute();
+        if ($duration === null) {
+            return 'Not completed';
+        }
+
+        if ($duration == 0) {
+            return 'Same day';
+        } elseif ($duration == 1) {
+            return '1 day';
+        } else {
+            return $duration . ' days';
+        }
     }
 
     public function getDaysRemainingAttribute()
