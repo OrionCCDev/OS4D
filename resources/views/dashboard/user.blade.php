@@ -79,54 +79,75 @@
                                     return $isInRange;
                                 })->sortBy('start_date');
 
-                                // Debug information removed
+                                // Group tasks by date to handle multiple tasks on same date
+                                $tasksByDate = [];
+                                foreach ($timelineTasks as $task) {
+                                    $startDate = \Carbon\Carbon::parse($task->start_date);
+                                    $dateKey = $startDate->format('Y-m-d');
+                                    if (!isset($tasksByDate[$dateKey])) {
+                                        $tasksByDate[$dateKey] = [];
+                                    }
+                                    $tasksByDate[$dateKey][] = $task;
+                                }
                             @endphp
 
-                            @foreach($timelineTasks as $task)
-                                @php
-                                    $startDate = \Carbon\Carbon::parse($task->start_date);
+                            @foreach($tasksByDate as $dateKey => $dateTasks)
+                                @foreach($dateTasks as $index => $task)
+                                    @php
+                                        $startDate = \Carbon\Carbon::parse($task->start_date);
 
-                                    // Calculate position based on days from today
-                                    $daysFromToday = $today->startOfDay()->diffInDays($startDate->startOfDay());
-                                    $position = ($daysFromToday / 19) * 100; // 19 because we have 20 days (0-19)
+                                        // Calculate position based on days from today
+                                        $daysFromToday = $today->startOfDay()->diffInDays($startDate->startOfDay());
+                                        $position = ($daysFromToday / 19) * 100; // 19 because we have 20 days (0-19)
 
-                                    // Ensure position is within bounds
-                                    $position = max(0, min(100, $position));
+                                        // Ensure position is within bounds
+                                        $position = max(0, min(100, $position));
 
-                                    $isOverdue = $startDate < now();
-                                    $isToday = $startDate->isToday();
-                                    $isTomorrow = $startDate->isTomorrow();
+                                        // Calculate vertical offset for multiple tasks on same date
+                                        $verticalOffset = 0;
+                                        if (count($dateTasks) > 1) {
+                                            // Offset tasks vertically to avoid overlap
+                                            // Calculate spacing based on number of tasks
+                                            $spacing = 60; // pixels between tasks
+                                            $totalOffset = (count($dateTasks) - 1) * $spacing;
+                                            $verticalOffset = ($index * $spacing) - ($totalOffset / 2);
+                                        }
 
-                                    // Color coding based on status and urgency
-                                    $statusColors = [
-                                        'pending' => 'bg-secondary',
-                                        'assigned' => 'bg-info',
-                                        'accepted' => 'bg-primary',
-                                        'in_progress' => 'bg-warning',
-                                        'completed' => 'bg-success'
-                                    ];
+                                        $isOverdue = $startDate < now();
+                                        $isToday = $startDate->isToday();
+                                        $isTomorrow = $startDate->isTomorrow();
 
-                                    $taskColor = $statusColors[$task->status] ?? 'bg-secondary';
-                                    if ($isOverdue) $taskColor = 'bg-danger';
-                                    if ($isToday) $taskColor = 'bg-warning';
-                                    if ($isTomorrow) $taskColor = 'bg-info';
-                                @endphp
+                                        // Color coding based on status and urgency
+                                        $statusColors = [
+                                            'pending' => 'bg-secondary',
+                                            'assigned' => 'bg-info',
+                                            'accepted' => 'bg-primary',
+                                            'in_progress' => 'bg-warning',
+                                            'completed' => 'bg-success'
+                                        ];
 
-                                <div class="timeline-event" style="left: {{ $position }}%;">
-                                    <div class="timeline-marker {{ $taskColor }}"></div>
-                                    <a href="{{ route('tasks.show', $task->id) }}" class="timeline-content timeline-clickable">
-                                        <div class="timeline-date">{{ $startDate->format('M d') }}</div>
-                                        <div class="timeline-task">
-                                            <div class="timeline-task-title">{{ Str::limit($task->title, 20) }}</div>
-                                            <div class="timeline-task-meta">
-                                                <span class="badge badge-sm {{ $taskColor }}">{{ ucfirst($task->status) }}</span>
-                                                @if($task->priority <= 2)
-                                                    <span class="badge badge-sm bg-danger">High Priority</span>
-                                                @endif
+                                        $taskColor = $statusColors[$task->status] ?? 'bg-secondary';
+                                        if ($isOverdue) $taskColor = 'bg-danger';
+                                        if ($isToday) $taskColor = 'bg-warning';
+                                        if ($isTomorrow) $taskColor = 'bg-info';
+                                    @endphp
+
+                                    <div class="timeline-event" style="left: {{ $position }}%; top: {{ 50 + $verticalOffset / 10 }}%;" data-task-index="{{ $index }}" data-total-tasks="{{ count($dateTasks) }}">
+                                        <div class="timeline-marker {{ $taskColor }}"></div>
+                                        <a href="{{ route('tasks.show', $task->id) }}" class="timeline-content timeline-clickable">
+                                            <div class="timeline-date">{{ $startDate->format('M d') }}</div>
+                                            <div class="timeline-task">
+                                                <div class="timeline-task-title">{{ Str::limit($task->title, 20) }}</div>
+                                                <div class="timeline-task-meta">
+                                                    <span class="badge badge-sm {{ $taskColor }}">{{ ucfirst($task->status) }}</span>
+                                                    @if($task->priority <= 2)
+                                                        <span class="badge badge-sm bg-danger">High Priority</span>
+                                                    @endif
+                                                </div>
                                             </div>
-                                        </div>
-                                    </a>
-                                </div>
+                                        </a>
+                                    </div>
+                                @endforeach
                             @endforeach
 
                             @if($timelineTasks->isEmpty())
@@ -858,8 +879,10 @@
     position: relative;
     background: linear-gradient(135deg, #e8f5e8 0%, #ffffff 100%);
     border-radius: 0 0 6px 6px;
-    padding: 40px 20px;
-    min-height: 200px;
+    padding: 60px 20px;
+    min-height: 250px;
+    overflow-y: visible;
+    overflow-x: visible;
 }
 
 .timeline-line {
@@ -875,9 +898,9 @@
 
 .timeline-event {
     position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
     z-index: 10;
+    transition: all 0.2s ease;
+    transform-origin: top center;
 }
 
 .timeline-marker {
@@ -888,6 +911,7 @@
     border: 2px solid white;
     box-shadow: 0 2px 4px rgba(0,0,0,0.2);
     position: relative;
+    flex-shrink: 0;
 }
 
 .timeline-marker::after {
@@ -917,6 +941,7 @@
     text-decoration: none;
     color: inherit;
     display: block;
+    white-space: nowrap;
 }
 
 .timeline-clickable {
@@ -925,9 +950,10 @@
 }
 
 .timeline-clickable:hover {
-    transform: translateX(-50%) translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    transform: translateX(-50%) translateY(-2px) scale(1.05);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
     background: #f8f9fa;
+    z-index: 20;
 }
 
 .timeline-date {
