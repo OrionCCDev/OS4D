@@ -143,6 +143,13 @@
                 <div data-i18n="Contractors">Contractors</div>
               </a>
             </li>
+            <!-- Project Managers - Manager only -->
+            <li class="menu-item {{ request()->routeIs('project-managers.*') ? 'active' : '' }}">
+              <a href="{{ route('project-managers.index') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-user-circle"></i>
+                <div data-i18n="Project Managers">Project Managers</div>
+              </a>
+            </li>
             {{--  <!-- Email Templates - Manager only -->
             <li class="menu-item {{ request()->routeIs('email-templates.*') ? 'active' : '' }}">
               <a href="{{ route('email-templates.index') }}" class="menu-link">

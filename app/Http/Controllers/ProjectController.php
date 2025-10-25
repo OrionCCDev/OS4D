@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Project;
+use App\Models\ProjectManager;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -20,7 +21,8 @@ class ProjectController extends Controller
 
     public function create()
     {
-        return view('projects.create');
+        $projectManagers = ProjectManager::orderBy('name')->get();
+        return view('projects.create', compact('projectManagers'));
     }
 
     public function store(Request $request)
@@ -32,6 +34,7 @@ class ProjectController extends Controller
             'status' => 'nullable|in:draft,active,on_hold,completed,cancelled',
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
+            'project_manager_id' => 'nullable|exists:project_managers,id',
         ]);
 
         $validated['owner_id'] = Auth::id();
@@ -51,7 +54,8 @@ class ProjectController extends Controller
 
     public function edit(Project $project)
     {
-        return view('projects.edit', compact('project'));
+        $projectManagers = ProjectManager::orderBy('name')->get();
+        return view('projects.edit', compact('project', 'projectManagers'));
     }
 
     public function show(Project $project)
@@ -156,6 +160,7 @@ class ProjectController extends Controller
             'status' => 'nullable|in:draft,active,on_hold,completed,cancelled',
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
+            'project_manager_id' => 'nullable|exists:project_managers,id',
         ]);
 
         $project->update($validated);

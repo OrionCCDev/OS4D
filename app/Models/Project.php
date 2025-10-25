@@ -13,6 +13,7 @@ class Project extends Model
 
     protected $fillable = [
         'owner_id',
+        'project_manager_id',
         'name',
         'short_code',
         'description',
@@ -31,6 +32,11 @@ class Project extends Model
     public function owner()
     {
         return $this->belongsTo(User::class, 'owner_id');
+    }
+
+    public function projectManager()
+    {
+        return $this->belongsTo(ProjectManager::class, 'project_manager_id');
     }
 
     public function folders()

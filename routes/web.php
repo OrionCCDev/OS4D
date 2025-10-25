@@ -15,6 +15,7 @@ use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ProjectFolderController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\ContractorController;
+use App\Http\Controllers\ProjectManagerController;
 use App\Http\Controllers\EmailTemplateController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ExternalStakeholderController;
@@ -206,6 +207,7 @@ Route::middleware('auth')->group(function () {
         Route::resource('projects', ProjectController::class);
         Route::resource('folders', ProjectFolderController::class)->parameters(['folders' => 'folder'])->except(['show']);
         Route::resource('contractors', ContractorController::class)->except(['show']);
+        Route::resource('project-managers', ProjectManagerController::class);
         Route::resource('email-templates', EmailTemplateController::class)->parameters(['email-templates' => 'email_template'])->except(['show']);
         Route::resource('external-stakeholders', ExternalStakeholderController::class);
     });

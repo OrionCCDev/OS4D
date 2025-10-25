@@ -20,6 +20,18 @@
                 <label class="form-label">Description</label>
                 <textarea name="description" class="form-control" rows="4">{{ old('description', $project->description) }}</textarea>
             </div>
+            <div class="mb-3">
+                <label class="form-label">Project Manager</label>
+                <select name="project_manager_id" class="form-select">
+                    <option value="">Select Project Manager</option>
+                    @foreach($projectManagers as $manager)
+                        <option value="{{ $manager->id }}" {{ old('project_manager_id', $project->project_manager_id) == $manager->id ? 'selected' : '' }}>
+                            {{ $manager->name }} ({{ $manager->orion_id }})
+                        </option>
+                    @endforeach
+                </select>
+                <small class="text-muted">Optional: Assign a project manager to this project</small>
+            </div>
             <div class="row">
                 <div class="col-md-4 mb-3">
                     <label class="form-label">Status</label>
