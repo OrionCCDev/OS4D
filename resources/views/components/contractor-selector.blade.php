@@ -24,6 +24,9 @@
 
             <input type="radio" class="btn-check" name="contractor_type_filter" id="filter_consultant" value="consultant">
             <label class="btn btn-outline-primary btn-sm" for="filter_consultant">Consultants</label>
+
+            <input type="radio" class="btn-check" name="contractor_type_filter" id="filter_other" value="other">
+            <label class="btn btn-outline-primary btn-sm" for="filter_other">Other</label>
         </div>
     </div>
     @endif
@@ -65,7 +68,7 @@
                                 </div>
                             </div>
                             <div class="text-end">
-                                <span class="badge bg-{{ $contractor->type === 'orion staff' ? 'primary' : ($contractor->type === 'client' ? 'success' : 'info') }}">
+                                <span class="badge bg-{{ $contractor->type === 'orion staff' ? 'primary' : ($contractor->type === 'client' ? 'success' : ($contractor->type === 'other' ? 'secondary' : 'info')) }}">
                                     {{ ucfirst(str_replace('_', ' ', $contractor->type)) }}
                                 </span>
                             </div>

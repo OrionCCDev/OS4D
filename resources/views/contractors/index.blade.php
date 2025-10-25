@@ -24,7 +24,7 @@
                         <td>{{ $contractor->name }}</td>
                         <td>{{ $contractor->email }}</td>
                         <td>
-                            <span class="badge bg-{{ $contractor->type == 'orion staff' ? 'primary' : ($contractor->type == 'client' ? 'success' : 'info') }}">
+                            <span class="badge bg-{{ $contractor->type == 'orion staff' ? 'primary' : ($contractor->type == 'client' ? 'success' : ($contractor->type == 'other' ? 'secondary' : 'info')) }}">
                                 {{ ucfirst($contractor->type) }}
                             </span>
                         </td>
