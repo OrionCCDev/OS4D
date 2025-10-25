@@ -99,21 +99,47 @@ document.addEventListener('DOMContentLoaded', function() {
     const selectedList = document.getElementById('selected_contractors_list');
     const checkboxes = document.querySelectorAll('.contractor-checkbox');
 
+    // Current filter state
+    let currentSearchTerm = '';
+    let currentTypeFilter = 'all';
+
     // Search functionality
     if (searchInput) {
         searchInput.addEventListener('input', function() {
-            const searchTerm = this.value.toLowerCase();
-            filterContractors(searchTerm);
+            currentSearchTerm = this.value.toLowerCase();
+            applyFilters();
         });
     }
 
     // Type filter functionality
     typeFilters.forEach(filter => {
         filter.addEventListener('change', function() {
-            const selectedType = this.value;
-            filterContractorsByType(selectedType);
+            currentTypeFilter = this.value;
+            applyFilters();
         });
     });
+
+    // Apply both search and type filters together
+    function applyFilters() {
+        contractorItems.forEach(item => {
+            const name = item.dataset.contractorName;
+            const email = item.dataset.contractorEmail;
+            const company = item.dataset.contractorCompany;
+            const type = item.dataset.contractorType;
+
+            // Check search term match
+            const searchMatches = currentSearchTerm === '' ||
+                                name.includes(currentSearchTerm) ||
+                                email.includes(currentSearchTerm) ||
+                                company.includes(currentSearchTerm);
+
+            // Check type filter match
+            const typeMatches = currentTypeFilter === 'all' || type === currentTypeFilter;
+
+            // Show item only if both filters match
+            item.style.display = (searchMatches && typeMatches) ? 'block' : 'none';
+        });
+    }
 
     // Update selected contractors summary
     function updateSelectedSummary() {
@@ -130,32 +156,6 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             selectedSummary.style.display = 'none';
         }
-    }
-
-    // Filter contractors by search term
-    function filterContractors(searchTerm) {
-        contractorItems.forEach(item => {
-            const name = item.dataset.contractorName;
-            const email = item.dataset.contractorEmail;
-            const company = item.dataset.contractorCompany;
-
-            const matches = name.includes(searchTerm) ||
-                          email.includes(searchTerm) ||
-                          company.includes(searchTerm);
-
-            item.style.display = matches ? 'block' : 'none';
-        });
-    }
-
-    // Filter contractors by type
-    function filterContractorsByType(type) {
-        contractorItems.forEach(item => {
-            if (type === 'all' || item.dataset.contractorType === type) {
-                item.style.display = 'block';
-            } else {
-                item.style.display = 'none';
-            }
-        });
     }
 
     // Update summary when checkboxes change
