@@ -137,7 +137,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const typeMatches = currentTypeFilter === 'all' || type === currentTypeFilter;
 
             // Show item only if both filters match
-            item.style.display = (searchMatches && typeMatches) ? 'block' : 'none';
+            const shouldShow = searchMatches && typeMatches;
+            item.style.display = shouldShow ? 'block' : 'none';
         });
     }
 
