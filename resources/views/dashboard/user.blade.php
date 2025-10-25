@@ -694,23 +694,19 @@
                 </div>
                 <div class="card-body">
                     <div class="timeline-container">
-                        <!-- Current Month + Next 10 Days Header -->
+                        <!-- Next 10 Days Header -->
                         <div class="timeline-header">
                             <div class="timeline-months">
                                 @php
-                                    $currentMonth = now();
-                                    $daysInMonth = $currentMonth->daysInMonth;
-                                    $next10Days = now()->addDays(10);
-                                    $totalDays = $daysInMonth + 10;
+                                    $today = now();
+                                    $next10Days = $today->addDays(10);
                                 @endphp
-                                @for($day = 1; $day <= $daysInMonth; $day++)
+                                @for($i = 0; $i < 10; $i++)
+                                    @php
+                                        $day = $today->copy()->addDays($i);
+                                    @endphp
                                     <div class="timeline-month">
-                                        {{ $day }}
-                                    </div>
-                                @endfor
-                                @for($day = 1; $day <= 10; $day++)
-                                    <div class="timeline-month timeline-next-month">
-                                        {{ $day }}
+                                        {{ $day->format('M d') }}
                                     </div>
                                 @endfor
                             </div>
@@ -721,18 +717,14 @@
                             <div class="timeline-line"></div>
 
                             @php
-                                $currentMonth = now();
-                                $daysInMonth = $currentMonth->daysInMonth;
-                                $monthStart = $currentMonth->startOfMonth();
-                                $monthEnd = $currentMonth->endOfMonth();
-                                $next10Days = now()->addDays(10);
-                                $totalDays = $daysInMonth + 10;
+                                $today = now();
+                                $next10Days = $today->copy()->addDays(10);
 
                                 $timelineTasks = collect($userData['recent_tasks'] ?? [])
-                                    ->filter(function($task) use ($monthStart, $next10Days) {
+                                    ->filter(function($task) use ($today, $next10Days) {
                                         return $task->start_date &&
-                                               $task->start_date >= $monthStart &&
-                                               $task->start_date <= $next10Days;
+                                               $task->start_date >= $today->startOfDay() &&
+                                               $task->start_date <= $next10Days->endOfDay();
                                     })
                                     ->sortBy('start_date');
                             @endphp
@@ -740,17 +732,10 @@
                             @foreach($timelineTasks as $task)
                                 @php
                                     $startDate = \Carbon\Carbon::parse($task->start_date);
-                                    $dayOfMonth = $startDate->day;
 
-                                    // Calculate position based on whether it's in current month or next 10 days
-                                    if ($startDate->month == $currentMonth->month) {
-                                        // Task is in current month
-                                        $position = (($dayOfMonth - 1) / ($totalDays - 1)) * 100;
-                                    } else {
-                                        // Task is in next month (next 10 days)
-                                        $nextMonthDay = $startDate->day;
-                                        $position = (($daysInMonth + $nextMonthDay - 1) / ($totalDays - 1)) * 100;
-                                    }
+                                    // Calculate position based on days from today
+                                    $daysFromToday = $today->startOfDay()->diffInDays($startDate->startOfDay());
+                                    $position = ($daysFromToday / 9) * 100; // 9 because we have 10 days (0-9)
 
                                     $isOverdue = $startDate < now();
                                     $isToday = $startDate->isToday();
@@ -839,14 +824,8 @@
     font-size: 11px;
     text-align: center;
     flex: 1;
-    min-width: 25px;
+    min-width: 50px;
     padding: 2px;
-}
-
-.timeline-next-month {
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 3px;
-    margin: 0 1px;
 }
 
 .timeline-body {
