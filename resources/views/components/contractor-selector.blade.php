@@ -16,7 +16,7 @@
             <input type="radio" class="btn-check" name="contractor_type_filter" id="filter_all" value="all" checked>
             <label class="btn btn-outline-primary btn-sm" for="filter_all">All</label>
 
-            <input type="radio" class="btn-check" name="contractor_type_filter" id="filter_orion_staff" value="orion_staff">
+            <input type="radio" class="btn-check" name="contractor_type_filter" id="filter_orion_staff" value="orion staff">
             <label class="btn btn-outline-primary btn-sm" for="filter_orion_staff">Orion Staff</label>
 
             <input type="radio" class="btn-check" name="contractor_type_filter" id="filter_client" value="client">
@@ -65,7 +65,7 @@
                                 </div>
                             </div>
                             <div class="text-end">
-                                <span class="badge bg-{{ $contractor->type === 'orion_staff' ? 'primary' : ($contractor->type === 'client' ? 'success' : 'info') }}">
+                                <span class="badge bg-{{ $contractor->type === 'orion staff' ? 'primary' : ($contractor->type === 'client' ? 'success' : 'info') }}">
                                     {{ ucfirst(str_replace('_', ' ', $contractor->type)) }}
                                 </span>
                             </div>

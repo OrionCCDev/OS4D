@@ -55,7 +55,7 @@
                     <div class="col-md-6 col-lg-4 mb-3">
                         <div class="d-flex align-items-center p-3 border rounded">
                             <div class="flex-shrink-0 me-3">
-                                <div class="avatar" style="width: 40px; height: 40px; background: {{ $contractor->type === 'orion_staff' ? '#0d6efd' : ($contractor->type === 'client' ? '#198754' : '#0dcaf0') }}; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                <div class="avatar" style="width: 40px; height: 40px; background: {{ $contractor->type === 'orion staff' ? '#0d6efd' : ($contractor->type === 'client' ? '#198754' : '#0dcaf0') }}; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
                                     <i class="bx bx-user text-white"></i>
                                 </div>
                             </div>
@@ -67,7 +67,7 @@
                                 @endif
                             </div>
                             <div class="flex-shrink-0">
-                                <span class="badge bg-{{ $contractor->type === 'orion_staff' ? 'primary' : ($contractor->type === 'client' ? 'success' : 'info') }}">
+                                <span class="badge bg-{{ $contractor->type === 'orion staff' ? 'primary' : ($contractor->type === 'client' ? 'success' : 'info') }}">
                                     {{ ucfirst(str_replace('_', ' ', $contractor->type)) }}
                                 </span>
                             </div>
