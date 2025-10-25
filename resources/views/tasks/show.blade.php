@@ -48,15 +48,32 @@
                         <span class="badge bg-{{ $priorityColors[$task->priority ?? 5] ?? 'secondary' }} fs-6 px-3 py-2">
                             Priority {{ $task->priority ?? 5 }}
                         </span>
-                        @if($task->due_date)
-                            <span class="badge bg-{{ $task->is_overdue ? 'danger' : 'success' }} fs-6 px-3 py-2">
-                                <i class="bx bx-{{ $task->is_overdue ? 'time-five' : 'timer' }} me-1"></i>
-                                @if($task->status === 'completed')
-                                    Completed
-                                @elseif($task->days_remaining !== null)
-                                    {{ abs($task->days_remaining) }} {{ $task->is_overdue ? 'days overdue' : 'days left' }}
-                                @endif
-                            </span>
+                        @if($task->start_date)
+                            @php
+                                $now = now();
+                                $startDate = \Carbon\Carbon::parse($task->start_date);
+                                $daysUntilStart = $now->diffInDays($startDate, false);
+                                $isAccepted = in_array($task->status, ['accepted', 'in_progress', 'workingon', 'submitted_for_review', 'in_review', 'approved', 'completed']);
+                                $isApproaching = $daysUntilStart <= 3 && $daysUntilStart >= 0;
+                                $isOverdue = $daysUntilStart < 0;
+                            @endphp
+
+                            @if($isAccepted && $daysUntilStart <= 0)
+                                {{-- Don't show anything if task is accepted and start date has passed --}}
+                            @else
+                                <span class="badge bg-{{ $isOverdue ? 'danger' : ($isApproaching && !$isAccepted ? 'danger' : 'success') }} fs-6 px-3 py-2">
+                                    <i class="bx bx-{{ $isOverdue ? 'time-five' : ($isApproaching && !$isAccepted ? 'time-five' : 'timer') }} me-1"></i>
+                                    @if($isOverdue)
+                                        {{ abs($daysUntilStart) }} days overdue to start
+                                    @elseif($daysUntilStart == 0)
+                                        Starts today
+                                    @elseif($daysUntilStart == 1)
+                                        Starts tomorrow
+                                    @else
+                                        {{ $daysUntilStart }} days until start
+                                    @endif
+                                </span>
+                            @endif
                         @endif
                     </div>
                 </div>
