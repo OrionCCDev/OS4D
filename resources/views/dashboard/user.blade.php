@@ -690,7 +690,7 @@
             <div class="card">
                 <div class="card-header">
                     <h5 class="card-title mb-0">Task Timeline</h5>
-                    <p class="text-muted mb-0">Upcoming tasks and their start dates</p>
+                    <p class="text-muted mb-0">Next 10 days: {{ now()->format('M d') }} - {{ now()->addDays(9)->format('M d, Y') }}</p>
                 </div>
                 <div class="card-body">
                     <div class="timeline-container">
@@ -737,6 +737,9 @@
                                     $daysFromToday = $today->startOfDay()->diffInDays($startDate->startOfDay());
                                     $position = ($daysFromToday / 9) * 100; // 9 because we have 10 days (0-9)
 
+                                    // Ensure position is within bounds
+                                    $position = max(0, min(100, $position));
+
                                     $isOverdue = $startDate < now();
                                     $isToday = $startDate->isToday();
                                     $isTomorrow = $startDate->isTomorrow();
@@ -772,6 +775,14 @@
                                     </div>
                                 </div>
                             @endforeach
+
+                            @if($timelineTasks->isEmpty())
+                                <div class="text-center py-4">
+                                    <i class="bx bx-calendar-x fs-1 text-muted"></i>
+                                    <h6 class="mt-3 text-muted">No Tasks Scheduled</h6>
+                                    <p class="text-muted mb-0">No tasks are scheduled to start in the next 10 days.</p>
+                                </div>
+                            @endif
                         </div>
                     </div>
                 </div>
