@@ -684,6 +684,116 @@
 
     </div>
 
+    <!-- Task Timeline -->
+    <div class="row">
+        <div class="col-12 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Task Timeline</h5>
+                    <p class="text-muted mb-0">Upcoming tasks and their start dates</p>
+                </div>
+                <div class="card-body">
+                    <div class="timeline-container">
+                        <!-- Current Month + Next 10 Days Header -->
+                        <div class="timeline-header">
+                            <div class="timeline-months">
+                                @php
+                                    $currentMonth = now();
+                                    $daysInMonth = $currentMonth->daysInMonth;
+                                    $next10Days = now()->addDays(10);
+                                    $totalDays = $daysInMonth + 10;
+                                @endphp
+                                @for($day = 1; $day <= $daysInMonth; $day++)
+                                    <div class="timeline-month">
+                                        {{ $day }}
+                                    </div>
+                                @endfor
+                                @for($day = 1; $day <= 10; $day++)
+                                    <div class="timeline-month timeline-next-month">
+                                        {{ $day }}
+                                    </div>
+                                @endfor
+                            </div>
+                        </div>
+
+                        <!-- Timeline Body -->
+                        <div class="timeline-body">
+                            <div class="timeline-line"></div>
+
+                            @php
+                                $currentMonth = now();
+                                $daysInMonth = $currentMonth->daysInMonth;
+                                $monthStart = $currentMonth->startOfMonth();
+                                $monthEnd = $currentMonth->endOfMonth();
+                                $next10Days = now()->addDays(10);
+                                $totalDays = $daysInMonth + 10;
+
+                                $timelineTasks = collect($userData['recent_tasks'] ?? [])
+                                    ->filter(function($task) use ($monthStart, $next10Days) {
+                                        return $task->start_date &&
+                                               $task->start_date >= $monthStart &&
+                                               $task->start_date <= $next10Days;
+                                    })
+                                    ->sortBy('start_date');
+                            @endphp
+
+                            @foreach($timelineTasks as $task)
+                                @php
+                                    $startDate = \Carbon\Carbon::parse($task->start_date);
+                                    $dayOfMonth = $startDate->day;
+
+                                    // Calculate position based on whether it's in current month or next 10 days
+                                    if ($startDate->month == $currentMonth->month) {
+                                        // Task is in current month
+                                        $position = (($dayOfMonth - 1) / ($totalDays - 1)) * 100;
+                                    } else {
+                                        // Task is in next month (next 10 days)
+                                        $nextMonthDay = $startDate->day;
+                                        $position = (($daysInMonth + $nextMonthDay - 1) / ($totalDays - 1)) * 100;
+                                    }
+
+                                    $isOverdue = $startDate < now();
+                                    $isToday = $startDate->isToday();
+                                    $isTomorrow = $startDate->isTomorrow();
+
+                                    // Color coding based on status and urgency
+                                    $statusColors = [
+                                        'pending' => 'bg-secondary',
+                                        'assigned' => 'bg-info',
+                                        'accepted' => 'bg-primary',
+                                        'in_progress' => 'bg-warning',
+                                        'completed' => 'bg-success'
+                                    ];
+
+                                    $taskColor = $statusColors[$task->status] ?? 'bg-secondary';
+                                    if ($isOverdue) $taskColor = 'bg-danger';
+                                    if ($isToday) $taskColor = 'bg-warning';
+                                    if ($isTomorrow) $taskColor = 'bg-info';
+                                @endphp
+
+                                <div class="timeline-event" style="left: {{ $position }}%;">
+                                    <div class="timeline-marker {{ $taskColor }}"></div>
+                                    <div class="timeline-content">
+                                        <div class="timeline-date">{{ $startDate->format('M d') }}</div>
+                                        <div class="timeline-task">
+                                            <div class="timeline-task-title">{{ Str::limit($task->title, 20) }}</div>
+                                            <div class="timeline-task-meta">
+                                                <span class="badge badge-sm {{ $taskColor }}">{{ ucfirst($task->status) }}</span>
+                                                @if($task->priority <= 2)
+                                                    <span class="badge badge-sm bg-danger">High Priority</span>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Weekly Trend Chart -->
     <div class="row">
         <div class="col-12 mb-4">
@@ -698,6 +808,202 @@
         </div>
     </div>
 </div>
+
+<style>
+/* Timeline Styles */
+.timeline-container {
+    position: relative;
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    border-radius: 8px;
+    padding: 20px;
+    overflow-x: auto;
+}
+
+.timeline-header {
+    background: #343a40;
+    border-radius: 6px 6px 0 0;
+    padding: 10px 0;
+    margin-bottom: 0;
+}
+
+.timeline-months {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 20px;
+}
+
+.timeline-month {
+    color: white;
+    font-weight: 600;
+    font-size: 11px;
+    text-align: center;
+    flex: 1;
+    min-width: 25px;
+    padding: 2px;
+}
+
+.timeline-next-month {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+    margin: 0 1px;
+}
+
+.timeline-body {
+    position: relative;
+    background: linear-gradient(135deg, #e8f5e8 0%, #ffffff 100%);
+    border-radius: 0 0 6px 6px;
+    padding: 40px 20px;
+    min-height: 200px;
+}
+
+.timeline-line {
+    position: absolute;
+    top: 50%;
+    left: 20px;
+    right: 20px;
+    height: 2px;
+    background: linear-gradient(90deg, #007bff, #28a745, #ffc107, #dc3545);
+    transform: translateY(-50%);
+    border-radius: 1px;
+}
+
+.timeline-event {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 10;
+}
+
+.timeline-marker {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin: 0 auto 8px;
+    border: 2px solid white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    position: relative;
+}
+
+.timeline-marker::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 6px;
+    height: 6px;
+    background: white;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.timeline-content {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: white;
+    border-radius: 6px;
+    padding: 8px 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    min-width: 120px;
+    text-align: center;
+    border: 1px solid #e9ecef;
+}
+
+.timeline-date {
+    font-size: 11px;
+    color: #6c757d;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.timeline-task-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: #343a40;
+    margin-bottom: 4px;
+    line-height: 1.2;
+}
+
+.timeline-task-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    align-items: center;
+}
+
+.timeline-task-meta .badge {
+    font-size: 9px;
+    padding: 2px 6px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .timeline-months {
+        padding: 0 5px;
+    }
+
+    .timeline-month {
+        font-size: 9px;
+        min-width: 18px;
+        padding: 1px;
+    }
+
+    .timeline-body {
+        padding: 30px 5px;
+    }
+
+    .timeline-line {
+        left: 5px;
+        right: 5px;
+    }
+
+    .timeline-content {
+        min-width: 80px;
+        padding: 4px 6px;
+    }
+
+    .timeline-task-title {
+        font-size: 10px;
+    }
+
+    .timeline-date {
+        font-size: 9px;
+    }
+}
+
+/* Color variations for different statuses */
+.timeline-marker.bg-danger {
+    background: #dc3545;
+    box-shadow: 0 0 8px rgba(220, 53, 69, 0.4);
+}
+
+.timeline-marker.bg-warning {
+    background: #ffc107;
+    box-shadow: 0 0 8px rgba(255, 193, 7, 0.4);
+}
+
+.timeline-marker.bg-info {
+    background: #17a2b8;
+    box-shadow: 0 0 8px rgba(23, 162, 184, 0.4);
+}
+
+.timeline-marker.bg-primary {
+    background: #007bff;
+    box-shadow: 0 0 8px rgba(0, 123, 255, 0.4);
+}
+
+.timeline-marker.bg-success {
+    background: #28a745;
+    box-shadow: 0 0 8px rgba(40, 167, 69, 0.4);
+}
+
+.timeline-marker.bg-secondary {
+    background: #6c757d;
+    box-shadow: 0 0 8px rgba(108, 117, 125, 0.4);
+}
+</style>
 
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
