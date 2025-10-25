@@ -50,8 +50,8 @@
                         </span>
                         @if($task->start_date)
                             @php
-                                $now = now();
-                                $startDate = \Carbon\Carbon::parse($task->start_date);
+                                $now = now()->startOfDay();
+                                $startDate = \Carbon\Carbon::parse($task->start_date)->startOfDay();
                                 $daysUntilStart = $now->diffInDays($startDate, false);
                                 $isAccepted = in_array($task->status, ['accepted', 'in_progress', 'workingon', 'submitted_for_review', 'in_review', 'approved', 'completed']);
                                 $isApproaching = $daysUntilStart <= 3 && $daysUntilStart >= 0;
