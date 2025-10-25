@@ -690,18 +690,18 @@
             <div class="card">
                 <div class="card-header">
                     <h5 class="card-title mb-0">Task Timeline</h5>
-                    <p class="text-muted mb-0">Next 10 days: {{ now()->format('M d') }} - {{ now()->addDays(9)->format('M d, Y') }}</p>
+                    <p class="text-muted mb-0">Next 20 days: {{ now()->format('M d') }} - {{ now()->addDays(19)->format('M d, Y') }}</p>
                 </div>
                 <div class="card-body">
                     <div class="timeline-container">
-                        <!-- Next 10 Days Header -->
+                        <!-- Next 20 Days Header -->
                         <div class="timeline-header">
                             <div class="timeline-months">
                                 @php
                                     $today = now();
-                                    $next10Days = $today->copy()->addDays(9); // 9 days from today = 10 days total
+                                    $next20Days = $today->copy()->addDays(19); // 19 days from today = 20 days total
                                 @endphp
-                                @for($i = 0; $i < 10; $i++)
+                                @for($i = 0; $i < 20; $i++)
                                     @php
                                         $day = $today->copy()->addDays($i);
                                     @endphp
@@ -718,7 +718,7 @@
 
                             @php
                                 $today = now();
-                                $next10Days = $today->copy()->addDays(9); // 9 days from today = 10 days total
+                                $next20Days = $today->copy()->addDays(19); // 19 days from today = 20 days total
 
                                 // Debug: Let's see what tasks we have
                                 $allTasks = collect($userData['recent_tasks'] ?? []);
@@ -730,13 +730,13 @@
                                         ->get());
                                 }
 
-                                $timelineTasks = $allTasks->filter(function($task) use ($today, $next10Days) {
+                                $timelineTasks = $allTasks->filter(function($task) use ($today, $next20Days) {
                                     if (!$task->start_date) {
                                         return false;
                                     }
 
                                     $startDate = \Carbon\Carbon::parse($task->start_date);
-                                    $isInRange = $startDate >= $today->startOfDay() && $startDate <= $next10Days->endOfDay();
+                                    $isInRange = $startDate >= $today->startOfDay() && $startDate <= $next20Days->endOfDay();
 
                                     return $isInRange;
                                 })->sortBy('start_date');
@@ -746,7 +746,7 @@
                                     echo '<div style="background: #f8f9fa; padding: 10px; margin: 10px 0; border: 1px solid #dee2e6; border-radius: 4px;">';
                                     echo '<strong>Debug Info:</strong><br>';
                                     echo 'Today: ' . $today->format('Y-m-d') . '<br>';
-                                    echo 'Next 10 days: ' . $next10Days->format('Y-m-d') . '<br>';
+                                    echo 'Next 20 days: ' . $next20Days->format('Y-m-d') . '<br>';
                                     echo 'All tasks count: ' . $allTasks->count() . '<br>';
                                     echo 'Timeline tasks count: ' . $timelineTasks->count() . '<br>';
                                     echo '<strong>All tasks:</strong><br>';
@@ -763,7 +763,7 @@
 
                                     // Calculate position based on days from today
                                     $daysFromToday = $today->startOfDay()->diffInDays($startDate->startOfDay());
-                                    $position = ($daysFromToday / 9) * 100; // 9 because we have 10 days (0-9)
+                                    $position = ($daysFromToday / 19) * 100; // 19 because we have 20 days (0-19)
 
                                     // Ensure position is within bounds
                                     $position = max(0, min(100, $position));
@@ -808,7 +808,7 @@
                                 <div class="text-center py-4">
                                     <i class="bx bx-calendar-x fs-1 text-muted"></i>
                                     <h6 class="mt-3 text-muted">No Tasks Scheduled</h6>
-                                    <p class="text-muted mb-0">No tasks are scheduled to start in the next 10 days.</p>
+                                    <p class="text-muted mb-0">No tasks are scheduled to start in the next 20 days.</p>
                                 </div>
                             @endif
                         </div>
