@@ -169,14 +169,7 @@
                                     </a>
                                 @endif
 
-                                @if(Auth::user()->isManager() || ($task->assigned_to === auth()->id() && !in_array($task->status, ['submitted_for_review', 'in_review', 'approved', 'completed'])))
-                                    <button class="btn btn-sm btn-outline-success" onclick="changeTaskStatus({{ $task->id }})" title="Change Status">
-                                        <i class="bx bx-check"></i>
-                                        @if(Auth::user()->isManager())
-                                            <span class="badge bg-warning ms-1" style="font-size: 0.6em;">M</span>
-                                        @endif
-                                    </button>
-                                @endif
+                                {{-- Change Status button removed as requested --}}
 
                                 @if(auth()->user()->isManager() && !$task->assigned_to)
                                     <button class="btn btn-sm btn-outline-info" onclick="assignTask({{ $task->id }})" title="Assign Task">
