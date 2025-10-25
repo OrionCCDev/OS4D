@@ -80,6 +80,29 @@ class Project extends Model
                     ->withTimestamps();
     }
 
+    // Contractor relationships
+    public function contractors()
+    {
+        return $this->belongsToMany(Contractor::class, 'project_contractor')
+                    ->withPivot('role', 'assigned_at')
+                    ->withTimestamps();
+    }
+
+    public function clientContractors()
+    {
+        return $this->contractors()->wherePivot('role', 'client');
+    }
+
+    public function consultantContractors()
+    {
+        return $this->contractors()->wherePivot('role', 'consultant');
+    }
+
+    public function orionStaffContractors()
+    {
+        return $this->contractors()->wherePivot('role', 'orion_staff');
+    }
+
     // Methods to manage project members
     public function addUser(User $user, string $role = 'member')
     {
@@ -101,6 +124,32 @@ class Project extends Model
     public function updateUserRole(User $user, string $role)
     {
         $this->users()->updateExistingPivot($user->id, [
+            'role' => $role,
+            'updated_at' => now()
+        ]);
+    }
+
+    // Methods to manage project contractors
+    public function addContractor(Contractor $contractor, ?string $role = null)
+    {
+        if (!$this->contractors()->where('contractor_id', $contractor->id)->exists()) {
+            $this->contractors()->attach($contractor->id, [
+                'role' => $role ?? $contractor->type,
+                'assigned_at' => now(),
+                'created_at' => now(),
+                'updated_at' => now()
+            ]);
+        }
+    }
+
+    public function removeContractor(Contractor $contractor)
+    {
+        $this->contractors()->detach($contractor->id);
+    }
+
+    public function updateContractorRole(Contractor $contractor, string $role)
+    {
+        $this->contractors()->updateExistingPivot($contractor->id, [
             'role' => $role,
             'updated_at' => now()
         ]);

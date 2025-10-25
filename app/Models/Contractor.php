@@ -87,4 +87,22 @@ class Contractor extends Model
                     ->where('status', 'completed')
                     ->get();
     }
+
+    // Project relationships
+    public function projects()
+    {
+        return $this->belongsToMany(Project::class, 'project_contractor')
+                    ->withPivot('role', 'assigned_at')
+                    ->withTimestamps();
+    }
+
+    public function activeProjects()
+    {
+        return $this->projects()->whereIn('status', ['active', 'on_hold']);
+    }
+
+    public function completedProjects()
+    {
+        return $this->projects()->where('status', 'completed');
+    }
 }

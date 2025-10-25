@@ -31,6 +31,16 @@
                 </select>
                 <small class="text-muted">Optional: Assign a project manager to this project</small>
             </div>
+
+            <div class="mb-3">
+                <x-contractor-selector
+                    :contractors="$contractors"
+                    :selectedContractors="collect(old('contractors', []))"
+                    name="contractors"
+                    label="Select Contractors"
+                    :showTypeFilter="true" />
+                <small class="text-muted">Optional: Assign contractors to this project</small>
+            </div>
             <div class="row">
                 <div class="col-md-4 mb-3">
                     <label class="form-label">Status</label>

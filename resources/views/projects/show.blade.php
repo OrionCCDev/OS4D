@@ -37,6 +37,48 @@
         </div>
     </div>
 
+    <!-- Project Contractors Section -->
+    @if($project->contractors->count() > 0)
+    <div class="card mb-4">
+        <div class="card-header">
+            <div class="d-flex align-items-center justify-content-between">
+                <h5 class="mb-0">
+                    <i class="bx bx-user me-2"></i>
+                    Project Contractors
+                </h5>
+                <span class="badge bg-primary">{{ $project->contractors->count() }} assigned</span>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                @foreach($project->contractors as $contractor)
+                    <div class="col-md-6 col-lg-4 mb-3">
+                        <div class="d-flex align-items-center p-3 border rounded">
+                            <div class="flex-shrink-0 me-3">
+                                <div class="avatar" style="width: 40px; height: 40px; background: {{ $contractor->type === 'orion_staff' ? '#0d6efd' : ($contractor->type === 'client' ? '#198754' : '#0dcaf0') }}; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                    <i class="bx bx-user text-white"></i>
+                                </div>
+                            </div>
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1">{{ $contractor->name }}</h6>
+                                <small class="text-muted">{{ $contractor->email }}</small>
+                                @if($contractor->company_name)
+                                    <br><small class="text-muted">{{ $contractor->company_name }}</small>
+                                @endif
+                            </div>
+                            <div class="flex-shrink-0">
+                                <span class="badge bg-{{ $contractor->type === 'orion_staff' ? 'primary' : ($contractor->type === 'client' ? 'success' : 'info') }}">
+                                    {{ ucfirst(str_replace('_', ' ', $contractor->type)) }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+    </div>
+    @endif
+
     <!-- Current Folder Breadcrumb -->
     @if($selectedFolder)
     <div class="card mb-4">

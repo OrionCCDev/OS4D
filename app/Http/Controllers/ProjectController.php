@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Project;
 use App\Models\ProjectManager;
+use App\Models\Contractor;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -22,7 +23,8 @@ class ProjectController extends Controller
     public function create()
     {
         $projectManagers = ProjectManager::orderBy('name')->get();
-        return view('projects.create', compact('projectManagers'));
+        $contractors = Contractor::orderBy('name')->get();
+        return view('projects.create', compact('projectManagers', 'contractors'));
     }
 
     public function store(Request $request)
@@ -35,10 +37,22 @@ class ProjectController extends Controller
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
             'project_manager_id' => 'nullable|exists:project_managers,id',
+            'contractors' => 'nullable|array',
+            'contractors.*' => 'exists:contractors,id',
         ]);
 
         $validated['owner_id'] = Auth::id();
         $project = Project::create($validated);
+
+        // Attach contractors if provided
+        if ($request->has('contractors') && is_array($request->contractors)) {
+            foreach ($request->contractors as $contractorId) {
+                $contractor = Contractor::find($contractorId);
+                if ($contractor) {
+                    $project->addContractor($contractor);
+                }
+            }
+        }
 
         // Create a folder for the project: public/projectsofus/{id}-{slug}
         $slug = Str::slug($project->name);
@@ -55,7 +69,9 @@ class ProjectController extends Controller
     public function edit(Project $project)
     {
         $projectManagers = ProjectManager::orderBy('name')->get();
-        return view('projects.edit', compact('project', 'projectManagers'));
+        $contractors = Contractor::orderBy('name')->get();
+        $selectedContractors = $project->contractors()->pluck('contractors.id');
+        return view('projects.edit', compact('project', 'projectManagers', 'contractors', 'selectedContractors'));
     }
 
     public function show(Project $project)
@@ -148,6 +164,9 @@ class ProjectController extends Controller
         }
         $tasks = $tasksQuery->paginate(20);
 
+        // Load contractors for the project
+        $project->load('contractors');
+
         return view('projects.show', compact('project', 'rootFolders', 'selectedFolder', 'tasks', 'descendantFolderIds', 'expandedFolderIds', 'allFolders', 'breadcrumbs'));
     }
 
@@ -161,9 +180,21 @@ class ProjectController extends Controller
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
             'project_manager_id' => 'nullable|exists:project_managers,id',
+            'contractors' => 'nullable|array',
+            'contractors.*' => 'exists:contractors,id',
         ]);
 
         $project->update($validated);
+
+        // Sync contractors
+        if ($request->has('contractors')) {
+            $contractorIds = $request->contractors;
+            $project->contractors()->sync($contractorIds);
+        } else {
+            // If no contractors provided, remove all
+            $project->contractors()->detach();
+        }
+
         return redirect()->route('projects.index')->with('success', 'Project updated');
     }
 
