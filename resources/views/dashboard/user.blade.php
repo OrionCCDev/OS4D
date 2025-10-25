@@ -699,7 +699,7 @@
                             <div class="timeline-months">
                                 @php
                                     $today = now();
-                                    $next10Days = $today->addDays(10);
+                                    $next10Days = $today->copy()->addDays(9); // 9 days from today = 10 days total
                                 @endphp
                                 @for($i = 0; $i < 10; $i++)
                                     @php
@@ -718,7 +718,7 @@
 
                             @php
                                 $today = now();
-                                $next10Days = $today->copy()->addDays(10);
+                                $next10Days = $today->copy()->addDays(9); // 9 days from today = 10 days total
 
                                 // Debug: Let's see what tasks we have
                                 $allTasks = collect($userData['recent_tasks'] ?? []);
