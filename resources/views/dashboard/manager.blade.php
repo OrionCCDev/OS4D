@@ -686,135 +686,185 @@
                     <div class="timeline-container">
                         <div class="alert alert-info mb-4">
                             <h5><i class="bx bx-info-circle me-2"></i>Task Timeline</h5>
-                            <p class="mb-0">Showing upcoming tasks for the next 20 days</p>
+                            <p class="mb-0">
+                                @if($timelineTasks->count() > 0)
+                                    Showing {{ $timelineTasks->count() }} upcoming task{{ $timelineTasks->count() > 1 ? 's' : '' }} for the next 20 days
+                                @elseif($dbError)
+                                    Database connection issue - unable to load tasks
+                                @else
+                                    No tasks scheduled for the next 20 days
+                                @endif
+                            </p>
                         </div>
 
-                        <!-- Timeline using pure HTML/CSS -->
+                        <!-- Timeline using real database data -->
                         <div class="timeline-wrapper">
-                            <!-- Timeline Item 1 -->
-                            <div class="timeline-item">
-                                <div class="timeline-marker bg-warning"></div>
-                                <div class="timeline-content">
-                                    <div class="card border-warning">
-                                        <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
-                                            <h6 class="mb-0"><i class="bx bx-calendar me-2"></i>{{ now()->addDay()->format('M d, Y') }}</h6>
-                                            <span class="badge bg-danger">High Priority</span>
-                                        </div>
-                                        <div class="card-body">
-                                            <h6 class="card-title">Website Design Project</h6>
-                                            <p class="card-text small text-muted">Create responsive website design for new client project</p>
-                                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                                <span class="badge bg-warning text-dark">In Progress</span>
-                                                <small class="text-muted">Assigned to: John Doe</small>
-                                            </div>
-                                            <div class="progress" style="height: 6px;">
-                                                <div class="progress-bar bg-warning" style="width: 45%"></div>
-                                            </div>
-                                            <small class="text-muted">Progress: 45%</small>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                            @php
+                                // Fetch real tasks from database
+                                $now = now();
+                                $endDate = $now->copy()->addDays(20);
+                                $timelineTasks = collect();
+                                $dbError = null;
 
-                            <!-- Timeline Item 2 -->
-                            <div class="timeline-item">
-                                <div class="timeline-marker bg-info"></div>
-                                <div class="timeline-content">
-                                    <div class="card border-info">
-                                        <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
-                                            <h6 class="mb-0"><i class="bx bx-calendar me-2"></i>{{ now()->addDays(3)->format('M d, Y') }}</h6>
-                                            <span class="badge bg-warning text-dark">Medium Priority</span>
-                                        </div>
-                                        <div class="card-body">
-                                            <h6 class="card-title">Content Review</h6>
-                                            <p class="card-text small text-muted">Review and approve content for upcoming marketing campaign</p>
-                                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                                <span class="badge bg-info">Assigned</span>
-                                                <small class="text-muted">Assigned to: Jane Smith</small>
-                                            </div>
-                                            <div class="progress" style="height: 6px;">
-                                                <div class="progress-bar bg-info" style="width: 15%"></div>
-                                            </div>
-                                            <small class="text-muted">Progress: 15%</small>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                                try {
+                                    $timelineTasks = \App\Models\Task::with(['assignee', 'project', 'creator'])
+                                        ->where(function($query) use ($now, $endDate) {
+                                            $query->where(function($q) use ($now, $endDate) {
+                                                $q->whereNotNull('start_date')
+                                                  ->whereBetween('start_date', [$now->format('Y-m-d'), $endDate->format('Y-m-d')]);
+                                            })->orWhere(function($q) use ($now, $endDate) {
+                                                $q->whereNotNull('due_date')
+                                                  ->whereBetween('due_date', [$now->format('Y-m-d'), $endDate->format('Y-m-d')]);
+                                            });
+                                        })
+                                        ->orderByRaw('COALESCE(start_date, due_date) ASC')
+                                        ->limit(10) // Limit to 10 tasks for better performance
+                                        ->get();
+                                } catch (\Exception $e) {
+                                    $dbError = $e->getMessage();
+                                    \Log::error('Timeline Database Error: ' . $e->getMessage());
+                                }
 
-                            <!-- Timeline Item 3 -->
-                            <div class="timeline-item">
-                                <div class="timeline-marker bg-success"></div>
-                                <div class="timeline-content">
-                                    <div class="card border-success">
-                                        <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
-                                            <h6 class="mb-0"><i class="bx bx-calendar me-2"></i>{{ now()->addDays(7)->format('M d, Y') }}</h6>
-                                            <span class="badge bg-danger">Critical Priority</span>
-                                        </div>
-                                        <div class="card-body">
-                                            <h6 class="card-title">Database Migration</h6>
-                                            <p class="card-text small text-muted">Migrate user data to new database structure</p>
-                                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                                <span class="badge bg-success">Completed</span>
-                                                <small class="text-muted">Assigned to: Mike Johnson</small>
-                                            </div>
-                                            <div class="progress" style="height: 6px;">
-                                                <div class="progress-bar bg-success" style="width: 100%"></div>
-                                            </div>
-                                            <small class="text-muted">Progress: 100%</small>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                                // Status colors mapping
+                                $statusColors = [
+                                    'pending' => 'secondary',
+                                    'assigned' => 'info',
+                                    'in_progress' => 'warning',
+                                    'submitted_for_review' => 'primary',
+                                    'in_review' => 'primary',
+                                    'approved' => 'success',
+                                    'ready_for_email' => 'success',
+                                    'on_client_consultant_review' => 'info',
+                                    'in_review_after_client_consultant_reply' => 'primary',
+                                    're_submit_required' => 'warning',
+                                    'rejected' => 'danger',
+                                    'completed' => 'success'
+                                ];
 
-                            <!-- Timeline Item 4 -->
-                            <div class="timeline-item">
-                                <div class="timeline-marker bg-primary"></div>
-                                <div class="timeline-content">
-                                    <div class="card border-primary">
-                                        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                                            <h6 class="mb-0"><i class="bx bx-calendar me-2"></i>{{ now()->addDays(12)->format('M d, Y') }}</h6>
-                                            <span class="badge bg-warning text-dark">Medium Priority</span>
-                                        </div>
-                                        <div class="card-body">
-                                            <h6 class="card-title">Client Presentation</h6>
-                                            <p class="card-text small text-muted">Prepare and deliver quarterly progress presentation to client</p>
-                                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                                <span class="badge bg-primary">Pending</span>
-                                                <small class="text-muted">Assigned to: Sarah Wilson</small>
-                                            </div>
-                                            <div class="progress" style="height: 6px;">
-                                                <div class="progress-bar bg-primary" style="width: 25%"></div>
-                                            </div>
-                                            <small class="text-muted">Progress: 25%</small>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                                // Priority colors mapping
+                                $priorityColors = [
+                                    1 => 'danger',    // Critical
+                                    2 => 'warning',   // High
+                                    3 => 'info',      // Medium
+                                    4 => 'primary',   // Low
+                                    5 => 'secondary'  // Very Low
+                                ];
 
-                            <!-- Timeline Item 5 -->
-                            <div class="timeline-item">
-                                <div class="timeline-marker bg-secondary"></div>
-                                <div class="timeline-content">
-                                    <div class="card border-secondary">
-                                        <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
-                                            <h6 class="mb-0"><i class="bx bx-calendar me-2"></i>{{ now()->addDays(18)->format('M d, Y') }}</h6>
-                                            <span class="badge bg-info">Low Priority</span>
+                                // Priority labels
+                                $priorityLabels = [
+                                    1 => 'Critical',
+                                    2 => 'High',
+                                    3 => 'Medium',
+                                    4 => 'Low',
+                                    5 => 'Very Low'
+                                ];
+                            @endphp
+
+                            @if($timelineTasks->count() > 0)
+                                @foreach($timelineTasks as $index => $task)
+                                    @php
+                                        $taskDate = $task->start_date ?: ($task->due_date ?? null);
+                                        $taskDate = \Carbon\Carbon::parse($taskDate);
+                                        $dateType = $task->start_date ? 'Start' : 'Due';
+                                        $statusColor = $statusColors[$task->status] ?? 'secondary';
+                                        $priorityColor = $priorityColors[$task->priority] ?? 'secondary';
+                                        $assigneeName = $task->assignee ? $task->assignee->name : 'Unassigned';
+                                        $projectName = $task->project ? $task->project->name : 'No Project';
+                                        $progressPercentage = $task->progress_percentage ?? 0;
+                                    @endphp
+                                    <div class="timeline-item">
+                                        <div class="timeline-marker bg-{{ $statusColor }}"></div>
+                                        <div class="timeline-content">
+                                            <div class="card border-{{ $statusColor }}">
+                                                <div class="card-header bg-{{ $statusColor }} {{ $statusColor == 'warning' ? 'text-dark' : 'text-white' }} d-flex justify-content-between align-items-center">
+                                                    <h6 class="mb-0">
+                                                        <i class="bx bx-calendar me-2"></i>{{ $taskDate->format('M d, Y') }}
+                                                        <small class="ms-2">({{ $dateType }})</small>
+                                                    </h6>
+                                                    <span class="badge bg-{{ $priorityColor }} {{ $priorityColor == 'warning' ? 'text-dark' : 'text-white' }}">
+                                                        {{ $priorityLabels[$task->priority] ?? 'Priority ' . $task->priority }}
+                                                    </span>
+                                                </div>
+                                                <div class="card-body">
+                                                    <h6 class="card-title">{{ $task->title }}</h6>
+                                                    @if($task->description)
+                                                        <p class="card-text small text-muted">{{ Str::limit($task->description, 100) }}</p>
+                                                    @endif
+                                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                                        <span class="badge bg-{{ $statusColor }} {{ $statusColor == 'warning' ? 'text-dark' : 'text-white' }}">
+                                                            {{ ucfirst(str_replace('_', ' ', $task->status)) }}
+                                                        </span>
+                                                        <small class="text-muted">Assigned to: {{ $assigneeName }}</small>
+                                                    </div>
+                                                    <div class="mb-2">
+                                                        <small class="text-muted"><strong>Project:</strong> {{ $projectName }}</small>
+                                                    </div>
+                                                    <div class="progress" style="height: 6px;">
+                                                        <div class="progress-bar bg-{{ $statusColor }}" style="width: {{ $progressPercentage }}%"></div>
+                                                    </div>
+                                                    <small class="text-muted">Progress: {{ $progressPercentage }}%</small>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div class="card-body">
-                                            <h6 class="card-title">System Maintenance</h6>
-                                            <p class="card-text small text-muted">Perform routine system maintenance and updates</p>
-                                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                                <span class="badge bg-secondary">Scheduled</span>
-                                                <small class="text-muted">Assigned to: IT Team</small>
+                                    </div>
+                                @endforeach
+                            @elseif($dbError)
+                                <!-- Database Error State -->
+                                <div class="timeline-item">
+                                    <div class="timeline-marker bg-danger"></div>
+                                    <div class="timeline-content">
+                                        <div class="card border-danger">
+                                            <div class="card-header bg-danger text-white">
+                                                <h6 class="mb-0"><i class="bx bx-error-circle me-2"></i>Database Connection Error</h6>
                                             </div>
-                                            <div class="progress" style="height: 6px;">
-                                                <div class="progress-bar bg-secondary" style="width: 0%"></div>
+                                            <div class="card-body">
+                                                <h6 class="card-title text-danger">Unable to Load Tasks</h6>
+                                                <p class="card-text small text-muted">There was an error connecting to the database.</p>
+                                                <div class="alert alert-warning">
+                                                    <small><strong>Error:</strong> {{ Str::limit($dbError, 100) }}</small>
+                                                </div>
+                                                <div class="mt-3">
+                                                    <button class="btn btn-primary btn-sm" onclick="location.reload()">
+                                                        <i class="bx bx-refresh me-2"></i>Retry
+                                                    </button>
+                                                </div>
                                             </div>
-                                            <small class="text-muted">Progress: 0%</small>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
+                            @else
+                                <!-- No Tasks State -->
+                                <div class="timeline-item">
+                                    <div class="timeline-marker bg-info"></div>
+                                    <div class="timeline-content">
+                                        <div class="card border-info">
+                                            <div class="card-header bg-info text-white">
+                                                <h6 class="mb-0"><i class="bx bx-info-circle me-2"></i>No Tasks Found</h6>
+                                            </div>
+                                            <div class="card-body">
+                                                <h6 class="card-title text-info">No Tasks Scheduled</h6>
+                                                <p class="card-text small text-muted">No tasks are scheduled to start or due in the next 20 days.</p>
+                                                <div class="alert alert-info">
+                                                    <small><strong>To see tasks in the timeline:</strong></small>
+                                                    <ul class="small mb-0 mt-2">
+                                                        <li>Create tasks with start dates or due dates</li>
+                                                        <li>Assign tasks to team members</li>
+                                                        <li>Set realistic deadlines for better planning</li>
+                                                    </ul>
+                                                </div>
+                                                <div class="mt-3">
+                                                    <button class="btn btn-primary btn-sm" onclick="window.open('{{ route('tasks.create') }}', '_blank')">
+                                                        <i class="bx bx-plus me-2"></i>Create New Task
+                                                    </button>
+                                                    <button class="btn btn-outline-secondary btn-sm ms-2" onclick="window.open('{{ route('tasks.index') }}', '_blank')">
+                                                        <i class="bx bx-list-ul me-2"></i>View All Tasks
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endif
                         </div>
 
                         <!-- Action buttons -->
