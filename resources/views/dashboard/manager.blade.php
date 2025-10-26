@@ -675,29 +675,12 @@
     <div class="row mb-4">
         <div class="col-12">
             <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <div>
-                        <h5 class="card-title mb-0 text-dark fw-semibold">
-                            <i class="bx bx-calendar me-2 text-primary"></i>Task Timeline
-                        </h5>
-                        <small class="text-muted">Next 20 days: {{ now()->format('M d') }} - {{ now()->addDays(19)->format('M d, Y') }}</small>
-                    </div>
-                    <div class="d-flex align-items-center gap-2">
-                        <span class="badge bg-primary text-white px-3 py-2 rounded-pill">
-                            {{ isset($data['timeline_data']['sequential']) ? count($data['timeline_data']['sequential']) : 0 }} days with tasks
-                        </span>
-                        @if(isset($data['timeline_data']['sequential']) && count($data['timeline_data']['sequential']) > 0)
-                            <button class="btn btn-sm btn-outline-primary" onclick="toggleTimelineView()">
-                                <i class="bx bx-grid-alt me-1"></i>Calendar View
-                            </button>
-                        @endif
-                    </div>
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Task Timeline</h5>
+                    <p class="text-muted mb-0">Next 20 days: {{ now()->format('M d') }} - {{ now()->addDays(19)->format('M d, Y') }}</p>
                 </div>
-                <div class="card-body p-0">
-                    @if(isset($data['timeline_data']['sequential']) && count($data['timeline_data']['sequential']) > 0)
-                        <div id="timelineContainer">
-                            <!-- User Dashboard Style Timeline View -->
-                            <div id="timelineView" class="timeline-container">
+                <div class="card-body">
+                    <div class="timeline-container">
                                 <!-- Next 20 Days Header -->
                                 <div class="timeline-header">
                                     <div class="timeline-months">
@@ -832,44 +815,8 @@
                                     @endif
                                 </div>
                             </div>
-
-                            <!-- Calendar Grid View -->
-                            <div id="calendarView" class="calendar-container" style="display: none;">
-                                <div class="calendar-grid">
-                                    @foreach($data['timeline_data']['sequential'] as $dayData)
-                                        <div class="calendar-day">
-                                            <div class="calendar-day-header">
-                                                <h6 class="mb-0 text-dark fw-semibold">{{ $dayData['date']->format('j') }}</h6>
-                                                <small class="text-muted">{{ $dayData['date']->format('M') }}</small>
-                                            </div>
-                                            <div class="calendar-tasks">
-                                                @foreach($dayData['tasks'] as $task)
-                                                    <div class="calendar-task" onclick="window.location.href='{{ route('tasks.show', $task['id']) }}'">
-                                                        <div class="task-indicator {{ $task['status_badge_class'] }}"></div>
-                                                        <div class="task-info">
-                                                            <div class="task-title">{{ Str::limit($task['title'], 20) }}</div>
-                                                            <div class="task-project">{{ Str::limit($task['project_name'], 15) }}</div>
-                                                            @if($task['start_date'])
-                                                                <div class="task-date-info">
-                                                                    <small class="text-primary">Start: {{ \Carbon\Carbon::parse($task['start_date'])->format('M j') }}</small>
-                                                                </div>
-                                                            @endif
-                                                        </div>
-                                                    </div>
-                                                @endforeach
-                                            </div>
-                                        </div>
-                                    @endforeach
-                                </div>
-                            </div>
                         </div>
-                    @else
-                        <div class="text-center py-5">
-                            <i class="bx bx-calendar fs-1 text-muted opacity-50"></i>
-                            <p class="text-muted mt-3">No tasks scheduled for the next 20 days</p>
-                            <small class="text-muted">Tasks with start dates or due dates will appear here</small>
-                        </div>
-                    @endif
+                    </div>
                 </div>
             </div>
         </div>
@@ -1404,30 +1351,7 @@
         }, 1000);
     }
 
-    // Timeline toggle function
-    function toggleTimelineView() {
-        const timelineView = document.getElementById('timelineView');
-        const calendarView = document.getElementById('calendarView');
-        const toggleButton = event.target.closest('button');
-
-        // Check if elements exist before trying to access them
-        if (!timelineView || !calendarView || !toggleButton) {
-            console.warn('Timeline elements not found');
-            return;
-        }
-
-        if (timelineView.style.display === 'none') {
-            // Show timeline view
-            timelineView.style.display = 'block';
-            calendarView.style.display = 'none';
-            toggleButton.innerHTML = '<i class="bx bx-grid-alt me-1"></i>Calendar View';
-        } else {
-            // Show calendar view
-            timelineView.style.display = 'none';
-            calendarView.style.display = 'block';
-            toggleButton.innerHTML = '<i class="bx bx-list-ul me-1"></i>Timeline View';
-        }
-    }
+    // Timeline toggle function removed - no longer needed
 
     // Debug data
     console.log('Recent Activity Data:', @json($data['recent_activity']));
@@ -1439,9 +1363,7 @@
     // Check if timeline elements exist on page load
     document.addEventListener('DOMContentLoaded', function() {
         const timelineView = document.getElementById('timelineView');
-        const calendarView = document.getElementById('calendarView');
         console.log('Timeline View element:', timelineView);
-        console.log('Calendar View element:', calendarView);
 
         // Add hover effects for timeline events (user dashboard style)
         const timelineEvents = document.querySelectorAll('.timeline-event');
