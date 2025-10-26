@@ -706,7 +706,7 @@
                                                 <small class="text-muted">{{ $dayData['day_name'] }}</small>
                                             </div>
                                             <div class="timeline-day-count">
-                                                <span class="badge bg-primary text-white px-2 py-1 rounded-pill">
+                                                <span class="badge bg-primary text-white px-3 py-2 rounded-pill" style="font-size: 12px; font-weight: 600;">
                                                     {{ count($dayData['tasks']) }} task{{ count($dayData['tasks']) > 1 ? 's' : '' }}
                                                 </span>
                                             </div>
@@ -721,10 +721,10 @@
                                                             <small class="text-muted">{{ $task['project_name'] }}</small>
                                                         </div>
                                                         <div class="task-badges">
-                                                            <span class="badge {{ $task['status_badge_class'] }} text-white px-2 py-1 rounded-pill me-1" style="font-size: 10px;">
+                                                            <span class="badge {{ $task['status_badge_class'] }} text-white px-3 py-2 rounded-pill me-2" style="font-size: 11px; font-weight: 600;">
                                                                 {{ ucfirst(str_replace('_', ' ', $task['status'])) }}
                                                             </span>
-                                                            <span class="badge {{ $task['priority_badge_class'] }} text-white px-2 py-1 rounded-pill" style="font-size: 10px;">
+                                                            <span class="badge {{ $task['priority_badge_class'] }} text-white px-3 py-2 rounded-pill" style="font-size: 11px; font-weight: 600;">
                                                                 {{ ucfirst($task['priority'] ?? 'Normal') }}
                                                             </span>
                                                         </div>
@@ -869,44 +869,66 @@
 /* Timeline Container Styles */
 .timeline-container {
     padding: 20px;
+    position: relative;
+}
+
+.timeline-container::before {
+    content: '';
+    position: absolute;
+    left: 30px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: linear-gradient(to bottom, #e9ecef, #dee2e6);
+    z-index: 1;
 }
 
 .timeline-day {
-    border-left: 3px solid #e9ecef;
-    padding-left: 20px;
     position: relative;
+    margin-bottom: 30px;
+    padding-left: 60px;
 }
 
 .timeline-day::before {
     content: '';
     position: absolute;
-    left: -6px;
-    top: 0;
-    width: 12px;
-    height: 12px;
+    left: 20px;
+    top: 5px;
+    width: 20px;
+    height: 20px;
     border-radius: 50%;
     background: #007bff;
     border: 3px solid #fff;
-    box-shadow: 0 0 0 2px #e9ecef;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    z-index: 2;
 }
 
 .timeline-day-header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    margin-bottom: 15px;
-    padding-bottom: 10px;
+    align-items: flex-start;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
     border-bottom: 1px solid #f0f0f0;
 }
 
 .timeline-date h6 {
     color: #2c3e50;
-    font-weight: 600;
+    font-weight: 700;
+    font-size: 18px;
+    margin-bottom: 5px;
+}
+
+.timeline-date small {
+    color: #6c757d;
+    font-size: 14px;
+    font-weight: 400;
 }
 
 .timeline-day-count .badge {
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
+    padding: 6px 12px;
 }
 
 .timeline-tasks {
@@ -917,16 +939,17 @@
 .timeline-task-card {
     background: #fff;
     border: 1px solid #e9ecef;
-    border-radius: 8px;
-    padding: 15px;
+    border-radius: 12px;
+    padding: 20px;
     cursor: pointer;
     transition: all 0.3s ease;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    margin-bottom: 15px;
 }
 
 .timeline-task-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.12);
     border-color: #007bff;
 }
 
@@ -934,23 +957,26 @@
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    margin-bottom: 12px;
+    margin-bottom: 15px;
 }
 
 .task-title h6 {
     color: #2c3e50;
-    font-weight: 600;
+    font-weight: 700;
+    font-size: 16px;
     line-height: 1.3;
+    margin-bottom: 5px;
 }
 
 .task-title small {
     color: #6c757d;
-    font-size: 11px;
+    font-size: 13px;
+    font-weight: 400;
 }
 
 .task-badges {
     display: flex;
-    gap: 5px;
+    gap: 8px;
     flex-wrap: wrap;
 }
 
@@ -958,6 +984,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    margin-top: 15px;
 }
 
 .task-assignee {
@@ -966,14 +993,16 @@
 }
 
 .task-assignee .avatar {
-    width: 24px;
-    height: 24px;
-    font-size: 10px;
+    width: 32px;
+    height: 32px;
+    font-size: 12px;
+    margin-right: 10px;
 }
 
 .task-assignee span {
-    font-size: 12px;
-    font-weight: 500;
+    font-size: 14px;
+    font-weight: 600;
+    color: #2c3e50;
 }
 
 .task-due-date {
@@ -981,7 +1010,9 @@
 }
 
 .task-due-date small {
-    font-size: 11px;
+    font-size: 12px;
+    color: #6c757d;
+    line-height: 1.4;
 }
 
 /* Calendar Grid Styles */
@@ -1094,20 +1125,34 @@
         padding: 15px;
     }
 
+    .timeline-container::before {
+        left: 25px;
+    }
+
     .timeline-day {
-        padding-left: 15px;
+        padding-left: 50px;
+    }
+
+    .timeline-day::before {
+        left: 15px;
+        width: 16px;
+        height: 16px;
     }
 
     .task-card-header {
         flex-direction: column;
         align-items: flex-start;
-        gap: 8px;
+        gap: 10px;
     }
 
     .task-card-body {
         flex-direction: column;
         align-items: flex-start;
-        gap: 8px;
+        gap: 10px;
+    }
+
+    .task-due-date {
+        text-align: left;
     }
 
     .calendar-grid {
@@ -1124,11 +1169,27 @@
     .timeline-day-header {
         flex-direction: column;
         align-items: flex-start;
-        gap: 8px;
+        gap: 10px;
+    }
+
+    .timeline-date h6 {
+        font-size: 16px;
+    }
+
+    .timeline-date small {
+        font-size: 12px;
     }
 
     .calendar-grid {
         grid-template-columns: 1fr;
+    }
+
+    .timeline-task-card {
+        padding: 15px;
+    }
+
+    .task-title h6 {
+        font-size: 14px;
     }
 }
 </style>
