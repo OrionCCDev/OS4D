@@ -848,6 +848,21 @@
                                 </button>
                                 <small class="text-muted text-center">Complete your work and submit it for manager review</small>
 
+                                @php
+                                    $hasPendingRequest = $task->timeExtensionRequests()->where('status', 'pending')->exists();
+                                @endphp
+
+                                @if(!$hasPendingRequest)
+                                    <button class="btn btn-outline-warning w-100 mt-2" onclick="showTimeExtensionModal({{ $task->id }})">
+                                        <i class="bx bx-time me-2"></i>Request Time Extension
+                                    </button>
+                                @else
+                                    <div class="alert alert-info mt-2 mb-0 p-2">
+                                        <i class="bx bx-hourglass me-2"></i>
+                                        <small>Time extension request pending review</small>
+                                    </div>
+                                @endif
+
                             {{-- Status: Submitted for Review - Waiting --}}
                             @elseif($task->status === 'submitted_for_review')
                                 <div class="alert alert-warning text-center mb-0">
@@ -1032,6 +1047,66 @@
 
                         <!-- MANAGER ACTIONS -->
                         @if(auth()->user()->isManager())
+                            {{-- Check for pending time extension requests --}}
+                            @php
+                                $pendingExtensionRequests = $task->timeExtensionRequests()->where('status', 'pending')->get();
+                            @endphp
+
+                            @if($pendingExtensionRequests->count() > 0)
+                                <div class="card border-warning mb-3">
+                                    <div class="card-header bg-warning">
+                                        <h6 class="mb-0">
+                                            <i class="bx bx-time me-2"></i>Pending Time Extension Requests ({{ $pendingExtensionRequests->count() }})
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        @foreach($pendingExtensionRequests as $request)
+                                            <div class="alert alert-light mb-3">
+                                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                                    <div>
+                                                        <strong>{{ $request->requester->name }}</strong> requested
+                                                        <span class="badge bg-warning">{{ $request->requested_days }} days</span>
+                                                    </div>
+                                                    <small class="text-muted">{{ $request->created_at->diffForHumans() }}</small>
+                                                </div>
+                                                <p class="mb-3"><strong>Reason:</strong> {{ $request->reason }}</p>
+
+                                                <form onsubmit="reviewTimeExtension(event, {{ $task->id }}, {{ $request->id }})">
+                                                    <div class="mb-3">
+                                                        <label class="form-label fw-semibold">Decision:</label>
+                                                        <div class="btn-group w-100" role="group">
+                                                            <input type="radio" class="btn-check" name="action_{{ $request->id }}"
+                                                                   id="approve_{{ $request->id }}" value="approve" checked>
+                                                            <label class="btn btn-outline-success" for="approve_{{ $request->id }}">Approve</label>
+
+                                                            <input type="radio" class="btn-check" name="action_{{ $request->id }}"
+                                                                   id="reject_{{ $request->id }}" value="reject">
+                                                            <label class="btn btn-outline-danger" for="reject_{{ $request->id }}">Reject</label>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="mb-3" id="approve_inputs_{{ $request->id }}">
+                                                        <label class="form-label">Days to Approve:</label>
+                                                        <input type="number" class="form-control" name="approved_days_{{ $request->id }}"
+                                                               value="{{ $request->requested_days }}" min="1" max="365">
+                                                    </div>
+
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Manager Notes:</label>
+                                                        <textarea class="form-control" name="manager_notes_{{ $request->id }}" rows="2"
+                                                                  placeholder="Optional notes for the user..."></textarea>
+                                                    </div>
+
+                                                    <button type="submit" class="btn btn-primary w-100">
+                                                        <i class="bx bx-check me-1"></i>Submit Decision
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @endif
+
                             {{-- Status: Submitted for Review - Manager can start review --}}
                             @if($task->status === 'submitted_for_review')
                                 <div class="alert alert-primary text-center mb-3">
@@ -2577,5 +2652,167 @@ document.getElementById('reassignTaskForm').addEventListener('submit', function(
         </div>
     </div>
 </div>
+
+<!-- Time Extension Request Modal -->
+<div class="modal fade" id="timeExtensionModal" tabindex="-1" aria-labelledby="timeExtensionModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title" id="timeExtensionModalLabel">
+                    <i class="bx bx-time me-2"></i>Request Time Extension
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="timeExtensionForm">
+                @csrf
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="bx bx-info-circle me-2"></i>
+                        <strong>Note:</strong> Your request will be sent to managers for review. Please provide a detailed explanation for the extension needed.
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="requested_days" class="form-label">
+                            Number of Days <span class="text-danger">*</span>
+                        </label>
+                        <input type="number" class="form-control" id="requested_days" name="requested_days"
+                               min="1" max="365" value="3" required>
+                        <div class="form-text">Enter the number of additional days you need (1-365)</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="reason" class="form-label">
+                            Reason for Extension <span class="text-danger">*</span>
+                        </label>
+                        <textarea class="form-control" id="reason" name="reason" rows="4"
+                                  placeholder="Please explain why you need this time extension..." required></textarea>
+                        <div class="form-text">Provide a detailed explanation to help managers understand your request.</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                        <i class="bx bx-x me-1"></i>Cancel
+                    </button>
+                    <button type="submit" class="btn btn-warning">
+                        <i class="bx bx-time me-1"></i>Submit Request
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Time Extension Request
+let currentTaskId = null;
+
+function showTimeExtensionModal(taskId) {
+    currentTaskId = taskId;
+    const modal = new bootstrap.Modal(document.getElementById('timeExtensionModal'));
+    modal.show();
+}
+
+document.getElementById('timeExtensionForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const formData = {
+        requested_days: document.getElementById('requested_days').value,
+        reason: document.getElementById('reason').value
+    };
+
+    const submitBtn = this.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="bx bx-loader bx-spin me-1"></i>Submitting...';
+
+    try {
+        const response = await fetch(`/tasks/${currentTaskId}/request-time-extension`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify(formData)
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            // Close modal
+            bootstrap.Modal.getInstance(document.getElementById('timeExtensionModal')).hide();
+
+            // Show success message
+            alert('Time extension request submitted successfully! Managers have been notified.');
+
+            // Reload page to show updated status
+            window.location.reload();
+        } else {
+            alert('Error: ' + (data.message || 'Failed to submit request'));
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('An error occurred while submitting the request');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+    }
+});
+
+// Reset form when modal is hidden
+document.getElementById('timeExtensionModal').addEventListener('hidden.bs.modal', function() {
+    document.getElementById('timeExtensionForm').reset();
+    document.getElementById('requested_days').value = '3';
+});
+
+// Manager review time extension request
+async function reviewTimeExtension(event, taskId, requestId) {
+    event.preventDefault();
+
+    const form = event.target;
+    const action = form.querySelector(`input[name="action_${requestId}"]:checked`).value;
+    const approvedDays = form.querySelector(`input[name="approved_days_${requestId}"]`).value;
+    const managerNotes = form.querySelector(`textarea[name="manager_notes_${requestId}"]`).value;
+
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="bx bx-loader bx-spin me-1"></i>Processing...';
+
+    try {
+        const response = await fetch(`/tasks/${taskId}/review-time-extension`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+                request_id: requestId,
+                action: action,
+                approved_days: action === 'approve' ? approvedDays : null,
+                manager_notes: managerNotes
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            alert('Time extension ' + (action === 'approve' ? 'approved' : 'rejected') + ' successfully!');
+            window.location.reload();
+        } else {
+            alert('Error: ' + (data.message || 'Failed to process request'));
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('An error occurred while processing the request');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+    }
+}
+</script>
 
 @endsection

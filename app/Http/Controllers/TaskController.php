@@ -440,7 +440,16 @@ class TaskController extends Controller
 
     public function show(Task $task)
     {
-        $task->load(['project', 'folder', 'creator', 'assignee', 'histories.user', 'attachments.uploader']);
+        $task->load([
+            'project',
+            'folder',
+            'creator',
+            'assignee',
+            'histories.user',
+            'attachments.uploader',
+            'timeExtensionRequests.requester',
+            'timeExtensionRequests.reviewer'
+        ]);
         return view('tasks.show', compact('task'));
     }
 
