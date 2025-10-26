@@ -717,6 +717,88 @@
     line-height: 1.6 !important;
 }
 
+/* Timeline Task Details Styling */
+.timeline-task-details {
+    font-family: 'Inter', sans-serif;
+}
+
+.timeline-task-details .task-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.timeline-task-details .badge {
+    font-size: 11px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-weight: 500;
+}
+
+.timeline-task-details .task-info p {
+    margin-bottom: 8px;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+.timeline-task-details .task-info p:last-child {
+    margin-bottom: 0;
+}
+
+.timeline-task-details .btn {
+    font-size: 12px;
+    padding: 6px 12px;
+    border-radius: 4px;
+}
+
+/* No Tasks State Styling */
+.timeline-no-tasks {
+    text-align: center;
+    padding: 20px;
+}
+
+.timeline-no-tasks .no-tasks-icon {
+    margin-bottom: 20px;
+}
+
+.timeline-no-tasks h5 {
+    color: #2c3e50;
+    margin-bottom: 15px;
+    font-weight: 600;
+}
+
+.timeline-no-tasks p {
+    color: #6c757d;
+    margin-bottom: 20px;
+    line-height: 1.5;
+}
+
+.timeline-no-tasks .no-tasks-suggestions {
+    text-align: left;
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.timeline-no-tasks .no-tasks-suggestions h6 {
+    color: #495057;
+    margin-bottom: 10px;
+    font-weight: 600;
+}
+
+.timeline-no-tasks .no-tasks-suggestions ul {
+    color: #6c757d;
+    padding-left: 20px;
+    margin-bottom: 0;
+}
+
+.timeline-no-tasks .no-tasks-suggestions li {
+    margin-bottom: 5px;
+    line-height: 1.4;
+}
+
 .tl-timeline .tl-timenav {
     background: #f8f9fa !important;
     border-radius: 8px !important;
@@ -1075,7 +1157,7 @@
         const timelineData = {
             "title": {
                 "media": {
-                    "url": "{{ asset('DAssets/assets/img/icons/timeline-icon.png') }}",
+                    "url": "{{ asset('DAssets/assets/img/icons/unicons/chart-success.png') }}",
                     "caption": "Task Management Timeline"
                 },
                 "text": {
@@ -1085,11 +1167,11 @@
             },
             "events": [
                 @php
-                    // Get real timeline data from database
+                    // Get comprehensive timeline data from database
                     $now = now();
                     $endDate = $now->copy()->addDays(20);
 
-                    $timelineTasks = \App\Models\Task::with(['assignee', 'project'])
+                    $timelineTasks = \App\Models\Task::with(['assignee', 'project', 'creator'])
                         ->where(function($query) use ($now, $endDate) {
                             $query->where(function($q) use ($now, $endDate) {
                                 $q->whereNotNull('start_date')
@@ -1097,6 +1179,9 @@
                             })->orWhere(function($q) use ($now, $endDate) {
                                 $q->whereNull('start_date')
                                   ->whereNotNull('due_date')
+                                  ->whereBetween('due_date', [$now->format('Y-m-d'), $endDate->format('Y-m-d')]);
+                            })->orWhere(function($q) use ($now, $endDate) {
+                                $q->whereNotNull('due_date')
                                   ->whereBetween('due_date', [$now->format('Y-m-d'), $endDate->format('Y-m-d')]);
                             });
                         })
@@ -1109,34 +1194,66 @@
                         @php
                             $taskDate = $task->start_date ?: ($task->due_date ?? null);
                             $taskDate = \Carbon\Carbon::parse($taskDate);
+                            $dateType = $task->start_date ? 'Start' : 'Due';
 
-                            // Determine status color
-                            $statusColor = '#007bff';
-                            switch($task->status) {
-                                case 'completed':
-                                    $statusColor = '#28a745';
-                                    break;
-                                case 'in_progress':
-                                    $statusColor = '#ffc107';
-                                    break;
-                                case 'assigned':
-                                    $statusColor = '#17a2b8';
-                                    break;
-                                case 'pending':
-                                    $statusColor = '#6c757d';
-                                    break;
-                                case 'in_review':
-                                    $statusColor = '#007bff';
-                                    break;
-                                case 'approved':
-                                    $statusColor = '#28a745';
-                                    break;
-                            }
+                            // Enhanced status colors
+                            $statusColors = [
+                                'pending' => '#6c757d',
+                                'assigned' => '#17a2b8',
+                                'in_progress' => '#ffc107',
+                                'submitted_for_review' => '#fd7e14',
+                                'in_review' => '#6f42c1',
+                                'approved' => '#28a745',
+                                'ready_for_email' => '#20c997',
+                                'on_client_consultant_review' => '#e83e8c',
+                                'in_review_after_client_consultant_reply' => '#6f42c1',
+                                're_submit_required' => '#dc3545',
+                                'rejected' => '#dc3545',
+                                'completed' => '#28a745'
+                            ];
+
+                            // Priority colors and labels
+                            $priorityColors = [
+                                1 => '#dc3545', // Critical
+                                2 => '#fd7e14', // High
+                                3 => '#ffc107', // Medium
+                                4 => '#17a2b8', // Low
+                                5 => '#6c757d'  // Very Low
+                            ];
+                            $priorityLabels = [
+                                1 => 'Critical',
+                                2 => 'High',
+                                3 => 'Medium',
+                                4 => 'Low',
+                                5 => 'Very Low'
+                            ];
+
+                            // Status labels
+                            $statusLabels = [
+                                'pending' => 'Pending',
+                                'assigned' => 'Assigned',
+                                'in_progress' => 'In Progress',
+                                'submitted_for_review' => 'Submitted for Review',
+                                'in_review' => 'In Review',
+                                'approved' => 'Approved',
+                                'ready_for_email' => 'Ready for Email',
+                                'on_client_consultant_review' => 'Client/Consultant Review',
+                                'in_review_after_client_consultant_reply' => 'Post-Client Review',
+                                're_submit_required' => 'Resubmit Required',
+                                'rejected' => 'Rejected',
+                                'completed' => 'Completed'
+                            ];
+
+                            $statusColor = $statusColors[$task->status] ?? '#007bff';
+                            $priorityColor = $priorityColors[$task->priority] ?? '#6c757d';
+                            $assigneeName = $task->assignee ? $task->assignee->name : 'Unassigned';
+                            $projectName = $task->project ? $task->project->name : 'No Project';
+                            $creatorName = $task->creator ? $task->creator->name : 'Unknown';
                         @endphp
                         {
                             "media": {
-                                "url": "{{ asset('DAssets/assets/img/icons/task-icon.png') }}",
-                                "caption": "Task: {{ $task->title }}"
+                                "url": "{{ asset('DAssets/assets/img/icons/unicons/chart.png') }}",
+                                "caption": "{{ $dateType }} Date: {{ $taskDate->format('M d, Y') }}"
                             },
                             "start_date": {
                                 "year": {{ $taskDate->year }},
@@ -1145,7 +1262,27 @@
                             },
                             "text": {
                                 "headline": "{{ $task->title }}",
-                                "text": "<p><strong>Project:</strong> {{ $task->project ? $task->project->name : 'No Project' }}</p><p><strong>Assigned to:</strong> {{ $task->assignee ? $task->assignee->name : 'Unassigned' }}</p><p><strong>Status:</strong> <span style='color: {{ $statusColor }}; font-weight: bold;'>{{ ucfirst(str_replace('_', ' ', $task->status)) }}</span></p><p><strong>Priority:</strong> {{ ucfirst($task->priority) }}</p>@if($task->description)<p><strong>Description:</strong> {{ Str::limit($task->description, 100) }}</p>@endif<p><a href='{{ route('tasks.show', $task->id) }}' class='btn btn-sm btn-primary'>View Task</a></p>"
+                                "text": "<div class='timeline-task-details'>
+                                    <div class='task-meta mb-2'>
+                                        <span class='badge badge-sm' style='background-color: {{ $statusColor }}; color: white; margin-right: 8px;'>{{ $statusLabels[$task->status] ?? ucfirst($task->status) }}</span>
+                                        <span class='badge badge-sm' style='background-color: {{ $priorityColor }}; color: white;'>{{ $priorityLabels[$task->priority] ?? 'Priority ' . $task->priority }}</span>
+                                    </div>
+                                    <div class='task-info'>
+                                        <p><strong>Project:</strong> {{ $projectName }}</p>
+                                        <p><strong>Assigned to:</strong> {{ $assigneeName }}</p>
+                                        <p><strong>Created by:</strong> {{ $creatorName }}</p>
+                                        @if($task->description)
+                                            <p><strong>Description:</strong> {{ Str::limit($task->description, 150) }}</p>
+                                        @endif
+                                        @if($task->due_date && $task->start_date)
+                                            <p><strong>Duration:</strong> {{ \Carbon\Carbon::parse($task->start_date)->diffInDays(\Carbon\Carbon::parse($task->due_date)) }} days</p>
+                                        @endif
+                                        <p><strong>Progress:</strong> {{ $task->progress_percentage }}%</p>
+                                        <div class='mt-2'>
+                                            <a href='{{ route('tasks.show', $task->id) }}' class='btn btn-sm btn-primary'>View Task</a>
+                                        </div>
+                                    </div>
+                                </div>"
                             },
                             "background": {
                                 "color": "{{ $statusColor }}"
@@ -1153,11 +1290,11 @@
                         }@if(!$loop->last),@endif
                     @endforeach
                 @else
-                    // No tasks found - add a placeholder event
+                    // No tasks found - add a helpful placeholder event
                     {
                         "media": {
-                            "url": "{{ asset('DAssets/assets/img/icons/timeline-icon.png') }}",
-                            "caption": "No Tasks Found"
+                            "url": "{{ asset('DAssets/assets/img/icons/unicons/chart-success.png') }}",
+                            "caption": "No Tasks Scheduled"
                         },
                         "start_date": {
                             "year": {{ now()->year }},
@@ -1166,10 +1303,29 @@
                         },
                         "text": {
                             "headline": "No Tasks Scheduled",
-                            "text": "<p>No tasks are scheduled to start or due in the next 20 days.</p><p>Create some tasks with start dates or due dates to see them here.</p>"
+                            "text": "<div class='timeline-no-tasks'>
+                                <div class='no-tasks-icon mb-3'>
+                                    <i class='bx bx-calendar-x' style='font-size: 48px; color: #6c757d;'></i>
+                                </div>
+                                <h5 style='color: #2c3e50; margin-bottom: 15px;'>No Tasks Found</h5>
+                                <p style='color: #6c757d; margin-bottom: 20px;'>No tasks are scheduled to start or due in the next 20 days.</p>
+                                <div class='no-tasks-suggestions'>
+                                    <h6 style='color: #495057; margin-bottom: 10px;'>To see tasks in the timeline:</h6>
+                                    <ul style='color: #6c757d; padding-left: 20px;'>
+                                        <li>Create tasks with start dates or due dates</li>
+                                        <li>Assign tasks to team members</li>
+                                        <li>Set realistic deadlines for better planning</li>
+                                        <li>Use the task management system to organize work</li>
+                                    </ul>
+                                </div>
+                                <div class='mt-3'>
+                                    <a href='{{ route('tasks.create') }}' class='btn btn-primary btn-sm'>Create New Task</a>
+                                    <a href='{{ route('tasks.index') }}' class='btn btn-outline-secondary btn-sm ms-2'>View All Tasks</a>
+                                </div>
+                            </div>"
                         },
                         "background": {
-                            "color": "#6c757d"
+                            "color": "#f8f9fa"
                         }
                     }
                 @endif
@@ -1180,8 +1336,16 @@
         console.log('TimelineJS Debug: Timeline data:', timelineData);
         console.log('TimelineJS Debug: Events count:', timelineData.events.length);
 
-        // Initialize TimelineJS
+        // Initialize TimelineJS with error handling
         try {
+            // Check if TimelineJS is loaded
+            if (typeof TL === 'undefined') {
+                console.error('TimelineJS Debug: TL library not loaded');
+                document.getElementById('timeline-embed').innerHTML = '<div class="alert alert-warning"><i class="bx bx-error-circle me-2"></i>TimelineJS library failed to load. Please refresh the page.</div>';
+                return;
+            }
+
+            // Initialize TimelineJS
             window.timeline = new TL.Timeline('timeline-embed', timelineData, {
                 width: '100%',
                 height: '600px',
@@ -1214,9 +1378,21 @@
                 css_path: 'https://cdn.knightlab.com/libs/timeline3/latest/css/timeline.css',
                 js_path: 'https://cdn.knightlab.com/libs/timeline3/latest/js/timeline.js'
             });
+
             console.log('TimelineJS Debug: Timeline initialized successfully');
+
+            // Add event listeners for timeline interactions
+            window.timeline.on('ready', function() {
+                console.log('TimelineJS Debug: Timeline is ready');
+            });
+
+            window.timeline.on('change', function(e) {
+                console.log('TimelineJS Debug: Timeline slide changed to:', e.data);
+            });
+
         } catch (error) {
             console.error('TimelineJS Debug: Error initializing timeline:', error);
+            document.getElementById('timeline-embed').innerHTML = '<div class="alert alert-danger"><i class="bx bx-error-circle me-2"></i>Failed to initialize timeline. Error: ' + error.message + '</div>';
         }
     });
 
