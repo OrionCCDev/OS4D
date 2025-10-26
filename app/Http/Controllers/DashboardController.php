@@ -645,33 +645,44 @@ class DashboardController extends Controller
     }
 
     /**
-     * Get timeline data for next 202 days
+     * Get timeline data for next 20 days
      */
     private function getTimelineData()
     {
         $now = now();
-        $endDate = $now->copy()->addDays(202);
+        $endDate = $now->copy()->addDays(20);
 
-        // Get tasks that start within the next 202 days
+        // Get tasks that start within the next 20 days (or due within 20 days if no start_date)
         $tasks = Task::with(['assignee', 'project', 'folder'])
-            ->whereNotNull('start_date')
-            ->whereBetween('start_date', [$now->format('Y-m-d'), $endDate->format('Y-m-d')])
-            ->orderBy('start_date', 'asc')
+            ->where(function($query) use ($now, $endDate) {
+                $query->where(function($q) use ($now, $endDate) {
+                    // Tasks with start_date in next 20 days
+                    $q->whereNotNull('start_date')
+                      ->whereBetween('start_date', [$now->format('Y-m-d'), $endDate->format('Y-m-d')]);
+                })->orWhere(function($q) use ($now, $endDate) {
+                    // Tasks without start_date but with due_date in next 20 days
+                    $q->whereNull('start_date')
+                      ->whereNotNull('due_date')
+                      ->whereBetween('due_date', [$now->format('Y-m-d'), $endDate->format('Y-m-d')]);
+                });
+            })
+            ->orderByRaw('COALESCE(start_date, due_date) ASC')
             ->orderBy('created_at', 'asc')
             ->get();
 
         // Group tasks by date
         $timelineData = [];
         foreach ($tasks as $task) {
-            $startDate = \Carbon\Carbon::parse($task->start_date);
-            $dateKey = $startDate->format('Y-m-d');
-            $dateLabel = $startDate->format('M j, Y');
-
+            // Use start_date if available, otherwise use due_date
+            $taskDate = $task->start_date ? \Carbon\Carbon::parse($task->start_date) : \Carbon\Carbon::parse($task->due_date);
+            $dateKey = $taskDate->format('Y-m-d');
+            $dateLabel = $taskDate->format('M j, Y');
+            
             if (!isset($timelineData[$dateKey])) {
                 $timelineData[$dateKey] = [
-                    'date' => $startDate,
+                    'date' => $taskDate,
                     'date_label' => $dateLabel,
-                    'day_name' => $startDate->format('l'),
+                    'day_name' => $taskDate->format('l'),
                     'tasks' => []
                 ];
             }
