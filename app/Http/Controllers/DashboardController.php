@@ -677,7 +677,7 @@ class DashboardController extends Controller
             $taskDate = $task->start_date ? \Carbon\Carbon::parse($task->start_date) : \Carbon\Carbon::parse($task->due_date);
             $dateKey = $taskDate->format('Y-m-d');
             $dateLabel = $taskDate->format('M j, Y');
-            
+
             if (!isset($timelineData[$dateKey])) {
                 $timelineData[$dateKey] = [
                     'date' => $taskDate,
@@ -705,13 +705,22 @@ class DashboardController extends Controller
             ];
         }
 
-        // Convert to array and sort by date
-        $timelineArray = array_values($timelineData);
-        usort($timelineArray, function($a, $b) {
+        // Convert to array and sort by date, but keep date keys for easy lookup
+        $timelineArray = [];
+        foreach ($timelineData as $dateKey => $dayData) {
+            $timelineArray[$dateKey] = $dayData;
+        }
+
+        // Also create a sequential array for iteration
+        $timelineSequential = array_values($timelineData);
+        usort($timelineSequential, function($a, $b) {
             return $a['date']->gt($b['date']) ? 1 : -1;
         });
 
-        return $timelineArray;
+        return [
+            'by_date' => $timelineArray,
+            'sequential' => $timelineSequential
+        ];
     }
 
     /**
