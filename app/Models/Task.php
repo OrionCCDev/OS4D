@@ -275,6 +275,11 @@ class Task extends Model
         return $this->hasMany(TaskEmailPreparation::class);
     }
 
+    public function timeExtensionRequests()
+    {
+        return $this->hasMany(TaskTimeExtensionRequest::class);
+    }
+
     public function contractors()
     {
         return $this->belongsToMany(Contractor::class, 'contractor_task')

@@ -10,12 +10,15 @@ use App\Models\Contractor;
 use App\Models\TaskHistory;
 use App\Models\CustomNotification;
 use App\Models\TaskAttachment;
+use App\Models\TaskTimeExtensionRequest;
+use App\Models\UnifiedNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use App\Jobs\SendTaskConfirmationEmailJob;
+use Carbon\Carbon;
 
 class TaskController extends Controller
 {
@@ -2436,6 +2439,187 @@ private function sendApprovalEmailViaGmail(Task $task, User $approver)
             case 'tasks.index':
             default:
                 return route('tasks.index');
+        }
+    }
+
+    /**
+     * Request time extension for a task
+     */
+    public function requestTimeExtension(Request $request, Task $task)
+    {
+        // Only the assigned user can request time extension
+        if ($task->assigned_to !== Auth::id()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You can only request time extension for tasks assigned to you.'
+            ], 403);
+        }
+
+        // Check if there's already a pending request
+        $pendingRequest = TaskTimeExtensionRequest::where('task_id', $task->id)
+            ->where('status', 'pending')
+            ->first();
+
+        if ($pendingRequest) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You already have a pending time extension request for this task.'
+            ], 400);
+        }
+
+        $validated = $request->validate([
+            'requested_days' => 'required|integer|min:1|max:365',
+            'reason' => 'required|string|max:2000'
+        ]);
+
+        try {
+            $extensionRequest = TaskTimeExtensionRequest::create([
+                'task_id' => $task->id,
+                'requested_by' => Auth::id(),
+                'requested_days' => $validated['requested_days'],
+                'reason' => $validated['reason'],
+                'status' => 'pending'
+            ]);
+
+            // Create task history entry
+            $task->histories()->create([
+                'user_id' => Auth::id(),
+                'action' => 'time_extension_requested',
+                'description' => "Time extension requested: {$validated['requested_days']} days. Reason: {$validated['reason']}",
+                'metadata' => [
+                    'extension_request_id' => $extensionRequest->id,
+                    'requested_days' => $validated['requested_days'],
+                    'reason' => $validated['reason']
+                ]
+            ]);
+
+            // Notify managers
+            $task->notifyManagers(
+                'time_extension_requested',
+                'Time Extension Requested',
+                "Task '{$task->title}' has a time extension request: {$validated['requested_days']} days"
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Time extension request submitted successfully.',
+                'request' => $extensionRequest
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to create time extension request: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to submit time extension request.'
+            ], 500);
+        }
+    }
+
+    /**
+     * Approve or reject time extension request
+     */
+    public function reviewTimeExtension(Request $request, Task $task)
+    {
+        // Only managers can review time extension requests
+        if (!Auth::user()->isManager()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Access denied. Only managers can review time extension requests.'
+            ], 403);
+        }
+
+        $validated = $request->validate([
+            'request_id' => 'required|exists:task_time_extension_requests,id',
+            'action' => 'required|in:approve,reject',
+            'approved_days' => 'nullable|integer|min:1|max:365',
+            'manager_notes' => 'nullable|string|max:1000'
+        ]);
+
+        try {
+            $extensionRequest = TaskTimeExtensionRequest::findOrFail($validated['request_id']);
+
+            // Only pending requests can be reviewed
+            if ($extensionRequest->status !== 'pending') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'This request has already been reviewed.'
+                ], 400);
+            }
+
+            $approveAction = $validated['action'] === 'approve';
+            $approvedDays = $approveAction ? ($validated['approved_days'] ?? $extensionRequest->requested_days) : null;
+
+            $extensionRequest->update([
+                'status' => $approveAction ? 'approved' : 'rejected',
+                'reviewed_by' => Auth::id(),
+                'reviewed_at' => now(),
+                'approved_days' => $approvedDays,
+                'manager_notes' => $validated['manager_notes'] ?? null
+            ]);
+
+            // Update task due date if approved
+            if ($approveAction && $approvedDays) {
+                $newDueDate = Carbon::parse($task->due_date)->addDays($approvedDays);
+                $task->update(['due_date' => $newDueDate]);
+
+                // Create task history entry for extension approval
+                $task->histories()->create([
+                    'user_id' => Auth::id(),
+                    'action' => 'time_extension_approved',
+                    'description' => "Time extension approved: {$approvedDays} days. New due date: {$newDueDate->format('Y-m-d')}",
+                    'metadata' => [
+                        'extension_request_id' => $extensionRequest->id,
+                        'approved_days' => $approvedDays,
+                        'old_due_date' => $task->due_date->format('Y-m-d'),
+                        'new_due_date' => $newDueDate->format('Y-m-d'),
+                        'manager_notes' => $validated['manager_notes']
+                    ]
+                ]);
+            } else {
+                // Create task history entry for rejection
+                $task->histories()->create([
+                    'user_id' => Auth::id(),
+                    'action' => 'time_extension_rejected',
+                    'description' => "Time extension rejected. Reason: " . ($validated['manager_notes'] ?? 'No reason provided'),
+                    'metadata' => [
+                        'extension_request_id' => $extensionRequest->id,
+                        'requested_days' => $extensionRequest->requested_days,
+                        'manager_notes' => $validated['manager_notes']
+                    ]
+                ]);
+            }
+
+            // Notify user about the decision
+            $notificationMessage = $approveAction
+                ? "Your time extension request for task '{$task->title}' has been approved. {$approvedDays} days added to due date."
+                : "Your time extension request for task '{$task->title}' has been rejected.";
+
+            if ($task->assignee) {
+                UnifiedNotification::createTaskNotification(
+                    $task->assignee->id,
+                    'time_extension_reviewed',
+                    'Time Extension Request Reviewed',
+                    $notificationMessage,
+                    [
+                        'task_id' => $task->id,
+                        'project_id' => $task->project_id,
+                        'extension_request_id' => $extensionRequest->id
+                    ],
+                    $task->id,
+                    'normal'
+                );
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => $approveAction ? 'Time extension approved successfully.' : 'Time extension rejected.',
+                'new_due_date' => $approveAction ? $task->fresh()->due_date->format('Y-m-d') : null
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to review time extension request: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to review time extension request.'
+            ], 500);
         }
     }
 }

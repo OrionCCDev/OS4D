@@ -247,6 +247,10 @@ Route::middleware('auth')->group(function () {
         Route::post('tasks/{task}/send-approval-email', [TaskController::class, 'sendApprovalEmail'])->name('tasks.send-approval-email');
         Route::post('tasks/{task}/send-rejection-email', [TaskController::class, 'sendRejectionEmail'])->name('tasks.send-rejection-email');
 
+        // Time extension routes
+        Route::post('tasks/{task}/request-time-extension', [TaskController::class, 'requestTimeExtension'])->name('tasks.request-time-extension');
+        Route::post('tasks/{task}/review-time-extension', [TaskController::class, 'reviewTimeExtension'])->name('tasks.review-time-extension');
+
         // Client/Consultant approval routes
         Route::post('tasks/{task}/move-to-waiting-sending-approval', [TaskController::class, 'moveToWaitingSendingApproval'])->name('tasks.move-to-waiting-sending-approval');
         Route::post('tasks/{task}/send-for-client-consultant-approval', [TaskController::class, 'sendForClientConsultantApproval'])->name('tasks.send-for-client-consultant-approval');
