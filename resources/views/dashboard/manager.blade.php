@@ -684,9 +684,9 @@
                     </div>
                     <div class="d-flex align-items-center gap-2">
                         <span class="badge bg-primary text-white px-3 py-2 rounded-pill">
-                            {{ count($data['timeline_data']['sequential']) }} days with tasks
+                            {{ isset($data['timeline_data']['sequential']) ? count($data['timeline_data']['sequential']) : 0 }} days with tasks
                         </span>
-                        @if(count($data['timeline_data']['sequential']) > 0)
+                        @if(isset($data['timeline_data']['sequential']) && count($data['timeline_data']['sequential']) > 0)
                             <button class="btn btn-sm btn-outline-primary" onclick="toggleTimelineView()">
                                 <i class="bx bx-grid-alt me-1"></i>Calendar View
                             </button>
@@ -694,7 +694,7 @@
                     </div>
                 </div>
                 <div class="card-body p-0">
-                    @if(count($data['timeline_data']['sequential']) > 0)
+                    @if(isset($data['timeline_data']['sequential']) && count($data['timeline_data']['sequential']) > 0)
                         <div id="timelineContainer">
                             <!-- Horizontal Timeline View -->
                             <div id="timelineView" class="horizontal-timeline-container">
@@ -780,7 +780,7 @@
                             <!-- Calendar Grid View -->
                             <div id="calendarView" class="calendar-container" style="display: none;">
                                 <div class="calendar-grid">
-                                    @foreach($data['timeline_data'] as $dayData)
+                                    @foreach($data['timeline_data']['sequential'] as $dayData)
                                         <div class="calendar-day">
                                             <div class="calendar-day-header">
                                                 <h6 class="mb-0 text-dark fw-semibold">{{ $dayData['date']->format('j') }}</h6>
@@ -1400,7 +1400,7 @@
     console.log('Tasks by Status:', @json($data['tasks_by_status']));
     console.log('Tasks by Priority:', @json($data['tasks_by_priority']));
     console.log('Timeline Data:', @json($data['timeline_data']));
-    console.log('Timeline Data Count:', {{ count($data['timeline_data']['sequential']) }});
+    console.log('Timeline Data Count:', {{ isset($data['timeline_data']['sequential']) ? count($data['timeline_data']['sequential']) : 0 }});
 
     // Check if timeline elements exist on page load
     document.addEventListener('DOMContentLoaded', function() {

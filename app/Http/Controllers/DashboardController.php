@@ -718,8 +718,8 @@ class DashboardController extends Controller
         });
 
         return [
-            'by_date' => $timelineArray,
-            'sequential' => $timelineSequential
+            'by_date' => $timelineArray ?? [],
+            'sequential' => $timelineSequential ?? []
         ];
     }
 
