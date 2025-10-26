@@ -691,7 +691,7 @@
                             <h5 class="text-muted">Loading Timeline...</h5>
                             <p class="text-muted">Fetching task data from database...</p>
                             <div class="mt-3">
-                                <small class="text-muted">If this takes too long, <a href="#" onclick="showFallbackContent()" class="text-primary">click here</a> to show sample data.</small>
+                                <small class="text-muted">If this takes too long, <a href="#" onclick="showFallbackContent(); return false;" class="text-primary">click here</a> to show sample data.</small>
                             </div>
                         </div>
                     </div>
@@ -800,6 +800,52 @@
     </div>
 
 @push('styles')
+<script>
+// Global functions for timeline management - available immediately
+console.log('Timeline functions loaded');
+
+function showFallbackContent() {
+    console.log('showFallbackContent called');
+    try {
+        document.getElementById('timeline-fallback').style.display = 'none';
+        document.getElementById('timeline-embed').style.display = 'none';
+        document.getElementById('timeline-error').style.display = 'none';
+        document.getElementById('timeline-sample').style.display = 'block';
+        console.log('Fallback content shown successfully');
+    } catch (error) {
+        console.error('Error showing fallback content:', error);
+    }
+}
+
+function retryTimeline() {
+    console.log('retryTimeline called');
+    location.reload();
+}
+
+function showError(message) {
+    console.log('showError called:', message);
+    document.getElementById('timeline-fallback').style.display = 'none';
+    document.getElementById('timeline-embed').style.display = 'none';
+    document.getElementById('timeline-sample').style.display = 'none';
+    document.getElementById('timeline-error').style.display = 'block';
+    document.getElementById('timeline-error').innerHTML = `
+        <div class="alert alert-warning">
+            <h5><i class="bx bx-error-circle me-2"></i>Timeline Loading Issue</h5>
+            <p>${message}</p>
+            <button class="btn btn-primary btn-sm" onclick="retryTimeline()">Retry Loading</button>
+            <button class="btn btn-outline-secondary btn-sm ms-2" onclick="showFallbackContent()">Show Sample Data</button>
+        </div>
+    `;
+}
+
+function showTimeline() {
+    console.log('showTimeline called');
+    document.getElementById('timeline-fallback').style.display = 'none';
+    document.getElementById('timeline-error').style.display = 'none';
+    document.getElementById('timeline-sample').style.display = 'none';
+    document.getElementById('timeline-embed').style.display = 'block';
+}
+</script>
 <style>
 /* Manager Dashboard Styles */
 
@@ -1318,41 +1364,7 @@
         }, 1000);
     }
 
-    // Timeline toggle function removed - no longer needed
-
-    // Global functions for timeline management
-    function showFallbackContent() {
-        document.getElementById('timeline-fallback').style.display = 'none';
-        document.getElementById('timeline-embed').style.display = 'none';
-        document.getElementById('timeline-error').style.display = 'none';
-        document.getElementById('timeline-sample').style.display = 'block';
-    }
-
-    function retryTimeline() {
-        location.reload();
-    }
-
-    function showError(message) {
-        document.getElementById('timeline-fallback').style.display = 'none';
-        document.getElementById('timeline-embed').style.display = 'none';
-        document.getElementById('timeline-sample').style.display = 'none';
-        document.getElementById('timeline-error').style.display = 'block';
-        document.getElementById('timeline-error').innerHTML = `
-            <div class="alert alert-warning">
-                <h5><i class="bx bx-error-circle me-2"></i>Timeline Loading Issue</h5>
-                <p>${message}</p>
-                <button class="btn btn-primary btn-sm" onclick="retryTimeline()">Retry Loading</button>
-                <button class="btn btn-outline-secondary btn-sm ms-2" onclick="showFallbackContent()">Show Sample Data</button>
-            </div>
-        `;
-    }
-
-    function showTimeline() {
-        document.getElementById('timeline-fallback').style.display = 'none';
-        document.getElementById('timeline-error').style.display = 'none';
-        document.getElementById('timeline-sample').style.display = 'none';
-        document.getElementById('timeline-embed').style.display = 'block';
-    }
+    // Timeline functions are now defined globally in the styles section
 
     // Initialize TimelineJS with timeout protection
     document.addEventListener('DOMContentLoaded', function() {
@@ -1362,7 +1374,7 @@
         const loadingTimeout = setTimeout(function() {
             console.warn('TimelineJS Debug: Loading timeout reached, showing fallback content');
             showFallbackContent();
-        }, 10000); // 10 second timeout
+        }, 5000); // 5 second timeout - reduced for better UX
 
         // Try to initialize TimelineJS
         setTimeout(function() {
