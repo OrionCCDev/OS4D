@@ -636,6 +636,10 @@
                                     <i class="bx bx-check-double me-2"></i>Mark as Sent (After Gmail)
                                 </button>
 
+                                <button type="button" class="btn btn-enhanced btn-outline-primary" id="sendFromOutsideBtn">
+                                    <i class="bx bx-mail-send me-2"></i>Send From Outside App (Gmail)
+                                </button>
+
                                 <a href="{{ route('tasks.show', $task) }}" class="btn btn-enhanced btn-outline-secondary">
                                     <i class="bx bx-arrow-back me-2"></i>Back to Task
                                 </a>
@@ -1246,8 +1250,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Mark as sent functionality
-    if (markAsSentBtn) {
-        markAsSentBtn.addEventListener('click', function() {
+    function markAsSent() {
         console.log('Mark as Sent button clicked!');
         if (confirm('Have you successfully sent the email via Gmail?\n\nThis will mark the task as "On Client/Consultant Review".')) {
             console.log('User confirmed - proceeding with mark as sent');
@@ -1329,7 +1332,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 markAsSentBtn.innerHTML = '<i class="bx bx-check-double me-2"></i>Mark as Sent (After Gmail)';
             });
         }
-    });
+    }
+
+    if (markAsSentBtn) {
+        markAsSentBtn.addEventListener('click', markAsSent);
     }
 
     // Direct send functionality - bypasses AJAX completely
@@ -1516,6 +1522,215 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Initialize form state
     updateProgress();
+
+    // Send From Outside App Modal functionality
+    const sendFromOutsideBtn = document.getElementById('sendFromOutsideBtn');
+    const sendFromOutsideModal = new bootstrap.Modal(document.getElementById('sendFromOutsideModal'));
+
+    sendFromOutsideBtn.addEventListener('click', function() {
+        // Populate modal with current email preparation data
+        const projectManagerEmail = document.getElementById('projectManagerEmail');
+        const ccEmails = document.getElementById('ccEmails');
+        const suggestedSubject = document.getElementById('suggestedSubject');
+        const emailBodyPreview = document.getElementById('emailBodyPreview');
+
+        // Get data from current form
+        const toEmails = document.getElementById('to_emails').value;
+        const ccEmailsValue = document.getElementById('cc_emails').value;
+        const subject = document.getElementById('subject').value;
+        const body = document.getElementById('body').value;
+
+        // Populate modal fields
+        projectManagerEmail.value = toEmails;
+        ccEmails.value = ccEmailsValue;
+        suggestedSubject.value = subject;
+        emailBodyPreview.textContent = body.replace(/<[^>]*>/g, ''); // Strip HTML tags for preview
+
+        // Show modal
+        sendFromOutsideModal.show();
+    });
+
+    // Copy functionality for Project Manager Email
+    document.getElementById('copyProjectManagerBtn').addEventListener('click', function() {
+        const email = document.getElementById('projectManagerEmail').value;
+        navigator.clipboard.writeText(email).then(function() {
+            showCopySuccess(this, 'Email copied!');
+        }).catch(function() {
+            // Fallback for older browsers
+            const textArea = document.createElement('textarea');
+            textArea.value = email;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            showCopySuccess(this, 'Email copied!');
+        });
+    });
+
+    // Copy functionality for CC Emails
+    document.getElementById('copyCcEmailsBtn').addEventListener('click', function() {
+        const emails = document.getElementById('ccEmails').value;
+        navigator.clipboard.writeText(emails).then(function() {
+            showCopySuccess(this, 'CC emails copied!');
+        }).catch(function() {
+            // Fallback for older browsers
+            const textArea = document.createElement('textarea');
+            textArea.value = emails;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            showCopySuccess(this, 'CC emails copied!');
+        });
+    });
+
+    // Mark as Sent functionality for external email
+    document.getElementById('markAsSentExternalBtn').addEventListener('click', function() {
+        // Show confirmation dialog
+        if (confirm('Are you sure you have sent the email from your external Gmail application? This will mark the task as sent and update its status.')) {
+            // Call the same functionality as the "Mark as Sent (After Gmail)" button
+            markAsSent();
+            sendFromOutsideModal.hide();
+        }
+    });
+
+    // Helper function to show copy success feedback
+    function showCopySuccess(button, message) {
+        const originalIcon = button.innerHTML;
+        button.innerHTML = '<i class="bx bx-check"></i>';
+        button.classList.remove('btn-outline-primary');
+        button.classList.add('btn-success');
+
+        setTimeout(function() {
+            button.innerHTML = originalIcon;
+            button.classList.remove('btn-success');
+            button.classList.add('btn-outline-primary');
+        }, 2000);
+
+        // Show toast notification
+        showToast(message, 'success');
+    }
+
+    // Helper function to show toast notifications
+    function showToast(message, type = 'info') {
+        const toastContainer = document.getElementById('toast-container') || createToastContainer();
+        const toast = document.createElement('div');
+        toast.className = `toast align-items-center text-white bg-${type} border-0`;
+        toast.setAttribute('role', 'alert');
+        toast.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">${message}</div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        `;
+
+        toastContainer.appendChild(toast);
+        const bsToast = new bootstrap.Toast(toast);
+        bsToast.show();
+
+        // Remove toast element after it's hidden
+        toast.addEventListener('hidden.bs.toast', function() {
+            toast.remove();
+        });
+    }
+
+    // Helper function to create toast container
+    function createToastContainer() {
+        const container = document.createElement('div');
+        container.id = 'toast-container';
+        container.className = 'toast-container position-fixed top-0 end-0 p-3';
+        container.style.zIndex = '9999';
+        document.body.appendChild(container);
+        return container;
+    }
 });
 </script>
+
+<!-- Send From Outside App Modal -->
+<div class="modal fade" id="sendFromOutsideModal" tabindex="-1" aria-labelledby="sendFromOutsideModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 20px; border: none; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);">
+            <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 20px 20px 0 0; border: none; padding: 2rem;">
+                <h5 class="modal-title" id="sendFromOutsideModalLabel" style="font-weight: 600;">
+                    <i class="bx bx-mail-send me-2"></i>Send From Outside App (Gmail)
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" style="padding: 2rem;">
+                <div class="alert alert-info" style="border-radius: 12px; border: none; background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);">
+                    <i class="bx bx-info-circle me-2"></i>
+                    <strong>Instructions:</strong> Copy the email details below and paste them into your external Gmail application. After sending the email, click "Done" to mark the task as sent.
+                </div>
+
+                <!-- Project Manager Email -->
+                <div class="form-group mb-4">
+                    <label class="form-label" style="font-weight: 600; color: #333;">
+                        <i class="bx bx-user me-2"></i>Project Manager Email (TO Field)
+                    </label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="projectManagerEmail" readonly
+                               style="border-radius: 12px 0 0 12px; border-right: none; background: #f8f9fa;">
+                        <button class="btn btn-outline-primary" type="button" id="copyProjectManagerBtn"
+                                style="border-radius: 0 12px 12px 0; border-left: none;">
+                            <i class="bx bx-copy"></i>
+                        </button>
+                    </div>
+                    <div class="alert alert-warning mt-2" style="border-radius: 8px; border: none; background: #fff3cd; padding: 0.75rem;">
+                        <i class="bx bx-info-circle me-2"></i>
+                        <small><strong>Important:</strong> Don't forget to add this email to the TO field in your Gmail!</small>
+                    </div>
+                </div>
+
+                <!-- CC Emails -->
+                <div class="form-group mb-4">
+                    <label class="form-label" style="font-weight: 600; color: #333;">
+                        <i class="bx bx-user-plus me-2"></i>CC Emails (Copy All)
+                    </label>
+                    <div class="input-group">
+                        <textarea class="form-control" id="ccEmails" rows="3" readonly
+                                  style="border-radius: 12px 0 0 12px; border-right: none; background: #f8f9fa; resize: none;"></textarea>
+                        <button class="btn btn-outline-primary" type="button" id="copyCcEmailsBtn"
+                                style="border-radius: 0 12px 12px 0; border-left: none;">
+                            <i class="bx bx-copy"></i>
+                        </button>
+                    </div>
+                    <div class="alert alert-warning mt-2" style="border-radius: 8px; border: none; background: #fff3cd; padding: 0.75rem;">
+                        <i class="bx bx-info-circle me-2"></i>
+                        <small><strong>Important:</strong> Don't forget to add all these emails to the CC field in your Gmail!</small>
+                    </div>
+                </div>
+
+                <!-- Email Subject -->
+                <div class="form-group mb-4">
+                    <label class="form-label" style="font-weight: 600; color: #333;">
+                        <i class="bx bx-message-square-detail me-2"></i>Suggested Subject
+                    </label>
+                    <input type="text" class="form-control" id="suggestedSubject" readonly
+                           style="border-radius: 12px; background: #f8f9fa;">
+                </div>
+
+                <!-- Email Body Preview -->
+                <div class="form-group mb-4">
+                    <label class="form-label" style="font-weight: 600; color: #333;">
+                        <i class="bx bx-edit me-2"></i>Email Body Preview
+                    </label>
+                    <div class="border rounded" style="border-radius: 12px; padding: 1rem; background: #f8f9fa; max-height: 200px; overflow-y: auto;">
+                        <div id="emailBodyPreview" style="white-space: pre-wrap; font-family: Arial, sans-serif; font-size: 14px; line-height: 1.5;"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" style="border: none; padding: 1.5rem 2rem; background: #f8f9fa; border-radius: 0 0 20px 20px;">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"
+                        style="border-radius: 12px; padding: 0.75rem 1.5rem;">
+                    <i class="bx bx-x me-2"></i>Cancel
+                </button>
+                <button type="button" class="btn btn-success" id="markAsSentExternalBtn"
+                        style="border-radius: 12px; padding: 0.75rem 1.5rem; background: linear-gradient(135deg, #28a745 0%, #20c997 100%); border: none;">
+                    <i class="bx bx-check-double me-2"></i>Done (Mark as Sent)
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @endsection
