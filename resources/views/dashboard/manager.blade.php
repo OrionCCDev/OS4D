@@ -882,7 +882,8 @@
 
 /* User Dashboard Style Timeline */
 .timeline-container {
-    background: white;
+    position: relative;
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
     border-radius: 8px;
     padding: 20px;
     overflow-x: auto;
@@ -988,26 +989,36 @@
 
 .timeline-clickable:hover {
     transform: translateX(-50%) translateY(-2px) scale(1.05);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+    background: #f8f9fa;
+    z-index: 20;
 }
 
 .timeline-date {
-    font-size: 10px;
-    font-weight: 600;
+    font-size: 11px;
     color: #6c757d;
+    font-weight: 600;
     margin-bottom: 4px;
 }
 
 .timeline-task-title {
     font-size: 12px;
     font-weight: 600;
-    color: #2c3e50;
+    color: #343a40;
     margin-bottom: 4px;
     line-height: 1.2;
 }
 
 .timeline-task-meta {
-    margin-bottom: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    align-items: center;
+}
+
+.timeline-task-meta .badge {
+    font-size: 9px;
+    padding: 2px 6px;
 }
 
 .timeline-task-assignee {
@@ -1015,10 +1026,70 @@
     color: #6c757d;
 }
 
-.badge-sm {
-    font-size: 9px;
-    padding: 2px 6px;
-    margin: 1px;
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .timeline-months {
+        padding: 0 5px;
+    }
+
+    .timeline-month {
+        font-size: 9px;
+        min-width: 18px;
+        padding: 1px;
+    }
+
+    .timeline-body {
+        padding: 30px 5px;
+    }
+
+    .timeline-line {
+        left: 5px;
+        right: 5px;
+    }
+
+    .timeline-content {
+        min-width: 80px;
+        padding: 4px 6px;
+    }
+
+    .timeline-task-title {
+        font-size: 10px;
+    }
+
+    .timeline-date {
+        font-size: 9px;
+    }
+}
+
+/* Color variations for different statuses */
+.timeline-marker.bg-danger {
+    background: #dc3545;
+    box-shadow: 0 0 8px rgba(220, 53, 69, 0.4);
+}
+
+.timeline-marker.bg-warning {
+    background: #ffc107;
+    box-shadow: 0 0 8px rgba(255, 193, 7, 0.4);
+}
+
+.timeline-marker.bg-info {
+    background: #17a2b8;
+    box-shadow: 0 0 8px rgba(23, 162, 184, 0.4);
+}
+
+.timeline-marker.bg-primary {
+    background: #007bff;
+    box-shadow: 0 0 8px rgba(0, 123, 255, 0.4);
+}
+
+.timeline-marker.bg-success {
+    background: #28a745;
+    box-shadow: 0 0 8px rgba(40, 167, 69, 0.4);
+}
+
+.timeline-marker.bg-secondary {
+    background: #6c757d;
+    box-shadow: 0 0 8px rgba(108, 117, 125, 0.4);
 }
 
 .timeline-day-header {
