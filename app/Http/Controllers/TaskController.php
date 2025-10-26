@@ -1338,12 +1338,31 @@ class TaskController extends Controller
      */
     private function createDefaultEmailPreparation(Task $task)
     {
-        // Get the assigned user's email as the default recipient
-        $defaultToEmail = $task->assignee ? $task->assignee->email : '';
+        // Get the project manager's email as the primary recipient
+        $projectManagerEmail = $task->project->projectManager ? $task->project->projectManager->email : '';
+
+        // Build CC emails list
+        $ccEmails = [];
+
+        // Add engineering@orion-contracting.com
+        $ccEmails[] = 'engineering@orion-contracting.com';
+
+        // Add manager email (project owner)
+        if ($task->project->owner && $task->project->owner->email) {
+            $ccEmails[] = $task->project->owner->email;
+        }
+
+        // Add all contractors assigned to this project
+        $projectContractors = $task->project->contractors()->whereNotNull('email')->get();
+        foreach ($projectContractors as $contractor) {
+            if ($contractor->email && !in_array($contractor->email, $ccEmails)) {
+                $ccEmails[] = $contractor->email;
+            }
+        }
 
         // Create default email content
         $defaultSubject = "Project Update: Task Completed - {$task->title}";
-        $defaultBody = "Dear {$task->assignee->name},\n\n" .
+        $defaultBody = "Dear Project Manager,\n\n" .
                       "I hope this email finds you well. I am writing to inform you that the assigned task '{$task->title}' has been completed and submitted for review.\n\n" .
                       "Project Information:\n" .
                       "- Project: {$task->project->name}\n" .
@@ -1358,8 +1377,8 @@ class TaskController extends Controller
         // Create the email preparation
         $emailPreparation = $task->emailPreparations()->create([
             'prepared_by' => Auth::id(),
-            'to_emails' => $defaultToEmail,
-            'cc_emails' => '',
+            'to_emails' => $projectManagerEmail,
+            'cc_emails' => implode(', ', $ccEmails),
             'bcc_emails' => '',
             'subject' => $defaultSubject,
             'body' => $defaultBody,

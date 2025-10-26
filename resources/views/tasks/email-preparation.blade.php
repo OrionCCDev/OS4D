@@ -543,7 +543,7 @@
                                        class="form-control"
                                        id="to_emails"
                                        name="to_emails"
-                                       value="{{ old('to_emails', $task->client_email ?? '') }}"
+                                       value="{{ old('to_emails', $emailPreparation->to_emails ?? '') }}"
                                        placeholder="Enter recipient email addresses (comma-separated)"
                                        required>
                                 <div id="to_suggestions" class="suggestion-list" style="display: none;"></div>
@@ -558,11 +558,11 @@
                                        class="form-control"
                                        id="cc_emails"
                                        name="cc_emails"
-                                       value="{{ old('cc_emails', 'engineering@orion-contracting.com' . ($task->creator?->email ? ', ' . $task->creator->email : '')) }}"
+                                       value="{{ old('cc_emails', $emailPreparation->cc_emails ?? '') }}"
                                        placeholder="Enter CC email addresses (comma-separated)">
                                 <div id="cc_suggestions" class="suggestion-list" style="display: none;"></div>
                                 <small class="text-muted">
-                                    engineering@orion-contracting.com and {{ $task->creator?->name ?? 'task creator' }} are automatically added to track all emails
+                                    Project manager is automatically added to TO field. Engineering team, project owner, and all project contractors are automatically added to CC field.
                                 </small>
                             </div>
 
@@ -575,7 +575,7 @@
                                        class="form-control"
                                        id="bcc_emails"
                                        name="bcc_emails"
-                                       value="{{ old('bcc_emails') }}"
+                                       value="{{ old('bcc_emails', $emailPreparation->bcc_emails ?? '') }}"
                                        placeholder="Enter BCC email addresses (comma-separated)">
                                 <div id="bcc_suggestions" class="suggestion-list" style="display: none;"></div>
                             </div>
