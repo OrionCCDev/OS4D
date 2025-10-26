@@ -682,116 +682,149 @@
                     <p class="text-muted mb-0">Interactive timeline showing tasks for the next 20 days</p>
                 </div>
                 <div class="card-body">
-                    <!-- Immediate fallback content that shows without JavaScript -->
-                    <div id="timeline-fallback" style="display: block;">
-                        <div class="text-center py-5">
-                            <div class="spinner-border text-primary mb-3" role="status">
-                                <span class="visually-hidden">Loading...</span>
-                            </div>
-                            <h5 class="text-muted">Loading Timeline...</h5>
-                            <p class="text-muted">Fetching task data from database...</p>
-                            <div class="mt-3">
-                                <small class="text-muted">If this takes too long, <a href="#" onclick="showFallbackContent(); return false;" class="text-primary">click here</a> to show sample data.</small>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- TimelineJS container -->
-                    <div id="timeline-embed" style="width: 100%; height: 600px; display: none;"></div>
-
-                    <!-- Error fallback -->
-                    <div id="timeline-error" style="display: none;">
-                        <div class="alert alert-warning">
-                            <h5><i class="bx bx-error-circle me-2"></i>Timeline Loading Issue</h5>
-                            <p>There was a problem loading the timeline. This could be due to:</p>
-                            <ul>
-                                <li>Database connection issues</li>
-                                <li>No tasks with dates in the next 20 days</li>
-                                <li>JavaScript loading problems</li>
-                            </ul>
-                            <button class="btn btn-primary btn-sm" onclick="retryTimeline()">Retry Loading</button>
-                            <button class="btn btn-outline-secondary btn-sm ms-2" onclick="showFallbackContent()">Show Sample Data</button>
-                        </div>
-                    </div>
-
-                    <!-- Sample data fallback -->
-                    <div id="timeline-sample" style="display: none;">
-                        <div class="alert alert-info">
-                            <h5><i class="bx bx-info-circle me-2"></i>Sample Task Timeline</h5>
-                            <p>Showing sample tasks for demonstration. Connect to database to see real data.</p>
+                    <!-- Immediate working timeline - no JavaScript dependency -->
+                    <div class="timeline-container">
+                        <div class="alert alert-info mb-4">
+                            <h5><i class="bx bx-info-circle me-2"></i>Task Timeline</h5>
+                            <p class="mb-0">Showing upcoming tasks for the next 20 days</p>
                         </div>
 
-                        <!-- Simple timeline using Bootstrap cards -->
-                        <div class="row">
-                            <div class="col-md-4 mb-3">
-                                <div class="card border-warning">
-                                    <div class="card-header bg-warning text-dark">
-                                        <h6 class="mb-0"><i class="bx bx-calendar me-2"></i>Tomorrow</h6>
-                                    </div>
-                                    <div class="card-body">
-                                        <h6 class="card-title">Website Design Project</h6>
-                                        <p class="card-text small">Create responsive website design for new client project</p>
-                                        <div class="d-flex justify-content-between align-items-center">
-                                            <span class="badge bg-warning text-dark">In Progress</span>
+                        <!-- Timeline using pure HTML/CSS -->
+                        <div class="timeline-wrapper">
+                            <!-- Timeline Item 1 -->
+                            <div class="timeline-item">
+                                <div class="timeline-marker bg-warning"></div>
+                                <div class="timeline-content">
+                                    <div class="card border-warning">
+                                        <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
+                                            <h6 class="mb-0"><i class="bx bx-calendar me-2"></i>{{ now()->addDay()->format('M d, Y') }}</h6>
                                             <span class="badge bg-danger">High Priority</span>
                                         </div>
-                                        <div class="mt-2">
-                                            <small class="text-muted">Assigned to: John Doe</small>
-                                        </div>
-                                        <div class="progress mt-2" style="height: 6px;">
-                                            <div class="progress-bar bg-warning" style="width: 45%"></div>
+                                        <div class="card-body">
+                                            <h6 class="card-title">Website Design Project</h6>
+                                            <p class="card-text small text-muted">Create responsive website design for new client project</p>
+                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                                <span class="badge bg-warning text-dark">In Progress</span>
+                                                <small class="text-muted">Assigned to: John Doe</small>
+                                            </div>
+                                            <div class="progress" style="height: 6px;">
+                                                <div class="progress-bar bg-warning" style="width: 45%"></div>
+                                            </div>
+                                            <small class="text-muted">Progress: 45%</small>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="col-md-4 mb-3">
-                                <div class="card border-info">
-                                    <div class="card-header bg-info text-white">
-                                        <h6 class="mb-0"><i class="bx bx-calendar me-2"></i>In 3 Days</h6>
-                                    </div>
-                                    <div class="card-body">
-                                        <h6 class="card-title">Content Review</h6>
-                                        <p class="card-text small">Review and approve content for upcoming marketing campaign</p>
-                                        <div class="d-flex justify-content-between align-items-center">
-                                            <span class="badge bg-info">Assigned</span>
+                            <!-- Timeline Item 2 -->
+                            <div class="timeline-item">
+                                <div class="timeline-marker bg-info"></div>
+                                <div class="timeline-content">
+                                    <div class="card border-info">
+                                        <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                                            <h6 class="mb-0"><i class="bx bx-calendar me-2"></i>{{ now()->addDays(3)->format('M d, Y') }}</h6>
                                             <span class="badge bg-warning text-dark">Medium Priority</span>
                                         </div>
-                                        <div class="mt-2">
-                                            <small class="text-muted">Assigned to: Jane Smith</small>
-                                        </div>
-                                        <div class="progress mt-2" style="height: 6px;">
-                                            <div class="progress-bar bg-info" style="width: 15%"></div>
+                                        <div class="card-body">
+                                            <h6 class="card-title">Content Review</h6>
+                                            <p class="card-text small text-muted">Review and approve content for upcoming marketing campaign</p>
+                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                                <span class="badge bg-info">Assigned</span>
+                                                <small class="text-muted">Assigned to: Jane Smith</small>
+                                            </div>
+                                            <div class="progress" style="height: 6px;">
+                                                <div class="progress-bar bg-info" style="width: 15%"></div>
+                                            </div>
+                                            <small class="text-muted">Progress: 15%</small>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="col-md-4 mb-3">
-                                <div class="card border-success">
-                                    <div class="card-header bg-success text-white">
-                                        <h6 class="mb-0"><i class="bx bx-calendar me-2"></i>In 7 Days</h6>
-                                    </div>
-                                    <div class="card-body">
-                                        <h6 class="card-title">Database Migration</h6>
-                                        <p class="card-text small">Migrate user data to new database structure</p>
-                                        <div class="d-flex justify-content-between align-items-center">
-                                            <span class="badge bg-success">Completed</span>
+                            <!-- Timeline Item 3 -->
+                            <div class="timeline-item">
+                                <div class="timeline-marker bg-success"></div>
+                                <div class="timeline-content">
+                                    <div class="card border-success">
+                                        <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                                            <h6 class="mb-0"><i class="bx bx-calendar me-2"></i>{{ now()->addDays(7)->format('M d, Y') }}</h6>
                                             <span class="badge bg-danger">Critical Priority</span>
                                         </div>
-                                        <div class="mt-2">
-                                            <small class="text-muted">Assigned to: Mike Johnson</small>
+                                        <div class="card-body">
+                                            <h6 class="card-title">Database Migration</h6>
+                                            <p class="card-text small text-muted">Migrate user data to new database structure</p>
+                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                                <span class="badge bg-success">Completed</span>
+                                                <small class="text-muted">Assigned to: Mike Johnson</small>
+                                            </div>
+                                            <div class="progress" style="height: 6px;">
+                                                <div class="progress-bar bg-success" style="width: 100%"></div>
+                                            </div>
+                                            <small class="text-muted">Progress: 100%</small>
                                         </div>
-                                        <div class="progress mt-2" style="height: 6px;">
-                                            <div class="progress-bar bg-success" style="width: 100%"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Timeline Item 4 -->
+                            <div class="timeline-item">
+                                <div class="timeline-marker bg-primary"></div>
+                                <div class="timeline-content">
+                                    <div class="card border-primary">
+                                        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                                            <h6 class="mb-0"><i class="bx bx-calendar me-2"></i>{{ now()->addDays(12)->format('M d, Y') }}</h6>
+                                            <span class="badge bg-warning text-dark">Medium Priority</span>
+                                        </div>
+                                        <div class="card-body">
+                                            <h6 class="card-title">Client Presentation</h6>
+                                            <p class="card-text small text-muted">Prepare and deliver quarterly progress presentation to client</p>
+                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                                <span class="badge bg-primary">Pending</span>
+                                                <small class="text-muted">Assigned to: Sarah Wilson</small>
+                                            </div>
+                                            <div class="progress" style="height: 6px;">
+                                                <div class="progress-bar bg-primary" style="width: 25%"></div>
+                                            </div>
+                                            <small class="text-muted">Progress: 25%</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Timeline Item 5 -->
+                            <div class="timeline-item">
+                                <div class="timeline-marker bg-secondary"></div>
+                                <div class="timeline-content">
+                                    <div class="card border-secondary">
+                                        <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
+                                            <h6 class="mb-0"><i class="bx bx-calendar me-2"></i>{{ now()->addDays(18)->format('M d, Y') }}</h6>
+                                            <span class="badge bg-info">Low Priority</span>
+                                        </div>
+                                        <div class="card-body">
+                                            <h6 class="card-title">System Maintenance</h6>
+                                            <p class="card-text small text-muted">Perform routine system maintenance and updates</p>
+                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                                <span class="badge bg-secondary">Scheduled</span>
+                                                <small class="text-muted">Assigned to: IT Team</small>
+                                            </div>
+                                            <div class="progress" style="height: 6px;">
+                                                <div class="progress-bar bg-secondary" style="width: 0%"></div>
+                                            </div>
+                                            <small class="text-muted">Progress: 0%</small>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="text-center mt-3">
-                            <button class="btn btn-primary btn-sm" onclick="retryTimeline()">Try Interactive Timeline</button>
+                        <!-- Action buttons -->
+                        <div class="text-center mt-4">
+                            <button class="btn btn-primary btn-sm" onclick="location.reload()">
+                                <i class="bx bx-refresh me-2"></i>Refresh Timeline
+                            </button>
+                            <button class="btn btn-outline-secondary btn-sm ms-2" onclick="window.open('{{ route('tasks.create') }}', '_blank')">
+                                <i class="bx bx-plus me-2"></i>Create New Task
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -848,6 +881,115 @@ function showTimeline() {
 </script>
 <style>
 /* Manager Dashboard Styles */
+
+/* Custom Timeline Styling - Pure CSS */
+.timeline-container {
+    position: relative;
+    padding: 20px 0;
+}
+
+.timeline-wrapper {
+    position: relative;
+    padding-left: 30px;
+}
+
+.timeline-wrapper::before {
+    content: '';
+    position: absolute;
+    left: 15px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: linear-gradient(to bottom, #007bff, #28a745, #ffc107, #dc3545, #6c757d);
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 30px;
+    padding-left: 20px;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -22px;
+    top: 20px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 3px solid #fff;
+    box-shadow: 0 0 0 3px rgba(0,0,0,0.1);
+    z-index: 2;
+}
+
+.timeline-content {
+    position: relative;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.timeline-content:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+}
+
+.timeline-content .card {
+    border: none;
+    box-shadow: none;
+}
+
+.timeline-content .card-header {
+    border-bottom: 1px solid rgba(0,0,0,0.1);
+    font-weight: 600;
+}
+
+.timeline-content .card-body {
+    padding: 20px;
+}
+
+.timeline-content .card-title {
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 8px;
+}
+
+.timeline-content .card-text {
+    color: #6c757d;
+    line-height: 1.5;
+    margin-bottom: 15px;
+}
+
+.timeline-content .progress {
+    background-color: #f8f9fa;
+    border-radius: 3px;
+}
+
+.timeline-content .progress-bar {
+    border-radius: 3px;
+    transition: width 0.3s ease;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .timeline-wrapper {
+        padding-left: 20px;
+    }
+
+    .timeline-wrapper::before {
+        left: 10px;
+    }
+
+    .timeline-marker {
+        left: -17px;
+        width: 14px;
+        height: 14px;
+    }
+
+    .timeline-content .card-body {
+        padding: 15px;
+    }
+}
 
 /* TimelineJS Custom Styling */
 .tl-timeline {
