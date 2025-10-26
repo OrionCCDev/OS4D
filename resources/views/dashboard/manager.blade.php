@@ -1085,52 +1085,34 @@
             },
             "events": [
                 @php
-                    // Fallback: Create sample timeline data since database connection is having issues
-                    $sampleTasks = [
-                        [
-                            'id' => 1,
-                            'title' => 'Sample Task 1',
-                            'project_name' => 'Project Alpha',
-                            'assignee_name' => 'John Doe',
-                            'status' => 'in_progress',
-                            'priority' => 'high',
-                            'start_date' => now()->addDays(2)->format('Y-m-d'),
-                            'description' => 'This is a sample task for demonstration purposes.'
-                        ],
-                        [
-                            'id' => 2,
-                            'title' => 'Sample Task 2',
-                            'project_name' => 'Project Beta',
-                            'assignee_name' => 'Jane Smith',
-                            'status' => 'assigned',
-                            'priority' => 'medium',
-                            'start_date' => now()->addDays(5)->format('Y-m-d'),
-                            'description' => 'Another sample task to show timeline functionality.'
-                        ],
-                        [
-                            'id' => 3,
-                            'title' => 'Sample Task 3',
-                            'project_name' => 'Project Gamma',
-                            'assignee_name' => 'Mike Johnson',
-                            'status' => 'pending',
-                            'priority' => 'low',
-                            'start_date' => now()->addDays(10)->format('Y-m-d'),
-                            'description' => 'Third sample task for timeline demonstration.'
-                        ]
-                    ];
+                    // Get real timeline data from database
+                    $now = now();
+                    $endDate = $now->copy()->addDays(20);
 
-                    $timelineTasks = collect($sampleTasks);
+                    $timelineTasks = \App\Models\Task::with(['assignee', 'project'])
+                        ->where(function($query) use ($now, $endDate) {
+                            $query->where(function($q) use ($now, $endDate) {
+                                $q->whereNotNull('start_date')
+                                  ->whereBetween('start_date', [$now->format('Y-m-d'), $endDate->format('Y-m-d')]);
+                            })->orWhere(function($q) use ($now, $endDate) {
+                                $q->whereNull('start_date')
+                                  ->whereNotNull('due_date')
+                                  ->whereBetween('due_date', [$now->format('Y-m-d'), $endDate->format('Y-m-d')]);
+                            });
+                        })
+                        ->orderByRaw('COALESCE(start_date, due_date) ASC')
+                        ->get();
                 @endphp
 
                 @if($timelineTasks->count() > 0)
                     @foreach($timelineTasks as $task)
                         @php
-                            $taskDate = $task['start_date'] ?: ($task['due_date'] ?? null);
+                            $taskDate = $task->start_date ?: ($task->due_date ?? null);
                             $taskDate = \Carbon\Carbon::parse($taskDate);
 
                             // Determine status color
                             $statusColor = '#007bff';
-                            switch($task['status']) {
+                            switch($task->status) {
                                 case 'completed':
                                     $statusColor = '#28a745';
                                     break;
@@ -1154,7 +1136,7 @@
                         {
                             "media": {
                                 "url": "{{ asset('DAssets/assets/img/icons/task-icon.png') }}",
-                                "caption": "Task: {{ $task['title'] }}"
+                                "caption": "Task: {{ $task->title }}"
                             },
                             "start_date": {
                                 "year": {{ $taskDate->year }},
@@ -1162,8 +1144,8 @@
                                 "day": {{ $taskDate->day }}
                             },
                             "text": {
-                                "headline": "{{ $task['title'] }}",
-                                "text": "<p><strong>Project:</strong> {{ $task['project_name'] }}</p><p><strong>Assigned to:</strong> {{ $task['assignee_name'] }}</p><p><strong>Status:</strong> <span style='color: {{ $statusColor }}; font-weight: bold;'>{{ ucfirst(str_replace('_', ' ', $task['status'])) }}</span></p><p><strong>Priority:</strong> {{ ucfirst($task['priority']) }}</p>@if(isset($task['description']))<p><strong>Description:</strong> {{ Str::limit($task['description'], 100) }}</p>@endif<p><a href='#' class='btn btn-sm btn-primary'>View Task</a></p>"
+                                "headline": "{{ $task->title }}",
+                                "text": "<p><strong>Project:</strong> {{ $task->project ? $task->project->name : 'No Project' }}</p><p><strong>Assigned to:</strong> {{ $task->assignee ? $task->assignee->name : 'Unassigned' }}</p><p><strong>Status:</strong> <span style='color: {{ $statusColor }}; font-weight: bold;'>{{ ucfirst(str_replace('_', ' ', $task->status)) }}</span></p><p><strong>Priority:</strong> {{ ucfirst($task->priority) }}</p>@if($task->description)<p><strong>Description:</strong> {{ Str::limit($task->description, 100) }}</p>@endif<p><a href='{{ route('tasks.show', $task->id) }}' class='btn btn-sm btn-primary'>View Task</a></p>"
                             },
                             "background": {
                                 "color": "{{ $statusColor }}"
