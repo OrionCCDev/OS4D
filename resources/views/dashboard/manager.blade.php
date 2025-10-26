@@ -670,6 +670,131 @@
             </div>
         </div>
     </div>
+
+    <!-- Timeline Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="card-title mb-0 text-dark fw-semibold">
+                            <i class="bx bx-calendar me-2 text-primary"></i>Task Timeline
+                        </h5>
+                        <small class="text-muted">Tasks starting in the next 202 days</small>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge bg-primary text-white px-3 py-2 rounded-pill">
+                            {{ count($data['timeline_data']) }} days with tasks
+                        </span>
+                        <button class="btn btn-sm btn-outline-primary" onclick="toggleTimelineView()">
+                            <i class="bx bx-grid-alt me-1"></i>Toggle View
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    @if(count($data['timeline_data']) > 0)
+                        <div id="timelineContainer">
+                            <!-- Timeline View -->
+                            <div id="timelineView" class="timeline-container">
+                                @foreach($data['timeline_data'] as $dayData)
+                                    <div class="timeline-day mb-4">
+                                        <div class="timeline-day-header">
+                                            <div class="timeline-date">
+                                                <h6 class="mb-0 text-dark fw-semibold">{{ $dayData['date_label'] }}</h6>
+                                                <small class="text-muted">{{ $dayData['day_name'] }}</small>
+                                            </div>
+                                            <div class="timeline-day-count">
+                                                <span class="badge bg-primary text-white px-2 py-1 rounded-pill">
+                                                    {{ count($dayData['tasks']) }} task{{ count($dayData['tasks']) > 1 ? 's' : '' }}
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        <div class="timeline-tasks">
+                                            @foreach($dayData['tasks'] as $task)
+                                                <div class="timeline-task-card" onclick="window.location.href='{{ route('tasks.show', $task['id']) }}'">
+                                                    <div class="task-card-header">
+                                                        <div class="task-title">
+                                                            <h6 class="mb-0 text-dark fw-semibold">{{ Str::limit($task['title'], 50) }}</h6>
+                                                            <small class="text-muted">{{ $task['project_name'] }}</small>
+                                                        </div>
+                                                        <div class="task-badges">
+                                                            <span class="badge {{ $task['status_badge_class'] }} text-white px-2 py-1 rounded-pill me-1" style="font-size: 10px;">
+                                                                {{ ucfirst(str_replace('_', ' ', $task['status'])) }}
+                                                            </span>
+                                                            <span class="badge {{ $task['priority_badge_class'] }} text-white px-2 py-1 rounded-pill" style="font-size: 10px;">
+                                                                {{ ucfirst($task['priority'] ?? 'Normal') }}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="task-card-body">
+                                                        <div class="task-assignee">
+                                                            <div class="d-flex align-items-center">
+                                                                <div class="avatar avatar-xs me-2">
+                                                                    <span class="avatar-initial rounded-circle bg-label-primary">
+                                                                        {{ substr($task['assignee_name'], 0, 1) }}
+                                                                    </span>
+                                                                </div>
+                                                                <span class="text-dark fw-semibold">{{ $task['assignee_name'] }}</span>
+                                                            </div>
+                                                        </div>
+
+                                                        @if($task['due_date'])
+                                                            <div class="task-due-date">
+                                                                <small class="text-muted">
+                                                                    <i class="bx bx-calendar me-1"></i>
+                                                                    Due: {{ \Carbon\Carbon::parse($task['due_date'])->format('M j, Y') }}
+                                                                    @if($task['is_overdue'])
+                                                                        <span class="text-danger ms-1">(Overdue)</span>
+                                                                    @endif
+                                                                </small>
+                                                            </div>
+                                                        @endif
+                                                    </div>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+
+                            <!-- Calendar Grid View -->
+                            <div id="calendarView" class="calendar-container" style="display: none;">
+                                <div class="calendar-grid">
+                                    @foreach($data['timeline_data'] as $dayData)
+                                        <div class="calendar-day">
+                                            <div class="calendar-day-header">
+                                                <h6 class="mb-0 text-dark fw-semibold">{{ $dayData['date']->format('j') }}</h6>
+                                                <small class="text-muted">{{ $dayData['date']->format('M') }}</small>
+                                            </div>
+                                            <div class="calendar-tasks">
+                                                @foreach($dayData['tasks'] as $task)
+                                                    <div class="calendar-task" onclick="window.location.href='{{ route('tasks.show', $task['id']) }}'">
+                                                        <div class="task-indicator {{ $task['status_badge_class'] }}"></div>
+                                                        <div class="task-info">
+                                                            <div class="task-title">{{ Str::limit($task['title'], 20) }}</div>
+                                                            <div class="task-project">{{ Str::limit($task['project_name'], 15) }}</div>
+                                                        </div>
+                                                    </div>
+                                                @endforeach
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+                    @else
+                        <div class="text-center py-5">
+                            <i class="bx bx-calendar fs-1 text-muted opacity-50"></i>
+                            <p class="text-muted mt-3">No tasks scheduled for the next 202 days</p>
+                            <small class="text-muted">Tasks with start dates will appear here</small>
+                        </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 @push('styles')
@@ -728,6 +853,263 @@
     font-size: 12px;
     color: #6c757d;
 }
+
+/* Timeline Container Styles */
+.timeline-container {
+    padding: 20px;
+}
+
+.timeline-day {
+    border-left: 3px solid #e9ecef;
+    padding-left: 20px;
+    position: relative;
+}
+
+.timeline-day::before {
+    content: '';
+    position: absolute;
+    left: -6px;
+    top: 0;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #007bff;
+    border: 3px solid #fff;
+    box-shadow: 0 0 0 2px #e9ecef;
+}
+
+.timeline-day-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.timeline-date h6 {
+    color: #2c3e50;
+    font-weight: 600;
+}
+
+.timeline-day-count .badge {
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.timeline-tasks {
+    display: grid;
+    gap: 12px;
+}
+
+.timeline-task-card {
+    background: #fff;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 15px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.timeline-task-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    border-color: #007bff;
+}
+
+.task-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+}
+
+.task-title h6 {
+    color: #2c3e50;
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+.task-title small {
+    color: #6c757d;
+    font-size: 11px;
+}
+
+.task-badges {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+}
+
+.task-card-body {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.task-assignee {
+    display: flex;
+    align-items: center;
+}
+
+.task-assignee .avatar {
+    width: 24px;
+    height: 24px;
+    font-size: 10px;
+}
+
+.task-assignee span {
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.task-due-date {
+    text-align: right;
+}
+
+.task-due-date small {
+    font-size: 11px;
+}
+
+/* Calendar Grid Styles */
+.calendar-container {
+    padding: 20px;
+}
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+.calendar-day {
+    background: #fff;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 15px;
+    transition: all 0.3s ease;
+}
+
+.calendar-day:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    transform: translateY(-2px);
+}
+
+.calendar-day-header {
+    text-align: center;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.calendar-day-header h6 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #2c3e50;
+    margin: 0;
+}
+
+.calendar-day-header small {
+    font-size: 11px;
+    color: #6c757d;
+    text-transform: uppercase;
+    font-weight: 500;
+}
+
+.calendar-tasks {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.calendar-task {
+    display: flex;
+    align-items: center;
+    padding: 8px;
+    background: #f8f9fa;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.calendar-task:hover {
+    background: #e9ecef;
+}
+
+.task-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 8px;
+    flex-shrink: 0;
+}
+
+.task-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.task-info .task-title {
+    font-size: 11px;
+    font-weight: 600;
+    color: #2c3e50;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.task-info .task-project {
+    font-size: 10px;
+    color: #6c757d;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .timeline-container {
+        padding: 15px;
+    }
+
+    .timeline-day {
+        padding-left: 15px;
+    }
+
+    .task-card-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .task-card-body {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .calendar-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 10px;
+    }
+
+    .calendar-day {
+        padding: 12px;
+    }
+}
+
+@media (max-width: 576px) {
+    .timeline-day-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .calendar-grid {
+        grid-template-columns: 1fr;
+    }
+}
 </style>
 @endpush
 
@@ -769,10 +1151,30 @@
         }, 1000);
     }
 
+    // Timeline toggle function
+    function toggleTimelineView() {
+        const timelineView = document.getElementById('timelineView');
+        const calendarView = document.getElementById('calendarView');
+        const toggleButton = event.target.closest('button');
+
+        if (timelineView.style.display === 'none') {
+            // Show timeline view
+            timelineView.style.display = 'block';
+            calendarView.style.display = 'none';
+            toggleButton.innerHTML = '<i class="bx bx-grid-alt me-1"></i>Calendar View';
+        } else {
+            // Show calendar view
+            timelineView.style.display = 'none';
+            calendarView.style.display = 'block';
+            toggleButton.innerHTML = '<i class="bx bx-list-ul me-1"></i>Timeline View';
+        }
+    }
+
     // Debug data
     console.log('Recent Activity Data:', @json($data['recent_activity']));
     console.log('Tasks by Status:', @json($data['tasks_by_status']));
     console.log('Tasks by Priority:', @json($data['tasks_by_priority']));
+    console.log('Timeline Data:', @json($data['timeline_data']));
 </script>
 @endpush
 @endsection

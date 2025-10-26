@@ -67,6 +67,9 @@ class Task extends Model
         'progress_status',
         'progress_stage',
         'progress_color',
+        'status_badge_class',
+        'priority_badge_class',
+        'is_overdue',
     ];
 
     protected $casts = [

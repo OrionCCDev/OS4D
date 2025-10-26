@@ -610,6 +610,9 @@ class DashboardController extends Controller
             'yearly_top_performers_count' => $this->getTopPerformersForPeriod('year')->count(),
         ]);
 
+        // Timeline data for next 202 days
+        $timelineData = $this->getTimelineData();
+
         return [
             'overview' => [
                 'total_users' => $totalUsers,
@@ -637,7 +640,67 @@ class DashboardController extends Controller
             'tasks_by_project' => $tasksByProject,
             'recent_notifications' => $recentNotifications,
             'urgent_tasks' => $urgentTasks,
+            'timeline_data' => $timelineData,
         ];
+    }
+
+    /**
+     * Get timeline data for next 202 days
+     */
+    private function getTimelineData()
+    {
+        $now = now();
+        $endDate = $now->copy()->addDays(202);
+
+        // Get tasks that start within the next 202 days
+        $tasks = Task::with(['assignee', 'project', 'folder'])
+            ->whereNotNull('start_date')
+            ->whereBetween('start_date', [$now->format('Y-m-d'), $endDate->format('Y-m-d')])
+            ->orderBy('start_date', 'asc')
+            ->orderBy('created_at', 'asc')
+            ->get();
+
+        // Group tasks by date
+        $timelineData = [];
+        foreach ($tasks as $task) {
+            $startDate = \Carbon\Carbon::parse($task->start_date);
+            $dateKey = $startDate->format('Y-m-d');
+            $dateLabel = $startDate->format('M j, Y');
+
+            if (!isset($timelineData[$dateKey])) {
+                $timelineData[$dateKey] = [
+                    'date' => $startDate,
+                    'date_label' => $dateLabel,
+                    'day_name' => $startDate->format('l'),
+                    'tasks' => []
+                ];
+            }
+
+            $timelineData[$dateKey]['tasks'][] = [
+                'id' => $task->id,
+                'title' => $task->title,
+                'description' => $task->description,
+                'status' => $task->status,
+                'priority' => $task->priority,
+                'project_name' => $task->project ? $task->project->name : 'No Project',
+                'project_id' => $task->project_id,
+                'assignee_name' => $task->assignee ? $task->assignee->name : 'Unassigned',
+                'assignee_id' => $task->assigned_to,
+                'due_date' => $task->due_date,
+                'start_date' => $task->start_date,
+                'status_badge_class' => $task->status_badge_class,
+                'priority_badge_class' => $task->priority_badge_class,
+                'is_overdue' => $task->due_date && $task->due_date < $now && !in_array($task->status, ['completed', 'approved']),
+            ];
+        }
+
+        // Convert to array and sort by date
+        $timelineArray = array_values($timelineData);
+        usort($timelineArray, function($a, $b) {
+            return $a['date']->gt($b['date']) ? 1 : -1;
+        });
+
+        return $timelineArray;
     }
 
     /**
