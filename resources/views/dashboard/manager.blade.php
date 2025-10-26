@@ -682,7 +682,33 @@
                     <p class="text-muted mb-0">Interactive timeline showing tasks for the next 20 days</p>
                 </div>
                 <div class="card-body">
-                    <div id="timeline-embed" style="width: 100%; height: 600px;"></div>
+                    <!-- Fallback content that shows immediately -->
+                    <div id="timeline-fallback" style="display: block;">
+                        <div class="text-center py-5">
+                            <div class="spinner-border text-primary mb-3" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <h5 class="text-muted">Loading Timeline...</h5>
+                            <p class="text-muted">Fetching task data from database...</p>
+                        </div>
+                    </div>
+
+                    <!-- TimelineJS container -->
+                    <div id="timeline-embed" style="width: 100%; height: 600px; display: none;"></div>
+
+                    <!-- Error fallback -->
+                    <div id="timeline-error" style="display: none;">
+                        <div class="alert alert-warning">
+                            <h5><i class="bx bx-error-circle me-2"></i>Timeline Loading Issue</h5>
+                            <p>There was a problem loading the timeline. This could be due to:</p>
+                            <ul>
+                                <li>Database connection issues</li>
+                                <li>No tasks with dates in the next 20 days</li>
+                                <li>JavaScript loading problems</li>
+                            </ul>
+                            <button class="btn btn-primary btn-sm" onclick="retryTimeline()">Retry Loading</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1209,311 +1235,311 @@
 
     // Timeline toggle function removed - no longer needed
 
-    // Initialize TimelineJS
+    // Initialize TimelineJS with robust error handling
     document.addEventListener('DOMContentLoaded', function() {
-        // Debug: Check if we have tasks
         console.log('TimelineJS Debug: Starting initialization...');
 
-        // Prepare timeline data
-        const timelineData = {
-            "title": {
-                "media": {
-                    "url": "{{ asset('DAssets/assets/img/icons/unicons/chart-success.png') }}",
-                    "caption": "Task Management Timeline"
-                },
-                "text": {
-                    "headline": "Manager Task Timeline",
-                    "text": "Interactive timeline showing all team tasks for the next 20 days"
+        // Function to show error state
+        function showError(message) {
+            document.getElementById('timeline-fallback').style.display = 'none';
+            document.getElementById('timeline-embed').style.display = 'none';
+            document.getElementById('timeline-error').style.display = 'block';
+            document.getElementById('timeline-error').innerHTML = `
+                <div class="alert alert-warning">
+                    <h5><i class="bx bx-error-circle me-2"></i>Timeline Loading Issue</h5>
+                    <p>${message}</p>
+                    <button class="btn btn-primary btn-sm" onclick="retryTimeline()">Retry Loading</button>
+                </div>
+            `;
+        }
+
+        // Function to show success state
+        function showTimeline() {
+            document.getElementById('timeline-fallback').style.display = 'none';
+            document.getElementById('timeline-error').style.display = 'none';
+            document.getElementById('timeline-embed').style.display = 'block';
+        }
+
+        // Try to get data from database first
+        let timelineData = null;
+        let hasDatabaseData = false;
+
+        try {
+            // Attempt to get data from PHP
+            @php
+                $now = now();
+                $endDate = $now->copy()->addDays(20);
+                $timelineTasks = collect();
+                $dbError = null;
+
+                try {
+                    $timelineTasks = \App\Models\Task::with(['assignee', 'project', 'creator'])
+                        ->where(function($query) use ($now, $endDate) {
+                            $query->where(function($q) use ($now, $endDate) {
+                                $q->whereNotNull('start_date')
+                                  ->whereBetween('start_date', [$now->format('Y-m-d'), $endDate->format('Y-m-d')]);
+                            })->orWhere(function($q) use ($now, $endDate) {
+                                $q->whereNotNull('due_date')
+                                  ->whereBetween('due_date', [$now->format('Y-m-d'), $endDate->format('Y-m-d')]);
+                            });
+                        })
+                        ->orderByRaw('COALESCE(start_date, due_date) ASC')
+                        ->get();
+                } catch (\Exception $e) {
+                    $dbError = $e->getMessage();
+                    \Log::error('TimelineJS Database Error: ' . $e->getMessage());
                 }
-            },
-            "events": [
-                @php
-                    // Get comprehensive timeline data from database with error handling
-                    $now = now();
-                    $endDate = $now->copy()->addDays(20);
-                    $timelineTasks = collect(); // Default to empty collection
-                    $dbError = null;
+            @endphp
 
-                    try {
-                        $timelineTasks = \App\Models\Task::with(['assignee', 'project', 'creator'])
-                            ->where(function($query) use ($now, $endDate) {
-                                $query->where(function($q) use ($now, $endDate) {
-                                    $q->whereNotNull('start_date')
-                                      ->whereBetween('start_date', [$now->format('Y-m-d'), $endDate->format('Y-m-d')]);
-                                })->orWhere(function($q) use ($now, $endDate) {
-                                    $q->whereNull('start_date')
-                                      ->whereNotNull('due_date')
-                                      ->whereBetween('due_date', [$now->format('Y-m-d'), $endDate->format('Y-m-d')]);
-                                })->orWhere(function($q) use ($now, $endDate) {
-                                    $q->whereNotNull('due_date')
-                                      ->whereBetween('due_date', [$now->format('Y-m-d'), $endDate->format('Y-m-d')]);
-                                });
-                            })
-                            ->orderByRaw('COALESCE(start_date, due_date) ASC')
-                            ->get();
-                    } catch (\Exception $e) {
-                        $dbError = $e->getMessage();
-                        \Log::error('TimelineJS Database Error: ' . $e->getMessage());
-                    }
-                @endphp
-
-                @if($timelineTasks->count() > 0)
-                    @foreach($timelineTasks as $task)
-                        @php
-                            $taskDate = $task->start_date ?: ($task->due_date ?? null);
-                            $taskDate = \Carbon\Carbon::parse($taskDate);
-                            $dateType = $task->start_date ? 'Start' : 'Due';
-
-                            // Enhanced status colors
-                            $statusColors = [
-                                'pending' => '#6c757d',
-                                'assigned' => '#17a2b8',
-                                'in_progress' => '#ffc107',
-                                'submitted_for_review' => '#fd7e14',
-                                'in_review' => '#6f42c1',
-                                'approved' => '#28a745',
-                                'ready_for_email' => '#20c997',
-                                'on_client_consultant_review' => '#e83e8c',
-                                'in_review_after_client_consultant_reply' => '#6f42c1',
-                                're_submit_required' => '#dc3545',
-                                'rejected' => '#dc3545',
-                                'completed' => '#28a745'
-                            ];
-
-                            // Priority colors and labels
-                            $priorityColors = [
-                                1 => '#dc3545', // Critical
-                                2 => '#fd7e14', // High
-                                3 => '#ffc107', // Medium
-                                4 => '#17a2b8', // Low
-                                5 => '#6c757d'  // Very Low
-                            ];
-                            $priorityLabels = [
-                                1 => 'Critical',
-                                2 => 'High',
-                                3 => 'Medium',
-                                4 => 'Low',
-                                5 => 'Very Low'
-                            ];
-
-                            // Status labels
-                            $statusLabels = [
-                                'pending' => 'Pending',
-                                'assigned' => 'Assigned',
-                                'in_progress' => 'In Progress',
-                                'submitted_for_review' => 'Submitted for Review',
-                                'in_review' => 'In Review',
-                                'approved' => 'Approved',
-                                'ready_for_email' => 'Ready for Email',
-                                'on_client_consultant_review' => 'Client/Consultant Review',
-                                'in_review_after_client_consultant_reply' => 'Post-Client Review',
-                                're_submit_required' => 'Resubmit Required',
-                                'rejected' => 'Rejected',
-                                'completed' => 'Completed'
-                            ];
-
-                            $statusColor = $statusColors[$task->status] ?? '#007bff';
-                            $priorityColor = $priorityColors[$task->priority] ?? '#6c757d';
-                            $assigneeName = $task->assignee ? $task->assignee->name : 'Unassigned';
-                            $projectName = $task->project ? $task->project->name : 'No Project';
-                            $creatorName = $task->creator ? $task->creator->name : 'Unknown';
-                        @endphp
+            @if($timelineTasks->count() > 0)
+                hasDatabaseData = true;
+                timelineData = {
+                    "title": {
+                        "media": {
+                            "url": "{{ asset('DAssets/assets/img/icons/unicons/chart-success.png') }}",
+                            "caption": "Task Management Timeline"
+                        },
+                        "text": {
+                            "headline": "Manager Task Timeline",
+                            "text": "Interactive timeline showing all team tasks for the next 20 days"
+                        }
+                    },
+                    "events": [
+                        @foreach($timelineTasks as $task)
+                            @php
+                                $taskDate = $task->start_date ?: ($task->due_date ?? null);
+                                $taskDate = \Carbon\Carbon::parse($taskDate);
+                                $dateType = $task->start_date ? 'Start' : 'Due';
+                                $statusColors = [
+                                    'pending' => '#6c757d',
+                                    'assigned' => '#17a2b8',
+                                    'in_progress' => '#ffc107',
+                                    'submitted_for_review' => '#fd7e14',
+                                    'in_review' => '#6f42c1',
+                                    'approved' => '#28a745',
+                                    'ready_for_email' => '#20c997',
+                                    'on_client_consultant_review' => '#e83e8c',
+                                    'in_review_after_client_consultant_reply' => '#6f42c1',
+                                    're_submit_required' => '#dc3545',
+                                    'rejected' => '#dc3545',
+                                    'completed' => '#28a745'
+                                ];
+                                $statusColor = $statusColors[$task->status] ?? '#007bff';
+                                $assigneeName = $task->assignee ? $task->assignee->name : 'Unassigned';
+                                $projectName = $task->project ? $task->project->name : 'No Project';
+                            @endphp
+                            {
+                                "media": {
+                                    "url": "{{ asset('DAssets/assets/img/icons/unicons/chart.png') }}",
+                                    "caption": "{{ $dateType }} Date: {{ $taskDate->format('M d, Y') }}"
+                                },
+                                "start_date": {
+                                    "year": {{ $taskDate->year }},
+                                    "month": {{ $taskDate->month }},
+                                    "day": {{ $taskDate->day }}
+                                },
+                                "text": {
+                                    "headline": "{{ $task->title }}",
+                                    "text": "<div class='timeline-task-details'>
+                                        <div class='task-meta mb-2'>
+                                            <span class='badge badge-sm' style='background-color: {{ $statusColor }}; color: white; margin-right: 8px;'>{{ ucfirst(str_replace('_', ' ', $task->status)) }}</span>
+                                            <span class='badge badge-sm' style='background-color: #6c757d; color: white;'>Priority {{ $task->priority }}</span>
+                                        </div>
+                                        <div class='task-info'>
+                                            <p><strong>Project:</strong> {{ $projectName }}</p>
+                                            <p><strong>Assigned to:</strong> {{ $assigneeName }}</p>
+                                            @if($task->description)
+                                                <p><strong>Description:</strong> {{ Str::limit($task->description, 150) }}</p>
+                                            @endif
+                                            <p><strong>Progress:</strong> {{ $task->progress_percentage }}%</p>
+                                        </div>
+                                    </div>"
+                                },
+                                "background": {
+                                    "color": "{{ $statusColor }}"
+                                }
+                            }@if(!$loop->last),@endif
+                        @endforeach
+                    ]
+                };
+            @else
+                // No database data - use sample data
+                timelineData = {
+                    "title": {
+                        "media": {
+                            "url": "{{ asset('DAssets/assets/img/icons/unicons/chart-success.png') }}",
+                            "caption": "Sample Task Timeline"
+                        },
+                        "text": {
+                            "headline": "Sample Task Timeline",
+                            "text": "Showing sample tasks for demonstration. Connect to database to see real data."
+                        }
+                    },
+                    "events": [
                         {
                             "media": {
                                 "url": "{{ asset('DAssets/assets/img/icons/unicons/chart.png') }}",
-                                "caption": "{{ $dateType }} Date: {{ $taskDate->format('M d, Y') }}"
+                                "caption": "Sample Task 1"
                             },
                             "start_date": {
-                                "year": {{ $taskDate->year }},
-                                "month": {{ $taskDate->month }},
-                                "day": {{ $taskDate->day }}
+                                "year": {{ now()->addDay()->year }},
+                                "month": {{ now()->addDay()->month }},
+                                "day": {{ now()->addDay()->day }}
                             },
                             "text": {
-                                "headline": "{{ $task->title }}",
+                                "headline": "Website Design Project",
                                 "text": "<div class='timeline-task-details'>
                                     <div class='task-meta mb-2'>
-                                        <span class='badge badge-sm' style='background-color: {{ $statusColor }}; color: white; margin-right: 8px;'>{{ $statusLabels[$task->status] ?? ucfirst($task->status) }}</span>
-                                        <span class='badge badge-sm' style='background-color: {{ $priorityColor }}; color: white;'>{{ $priorityLabels[$task->priority] ?? 'Priority ' . $task->priority }}</span>
+                                        <span class='badge badge-sm' style='background-color: #ffc107; color: white; margin-right: 8px;'>In Progress</span>
+                                        <span class='badge badge-sm' style='background-color: #fd7e14; color: white;'>High Priority</span>
                                     </div>
                                     <div class='task-info'>
-                                        <p><strong>Project:</strong> {{ $projectName }}</p>
-                                        <p><strong>Assigned to:</strong> {{ $assigneeName }}</p>
-                                        <p><strong>Created by:</strong> {{ $creatorName }}</p>
-                                        @if($task->description)
-                                            <p><strong>Description:</strong> {{ Str::limit($task->description, 150) }}</p>
-                                        @endif
-                                        @if($task->due_date && $task->start_date)
-                                            <p><strong>Duration:</strong> {{ \Carbon\Carbon::parse($task->start_date)->diffInDays(\Carbon\Carbon::parse($task->due_date)) }} days</p>
-                                        @endif
-                                        <p><strong>Progress:</strong> {{ $task->progress_percentage }}%</p>
-                                        <div class='mt-2'>
-                                            <a href='{{ route('tasks.show', $task->id) }}' class='btn btn-sm btn-primary'>View Task</a>
-                                        </div>
+                                        <p><strong>Project:</strong> Client Website</p>
+                                        <p><strong>Assigned to:</strong> John Doe</p>
+                                        <p><strong>Description:</strong> Create responsive website design for new client project</p>
+                                        <p><strong>Progress:</strong> 45%</p>
                                     </div>
                                 </div>"
                             },
                             "background": {
-                                "color": "{{ $statusColor }}"
+                                "color": "#ffc107"
                             }
-                        }@if(!$loop->last),@endif
-                    @endforeach
-                @elseif($dbError)
-                    // Database connection error - show helpful message
-                    {
-                        "media": {
-                            "url": "{{ asset('DAssets/assets/img/icons/unicons/cc-warning.png') }}",
-                            "caption": "Database Connection Issue"
                         },
-                        "start_date": {
-                            "year": {{ now()->year }},
-                            "month": {{ now()->month }},
-                            "day": {{ now()->day }}
+                        {
+                            "media": {
+                                "url": "{{ asset('DAssets/assets/img/icons/unicons/chart.png') }}",
+                                "caption": "Sample Task 2"
+                            },
+                            "start_date": {
+                                "year": {{ now()->addDays(3)->year }},
+                                "month": {{ now()->addDays(3)->month }},
+                                "day": {{ now()->addDays(3)->day }}
+                            },
+                            "text": {
+                                "headline": "Content Review",
+                                "text": "<div class='timeline-task-details'>
+                                    <div class='task-meta mb-2'>
+                                        <span class='badge badge-sm' style='background-color: #17a2b8; color: white; margin-right: 8px;'>Assigned</span>
+                                        <span class='badge badge-sm' style='background-color: #ffc107; color: white;'>Medium Priority</span>
+                                    </div>
+                                    <div class='task-info'>
+                                        <p><strong>Project:</strong> Marketing Campaign</p>
+                                        <p><strong>Assigned to:</strong> Jane Smith</p>
+                                        <p><strong>Description:</strong> Review and approve content for upcoming marketing campaign</p>
+                                        <p><strong>Progress:</strong> 15%</p>
+                                    </div>
+                                </div>"
+                            },
+                            "background": {
+                                "color": "#17a2b8"
+                            }
                         },
-                        "text": {
-                            "headline": "Database Connection Error",
-                            "text": "<div class='timeline-db-error'>
-                                <div class='db-error-icon mb-3'>
-                                    <i class='bx bx-error-circle' style='font-size: 48px; color: #dc3545;'></i>
-                                </div>
-                                <h5 style='color: #dc3545; margin-bottom: 15px;'>Database Connection Failed</h5>
-                                <p style='color: #6c757d; margin-bottom: 20px;'>Unable to load task data from the database.</p>
-                                <div class='db-error-details'>
-                                    <h6 style='color: #495057; margin-bottom: 10px;'>Error Details:</h6>
-                                    <p style='color: #6c757d; font-family: monospace; background: #f8f9fa; padding: 10px; border-radius: 4px; font-size: 12px;'>{{ Str::limit($dbError, 200) }}</p>
-                                </div>
-                                <div class='db-error-solutions mt-3'>
-                                    <h6 style='color: #495057; margin-bottom: 10px;'>Possible Solutions:</h6>
-                                    <ul style='color: #6c757d; padding-left: 20px;'>
-                                        <li>Check database server is running</li>
-                                        <li>Verify database connection settings in .env file</li>
-                                        <li>Ensure database credentials are correct</li>
-                                        <li>Check if database exists and is accessible</li>
-                                    </ul>
-                                </div>
-                            </div>"
-                        },
-                        "background": {
-                            "color": "#f8d7da"
+                        {
+                            "media": {
+                                "url": "{{ asset('DAssets/assets/img/icons/unicons/chart.png') }}",
+                                "caption": "Sample Task 3"
+                            },
+                            "start_date": {
+                                "year": {{ now()->addDays(7)->year }},
+                                "month": {{ now()->addDays(7)->month }},
+                                "day": {{ now()->addDays(7)->day }}
+                            },
+                            "text": {
+                                "headline": "Database Migration",
+                                "text": "<div class='timeline-task-details'>
+                                    <div class='task-meta mb-2'>
+                                        <span class='badge badge-sm' style='background-color: #28a745; color: white; margin-right: 8px;'>Completed</span>
+                                        <span class='badge badge-sm' style='background-color: #dc3545; color: white;'>Critical Priority</span>
+                                    </div>
+                                    <div class='task-info'>
+                                        <p><strong>Project:</strong> System Upgrade</p>
+                                        <p><strong>Assigned to:</strong> Mike Johnson</p>
+                                        <p><strong>Description:</strong> Migrate user data to new database structure</p>
+                                        <p><strong>Progress:</strong> 100%</p>
+                                    </div>
+                                </div>"
+                            },
+                            "background": {
+                                "color": "#28a745"
+                            }
                         }
-                    }
-                @else
-                    // No tasks found - add a helpful placeholder event
-                    {
-                        "media": {
-                            "url": "{{ asset('DAssets/assets/img/icons/unicons/chart-success.png') }}",
-                            "caption": "No Tasks Scheduled"
-                        },
-                        "start_date": {
-                            "year": {{ now()->year }},
-                            "month": {{ now()->month }},
-                            "day": {{ now()->day }}
-                        },
-                        "text": {
-                            "headline": "No Tasks Scheduled",
-                            "text": "<div class='timeline-no-tasks'>
-                                <div class='no-tasks-icon mb-3'>
-                                    <i class='bx bx-calendar-x' style='font-size: 48px; color: #6c757d;'></i>
-                                </div>
-                                <h5 style='color: #2c3e50; margin-bottom: 15px;'>No Tasks Found</h5>
-                                <p style='color: #6c757d; margin-bottom: 20px;'>No tasks are scheduled to start or due in the next 20 days.</p>
-                                <div class='no-tasks-suggestions'>
-                                    <h6 style='color: #495057; margin-bottom: 10px;'>To see tasks in the timeline:</h6>
-                                    <ul style='color: #6c757d; padding-left: 20px;'>
-                                        <li>Create tasks with start dates or due dates</li>
-                                        <li>Assign tasks to team members</li>
-                                        <li>Set realistic deadlines for better planning</li>
-                                        <li>Use the task management system to organize work</li>
-                                    </ul>
-                                </div>
-                                <div class='mt-3'>
-                                    <a href='{{ route('tasks.create') }}' class='btn btn-primary btn-sm'>Create New Task</a>
-                                    <a href='{{ route('tasks.index') }}' class='btn btn-outline-secondary btn-sm ms-2'>View All Tasks</a>
-                                </div>
-                            </div>"
-                        },
-                        "background": {
-                            "color": "#f8f9fa"
-                        }
-                    }
-                @endif
-            ]
-        };
-
-        // Debug: Log timeline data
-        console.log('TimelineJS Debug: Starting initialization...');
-        console.log('TimelineJS Debug: Timeline data:', timelineData);
-        console.log('TimelineJS Debug: Events count:', timelineData.events.length);
-
-        // Additional debugging for database issues
-        @if(isset($dbError))
-            console.error('TimelineJS Debug: Database Error:', '{{ $dbError }}');
-        @endif
-
-        @if($timelineTasks->count() === 0 && !isset($dbError))
-            console.warn('TimelineJS Debug: No tasks found in database for the next 20 days');
-        @endif
-
-        // Initialize TimelineJS with error handling
-        try {
-            // Check if TimelineJS is loaded
-            if (typeof TL === 'undefined') {
-                console.error('TimelineJS Debug: TL library not loaded');
-                document.getElementById('timeline-embed').innerHTML = '<div class="alert alert-warning"><i class="bx bx-error-circle me-2"></i>TimelineJS library failed to load. Please refresh the page.</div>';
-                return;
-            }
-
-            // Initialize TimelineJS
-            window.timeline = new TL.Timeline('timeline-embed', timelineData, {
-                width: '100%',
-                height: '600px',
-                font: 'default',
-                scale_factor: 1,
-                timenav_height: 150,
-                timenav_height_percentage: 25,
-                timenav_mobile_height_percentage: 40,
-                timenav_position: 'bottom',
-                optimal_tick_width: 100,
-                base_class: 'tl-timeline',
-                timenav_height_min: 100,
-                marker_height_min: 30,
-                marker_width_min: 100,
-                marker_padding: 5,
-                start_at_slide: 0,
-                start_at_end: false,
-                menubar_height: 0,
-                skin: 'default',
-                duration: 1000,
-                ease: 'easeInOut',
-                dragging: true,
-                trackResize: true,
-                slide_padding_lr: 100,
-                slide_default_fade: '0%',
-                language: 'en',
-                ga_property_id: '',
-                debug: false,
-                script_path: 'https://cdn.knightlab.com/libs/timeline3/latest/js/',
-                css_path: 'https://cdn.knightlab.com/libs/timeline3/latest/css/timeline.css',
-                js_path: 'https://cdn.knightlab.com/libs/timeline3/latest/js/timeline.js'
-            });
-
-            console.log('TimelineJS Debug: Timeline initialized successfully');
-
-            // Add event listeners for timeline interactions
-            window.timeline.on('ready', function() {
-                console.log('TimelineJS Debug: Timeline is ready');
-            });
-
-            window.timeline.on('change', function(e) {
-                console.log('TimelineJS Debug: Timeline slide changed to:', e.data);
-            });
+                    ]
+                };
+            @endif
 
         } catch (error) {
-            console.error('TimelineJS Debug: Error initializing timeline:', error);
-            document.getElementById('timeline-embed').innerHTML = '<div class="alert alert-danger"><i class="bx bx-error-circle me-2"></i>Failed to initialize timeline. Error: ' + error.message + '</div>';
+            console.error('TimelineJS Debug: Error getting data:', error);
+            showError('Failed to load task data: ' + error.message);
+            return;
         }
+
+        console.log('TimelineJS Debug: Timeline data prepared:', timelineData);
+        console.log('TimelineJS Debug: Events count:', timelineData.events.length);
+
+        // Initialize TimelineJS
+        setTimeout(function() {
+            try {
+                // Check if TimelineJS is loaded
+                if (typeof TL === 'undefined') {
+                    console.error('TimelineJS Debug: TL library not loaded');
+                    showError('TimelineJS library failed to load. Please refresh the page.');
+                    return;
+                }
+
+                // Initialize TimelineJS
+                window.timeline = new TL.Timeline('timeline-embed', timelineData, {
+                    width: '100%',
+                    height: '600px',
+                    font: 'default',
+                    scale_factor: 1,
+                    timenav_height: 150,
+                    timenav_height_percentage: 25,
+                    timenav_mobile_height_percentage: 40,
+                    timenav_position: 'bottom',
+                    optimal_tick_width: 100,
+                    base_class: 'tl-timeline',
+                    timenav_height_min: 100,
+                    marker_height_min: 30,
+                    marker_width_min: 100,
+                    marker_padding: 5,
+                    start_at_slide: 0,
+                    start_at_end: false,
+                    menubar_height: 0,
+                    skin: 'default',
+                    duration: 1000,
+                    ease: 'easeInOut',
+                    dragging: true,
+                    trackResize: true,
+                    slide_padding_lr: 100,
+                    slide_default_fade: '0%',
+                    language: 'en',
+                    ga_property_id: '',
+                    debug: false
+                });
+
+                console.log('TimelineJS Debug: Timeline initialized successfully');
+                showTimeline();
+
+                // Add event listeners
+                window.timeline.on('ready', function() {
+                    console.log('TimelineJS Debug: Timeline is ready');
+                });
+
+                window.timeline.on('change', function(e) {
+                    console.log('TimelineJS Debug: Timeline slide changed to:', e.data);
+                });
+
+            } catch (error) {
+                console.error('TimelineJS Debug: Error initializing timeline:', error);
+                showError('Failed to initialize timeline: ' + error.message);
+            }
+        }, 1000); // Small delay to ensure everything is loaded
     });
 
-    // Debug data
+    // Retry function
+    function retryTimeline() {
+        location.reload();
+    }
 </script>
 @endpush
 @endsection
