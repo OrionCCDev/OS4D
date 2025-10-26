@@ -383,10 +383,10 @@
                                         </td>
                                         <td>
                                             @if($task->due_date)
-                                                <span class="text-dark fw-semibold {{ $task->due_date < now() && $task->status !== 'completed' ? 'text-danger' : '' }}">
+                                                <span class="text-dark fw-semibold {{ $task->is_overdue ? 'text-danger' : '' }}">
                                                     {{ $task->due_date->format('M j, Y') }}
                                                 </span>
-                                                @if($task->due_date < now() && $task->status !== 'completed')
+                                                @if($task->is_overdue)
                                                     <br><small class="text-danger">Overdue</small>
                                                 @endif
                                             @else
@@ -461,10 +461,10 @@
                                         </td>
                                         <td>
                                             @if($task->due_date)
-                                                <span class="text-dark fw-semibold {{ $task->due_date < now() && $task->status !== 'completed' ? 'text-danger' : '' }}">
+                                                <span class="text-dark fw-semibold {{ $task->is_overdue ? 'text-danger' : '' }}">
                                                     {{ $task->due_date->format('M j, Y') }}
                                                 </span>
-                                                @if($task->due_date < now() && $task->status !== 'completed')
+                                                @if($task->is_overdue)
                                                     <br><small class="text-danger">Overdue</small>
                                                 @endif
                                             @else

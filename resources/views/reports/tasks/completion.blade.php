@@ -397,7 +397,7 @@
                                             <div class="d-flex flex-column">
                                                 <span class="fw-semibold">{{ \Carbon\Carbon::parse($task->due_date)->format('M d, Y') }}</span>
                                                 <small class="text-muted">{{ \Carbon\Carbon::parse($task->due_date)->format('H:i') }}</small>
-                                                @if($task->due_date < now() && $task->status !== 'completed')
+                                                @if($task->is_overdue)
                                                     <small class="text-danger">Overdue</small>
                                                 @endif
                                             </div>

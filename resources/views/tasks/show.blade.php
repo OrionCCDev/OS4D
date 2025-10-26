@@ -226,7 +226,7 @@
                             @if($task->due_date)
                                 <div class="mb-2">
                                     <small class="text-muted">Due Date</small>
-                                    <p class="mb-0 fw-semibold {{ $task->due_date < now() && $task->status !== 'completed' ? 'text-danger' : '' }}">
+                                    <p class="mb-0 fw-semibold {{ $task->is_overdue ? 'text-danger' : '' }}">
                                         {{ $task->due_date->format('M d, Y') }}
                                     </p>
                                 </div>

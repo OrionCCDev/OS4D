@@ -97,7 +97,7 @@
                         </td>
                         <td>
                             @if($task->due_date)
-                                <span class="{{ $task->due_date < now() ? 'text-danger' : 'text-muted' }}">
+                                <span class="{{ $task->is_overdue ? 'text-danger' : 'text-muted' }}">
                                     {{ $task->due_date->format('M d, Y') }}
                                 </span>
                             @else

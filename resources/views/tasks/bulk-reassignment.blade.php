@@ -3,7 +3,7 @@
 @section('content')
 <div class="container-xxl flex-grow-1 container-p-y">
     <!-- Breadcrumb -->
-    <x-modern-breadcrumb 
+    <x-modern-breadcrumb
         :items="[
             ['label' => 'Dashboard', 'url' => route('dashboard')],
             ['label' => 'Users', 'url' => route('users.index')],
@@ -86,7 +86,7 @@
                         </div>
                         <div>
                             <p class="mb-0 text-muted">Overdue</p>
-                            <h4 class="mb-0">{{ $tasks->where('due_date', '<', now())->count() }}</h4>
+                            <h4 class="mb-0">{{ $tasks->where('due_date', '<', now()->startOfDay())->count() }}</h4>
                         </div>
                     </div>
                 </div>
@@ -125,7 +125,7 @@
                         <label for="reassignment_reason" class="form-label">
                             <i class="bx bx-note me-1"></i>Reason for Reassignment
                         </label>
-                        <input type="text" class="form-control" id="reassignment_reason" name="reassignment_reason" 
+                        <input type="text" class="form-control" id="reassignment_reason" name="reassignment_reason"
                                placeholder="e.g., Employee resigned, On leave, etc.">
                     </div>
                 </div>

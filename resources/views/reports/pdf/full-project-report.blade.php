@@ -452,7 +452,7 @@
                         <td>
                             @if($task->due_date)
                                 {{ \Carbon\Carbon::parse($task->due_date)->format('M j, Y') }}
-                                @if($task->due_date < now() && $task->status !== 'completed')
+                                @if($task->is_overdue)
                                     <br><small style="color: #dc3545;">Overdue</small>
                                 @endif
                             @else

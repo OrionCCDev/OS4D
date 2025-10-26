@@ -587,11 +587,13 @@ class Task extends Model
     public function getDaysRemainingAttribute()
     {
         if ($this->status !== 'completed' && $this->due_date) {
-            $now = now();
-            if ($this->due_date && $this->due_date->isFuture()) {
-                return ceil($this->due_date->diffInDays($now));
+            $today = now()->startOfDay();
+            $dueDate = $this->due_date->startOfDay();
+
+            if ($dueDate->gte($today)) {
+                return $dueDate->diffInDays($today);
             } else {
-                return $this->due_date ? -ceil($this->due_date->diffInDays($now)) : null; // Negative for overdue
+                return -$dueDate->diffInDays($today); // Negative for overdue
             }
         }
         return null;
@@ -599,7 +601,15 @@ class Task extends Model
 
     public function getIsOverdueAttribute()
     {
-        return $this->due_date && $this->due_date->isPast() && $this->status !== 'completed';
+        if (!$this->due_date || $this->status === 'completed') {
+            return false;
+        }
+
+        // Compare dates only, not times - a task is overdue if due date is before today
+        $today = now()->startOfDay();
+        $dueDate = $this->due_date->startOfDay();
+
+        return $dueDate->lt($today);
     }
 
     public function getStatusBadgeClassAttribute()

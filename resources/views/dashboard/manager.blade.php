@@ -254,7 +254,7 @@
                                 <tbody>
                                     @foreach($data['urgent_tasks'] as $task)
                                     @php
-                                        $isOverdue = $task->due_date < now();
+                                        $isOverdue = $task->is_overdue;
 
                                         // Calculate total hours difference
                                         $totalHours = now()->diffInHours($task->due_date, false);
