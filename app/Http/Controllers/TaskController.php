@@ -2508,10 +2508,13 @@ private function sendApprovalEmailViaGmail(Task $task, User $approver)
                 $managers = User::whereIn('role', ['admin', 'manager', 'sub-admin'])->get();
                 Log::info("Time extension: Notifying {$managers->count()} managers");
 
+                $assigneeName = $task->assignee ? $task->assignee->name : 'Unknown user';
+                $requestMessage = "{$assigneeName} requested {$validated['requested_days']} day(s) extension for task '{$task->title}'.\nReason: {$validated['reason']}";
+
                 $task->notifyManagers(
                     'time_extension_requested',
                     'Time Extension Requested',
-                    "Task '{$task->title}' has a time extension request: {$validated['requested_days']} days"
+                    $requestMessage
                 );
 
                 Log::info('Time extension: Managers notified successfully');
@@ -2577,7 +2580,8 @@ private function sendApprovalEmailViaGmail(Task $task, User $approver)
             }
 
             $approveAction = $validated['action'] === 'approve';
-            $approvedDays = $approveAction ? ($validated['approved_days'] ?? $extensionRequest->requested_days) : null;
+            // Ensure approved_days is an integer, not a string
+            $approvedDays = $approveAction ? (int)($validated['approved_days'] ?? $extensionRequest->requested_days) : null;
 
             $extensionRequest->update([
                 'status' => $approveAction ? 'approved' : 'rejected',
@@ -2589,7 +2593,9 @@ private function sendApprovalEmailViaGmail(Task $task, User $approver)
 
             // Update task due date if approved
             if ($approveAction && $approvedDays) {
-                $newDueDate = Carbon::parse($task->due_date)->addDays($approvedDays);
+                // Ensure we have the current due date from database
+                $currentDueDate = $task->fresh()->due_date;
+                $newDueDate = Carbon::parse($currentDueDate)->addDays((int)$approvedDays);
                 $task->update(['due_date' => $newDueDate]);
 
                 // Create task history entry for extension approval
@@ -2600,7 +2606,7 @@ private function sendApprovalEmailViaGmail(Task $task, User $approver)
                     'metadata' => [
                         'extension_request_id' => $extensionRequest->id,
                         'approved_days' => $approvedDays,
-                        'old_due_date' => $task->due_date->format('Y-m-d'),
+                        'old_due_date' => Carbon::parse($currentDueDate)->format('Y-m-d'),
                         'new_due_date' => $newDueDate->format('Y-m-d'),
                         'manager_notes' => $validated['manager_notes']
                     ]
@@ -2621,23 +2627,31 @@ private function sendApprovalEmailViaGmail(Task $task, User $approver)
 
             // Notify user about the decision
             $notificationMessage = $approveAction
-                ? "Your time extension request for task '{$task->title}' has been approved. {$approvedDays} days added to due date."
-                : "Your time extension request for task '{$task->title}' has been rejected.";
+                ? "Your time extension request for task '{$task->title}' has been approved. {$approvedDays} days added to due date. New due date: {$newDueDate->format('M d, Y')}."
+                : "Your time extension request for task '{$task->title}' has been rejected." . ($validated['manager_notes'] ? " Reason: {$validated['manager_notes']}" : '');
 
             if ($task->assignee) {
-                UnifiedNotification::createTaskNotification(
-                    $task->assignee->id,
-                    'time_extension_reviewed',
-                    'Time Extension Request Reviewed',
-                    $notificationMessage,
-                    [
-                        'task_id' => $task->id,
-                        'project_id' => $task->project_id,
-                        'extension_request_id' => $extensionRequest->id
-                    ],
-                    $task->id,
-                    'normal'
-                );
+                try {
+                    UnifiedNotification::createTaskNotification(
+                        $task->assignee->id,
+                        'time_extension_reviewed',
+                        'Time Extension ' . ($approveAction ? 'Approved' : 'Rejected'),
+                        $notificationMessage,
+                        [
+                            'task_id' => $task->id,
+                            'project_id' => $task->project_id,
+                            'extension_request_id' => $extensionRequest->id,
+                            'approved' => $approveAction,
+                            'approved_days' => $approvedDays,
+                            'new_due_date' => $approveAction ? $newDueDate->format('Y-m-d') : null
+                        ],
+                        $task->id,
+                        'high'
+                    );
+                    Log::info("User notification sent for time extension review to user: {$task->assignee->id}");
+                } catch (\Exception $notifyException) {
+                    Log::error('Failed to notify user about time extension review: ' . $notifyException->getMessage());
+                }
             }
 
             return response()->json([
