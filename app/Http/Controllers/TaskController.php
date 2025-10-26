@@ -2502,7 +2502,7 @@ private function sendApprovalEmailViaGmail(Task $task, User $approver)
                 ]
             ]);
 
-            // Notify managers
+            // Notify managers - send notification directly to avoid skipping
             try {
                 // Get managers first for logging
                 $managers = User::whereIn('role', ['admin', 'manager', 'sub-admin'])->get();
@@ -2511,11 +2511,26 @@ private function sendApprovalEmailViaGmail(Task $task, User $approver)
                 $assigneeName = $task->assignee ? $task->assignee->name : 'Unknown user';
                 $requestMessage = "{$assigneeName} requested {$validated['requested_days']} day(s) extension for task '{$task->title}'.\nReason: {$validated['reason']}";
 
-                $task->notifyManagers(
-                    'time_extension_requested',
-                    'Time Extension Requested',
-                    $requestMessage
-                );
+                // Send notification directly to ALL managers for time extension requests
+                foreach ($managers as $manager) {
+                    UnifiedNotification::createTaskNotification(
+                        $manager->id,
+                        'time_extension_requested',
+                        'Time Extension Requested',
+                        $requestMessage,
+                        [
+                            'task_id' => $task->id,
+                            'project_id' => $task->project_id,
+                            'due_date' => $task->due_date ? $task->due_date->format('Y-m-d') : null,
+                            'extension_request_id' => $extensionRequest->id,
+                            'requester_name' => $assigneeName,
+                            'requested_days' => $validated['requested_days'],
+                            'reason' => $validated['reason']
+                        ],
+                        $task->id,
+                        'high'
+                    );
+                }
 
                 Log::info('Time extension: Managers notified successfully');
             } catch (\Exception $notifyException) {
