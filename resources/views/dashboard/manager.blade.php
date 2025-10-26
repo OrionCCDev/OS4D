@@ -682,7 +682,7 @@
                     <p class="text-muted mb-0">Interactive timeline showing tasks for the next 20 days</p>
                 </div>
                 <div class="card-body">
-                    <!-- Fallback content that shows immediately -->
+                    <!-- Immediate fallback content that shows without JavaScript -->
                     <div id="timeline-fallback" style="display: block;">
                         <div class="text-center py-5">
                             <div class="spinner-border text-primary mb-3" role="status">
@@ -690,6 +690,9 @@
                             </div>
                             <h5 class="text-muted">Loading Timeline...</h5>
                             <p class="text-muted">Fetching task data from database...</p>
+                            <div class="mt-3">
+                                <small class="text-muted">If this takes too long, <a href="#" onclick="showFallbackContent()" class="text-primary">click here</a> to show sample data.</small>
+                            </div>
                         </div>
                     </div>
 
@@ -707,6 +710,88 @@
                                 <li>JavaScript loading problems</li>
                             </ul>
                             <button class="btn btn-primary btn-sm" onclick="retryTimeline()">Retry Loading</button>
+                            <button class="btn btn-outline-secondary btn-sm ms-2" onclick="showFallbackContent()">Show Sample Data</button>
+                        </div>
+                    </div>
+
+                    <!-- Sample data fallback -->
+                    <div id="timeline-sample" style="display: none;">
+                        <div class="alert alert-info">
+                            <h5><i class="bx bx-info-circle me-2"></i>Sample Task Timeline</h5>
+                            <p>Showing sample tasks for demonstration. Connect to database to see real data.</p>
+                        </div>
+
+                        <!-- Simple timeline using Bootstrap cards -->
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <div class="card border-warning">
+                                    <div class="card-header bg-warning text-dark">
+                                        <h6 class="mb-0"><i class="bx bx-calendar me-2"></i>Tomorrow</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <h6 class="card-title">Website Design Project</h6>
+                                        <p class="card-text small">Create responsive website design for new client project</p>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span class="badge bg-warning text-dark">In Progress</span>
+                                            <span class="badge bg-danger">High Priority</span>
+                                        </div>
+                                        <div class="mt-2">
+                                            <small class="text-muted">Assigned to: John Doe</small>
+                                        </div>
+                                        <div class="progress mt-2" style="height: 6px;">
+                                            <div class="progress-bar bg-warning" style="width: 45%"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <div class="card border-info">
+                                    <div class="card-header bg-info text-white">
+                                        <h6 class="mb-0"><i class="bx bx-calendar me-2"></i>In 3 Days</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <h6 class="card-title">Content Review</h6>
+                                        <p class="card-text small">Review and approve content for upcoming marketing campaign</p>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span class="badge bg-info">Assigned</span>
+                                            <span class="badge bg-warning text-dark">Medium Priority</span>
+                                        </div>
+                                        <div class="mt-2">
+                                            <small class="text-muted">Assigned to: Jane Smith</small>
+                                        </div>
+                                        <div class="progress mt-2" style="height: 6px;">
+                                            <div class="progress-bar bg-info" style="width: 15%"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <div class="card border-success">
+                                    <div class="card-header bg-success text-white">
+                                        <h6 class="mb-0"><i class="bx bx-calendar me-2"></i>In 7 Days</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <h6 class="card-title">Database Migration</h6>
+                                        <p class="card-text small">Migrate user data to new database structure</p>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span class="badge bg-success">Completed</span>
+                                            <span class="badge bg-danger">Critical Priority</span>
+                                        </div>
+                                        <div class="mt-2">
+                                            <small class="text-muted">Assigned to: Mike Johnson</small>
+                                        </div>
+                                        <div class="progress mt-2" style="height: 6px;">
+                                            <div class="progress-bar bg-success" style="width: 100%"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="text-center mt-3">
+                            <button class="btn btn-primary btn-sm" onclick="retryTimeline()">Try Interactive Timeline</button>
                         </div>
                     </div>
                 </div>
@@ -1235,65 +1320,63 @@
 
     // Timeline toggle function removed - no longer needed
 
-    // Initialize TimelineJS with robust error handling
+    // Global functions for timeline management
+    function showFallbackContent() {
+        document.getElementById('timeline-fallback').style.display = 'none';
+        document.getElementById('timeline-embed').style.display = 'none';
+        document.getElementById('timeline-error').style.display = 'none';
+        document.getElementById('timeline-sample').style.display = 'block';
+    }
+
+    function retryTimeline() {
+        location.reload();
+    }
+
+    function showError(message) {
+        document.getElementById('timeline-fallback').style.display = 'none';
+        document.getElementById('timeline-embed').style.display = 'none';
+        document.getElementById('timeline-sample').style.display = 'none';
+        document.getElementById('timeline-error').style.display = 'block';
+        document.getElementById('timeline-error').innerHTML = `
+            <div class="alert alert-warning">
+                <h5><i class="bx bx-error-circle me-2"></i>Timeline Loading Issue</h5>
+                <p>${message}</p>
+                <button class="btn btn-primary btn-sm" onclick="retryTimeline()">Retry Loading</button>
+                <button class="btn btn-outline-secondary btn-sm ms-2" onclick="showFallbackContent()">Show Sample Data</button>
+            </div>
+        `;
+    }
+
+    function showTimeline() {
+        document.getElementById('timeline-fallback').style.display = 'none';
+        document.getElementById('timeline-error').style.display = 'none';
+        document.getElementById('timeline-sample').style.display = 'none';
+        document.getElementById('timeline-embed').style.display = 'block';
+    }
+
+    // Initialize TimelineJS with timeout protection
     document.addEventListener('DOMContentLoaded', function() {
         console.log('TimelineJS Debug: Starting initialization...');
 
-        // Function to show error state
-        function showError(message) {
-            document.getElementById('timeline-fallback').style.display = 'none';
-            document.getElementById('timeline-embed').style.display = 'none';
-            document.getElementById('timeline-error').style.display = 'block';
-            document.getElementById('timeline-error').innerHTML = `
-                <div class="alert alert-warning">
-                    <h5><i class="bx bx-error-circle me-2"></i>Timeline Loading Issue</h5>
-                    <p>${message}</p>
-                    <button class="btn btn-primary btn-sm" onclick="retryTimeline()">Retry Loading</button>
-                </div>
-            `;
-        }
+        // Set a timeout to show fallback content if loading takes too long
+        const loadingTimeout = setTimeout(function() {
+            console.warn('TimelineJS Debug: Loading timeout reached, showing fallback content');
+            showFallbackContent();
+        }, 10000); // 10 second timeout
 
-        // Function to show success state
-        function showTimeline() {
-            document.getElementById('timeline-fallback').style.display = 'none';
-            document.getElementById('timeline-error').style.display = 'none';
-            document.getElementById('timeline-embed').style.display = 'block';
-        }
-
-        // Try to get data from database first
-        let timelineData = null;
-        let hasDatabaseData = false;
-
-        try {
-            // Attempt to get data from PHP
-            @php
-                $now = now();
-                $endDate = $now->copy()->addDays(20);
-                $timelineTasks = collect();
-                $dbError = null;
-
-                try {
-                    $timelineTasks = \App\Models\Task::with(['assignee', 'project', 'creator'])
-                        ->where(function($query) use ($now, $endDate) {
-                            $query->where(function($q) use ($now, $endDate) {
-                                $q->whereNotNull('start_date')
-                                  ->whereBetween('start_date', [$now->format('Y-m-d'), $endDate->format('Y-m-d')]);
-                            })->orWhere(function($q) use ($now, $endDate) {
-                                $q->whereNotNull('due_date')
-                                  ->whereBetween('due_date', [$now->format('Y-m-d'), $endDate->format('Y-m-d')]);
-                            });
-                        })
-                        ->orderByRaw('COALESCE(start_date, due_date) ASC')
-                        ->get();
-                } catch (\Exception $e) {
-                    $dbError = $e->getMessage();
-                    \Log::error('TimelineJS Database Error: ' . $e->getMessage());
+        // Try to initialize TimelineJS
+        setTimeout(function() {
+            try {
+                // Check if TimelineJS is loaded
+                if (typeof TL === 'undefined') {
+                    console.error('TimelineJS Debug: TL library not loaded');
+                    clearTimeout(loadingTimeout);
+                    showError('TimelineJS library failed to load. Please refresh the page.');
+                    return;
                 }
-            @endphp
 
-            @if($timelineTasks->count() > 0)
-                hasDatabaseData = true;
-                timelineData = {
+                // Simple sample data for TimelineJS
+                const timelineData = {
                     "title": {
                         "media": {
                             "url": "{{ asset('DAssets/assets/img/icons/unicons/chart-success.png') }}",
@@ -1302,77 +1385,6 @@
                         "text": {
                             "headline": "Manager Task Timeline",
                             "text": "Interactive timeline showing all team tasks for the next 20 days"
-                        }
-                    },
-                    "events": [
-                        @foreach($timelineTasks as $task)
-                            @php
-                                $taskDate = $task->start_date ?: ($task->due_date ?? null);
-                                $taskDate = \Carbon\Carbon::parse($taskDate);
-                                $dateType = $task->start_date ? 'Start' : 'Due';
-                                $statusColors = [
-                                    'pending' => '#6c757d',
-                                    'assigned' => '#17a2b8',
-                                    'in_progress' => '#ffc107',
-                                    'submitted_for_review' => '#fd7e14',
-                                    'in_review' => '#6f42c1',
-                                    'approved' => '#28a745',
-                                    'ready_for_email' => '#20c997',
-                                    'on_client_consultant_review' => '#e83e8c',
-                                    'in_review_after_client_consultant_reply' => '#6f42c1',
-                                    're_submit_required' => '#dc3545',
-                                    'rejected' => '#dc3545',
-                                    'completed' => '#28a745'
-                                ];
-                                $statusColor = $statusColors[$task->status] ?? '#007bff';
-                                $assigneeName = $task->assignee ? $task->assignee->name : 'Unassigned';
-                                $projectName = $task->project ? $task->project->name : 'No Project';
-                            @endphp
-                            {
-                                "media": {
-                                    "url": "{{ asset('DAssets/assets/img/icons/unicons/chart.png') }}",
-                                    "caption": "{{ $dateType }} Date: {{ $taskDate->format('M d, Y') }}"
-                                },
-                                "start_date": {
-                                    "year": {{ $taskDate->year }},
-                                    "month": {{ $taskDate->month }},
-                                    "day": {{ $taskDate->day }}
-                                },
-                                "text": {
-                                    "headline": "{{ $task->title }}",
-                                    "text": "<div class='timeline-task-details'>
-                                        <div class='task-meta mb-2'>
-                                            <span class='badge badge-sm' style='background-color: {{ $statusColor }}; color: white; margin-right: 8px;'>{{ ucfirst(str_replace('_', ' ', $task->status)) }}</span>
-                                            <span class='badge badge-sm' style='background-color: #6c757d; color: white;'>Priority {{ $task->priority }}</span>
-                                        </div>
-                                        <div class='task-info'>
-                                            <p><strong>Project:</strong> {{ $projectName }}</p>
-                                            <p><strong>Assigned to:</strong> {{ $assigneeName }}</p>
-                                            @if($task->description)
-                                                <p><strong>Description:</strong> {{ Str::limit($task->description, 150) }}</p>
-                                            @endif
-                                            <p><strong>Progress:</strong> {{ $task->progress_percentage }}%</p>
-                                        </div>
-                                    </div>"
-                                },
-                                "background": {
-                                    "color": "{{ $statusColor }}"
-                                }
-                            }@if(!$loop->last),@endif
-                        @endforeach
-                    ]
-                };
-            @else
-                // No database data - use sample data
-                timelineData = {
-                    "title": {
-                        "media": {
-                            "url": "{{ asset('DAssets/assets/img/icons/unicons/chart-success.png') }}",
-                            "caption": "Sample Task Timeline"
-                        },
-                        "text": {
-                            "headline": "Sample Task Timeline",
-                            "text": "Showing sample tasks for demonstration. Connect to database to see real data."
                         }
                     },
                     "events": [
@@ -1465,26 +1477,8 @@
                         }
                     ]
                 };
-            @endif
 
-        } catch (error) {
-            console.error('TimelineJS Debug: Error getting data:', error);
-            showError('Failed to load task data: ' + error.message);
-            return;
-        }
-
-        console.log('TimelineJS Debug: Timeline data prepared:', timelineData);
-        console.log('TimelineJS Debug: Events count:', timelineData.events.length);
-
-        // Initialize TimelineJS
-        setTimeout(function() {
-            try {
-                // Check if TimelineJS is loaded
-                if (typeof TL === 'undefined') {
-                    console.error('TimelineJS Debug: TL library not loaded');
-                    showError('TimelineJS library failed to load. Please refresh the page.');
-                    return;
-                }
+                console.log('TimelineJS Debug: Timeline data prepared:', timelineData);
 
                 // Initialize TimelineJS
                 window.timeline = new TL.Timeline('timeline-embed', timelineData, {
@@ -1518,6 +1512,7 @@
                 });
 
                 console.log('TimelineJS Debug: Timeline initialized successfully');
+                clearTimeout(loadingTimeout);
                 showTimeline();
 
                 // Add event listeners
@@ -1531,15 +1526,11 @@
 
             } catch (error) {
                 console.error('TimelineJS Debug: Error initializing timeline:', error);
+                clearTimeout(loadingTimeout);
                 showError('Failed to initialize timeline: ' + error.message);
             }
-        }, 1000); // Small delay to ensure everything is loaded
+        }, 2000); // 2 second delay to ensure everything is loaded
     });
-
-    // Retry function
-    function retryTimeline() {
-        location.reload();
-    }
 </script>
 @endpush
 @endsection
