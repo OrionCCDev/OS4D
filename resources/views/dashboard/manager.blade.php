@@ -671,425 +671,64 @@
         </div>
     </div>
 
-    <!-- Timeline Section -->
+    <!-- TimelineJS Section -->
     <div class="row mb-4">
         <div class="col-12">
             <div class="card">
                 <div class="card-header">
-                    <h5 class="card-title mb-0">Task Timeline</h5>
-                    <p class="text-muted mb-0">Next 20 days: {{ now()->format('M d') }} - {{ now()->addDays(19)->format('M d, Y') }}</p>
+                    <h5 class="card-title mb-0">
+                        <i class="bx bx-timeline me-2 text-primary"></i>Task Timeline
+                    </h5>
+                    <p class="text-muted mb-0">Interactive timeline showing tasks for the next 20 days</p>
                 </div>
                 <div class="card-body">
-                    <div class="timeline-container">
-                                <!-- Next 20 Days Header -->
-                                <div class="timeline-header">
-                                    <div class="timeline-months">
-                                        @php
-                                            $today = now();
-                                            $next20Days = $today->copy()->addDays(19); // 19 days from today = 20 days total
-                                        @endphp
-                                        @for($i = 0; $i < 20; $i++)
-                                            @php
-                                                $day = $today->copy()->addDays($i);
-                                            @endphp
-                                            <div class="timeline-month">
-                                                {{ $day->format('M d') }}
-                                            </div>
-                                        @endfor
-                                    </div>
-                                </div>
-
-                                <!-- Timeline Body -->
-                                <div class="timeline-body">
-                                    <div class="timeline-line"></div>
-
-                                    @php
-                                        $today = now();
-                                        $next20Days = $today->copy()->addDays(19); // 19 days from today = 20 days total
-
-                                        // Get all timeline tasks from manager data
-                                        $allTasks = collect();
-                                        foreach($data['timeline_data']['sequential'] as $dayData) {
-                                            foreach($dayData['tasks'] as $taskData) {
-                                                // Convert task data to object-like structure
-                                                $task = (object) $taskData;
-                                                $task->start_date = $taskData['start_date'] ?: $taskData['due_date'];
-                                                $allTasks->push($task);
-                                            }
-                                        }
-
-                                        $timelineTasks = $allTasks->filter(function($task) use ($today, $next20Days) {
-                                            if (!$task->start_date) {
-                                                return false;
-                                            }
-
-                                            $startDate = \Carbon\Carbon::parse($task->start_date);
-                                            $isInRange = $startDate >= $today->startOfDay() && $startDate <= $next20Days->endOfDay();
-
-                                            return $isInRange;
-                                        })->sortBy('start_date');
-
-                                        // Group tasks by date to handle multiple tasks on same date
-                                        $tasksByDate = [];
-                                        foreach ($timelineTasks as $task) {
-                                            $startDate = \Carbon\Carbon::parse($task->start_date);
-                                            $dateKey = $startDate->format('Y-m-d');
-                                            if (!isset($tasksByDate[$dateKey])) {
-                                                $tasksByDate[$dateKey] = [];
-                                            }
-                                            $tasksByDate[$dateKey][] = $task;
-                                        }
-                                    @endphp
-
-                                    @foreach($tasksByDate as $dateKey => $dateTasks)
-                                        @foreach($dateTasks as $index => $task)
-                                            @php
-                                                $startDate = \Carbon\Carbon::parse($task->start_date);
-
-                                                // Calculate position based on days from today
-                                                $daysFromToday = $today->startOfDay()->diffInDays($startDate->startOfDay());
-                                                $position = ($daysFromToday / 19) * 100; // 19 because we have 20 days (0-19)
-
-                                                // Ensure position is within bounds
-                                                $position = max(0, min(100, $position));
-
-                                                // Calculate vertical offset for multiple tasks on same date
-                                                $verticalOffset = 0;
-                                                if (count($dateTasks) > 1) {
-                                                    $verticalOffset = ($index - (count($dateTasks) - 1) / 2) * 30;
-                                                }
-
-                                                // Determine task color based on status
-                                                $taskColor = 'bg-primary';
-                                                switch($task->status) {
-                                                    case 'completed':
-                                                        $taskColor = 'bg-success';
-                                                        break;
-                                                    case 'in_progress':
-                                                        $taskColor = 'bg-warning';
-                                                        break;
-                                                    case 'assigned':
-                                                        $taskColor = 'bg-info';
-                                                        break;
-                                                    case 'pending':
-                                                        $taskColor = 'bg-secondary';
-                                                        break;
-                                                    case 'in_review':
-                                                        $taskColor = 'bg-primary';
-                                                        break;
-                                                    case 'approved':
-                                                        $taskColor = 'bg-success';
-                                                        break;
-                                                    default:
-                                                        $taskColor = 'bg-primary';
-                                                }
-                                            @endphp
-
-                                            <div class="timeline-event" style="left: {{ $position }}%; top: {{ 50 + $verticalOffset / 10 }}%;" data-task-index="{{ $index }}" data-total-tasks="{{ count($dateTasks) }}">
-                                                <div class="timeline-marker {{ $taskColor }}"></div>
-                                                <a href="{{ route('tasks.show', $task->id) }}" class="timeline-content timeline-clickable">
-                                                    <div class="timeline-date">{{ $startDate->format('M d') }}</div>
-                                                    <div class="timeline-task">
-                                                        <div class="timeline-task-title">{{ Str::limit($task->title, 20) }}</div>
-                                                        <div class="timeline-task-meta">
-                                                            <span class="badge badge-sm {{ $taskColor }}">{{ ucfirst(str_replace('_', ' ', $task->status)) }}</span>
-                                                            @if($task->priority === 'urgent' || $task->priority === 'high')
-                                                                <span class="badge badge-sm bg-danger">High Priority</span>
-                                                            @endif
-                                                        </div>
-                                                        <div class="timeline-task-assignee">
-                                                            <small class="text-muted">{{ $task->assignee_name }}</small>
-                                                        </div>
-                                                    </div>
-                                                </a>
-                                            </div>
-                                        @endforeach
-                                    @endforeach
-
-                                    @if($timelineTasks->isEmpty())
-                                        <div class="text-center py-4">
-                                            <i class="bx bx-calendar-x fs-1 text-muted"></i>
-                                            <h6 class="mt-3 text-muted">No Tasks Scheduled</h6>
-                                            <p class="text-muted mb-0">No tasks are scheduled to start in the next 20 days.</p>
-                                        </div>
-                                    @endif
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <div id="timeline-embed" style="width: 100%; height: 600px;"></div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
 @push('styles')
 <style>
-.timeline {
-    position: relative;
-    padding-left: 30px;
+/* Manager Dashboard Styles */
+
+/* TimelineJS Custom Styling */
+.tl-timeline {
+    font-family: 'Inter', sans-serif !important;
 }
 
-.timeline::before {
-    content: '';
-    position: absolute;
-    left: 15px;
-    top: 0;
-    bottom: 0;
-    width: 2px;
-    background: #e9ecef;
+.tl-timeline .tl-slide {
+    background: #ffffff !important;
+    border-radius: 8px !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
 }
 
-.timeline-item {
-    position: relative;
-    margin-bottom: 20px;
+.tl-timeline .tl-slide-content {
+    padding: 20px !important;
 }
 
-.timeline-marker {
-    position: absolute;
-    left: -22px;
-    top: 5px;
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    border: 2px solid #fff;
-    box-shadow: 0 0 0 2px #e9ecef;
+.tl-timeline .tl-headline {
+    color: #2c3e50 !important;
+    font-weight: 600 !important;
 }
 
-.timeline-content {
-    background: #f8f9fa;
-    padding: 15px;
-    border-radius: 8px;
-    border-left: 3px solid #007bff;
+.tl-timeline .tl-text {
+    color: #6c757d !important;
+    line-height: 1.6 !important;
 }
 
-.timeline-title {
-    margin: 0 0 8px 0;
-    font-size: 14px;
-    font-weight: 600;
+.tl-timeline .tl-timenav {
+    background: #f8f9fa !important;
+    border-radius: 8px !important;
 }
 
-.timeline-text {
-    margin: 0 0 8px 0;
-    font-size: 13px;
-    line-height: 1.4;
+.tl-timeline .tl-timenav-slider {
+    background: #007bff !important;
 }
 
-.timeline-meta {
-    font-size: 12px;
-    color: #6c757d;
-}
-
-/* User Dashboard Style Timeline */
-.timeline-container {
-    position: relative;
-    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
-    border-radius: 8px;
-    padding: 20px;
-    overflow-x: auto;
-}
-
-.timeline-header {
-    background: #343a40;
-    border-radius: 6px 6px 0 0;
-    padding: 10px 0;
-    margin-bottom: 0;
-}
-
-.timeline-months {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0 20px;
-}
-
-.timeline-month {
-    color: white;
-    font-weight: 600;
-    font-size: 11px;
-    text-align: center;
-    flex: 1;
-    min-width: 50px;
-    padding: 2px;
-}
-
-.timeline-body {
-    position: relative;
-    background: linear-gradient(135deg, #e8f5e8 0%, #ffffff 100%);
-    border-radius: 0 0 6px 6px;
-    padding: 60px 20px;
-    min-height: 250px;
-    overflow-y: visible;
-    overflow-x: visible;
-}
-
-.timeline-line {
-    position: absolute;
-    top: 50%;
-    left: 20px;
-    right: 20px;
-    height: 2px;
-    background: linear-gradient(90deg, #007bff, #28a745, #ffc107, #dc3545);
-    transform: translateY(-50%);
-    border-radius: 1px;
-}
-
-.timeline-event {
-    position: absolute;
-    z-index: 10;
-    transition: all 0.2s ease;
-    transform-origin: top center;
-}
-
-.timeline-marker {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    margin: 0 auto 8px;
-    border: 2px solid white;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-    position: relative;
-    flex-shrink: 0;
-}
-
-.timeline-marker::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 6px;
-    height: 6px;
-    background: white;
-    border-radius: 50%;
-    transform: translate(-50%, -50%);
-}
-
-.timeline-content {
-    position: absolute;
-    top: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: white;
-    border-radius: 6px;
-    padding: 8px 12px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-    min-width: 120px;
-    text-align: center;
-    border: 1px solid #e9ecef;
-    text-decoration: none;
-    color: inherit;
-    display: block;
-    white-space: nowrap;
-}
-
-.timeline-clickable {
-    transition: all 0.2s ease;
-    cursor: pointer;
-}
-
-.timeline-clickable:hover {
-    transform: translateX(-50%) translateY(-2px) scale(1.05);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
-    background: #f8f9fa;
-    z-index: 20;
-}
-
-.timeline-date {
-    font-size: 11px;
-    color: #6c757d;
-    font-weight: 600;
-    margin-bottom: 4px;
-}
-
-.timeline-task-title {
-    font-size: 12px;
-    font-weight: 600;
-    color: #343a40;
-    margin-bottom: 4px;
-    line-height: 1.2;
-}
-
-.timeline-task-meta {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    align-items: center;
-}
-
-.timeline-task-meta .badge {
-    font-size: 9px;
-    padding: 2px 6px;
-}
-
-.timeline-task-assignee {
-    font-size: 10px;
-    color: #6c757d;
-}
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-    .timeline-months {
-        padding: 0 5px;
-    }
-
-    .timeline-month {
-        font-size: 9px;
-        min-width: 18px;
-        padding: 1px;
-    }
-
-    .timeline-body {
-        padding: 30px 5px;
-    }
-
-    .timeline-line {
-        left: 5px;
-        right: 5px;
-    }
-
-    .timeline-content {
-        min-width: 80px;
-        padding: 4px 6px;
-    }
-
-    .timeline-task-title {
-        font-size: 10px;
-    }
-
-    .timeline-date {
-        font-size: 9px;
-    }
-}
-
-/* Color variations for different statuses */
-.timeline-marker.bg-danger {
-    background: #dc3545;
-    box-shadow: 0 0 8px rgba(220, 53, 69, 0.4);
-}
-
-.timeline-marker.bg-warning {
-    background: #ffc107;
-    box-shadow: 0 0 8px rgba(255, 193, 7, 0.4);
-}
-
-.timeline-marker.bg-info {
-    background: #17a2b8;
-    box-shadow: 0 0 8px rgba(23, 162, 184, 0.4);
-}
-
-.timeline-marker.bg-primary {
-    background: #007bff;
-    box-shadow: 0 0 8px rgba(0, 123, 255, 0.4);
-}
-
-.timeline-marker.bg-success {
-    background: #28a745;
-    box-shadow: 0 0 8px rgba(40, 167, 69, 0.4);
-}
-
-.timeline-marker.bg-secondary {
-    background: #6c757d;
-    box-shadow: 0 0 8px rgba(108, 117, 125, 0.4);
+.tl-timeline .tl-timenav-marker {
+    background: #007bff !important;
+    border: 2px solid #ffffff !important;
 }
 
 .timeline-day-header {
@@ -1385,6 +1024,9 @@
 @endpush
 
 @push('scripts')
+<!-- TimelineJS CDN -->
+<link title="timeline-styles" rel="stylesheet" href="https://cdn.knightlab.com/libs/timeline3/latest/css/timeline.css">
+<script src="https://cdn.knightlab.com/libs/timeline3/latest/js/timeline.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     // Task Status Chart removed - now showing task list instead
@@ -1424,32 +1066,127 @@
 
     // Timeline toggle function removed - no longer needed
 
-    // Debug data
-    console.log('Recent Activity Data:', @json($data['recent_activity']));
-    console.log('Tasks by Status:', @json($data['tasks_by_status']));
-    console.log('Tasks by Priority:', @json($data['tasks_by_priority']));
-    console.log('Timeline Data:', @json($data['timeline_data']));
-    console.log('Timeline Data Count:', {{ isset($data['timeline_data']['sequential']) ? count($data['timeline_data']['sequential']) : 0 }});
-
-    // Check if timeline elements exist on page load
+    // Initialize TimelineJS
     document.addEventListener('DOMContentLoaded', function() {
-        const timelineView = document.getElementById('timelineView');
-        console.log('Timeline View element:', timelineView);
+        // Prepare timeline data
+        const timelineData = {
+            "title": {
+                "media": {
+                    "url": "{{ asset('DAssets/assets/img/icons/timeline-icon.png') }}",
+                    "caption": "Task Management Timeline"
+                },
+                "text": {
+                    "headline": "Manager Task Timeline",
+                    "text": "Interactive timeline showing all team tasks for the next 20 days"
+                }
+            },
+            "events": [
+                @php
+                    $now = now();
+                    $endDate = $now->copy()->addDays(20);
 
-        // Add hover effects for timeline events (user dashboard style)
-        const timelineEvents = document.querySelectorAll('.timeline-event');
-        timelineEvents.forEach(event => {
-            event.addEventListener('mouseenter', function() {
-                this.style.transform = 'scale(1.1)';
-                this.style.zIndex = '20';
-            });
+                    // Get tasks for timeline
+                    $timelineTasks = \App\Models\Task::with(['assignee', 'project'])
+                        ->where(function($query) use ($now, $endDate) {
+                            $query->where(function($q) use ($now, $endDate) {
+                                $q->whereNotNull('start_date')
+                                  ->whereBetween('start_date', [$now->format('Y-m-d'), $endDate->format('Y-m-d')]);
+                            })->orWhere(function($q) use ($now, $endDate) {
+                                $q->whereNull('start_date')
+                                  ->whereNotNull('due_date')
+                                  ->whereBetween('due_date', [$now->format('Y-m-d'), $endDate->format('Y-m-d')]);
+                            });
+                        })
+                        ->orderByRaw('COALESCE(start_date, due_date) ASC')
+                        ->get();
+                @endphp
 
-            event.addEventListener('mouseleave', function() {
-                this.style.transform = 'scale(1)';
-                this.style.zIndex = '10';
-            });
+                @foreach($timelineTasks as $task)
+                    @php
+                        $taskDate = $task->start_date ?: $task->due_date;
+                        $taskDate = \Carbon\Carbon::parse($taskDate);
+
+                        // Determine status color
+                        $statusColor = '#007bff';
+                        switch($task->status) {
+                            case 'completed':
+                                $statusColor = '#28a745';
+                                break;
+                            case 'in_progress':
+                                $statusColor = '#ffc107';
+                                break;
+                            case 'assigned':
+                                $statusColor = '#17a2b8';
+                                break;
+                            case 'pending':
+                                $statusColor = '#6c757d';
+                                break;
+                            case 'in_review':
+                                $statusColor = '#007bff';
+                                break;
+                            case 'approved':
+                                $statusColor = '#28a745';
+                                break;
+                        }
+                    @endphp
+                    {
+                        "media": {
+                            "url": "{{ asset('DAssets/assets/img/icons/task-icon.png') }}",
+                            "caption": "Task: {{ $task->title }}"
+                        },
+                        "start_date": {
+                            "year": {{ $taskDate->year }},
+                            "month": {{ $taskDate->month }},
+                            "day": {{ $taskDate->day }}
+                        },
+                        "text": {
+                            "headline": "{{ $task->title }}",
+                            "text": "<p><strong>Project:</strong> {{ $task->project ? $task->project->name : 'No Project' }}</p><p><strong>Assigned to:</strong> {{ $task->assignee ? $task->assignee->name : 'Unassigned' }}</p><p><strong>Status:</strong> <span style='color: {{ $statusColor }}; font-weight: bold;'>{{ ucfirst(str_replace('_', ' ', $task->status)) }}</span></p><p><strong>Priority:</strong> {{ ucfirst($task->priority) }}</p>@if($task->description)<p><strong>Description:</strong> {{ Str::limit($task->description, 100) }}</p>@endif<p><a href='{{ route('tasks.show', $task->id) }}' class='btn btn-sm btn-primary'>View Task</a></p>"
+                        },
+                        "background": {
+                            "color": "{{ $statusColor }}"
+                        }
+                    }@if(!$loop->last),@endif
+                @endforeach
+            ]
+        };
+
+        // Initialize TimelineJS
+        window.timeline = new TL.Timeline('timeline-embed', timelineData, {
+            width: '100%',
+            height: '600px',
+            font: 'default',
+            scale_factor: 1,
+            timenav_height: 150,
+            timenav_height_percentage: 25,
+            timenav_mobile_height_percentage: 40,
+            timenav_position: 'bottom',
+            optimal_tick_width: 100,
+            base_class: 'tl-timeline',
+            timenav_height_min: 100,
+            marker_height_min: 30,
+            marker_width_min: 100,
+            marker_padding: 5,
+            start_at_slide: 0,
+            start_at_end: false,
+            menubar_height: 0,
+            skin: 'default',
+            duration: 1000,
+            ease: 'easeInOut',
+            dragging: true,
+            trackResize: true,
+            slide_padding_lr: 100,
+            slide_default_fade: '0%',
+            language: 'en',
+            ga_property_id: '',
+            debug: false,
+            script_path: 'https://cdn.knightlab.com/libs/timeline3/latest/js/',
+            css_path: 'https://cdn.knightlab.com/libs/timeline3/latest/css/timeline.css',
+            js_path: 'https://cdn.knightlab.com/libs/timeline3/latest/js/timeline.js'
         });
     });
+
+    // Debug data
 </script>
 @endpush
 @endsection

@@ -610,9 +610,6 @@ class DashboardController extends Controller
             'yearly_top_performers_count' => $this->getTopPerformersForPeriod('year')->count(),
         ]);
 
-        // Timeline data for next 202 days
-        $timelineData = $this->getTimelineData();
-
         return [
             'overview' => [
                 'total_users' => $totalUsers,
@@ -640,86 +637,6 @@ class DashboardController extends Controller
             'tasks_by_project' => $tasksByProject,
             'recent_notifications' => $recentNotifications,
             'urgent_tasks' => $urgentTasks,
-            'timeline_data' => $timelineData,
-        ];
-    }
-
-    /**
-     * Get timeline data for next 20 days
-     */
-    private function getTimelineData()
-    {
-        $now = now();
-        $endDate = $now->copy()->addDays(20);
-
-        // Get tasks that start within the next 20 days (or due within 20 days if no start_date)
-        $tasks = Task::with(['assignee', 'project', 'folder'])
-            ->where(function($query) use ($now, $endDate) {
-                $query->where(function($q) use ($now, $endDate) {
-                    // Tasks with start_date in next 20 days
-                    $q->whereNotNull('start_date')
-                      ->whereBetween('start_date', [$now->format('Y-m-d'), $endDate->format('Y-m-d')]);
-                })->orWhere(function($q) use ($now, $endDate) {
-                    // Tasks without start_date but with due_date in next 20 days
-                    $q->whereNull('start_date')
-                      ->whereNotNull('due_date')
-                      ->whereBetween('due_date', [$now->format('Y-m-d'), $endDate->format('Y-m-d')]);
-                });
-            })
-            ->orderByRaw('COALESCE(start_date, due_date) ASC')
-            ->orderBy('created_at', 'asc')
-            ->get();
-
-        // Group tasks by date
-        $timelineData = [];
-        foreach ($tasks as $task) {
-            // Use start_date if available, otherwise use due_date
-            $taskDate = $task->start_date ? \Carbon\Carbon::parse($task->start_date) : \Carbon\Carbon::parse($task->due_date);
-            $dateKey = $taskDate->format('Y-m-d');
-            $dateLabel = $taskDate->format('M j, Y');
-
-            if (!isset($timelineData[$dateKey])) {
-                $timelineData[$dateKey] = [
-                    'date' => $taskDate,
-                    'date_label' => $dateLabel,
-                    'day_name' => $taskDate->format('l'),
-                    'tasks' => []
-                ];
-            }
-
-            $timelineData[$dateKey]['tasks'][] = [
-                'id' => $task->id,
-                'title' => $task->title,
-                'description' => $task->description,
-                'status' => $task->status,
-                'priority' => $task->priority,
-                'project_name' => $task->project ? $task->project->name : 'No Project',
-                'project_id' => $task->project_id,
-                'assignee_name' => $task->assignee ? $task->assignee->name : 'Unassigned',
-                'assignee_id' => $task->assigned_to,
-                'due_date' => $task->due_date,
-                'start_date' => $task->start_date,
-                'status_badge_class' => $task->status_badge_class,
-                'priority_badge_class' => $task->priority_badge_class,
-                'is_overdue' => $task->due_date && $task->due_date < $now && !in_array($task->status, ['completed', 'approved']),
-            ];
-        }
-
-        // Convert to array and sort by date, but keep date keys for easy lookup
-        $timelineArray = [];
-        foreach ($timelineData as $dateKey => $dayData) {
-            $timelineArray[$dateKey] = $dayData;
-        }
-
-        // Also create a sequential array for iteration
-        $timelineSequential = array_values($timelineData);
-        usort($timelineSequential, function($a, $b) {
-            return $a['date']->gt($b['date']) ? 1 : -1;
-        });
-
-        return [
-            'by_date' => $timelineArray ?? [],
-            'sequential' => $timelineSequential ?? []
         ];
     }
 
