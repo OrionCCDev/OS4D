@@ -831,6 +831,24 @@
                     <div class="d-grid gap-2">
                         <!-- USER ACTIONS -->
                         @if($task->assigned_to === auth()->id())
+                            {{-- Time Extension Request Button - Always visible except for completed tasks --}}
+                            @if($task->status !== 'completed')
+                                @php
+                                    $hasPendingRequest = $task->timeExtensionRequests()->where('status', 'pending')->exists();
+                                @endphp
+
+                                @if(!$hasPendingRequest)
+                                    <button class="btn btn-outline-warning w-100 mb-2" onclick="showTimeExtensionModal({{ $task->id }})">
+                                        <i class="bx bx-time me-2"></i>Request Time Extension
+                                    </button>
+                                @else
+                                    <div class="alert alert-info mb-2 p-2">
+                                        <i class="bx bx-hourglass me-2"></i>
+                                        <small>Time extension request pending review</small>
+                                    </div>
+                                @endif
+                            @endif
+
                             {{-- Status: Assigned - User can accept task --}}
                             @if($task->status === 'assigned')
                                 <form action="{{ route('tasks.accept', $task) }}" method="POST">
@@ -847,21 +865,6 @@
                                     <i class="bx bx-send me-2"></i>Submit for Review
                                 </button>
                                 <small class="text-muted text-center">Complete your work and submit it for manager review</small>
-
-                                @php
-                                    $hasPendingRequest = $task->timeExtensionRequests()->where('status', 'pending')->exists();
-                                @endphp
-
-                                @if(!$hasPendingRequest)
-                                    <button class="btn btn-outline-warning w-100 mt-2" onclick="showTimeExtensionModal({{ $task->id }})">
-                                        <i class="bx bx-time me-2"></i>Request Time Extension
-                                    </button>
-                                @else
-                                    <div class="alert alert-info mt-2 mb-0 p-2">
-                                        <i class="bx bx-hourglass me-2"></i>
-                                        <small>Time extension request pending review</small>
-                                    </div>
-                                @endif
 
                             {{-- Status: Submitted for Review - Waiting --}}
                             @elseif($task->status === 'submitted_for_review')
