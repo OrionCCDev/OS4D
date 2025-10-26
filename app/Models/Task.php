@@ -467,7 +467,9 @@ class Task extends Model
             'task_resubmit_enhanced',
             'task_submitted_for_review',
             'task_waiting_for_review',
-            'task_overdue'
+            'task_overdue',
+            'time_extension_requested',
+            'time_extension_reviewed'
         ];
 
         $priority = in_array($type, $actionableTypes) ? 'high' : 'normal';
@@ -489,7 +491,8 @@ class Task extends Model
 
     private function notifyManagers(string $type, string $title, string $message)
     {
-        $managers = User::where('role', 'admin')->orWhere('role', 'manager')->get();
+        // Include all manager roles: admin, manager, and sub-admin
+        $managers = User::whereIn('role', ['admin', 'manager', 'sub-admin'])->get();
         $currentUserId = Auth::id();
 
         foreach ($managers as $manager) {

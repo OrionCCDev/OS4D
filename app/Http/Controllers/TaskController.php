@@ -2504,13 +2504,20 @@ private function sendApprovalEmailViaGmail(Task $task, User $approver)
 
             // Notify managers
             try {
+                // Get managers first for logging
+                $managers = User::whereIn('role', ['admin', 'manager', 'sub-admin'])->get();
+                Log::info("Time extension: Notifying {$managers->count()} managers");
+
                 $task->notifyManagers(
                     'time_extension_requested',
                     'Time Extension Requested',
                     "Task '{$task->title}' has a time extension request: {$validated['requested_days']} days"
                 );
+
+                Log::info('Time extension: Managers notified successfully');
             } catch (\Exception $notifyException) {
-                Log::warning('Failed to notify managers about time extension: ' . $notifyException->getMessage());
+                Log::error('Failed to notify managers about time extension: ' . $notifyException->getMessage());
+                Log::error('Notification exception trace: ' . $notifyException->getTraceAsString());
                 // Don't fail the whole request if notification fails
             }
 
