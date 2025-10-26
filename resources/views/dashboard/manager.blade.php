@@ -1,5 +1,66 @@
 @extends('layouts.app')
 
+@php
+    // Fetch real tasks from database for timeline
+    $now = now();
+    $endDate = $now->copy()->addDays(20);
+    $timelineTasks = collect();
+    $dbError = null;
+
+    try {
+        $timelineTasks = \App\Models\Task::with(['assignee', 'project', 'creator'])
+            ->where(function($query) use ($now, $endDate) {
+                $query->where(function($q) use ($now, $endDate) {
+                    $q->whereNotNull('start_date')
+                      ->whereBetween('start_date', [$now->format('Y-m-d'), $endDate->format('Y-m-d')]);
+                })->orWhere(function($q) use ($now, $endDate) {
+                    $q->whereNotNull('due_date')
+                      ->whereBetween('due_date', [$now->format('Y-m-d'), $endDate->format('Y-m-d')]);
+                });
+            })
+            ->orderByRaw('COALESCE(start_date, due_date) ASC')
+            ->limit(10) // Limit to 10 tasks for better performance
+            ->get();
+    } catch (\Exception $e) {
+        $dbError = $e->getMessage();
+        \Log::error('Timeline Database Error: ' . $e->getMessage());
+    }
+
+    // Status colors mapping
+    $statusColors = [
+        'pending' => 'secondary',
+        'assigned' => 'info',
+        'in_progress' => 'warning',
+        'submitted_for_review' => 'primary',
+        'in_review' => 'primary',
+        'approved' => 'success',
+        'ready_for_email' => 'success',
+        'on_client_consultant_review' => 'info',
+        'in_review_after_client_consultant_reply' => 'primary',
+        're_submit_required' => 'warning',
+        'rejected' => 'danger',
+        'completed' => 'success'
+    ];
+
+    // Priority colors mapping
+    $priorityColors = [
+        1 => 'danger',    // Critical
+        2 => 'warning',   // High
+        3 => 'info',      // Medium
+        4 => 'primary',   // Low
+        5 => 'secondary'  // Very Low
+    ];
+
+    // Priority labels
+    $priorityLabels = [
+        1 => 'Critical',
+        2 => 'High',
+        3 => 'Medium',
+        4 => 'Low',
+        5 => 'Very Low'
+    ];
+@endphp
+
 @section('content')
 <style>
     .competition-card {
@@ -699,66 +760,6 @@
 
                         <!-- Timeline using real database data -->
                         <div class="timeline-wrapper">
-                            @php
-                                // Fetch real tasks from database
-                                $now = now();
-                                $endDate = $now->copy()->addDays(20);
-                                $timelineTasks = collect();
-                                $dbError = null;
-
-                                try {
-                                    $timelineTasks = \App\Models\Task::with(['assignee', 'project', 'creator'])
-                                        ->where(function($query) use ($now, $endDate) {
-                                            $query->where(function($q) use ($now, $endDate) {
-                                                $q->whereNotNull('start_date')
-                                                  ->whereBetween('start_date', [$now->format('Y-m-d'), $endDate->format('Y-m-d')]);
-                                            })->orWhere(function($q) use ($now, $endDate) {
-                                                $q->whereNotNull('due_date')
-                                                  ->whereBetween('due_date', [$now->format('Y-m-d'), $endDate->format('Y-m-d')]);
-                                            });
-                                        })
-                                        ->orderByRaw('COALESCE(start_date, due_date) ASC')
-                                        ->limit(10) // Limit to 10 tasks for better performance
-                                        ->get();
-                                } catch (\Exception $e) {
-                                    $dbError = $e->getMessage();
-                                    \Log::error('Timeline Database Error: ' . $e->getMessage());
-                                }
-
-                                // Status colors mapping
-                                $statusColors = [
-                                    'pending' => 'secondary',
-                                    'assigned' => 'info',
-                                    'in_progress' => 'warning',
-                                    'submitted_for_review' => 'primary',
-                                    'in_review' => 'primary',
-                                    'approved' => 'success',
-                                    'ready_for_email' => 'success',
-                                    'on_client_consultant_review' => 'info',
-                                    'in_review_after_client_consultant_reply' => 'primary',
-                                    're_submit_required' => 'warning',
-                                    'rejected' => 'danger',
-                                    'completed' => 'success'
-                                ];
-
-                                // Priority colors mapping
-                                $priorityColors = [
-                                    1 => 'danger',    // Critical
-                                    2 => 'warning',   // High
-                                    3 => 'info',      // Medium
-                                    4 => 'primary',   // Low
-                                    5 => 'secondary'  // Very Low
-                                ];
-
-                                // Priority labels
-                                $priorityLabels = [
-                                    1 => 'Critical',
-                                    2 => 'High',
-                                    3 => 'Medium',
-                                    4 => 'Low',
-                                    5 => 'Very Low'
-                                ];
-                            @endphp
 
                             @if($timelineTasks->count() > 0)
                                 @foreach($timelineTasks as $index => $task)
