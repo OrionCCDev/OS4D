@@ -2503,11 +2503,16 @@ private function sendApprovalEmailViaGmail(Task $task, User $approver)
             ]);
 
             // Notify managers
-            $task->notifyManagers(
-                'time_extension_requested',
-                'Time Extension Requested',
-                "Task '{$task->title}' has a time extension request: {$validated['requested_days']} days"
-            );
+            try {
+                $task->notifyManagers(
+                    'time_extension_requested',
+                    'Time Extension Requested',
+                    "Task '{$task->title}' has a time extension request: {$validated['requested_days']} days"
+                );
+            } catch (\Exception $notifyException) {
+                Log::warning('Failed to notify managers about time extension: ' . $notifyException->getMessage());
+                // Don't fail the whole request if notification fails
+            }
 
             return response()->json([
                 'success' => true,
@@ -2516,9 +2521,19 @@ private function sendApprovalEmailViaGmail(Task $task, User $approver)
             ]);
         } catch (\Exception $e) {
             Log::error('Failed to create time extension request: ' . $e->getMessage());
+            Log::error('Stack trace: ' . $e->getTraceAsString());
+
+            $errorMessage = 'Failed to submit time extension request.';
+            if (strpos($e->getMessage(), "doesn't exist") !== false) {
+                $errorMessage = 'Database table missing. Please run migrations: php artisan migrate';
+            } elseif (strpos($e->getMessage(), "Unknown column") !== false) {
+                $errorMessage = 'Database columns missing. Please run migrations: php artisan migrate';
+            }
+
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to submit time extension request.'
+                'message' => $errorMessage,
+                'debug' => config('app.debug') ? $e->getMessage() : null
             ], 500);
         }
     }
