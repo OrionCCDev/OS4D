@@ -590,7 +590,7 @@
                                        class="form-control"
                                        id="subject"
                                        name="subject"
-                                       value="{{ old('subject', 'Task Completion Confirmation - ' . $task->title) }}"
+                                       value="{{ old('subject', $emailPreparation->subject ?? 'Task Completion Confirmation - ' . $task->title) }}"
                                        placeholder="Enter email subject"
                                        required>
                             </div>
@@ -606,7 +606,7 @@
                                           name="body"
                                           rows="8"
                                           placeholder="Enter your email message here..."
-                                          required>{{ old('body') }}</textarea>
+                                          required>{{ old('body', $emailPreparation->body ?? '') }}</textarea>
                                 <small class="text-muted">HTML styling is supported! The template includes your company logo and professional formatting.</small>
                                     </div>
 

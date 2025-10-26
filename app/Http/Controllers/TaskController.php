@@ -781,12 +781,23 @@ class TaskController extends Controller
             abort(403, 'Access denied. Only tasks ready for email can have emails prepared.');
         }
 
+        // Eager load necessary relationships for creating default email preparation
+        $task->load(['project.projectManager', 'project.contractors', 'project.owner']);
+
         // Look for any email preparation for this task, prioritizing current user's preparation
         $emailPreparation = $task->emailPreparations()->where('prepared_by', Auth::id())->latest()->first();
 
         // If no preparation by current user, get the latest one for the task
         if (!$emailPreparation) {
             $emailPreparation = $task->emailPreparations()->latest()->first();
+        }
+
+        // If no email preparation exists at all, create a default one
+        if (!$emailPreparation) {
+            $emailPreparation = $this->createDefaultEmailPreparation($task);
+
+            // Log the creation for debugging
+            \Log::info('Created default email preparation for task ' . $task->id . ' with TO: ' . $emailPreparation->to_emails . ' and CC: ' . $emailPreparation->cc_emails);
         }
 
         return view('tasks.email-preparation', compact('task', 'emailPreparation'));
@@ -1359,6 +1370,13 @@ class TaskController extends Controller
                 $ccEmails[] = $contractor->email;
             }
         }
+
+        // Log the email building process for debugging
+        \Log::info('Building default email preparation for task ' . $task->id);
+        \Log::info('Project Manager Email: ' . $projectManagerEmail);
+        \Log::info('Project Owner Email: ' . ($task->project->owner ? $task->project->owner->email : 'None'));
+        \Log::info('Project Contractors Count: ' . $projectContractors->count());
+        \Log::info('CC Emails: ' . implode(', ', $ccEmails));
 
         // Create default email content
         $defaultSubject = "Project Update: Task Completed - {$task->title}";
