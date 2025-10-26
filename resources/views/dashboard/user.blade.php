@@ -9,7 +9,7 @@
                 <div class="d-flex align-items-end row">
                     <div class="col-sm-12">
                         <div class="card-body">
-                            <h5 class="card-title text-primary">Welcome back, malekahmd!</h5>
+                            <h5 class="card-title text-primary">Welcome back, {{ auth()->user()->name }}!</h5>
                             <p class="mb-4">Here's your personal task overview and progress summary.</p>
                             <div class="d-flex gap-2">
                                 <a href="https://odc.com.orion-contracting.com/tasks" class="btn btn-primary">
