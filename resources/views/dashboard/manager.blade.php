@@ -799,6 +799,67 @@
     line-height: 1.4;
 }
 
+/* Database Error State Styling */
+.timeline-db-error {
+    text-align: center;
+    padding: 20px;
+}
+
+.timeline-db-error .db-error-icon {
+    margin-bottom: 20px;
+}
+
+.timeline-db-error h5 {
+    color: #dc3545;
+    margin-bottom: 15px;
+    font-weight: 600;
+}
+
+.timeline-db-error p {
+    color: #6c757d;
+    margin-bottom: 20px;
+    line-height: 1.5;
+}
+
+.timeline-db-error .db-error-details {
+    text-align: left;
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.timeline-db-error .db-error-details h6 {
+    color: #495057;
+    margin-bottom: 10px;
+    font-weight: 600;
+}
+
+.timeline-db-error .db-error-solutions {
+    text-align: left;
+    background: #fff3cd;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.timeline-db-error .db-error-solutions h6 {
+    color: #495057;
+    margin-bottom: 10px;
+    font-weight: 600;
+}
+
+.timeline-db-error .db-error-solutions ul {
+    color: #6c757d;
+    padding-left: 20px;
+    margin-bottom: 0;
+}
+
+.timeline-db-error .db-error-solutions li {
+    margin-bottom: 5px;
+    line-height: 1.4;
+}
+
 .tl-timeline .tl-timenav {
     background: #f8f9fa !important;
     border-radius: 8px !important;
@@ -1167,26 +1228,33 @@
             },
             "events": [
                 @php
-                    // Get comprehensive timeline data from database
+                    // Get comprehensive timeline data from database with error handling
                     $now = now();
                     $endDate = $now->copy()->addDays(20);
+                    $timelineTasks = collect(); // Default to empty collection
+                    $dbError = null;
 
-                    $timelineTasks = \App\Models\Task::with(['assignee', 'project', 'creator'])
-                        ->where(function($query) use ($now, $endDate) {
-                            $query->where(function($q) use ($now, $endDate) {
-                                $q->whereNotNull('start_date')
-                                  ->whereBetween('start_date', [$now->format('Y-m-d'), $endDate->format('Y-m-d')]);
-                            })->orWhere(function($q) use ($now, $endDate) {
-                                $q->whereNull('start_date')
-                                  ->whereNotNull('due_date')
-                                  ->whereBetween('due_date', [$now->format('Y-m-d'), $endDate->format('Y-m-d')]);
-                            })->orWhere(function($q) use ($now, $endDate) {
-                                $q->whereNotNull('due_date')
-                                  ->whereBetween('due_date', [$now->format('Y-m-d'), $endDate->format('Y-m-d')]);
-                            });
-                        })
-                        ->orderByRaw('COALESCE(start_date, due_date) ASC')
-                        ->get();
+                    try {
+                        $timelineTasks = \App\Models\Task::with(['assignee', 'project', 'creator'])
+                            ->where(function($query) use ($now, $endDate) {
+                                $query->where(function($q) use ($now, $endDate) {
+                                    $q->whereNotNull('start_date')
+                                      ->whereBetween('start_date', [$now->format('Y-m-d'), $endDate->format('Y-m-d')]);
+                                })->orWhere(function($q) use ($now, $endDate) {
+                                    $q->whereNull('start_date')
+                                      ->whereNotNull('due_date')
+                                      ->whereBetween('due_date', [$now->format('Y-m-d'), $endDate->format('Y-m-d')]);
+                                })->orWhere(function($q) use ($now, $endDate) {
+                                    $q->whereNotNull('due_date')
+                                      ->whereBetween('due_date', [$now->format('Y-m-d'), $endDate->format('Y-m-d')]);
+                                });
+                            })
+                            ->orderByRaw('COALESCE(start_date, due_date) ASC')
+                            ->get();
+                    } catch (\Exception $e) {
+                        $dbError = $e->getMessage();
+                        \Log::error('TimelineJS Database Error: ' . $e->getMessage());
+                    }
                 @endphp
 
                 @if($timelineTasks->count() > 0)
@@ -1289,6 +1357,45 @@
                             }
                         }@if(!$loop->last),@endif
                     @endforeach
+                @elseif($dbError)
+                    // Database connection error - show helpful message
+                    {
+                        "media": {
+                            "url": "{{ asset('DAssets/assets/img/icons/unicons/cc-warning.png') }}",
+                            "caption": "Database Connection Issue"
+                        },
+                        "start_date": {
+                            "year": {{ now()->year }},
+                            "month": {{ now()->month }},
+                            "day": {{ now()->day }}
+                        },
+                        "text": {
+                            "headline": "Database Connection Error",
+                            "text": "<div class='timeline-db-error'>
+                                <div class='db-error-icon mb-3'>
+                                    <i class='bx bx-error-circle' style='font-size: 48px; color: #dc3545;'></i>
+                                </div>
+                                <h5 style='color: #dc3545; margin-bottom: 15px;'>Database Connection Failed</h5>
+                                <p style='color: #6c757d; margin-bottom: 20px;'>Unable to load task data from the database.</p>
+                                <div class='db-error-details'>
+                                    <h6 style='color: #495057; margin-bottom: 10px;'>Error Details:</h6>
+                                    <p style='color: #6c757d; font-family: monospace; background: #f8f9fa; padding: 10px; border-radius: 4px; font-size: 12px;'>{{ Str::limit($dbError, 200) }}</p>
+                                </div>
+                                <div class='db-error-solutions mt-3'>
+                                    <h6 style='color: #495057; margin-bottom: 10px;'>Possible Solutions:</h6>
+                                    <ul style='color: #6c757d; padding-left: 20px;'>
+                                        <li>Check database server is running</li>
+                                        <li>Verify database connection settings in .env file</li>
+                                        <li>Ensure database credentials are correct</li>
+                                        <li>Check if database exists and is accessible</li>
+                                    </ul>
+                                </div>
+                            </div>"
+                        },
+                        "background": {
+                            "color": "#f8d7da"
+                        }
+                    }
                 @else
                     // No tasks found - add a helpful placeholder event
                     {
@@ -1333,8 +1440,18 @@
         };
 
         // Debug: Log timeline data
+        console.log('TimelineJS Debug: Starting initialization...');
         console.log('TimelineJS Debug: Timeline data:', timelineData);
         console.log('TimelineJS Debug: Events count:', timelineData.events.length);
+
+        // Additional debugging for database issues
+        @if(isset($dbError))
+            console.error('TimelineJS Debug: Database Error:', '{{ $dbError }}');
+        @endif
+
+        @if($timelineTasks->count() === 0 && !isset($dbError))
+            console.warn('TimelineJS Debug: No tasks found in database for the next 20 days');
+        @endif
 
         // Initialize TimelineJS with error handling
         try {
