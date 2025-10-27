@@ -14,6 +14,71 @@
         @endif
     </div>
 
+    @if(Auth::user()->isManager() && isset($users))
+    <div class="card mb-3">
+        <div class="card-body">
+            <form method="GET" action="{{ route('tasks.index') }}" class="row g-3">
+                <div class="col-md-5">
+                    <label for="search" class="form-label">
+                        <i class="bx bx-search me-1"></i>Search Tasks
+                    </label>
+                    <input type="text"
+                           class="form-control"
+                           id="search"
+                           name="search"
+                           placeholder="Search by task name..."
+                           value="{{ request()->search }}">
+                </div>
+                <div class="col-md-5">
+                    <label for="assigned_to" class="form-label">
+                        <i class="bx bx-user me-1"></i>Filter by User
+                    </label>
+                    <select class="form-select"
+                            id="assigned_to"
+                            name="assigned_to">
+                        <option value="">All Users</option>
+                        @foreach($users as $user)
+                            <option value="{{ $user->id }}" {{ request()->assigned_to == $user->id ? 'selected' : '' }}>
+                                {{ $user->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <div class="d-flex gap-2 w-100">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="bx bx-filter me-1"></i>Filter
+                        </button>
+                        @if(request()->search || request()->assigned_to)
+                            <a href="{{ route('tasks.index') }}" class="btn btn-outline-secondary">
+                                <i class="bx bx-x"></i>
+                            </a>
+                        @endif
+                    </div>
+                </div>
+            </form>
+            @if(request()->search || request()->assigned_to)
+                <div class="mt-2">
+                    <small class="text-muted">
+                        <i class="bx bx-info-circle me-1"></i>
+                        Showing {{ $tasks->total() }} result(s)
+                        @if(request()->search)
+                            for "{{ request()->search }}"
+                        @endif
+                        @if(request()->assigned_to)
+                            @php
+                                $selectedUser = $users->firstWhere('id', request()->assigned_to);
+                            @endphp
+                            @if($selectedUser)
+                                for {{ $selectedUser->name }}
+                            @endif
+                        @endif
+                    </small>
+                </div>
+            @endif
+        </div>
+    </div>
+    @endif
 
     <div class="card">
         <div class="table-responsive">

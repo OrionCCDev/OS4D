@@ -26,18 +26,38 @@ class TaskController extends Controller
     {
         $user = Auth::user();
 
-        // Managers and admins see all tasks
+        // Start building query
+        $query = Task::with('project', 'folder', 'creator', 'assignee');
+
+        // If manager, apply filters and search
         if ($user->isManager()) {
-            $tasks = Task::with('project', 'folder', 'creator', 'assignee')->latest()->paginate(15);
+            // Filter by assigned user
+            if (request()->has('assigned_to') && request()->assigned_to) {
+                $query->where('assigned_to', request()->assigned_to);
+            }
+
+            // Search by task name
+            if (request()->has('search') && request()->search) {
+                $query->where('title', 'like', '%' . request()->search . '%');
+            }
         } else {
             // Regular users only see tasks assigned to them
-            $tasks = Task::with('project', 'folder', 'creator', 'assignee')
-                ->where('assigned_to', $user->id)
-                ->latest()
-                ->paginate(15);
+            $query->where('assigned_to', $user->id);
         }
 
-        return view('tasks.index', compact('tasks'));
+        $tasks = $query->latest()->paginate(15);
+        $tasks->appends(request()->query());
+
+        // Get users for filter dropdown (only for managers)
+        $users = null;
+        if ($user->isManager()) {
+            $users = User::where('status', 'active')
+                ->where('role', '!=', 'admin')
+                ->orderBy('name')
+                ->get();
+        }
+
+        return view('tasks.index', compact('tasks', 'users'));
     }
 
     public function create()
