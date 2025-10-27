@@ -761,7 +761,14 @@ function loadFiles() {
     // Show loading spinner
     container.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary spinner-border-sm" role="status"><span class="visually-hidden">Loading files...</span></div></div>';
 
-    fetch(`/projects/${projectId}/files?folder=${folderId ? folderId : ''}`)
+    fetch(`/projects/${projectId}/files?folder=${folderId ? folderId : ''}`, {
+        method: 'GET',
+        credentials: 'include', // Include cookies for auth
+        headers: {
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+        }
+    })
         .then(response => {
             console.log('Response status:', response.status, response.statusText);
             if (!response.ok) {
