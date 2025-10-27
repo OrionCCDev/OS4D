@@ -90,7 +90,7 @@
                     <div class="d-flex align-items-center justify-content-between">
                 <h5 class="mb-0">
                     <i class="bx bx-folder me-2"></i>
-                    {{ $selectedFolder ? 'Subfolders in "' . $selectedFolder->name . '"' : 'Project Folders & Files' }}
+                    {{ $selectedFolder ? 'Subfolders in "' . $selectedFolder->name . '"' : 'Project Folders' }}
                 </h5>
                 <div class="d-flex gap-2">
                     <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#foldersSection" aria-expanded="true" aria-controls="foldersSection">
@@ -101,14 +101,6 @@
         </div>
         <div class="collapse show" id="foldersSection">
             <div class="card-body">
-                <!-- Files Container -->
-                <div id="filesContainer" class="mb-4">
-                    <div class="text-center py-4">
-                        <div class="spinner-border text-primary spinner-border-sm" role="status">
-                            <span class="visually-hidden">Loading files...</span>
-                        </div>
-                    </div>
-                </div>
 
                 @if($selectedFolder && $selectedFolder->children->count() > 0)
                     <div class="row" id="foldersGrid">
@@ -218,6 +210,34 @@
                     </div>
                 </div>
 
+    <!-- Project Files Section - Shows all files from all folders -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <div class="d-flex align-items-center justify-content-between">
+                <h5 class="mb-0">
+                    <i class="bx bx-file me-2"></i>
+                    Project Files (From All Folders)
+                </h5>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#filesSection" aria-expanded="true" aria-controls="filesSection">
+                        <i class="bx bx-chevron-down" id="filesToggleIcon"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="collapse show" id="filesSection">
+            <div class="card-body">
+                <!-- Files Container for all files -->
+                <div id="allFilesContainer">
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary spinner-border-sm" role="status">
+                            <span class="visually-hidden">Loading files...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Tasks Section -->
     <div class="card">
@@ -548,9 +568,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Load files on page load - check if filesContainer exists
-    const filesContainer = document.getElementById('filesContainer');
-    console.log('filesContainer element:', filesContainer);
+    // Load files on page load - check if allFilesContainer exists
+    const filesContainer = document.getElementById('allFilesContainer');
+    console.log('allFilesContainer element:', filesContainer);
 
     if (filesContainer) {
         console.log('DOMContentLoaded: Loading files section for project {{ $project->id }}');
@@ -560,7 +580,7 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('loadFiles function not defined!');
         }
     } else {
-        console.error('filesContainer element not found!');
+        console.error('allFilesContainer element not found!');
     }
 });
 
@@ -574,15 +594,15 @@ function reloadFiles() {
 function loadFiles() {
     console.log('=== loadFiles() STARTED ===');
     const projectId = {{ $project->id }};
-    const folderId = {{ $selectedFolder?->id ?? 'null' }};
-    const container = document.getElementById('filesContainer');
-    console.log('Project ID:', projectId, 'Folder ID:', folderId);
+    const container = document.getElementById('allFilesContainer');
+    console.log('Project ID:', projectId);
     console.log('Container:', container);
 
     // Show loading spinner
     container.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary spinner-border-sm" role="status"><span class="visually-hidden">Loading files...</span></div></div>';
 
-    fetch(`/user/projects/${projectId}/files?folder=${folderId ? folderId : ''}`, {
+    // Load files from all folders (no folder parameter)
+    fetch(`/user/projects/${projectId}/files`, {
         method: 'GET',
         credentials: 'include', // Include cookies for auth
         headers: {
@@ -613,7 +633,7 @@ function loadFiles() {
 
 function displayFiles(files) {
     console.log('displayFiles() called with:', files);
-    const container = document.getElementById('filesContainer');
+    const container = document.getElementById('allFilesContainer');
 
     if (!container) {
         console.error('filesContainer element not found!');

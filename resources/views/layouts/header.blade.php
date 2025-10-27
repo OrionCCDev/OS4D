@@ -166,6 +166,16 @@
             </li>  --}}
             @endif
 
+            @if(!Auth::user()->isManager() && !Auth::user()->isSubAdmin() && Auth::user()->role !== 'admin')
+            <!-- Projects - Regular Users -->
+            <li class="menu-item {{ request()->routeIs('user.projects.*') ? 'active' : '' }}">
+              <a href="{{ route('user.projects.index') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-folder"></i>
+                <div data-i18n="Projects">Projects</div>
+              </a>
+            </li>
+            @endif
+
             <!-- Tasks - Available to all users (with restrictions) -->
             <li class="menu-item {{ request()->routeIs('tasks.*') ? 'active' : '' }}">
               <a href="{{ route('tasks.index') }}" class="menu-link">
