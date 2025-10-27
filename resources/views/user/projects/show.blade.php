@@ -623,7 +623,7 @@ function loadFiles() {
         .then(files => {
             console.log('Files loaded successfully:', files);
             console.log('Files count:', Array.isArray(files) ? files.length : 'Not an array');
-            displayFiles(files);
+            displayFiles(files, projectId);
         })
         .catch(error => {
             console.error('Error loading files:', error);
@@ -631,7 +631,7 @@ function loadFiles() {
         });
 }
 
-function displayFiles(files) {
+function displayFiles(files, projectId) {
     console.log('displayFiles() called with:', files);
     const container = document.getElementById('allFilesContainer');
 
@@ -648,16 +648,11 @@ function displayFiles(files) {
 
     if (files.length === 0) {
         console.log('No files to display');
-        container.innerHTML = '';
+        container.innerHTML = '<div class="text-center py-4"><i class="bx bx-file" style="font-size: 4rem; color: #d1d5db;"></i><h5 class="text-muted mt-3">No files found in this project</h5></div>';
         return;
     }
 
     console.log('Displaying', files.length, 'files to container');
-
-    if (files.length === 0) {
-        container.innerHTML = '<div class="text-center py-4"><i class="bx bx-file" style="font-size: 4rem; color: #d1d5db;"></i><h5 class="text-muted mt-3">No files found in this project</h5></div>';
-        return;
-    }
 
     let html = '<h6 class="mb-3"><i class="bx bx-file me-2"></i>Files (' + files.length + ')</h6><div class="row g-3 mb-4">';
     files.forEach(file => {
