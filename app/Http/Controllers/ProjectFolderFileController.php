@@ -8,6 +8,7 @@ use App\Models\ProjectFolder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class ProjectFolderFileController extends Controller
@@ -40,19 +41,30 @@ class ProjectFolderFileController extends Controller
      */
     public function store(Request $request, Project $project)
     {
-        $request->validate([
-            'file' => 'required|file|max:102400', // 100MB max
-            'folder_id' => 'nullable|exists:project_folders,id',
-            'display_name' => 'nullable|string|max:255',
-            'description' => 'nullable|string',
-        ]);
+        try {
+            $request->validate([
+                'file' => 'required|file|max:102400', // 100MB max
+                'folder_id' => 'nullable|exists:project_folders,id',
+                'display_name' => 'nullable|string|max:255',
+                'description' => 'nullable|string',
+            ]);
 
-        // Check if user is a manager
-        if (!Auth::user()->isManager()) {
-            return response()->json(['error' => 'Only managers can upload files'], 403);
-        }
+            // Check if user is a manager
+            if (!Auth::user()->isManager()) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Only managers can upload files'
+                ], 403);
+            }
 
-        $file = $request->file('file');
+            $file = $request->file('file');
+
+            if (!$file) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'No file provided'
+                ], 400);
+            }
 
         // Build the storage path based on folder hierarchy
         $folder = null;
@@ -113,6 +125,20 @@ class ProjectFolderFileController extends Controller
             'file' => $fileRecord->toArray(),
             'message' => 'File uploaded successfully'
         ]);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error('File upload error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'error' => 'Upload failed: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     /**

@@ -222,6 +222,11 @@ Route::middleware('auth')->group(function () {
         Route::put('projects/{project}/files/{file}', [App\Http\Controllers\ProjectFolderFileController::class, 'update'])->name('projects.files.update');
         Route::delete('projects/{project}/files/{file}', [App\Http\Controllers\ProjectFolderFileController::class, 'destroy'])->name('projects.files.destroy');
         Route::get('projects/{project}/files/{file}/download', [App\Http\Controllers\ProjectFolderFileController::class, 'download'])->name('projects.files.download');
+
+        // Explicitly bind the file parameter to ProjectFolderFile model
+        Route::bind('file', function ($value) {
+            return \App\Models\ProjectFolderFile::findOrFail($value);
+        });
     });
 
     // Tasks - Restricted access for non-managers
