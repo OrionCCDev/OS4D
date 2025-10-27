@@ -801,6 +801,11 @@ function displayFiles(files) {
     console.log('displayFiles() called with:', files);
     const container = document.getElementById('filesContainer');
 
+    if (!container) {
+        console.error('filesContainer element not found!');
+        return;
+    }
+
     if (!Array.isArray(files)) {
         console.error('Files is not an array:', typeof files, files);
         container.innerHTML = '<p class="text-danger text-center">Invalid response format</p>';
@@ -813,11 +818,18 @@ function displayFiles(files) {
         return;
     }
 
-    console.log('Displaying', files.length, 'files');
+    console.log('Displaying', files.length, 'files to container');
 
     let html = '<h6 class="mb-3"><i class="bx bx-file me-2"></i>Files (' + files.length + ')</h6><div class="row g-3 mb-4">';
     files.forEach(file => {
-        const iconClass = getFileIconClass(file.mime_type);
+        console.log('Processing file:', file.id, file.display_name || file.original_name);
+        const iconClass = getFileIconClass(file.mime_type || '');
+        const displayName = file.display_name || file.original_name || 'Unknown file';
+        const fileSize = file.human_readable_size || '0 B';
+        const fileUrl = file.url || '#';
+        const uploaderName = (file.uploader && file.uploader.name) || 'Unknown';
+        const description = file.description || '';
+
         html += `
             <div class="col-md-6 col-lg-4" data-file-id="${file.id}">
                 <div class="card h-100">
@@ -831,28 +843,26 @@ function displayFiles(files) {
                                 </div>
                             </div>
                             <div class="flex-grow-1 ms-3" style="min-width: 0;">
-                                <h6 class="mb-1 text-truncate" title="${file.display_name}">${file.display_name || file.original_name}</h6>
-                                <p class="text-muted small mb-0">${file.human_readable_size}</p>
+                                <h6 class="mb-1 text-truncate" title="${displayName}">${displayName}</h6>
+                                <p class="text-muted small mb-0">${fileSize}</p>
                             </div>
                         </div>
-                        ${file.description ? `<p class="small text-muted mb-2">${file.description}</p>` : ''}
+                        ${description ? `<p class="small text-muted mb-2">${description}</p>` : ''}
                         <div class="d-flex justify-content-between align-items-center mt-3">
                             <small class="text-muted">
-                                <i class="bx bx-user me-1"></i>${file.uploader?.name || 'Unknown'}
+                                <i class="bx bx-user me-1"></i>` + uploaderName + `
                             </small>
-                            ${isManager ? `
-                            <div class="btn-group btn-group-sm">
-                                <a href="${file.url}" target="_blank" class="btn btn-outline-primary" title="Download">
+                            ${isManager ? `<div class="btn-group btn-group-sm">
+                                <a href="${fileUrl}" target="_blank" class="btn btn-outline-primary" title="Download">
                                     <i class="bx bx-download"></i>
                                 </a>
-                                <button onclick="openEditFileModal(${file.id}, '${(file.display_name || file.original_name).replace(/'/g, "\\'")}', '${(file.description || '').replace(/'/g, "\\'")}')" class="btn btn-outline-secondary" title="Edit">
+                                <button onclick="openEditFileModal(${file.id}, '${displayName.replace(/'/g, "\\'")}', '${description.replace(/'/g, "\\'")}')" class="btn btn-outline-secondary" title="Edit">
                                     <i class="bx bx-edit"></i>
                                 </button>
-                                <button onclick="confirmDeleteFile(${file.id}, '${(file.display_name || file.original_name).replace(/'/g, "\\'")}')" class="btn btn-outline-danger" title="Delete">
+                                <button onclick="confirmDeleteFile(${file.id}, '${displayName.replace(/'/g, "\\'")}')" class="btn btn-outline-danger" title="Delete">
                                     <i class="bx bx-trash"></i>
                                 </button>
-                            </div>` : `
-                            <a href="${file.url}" target="_blank" class="btn btn-sm btn-outline-primary">
+                            </div>` : `<a href="${fileUrl}" target="_blank" class="btn btn-sm btn-outline-primary">
                                 <i class="bx bx-download me-1"></i>Download
                             </a>`}
                         </div>
@@ -862,7 +872,9 @@ function displayFiles(files) {
         `;
     });
     html += '</div>';
+    console.log('Setting container.innerHTML, length:', html.length);
     container.innerHTML = html;
+    console.log('Container updated, check if files are visible now');
 }
 
 function getFileIconClass(mimeType) {
