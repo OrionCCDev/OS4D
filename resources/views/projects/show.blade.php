@@ -865,7 +865,7 @@ function displayFiles(files) {
                                 <i class="bx bx-user me-1"></i>` + uploaderName + `
                             </small>
                             ${isManager ? `<div class="btn-group btn-group-sm">
-                                <a href="${fileUrl}" target="_blank" class="btn btn-outline-primary" title="Download">
+                                <a href="${fileUrl}" download="${displayName}" class="btn btn-outline-primary" title="Download">
                                     <i class="bx bx-download"></i>
                                 </a>
                                 <button onclick="openEditFileModal(${file.id}, '${displayName.replace(/'/g, "\\'")}', '${description.replace(/'/g, "\\'")}')" class="btn btn-outline-secondary" title="Edit">
@@ -874,7 +874,7 @@ function displayFiles(files) {
                                 <button onclick="confirmDeleteFile(${file.id}, '${displayName.replace(/'/g, "\\'")}')" class="btn btn-outline-danger" title="Delete">
                                     <i class="bx bx-trash"></i>
                                 </button>
-                            </div>` : `<a href="${fileUrl}" target="_blank" class="btn btn-sm btn-outline-primary">
+                            </div>` : `<a href="${fileUrl}" download="${displayName}" class="btn btn-sm btn-outline-primary">
                                 <i class="bx bx-download me-1"></i>Download
                             </a>`}
                         </div>
