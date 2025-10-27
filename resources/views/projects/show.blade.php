@@ -158,8 +158,8 @@
                                             <div class="folder-icon me-3" style="width: 48px; height: 48px; background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
                                                 <i class="bx bx-folder text-white" style="font-size: 24px;"></i>
                                             </div>
-                                            <div class="flex-grow-1">
-                                                <h6 class="mb-1 fw-semibold text-truncate" title="{{ $folder->name }}">{{ $folder->name }}</h6>
+                                            <div class="flex-grow-1" style="min-width: 0; padding-right: 80px;">
+                                                <h6 class="mb-1 fw-semibold text-truncate" title="{{ $folder->name }}" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ $folder->name }}</h6>
                                                 <small class="text-muted">{{ $folder->children_count }} subfolders</small>
                                             </div>
                                         </div>
@@ -225,8 +225,8 @@
                                             <div class="folder-icon me-3" style="width: 48px; height: 48px; background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
                                                 <i class="bx bx-folder text-white" style="font-size: 24px;"></i>
                                             </div>
-                                            <div class="flex-grow-1">
-                                                <h6 class="mb-1 fw-semibold text-truncate" title="{{ $folder->name }}">{{ $folder->name }}</h6>
+                                            <div class="flex-grow-1" style="min-width: 0; padding-right: 80px;">
+                                                <h6 class="mb-1 fw-semibold text-truncate" title="{{ $folder->name }}" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ $folder->name }}</h6>
                                                 <small class="text-muted">{{ $folder->children_count }} subfolders</small>
                                             </div>
                                         </div>
@@ -479,6 +479,10 @@
         height: 40px !important;
     }
 
+    .folder-card .flex-grow-1 {
+        padding-right: 100px !important;
+    }
+
     .table-responsive {
         font-size: 0.875rem;
     }
@@ -496,6 +500,10 @@
 
     .folder-card .col-6 {
         padding: 0 0.25rem;
+    }
+
+    .folder-card .flex-grow-1 {
+        padding-right: 110px !important;
     }
 
     .table th,
