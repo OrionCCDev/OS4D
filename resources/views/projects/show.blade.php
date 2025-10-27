@@ -92,13 +92,9 @@
                     </li>
                     @foreach($breadcrumbs as $crumb)
                         <li class="breadcrumb-item {{ $loop->last ? 'active' : '' }}">
-                            @if($loop->last)
+                            <a href="{{ route('projects.show', ['project' => $project->id, 'folder' => $crumb->id]) }}" class="text-decoration-none {{ $loop->last ? 'active' : '' }}">
                                 {{ $crumb->name }}
-                            @else
-                                <a href="{{ route('projects.show', ['project' => $project->id, 'folder' => $crumb->id]) }}" class="text-decoration-none">
-                                    {{ $crumb->name }}
-                                </a>
-                            @endif
+                            </a>
                         </li>
                     @endforeach
                 </ol>
