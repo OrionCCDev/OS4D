@@ -266,18 +266,38 @@ class DashboardController extends Controller
 
     public function getDashboardData()
     {
+        // Try to get cached data first
+        $user = auth()->user();
+        $cacheKey = 'dashboard_data_' . $user->id;
+        $cachedData = cache()->get($cacheKey);
+        
+        if ($cachedData) {
+            return $cachedData;
+        }
+
         $now = now();
         $startOfMonth = $now->copy()->startOfMonth();
         $startOfWeek = $now->copy()->startOfWeek();
         $endOfWeek = $now->copy()->endOfWeek();
 
-        // Basic counts
-        $totalUsers = User::count();
-        $totalTasks = Task::count();
-        $totalProjects = Project::count();
-        $activeUsers = User::whereHas('assignedTasks', function($query) {
-            $query->whereIn('status', ['assigned', 'in_progress', 'in_review']);
-        })->count();
+        // Basic counts - Cache these as they don't change frequently
+        $totalUsers = cache()->remember('total_users', 300, function() {
+            return User::count();
+        });
+        
+        $totalTasks = cache()->remember('total_tasks', 300, function() {
+            return Task::count();
+        });
+        
+        $totalProjects = cache()->remember('total_projects', 300, function() {
+            return Project::count();
+        });
+        
+        $activeUsers = cache()->remember('active_users', 300, function() use ($now) {
+            return User::whereHas('assignedTasks', function($query) {
+                $query->whereIn('status', ['assigned', 'in_progress', 'in_review']);
+            })->count();
+        });
 
         // Task statistics
         $taskStats = [
@@ -300,16 +320,9 @@ class DashboardController extends Controller
             ? round(($taskStats['completed'] / $totalTasks) * 100, 1)
             : 0;
 
-        // Tasks by priority - get actual tasks ordered by priority
-        $priorityOrder = [
-            'urgent' => 1,
-            'high' => 2,
-            'medium' => 3,
-            'normal' => 4,
-            'low' => 5
-        ];
-
-        $tasksByPriority = Task::with(['assignee', 'project', 'folder'])
+        // Tasks by priority - get actual tasks ordered by priority with eager loading
+        $tasksByPriority = Task::with(['assignee:id,name,email', 'project:id,name', 'folder:id,name'])
+            ->select('tasks.*')
             ->orderByRaw("
                 CASE
                     WHEN priority = 'urgent' THEN 1
@@ -322,10 +335,15 @@ class DashboardController extends Controller
             ")
             ->orderBy('due_date', 'asc')
             ->orderBy('created_at', 'desc')
-            ->paginate(4, ['*'], 'priority_page');
+            ->limit(20)
+            ->get()
+            ->map(function($task) {
+                return $task->only(['id', 'title', 'status', 'priority', 'due_date', 'project', 'assignee']);
+            });
 
-        // Tasks by status - get actual tasks ordered by status priority
-        $tasksByStatus = Task::with(['assignee', 'project', 'folder'])
+        // Tasks by status - get actual tasks ordered by status priority with eager loading
+        $tasksByStatus = Task::with(['assignee:id,name,email', 'project:id,name', 'folder:id,name'])
+            ->select('tasks.*')
             ->orderByRaw("
                 CASE
                     WHEN due_date < NOW() AND status != 'completed' THEN 1
@@ -344,7 +362,11 @@ class DashboardController extends Controller
             ")
             ->orderBy('due_date', 'asc')
             ->orderBy('created_at', 'desc')
-            ->paginate(4, ['*'], 'status_page');
+            ->limit(20)
+            ->get()
+            ->map(function($task) {
+                return $task->only(['id', 'title', 'status', 'priority', 'due_date', 'project', 'assignee']);
+            });
 
         // Top performers (users with most completed tasks) - Overall
         $topPerformers = User::withCount(['assignedTasks as completed_tasks_count' => function($query) {
@@ -578,9 +600,9 @@ class DashboardController extends Controller
             ->limit(5)
             ->get();
 
-        // Urgent Tasks - Tasks approaching or exceeding due date
-        $now = now();
-        $urgentTasks = Task::with(['assignee', 'project', 'folder'])
+        // Urgent Tasks - Tasks approaching or exceeding due date with eager loading and caching
+        $urgentTasks = Task::with(['assignee:id,name', 'project:id,name', 'folder:id,name'])
+            ->select('tasks.*')
             ->where(function($query) use ($now) {
                 // Tasks that are overdue (past due date and not completed)
                 $query->where(function($q) use ($now) {
@@ -600,17 +622,27 @@ class DashboardController extends Controller
                 END
             ")
             ->orderBy('due_date', 'asc')
-            ->paginate(6, ['*'], 'urgent_page');
+            ->limit(10)
+            ->get();
 
-        // Debug: Log competition data
-        Log::info('Competition Board Data:', [
-            'monthly_top_performers_count' => $monthlyTopPerformers->count(),
-            'monthly_top_performers' => $monthlyTopPerformers->toArray(),
-            'quarterly_top_performers_count' => $this->getTopPerformersForPeriod('quarter')->count(),
-            'yearly_top_performers_count' => $this->getTopPerformersForPeriod('year')->count(),
-        ]);
+        // Timeline tasks - Moved from Blade to here for better performance
+        $endDate = $now->copy()->addDays(20);
+        $timelineTasks = Task::with(['assignee:id,name', 'project:id,name', 'folder:id,name'])
+            ->where(function($query) use ($now, $endDate) {
+                $query->where(function($q) use ($now, $endDate) {
+                    $q->whereNotNull('start_date')
+                      ->whereBetween('start_date', [$now->format('Y-m-d'), $endDate->format('Y-m-d')]);
+                })->orWhere(function($q) use ($now, $endDate) {
+                    $q->whereNotNull('due_date')
+                      ->whereBetween('due_date', [$now->format('Y-m-d'), $endDate->format('Y-m-d')]);
+                });
+            })
+            ->orderByRaw('COALESCE(start_date, due_date) ASC')
+            ->limit(10)
+            ->get(['id', 'title', 'description', 'status', 'priority', 'start_date', 'due_date', 'assignee_id', 'project_id', 'folder_id']);
 
-        return [
+        // Build the final data array
+        $data = [
             'overview' => [
                 'total_users' => $totalUsers,
                 'active_users' => $activeUsers,
@@ -637,7 +669,13 @@ class DashboardController extends Controller
             'tasks_by_project' => $tasksByProject,
             'recent_notifications' => $recentNotifications,
             'urgent_tasks' => $urgentTasks,
+            'timeline_tasks' => $timelineTasks,
         ];
+
+        // Cache the entire dashboard data for 2 minutes
+        cache()->put($cacheKey, $data, 120);
+
+        return $data;
     }
 
     /**

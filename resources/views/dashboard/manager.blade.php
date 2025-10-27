@@ -1,30 +1,9 @@
 @extends('layouts.app')
 
 @php
-    // Fetch real tasks from database for timeline
-    $now = now();
-    $endDate = $now->copy()->addDays(20);
-    $timelineTasks = collect();
+    // Timeline tasks are now passed from the controller for better performance
+    $timelineTasks = $data['timeline_tasks'] ?? collect();
     $dbError = null;
-
-    try {
-        $timelineTasks = \App\Models\Task::with(['assignee', 'project', 'creator'])
-            ->where(function($query) use ($now, $endDate) {
-                $query->where(function($q) use ($now, $endDate) {
-                    $q->whereNotNull('start_date')
-                      ->whereBetween('start_date', [$now->format('Y-m-d'), $endDate->format('Y-m-d')]);
-                })->orWhere(function($q) use ($now, $endDate) {
-                    $q->whereNotNull('due_date')
-                      ->whereBetween('due_date', [$now->format('Y-m-d'), $endDate->format('Y-m-d')]);
-                });
-            })
-            ->orderByRaw('COALESCE(start_date, due_date) ASC')
-            ->limit(10) // Limit to 10 tasks for better performance
-            ->get();
-    } catch (\Exception $e) {
-        $dbError = $e->getMessage();
-        \Log::error('Timeline Database Error: ' . $e->getMessage());
-    }
 
     // Status colors mapping
     $statusColors = [
