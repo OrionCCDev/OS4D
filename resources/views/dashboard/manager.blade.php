@@ -275,7 +275,7 @@
                         </h5>
                         <small class="text-muted">Tasks approaching or exceeding due date</small>
                 </div>
-                    <small class="text-muted">{{ $data['urgent_tasks']->total() }} urgent tasks</small>
+                    <small class="text-muted">{{ $data['urgent_tasks']->count() }} urgent tasks</small>
                 </div>
                 <div class="card-body p-0">
                     @if($data['urgent_tasks']->count() > 0)
@@ -388,11 +388,6 @@
                                 </tbody>
                             </table>
                                 </div>
-                        @if($data['urgent_tasks']->hasPages())
-                            <div class="card-footer">
-                                {{ $data['urgent_tasks']->appends(request()->except('urgent_page'))->links() }}
-                            </div>
-                        @endif
                     @else
                         <div class="text-center py-4">
                             <i class="bx bx-check-circle fs-1 text-success opacity-50"></i>
@@ -412,7 +407,7 @@
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="card-title mb-0 text-dark fw-semibold">Tasks by Status</h5>
-                    <small class="text-muted">{{ $data['tasks_by_status']->total() }} total tasks</small>
+                    <small class="text-muted">{{ $data['tasks_by_status']->count() }} total tasks</small>
                 </div>
                 <div class="card-body p-0">
                     @if($data['tasks_by_status']->count() > 0)
@@ -479,11 +474,6 @@
                                 </tbody>
                             </table>
                                 </div>
-                        @if($data['tasks_by_status']->hasPages())
-                            <div class="card-footer">
-                                {{ $data['tasks_by_status']->appends(request()->except('status_page'))->links() }}
-                            </div>
-                        @endif
                     @else
                         <div class="text-center py-4">
                             <i class="bx bx-task fs-1 text-muted opacity-50"></i>
@@ -499,7 +489,7 @@
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="card-title mb-0 text-dark fw-semibold">Tasks by Priority</h5>
-                    <small class="text-muted">{{ $data['tasks_by_priority']->total() }} total tasks</small>
+                    <small class="text-muted">{{ $data['tasks_by_priority']->count() }} total tasks</small>
                 </div>
                 <div class="card-body p-0">
                     @if($data['tasks_by_priority']->count() > 0)
@@ -566,11 +556,6 @@
                                 </tbody>
                             </table>
                                 </div>
-                        @if($data['tasks_by_priority']->hasPages())
-                            <div class="card-footer">
-                                {{ $data['tasks_by_priority']->appends(request()->except('priority_page'))->links() }}
-                            </div>
-                        @endif
                     @else
                         <div class="text-center py-4">
                             <i class="bx bx-task fs-1 text-muted opacity-50"></i>
