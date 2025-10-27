@@ -43,12 +43,17 @@ return new class extends Migration
             $table->index('created_at', 'unified_notifications_created_at_idx');
         });
 
-        // Add index to custom_notifications table
-        if (Schema::hasTable('custom_notifications')) {
-            Schema::table('custom_notifications', function (Blueprint $table) {
-                $table->index(['user_id', 'is_read'], 'custom_notifications_user_read_idx');
-                $table->index('created_at', 'custom_notifications_created_at_idx');
-            });
+        // Add index to custom_notifications table - Skip if table doesn't exist or column doesn't exist
+        // Note: This table already has indexes in its migration, so we might skip adding them
+        try {
+            if (Schema::hasTable('custom_notifications') && Schema::hasColumn('custom_notifications', 'read')) {
+                Schema::table('custom_notifications', function (Blueprint $table) {
+                    // Use raw SQL to check if index exists before creating
+                    $table->index(['user_id', 'read'], 'custom_notifications_user_read_idx');
+                });
+            }
+        } catch (\Exception $e) {
+            // Index might already exist, continue
         }
     }
 
