@@ -627,7 +627,7 @@ function loadFiles() {
         })
         .catch(error => {
             console.error('Error loading files:', error);
-            container.innerHTML = '<p class="text-muted text-center">Failed to load files: ' + error.message + '</p>';
+            container.innerHTML = '<div class="text-center py-4"><div class="alert alert-warning"><i class="bx bx-error-circle"></i> Failed to load files: ' + error.message + '</div></div>';
         });
 }
 
@@ -654,6 +654,11 @@ function displayFiles(files) {
 
     console.log('Displaying', files.length, 'files to container');
 
+    if (files.length === 0) {
+        container.innerHTML = '<div class="text-center py-4"><i class="bx bx-file" style="font-size: 4rem; color: #d1d5db;"></i><h5 class="text-muted mt-3">No files found in this project</h5></div>';
+        return;
+    }
+
     let html = '<h6 class="mb-3"><i class="bx bx-file me-2"></i>Files (' + files.length + ')</h6><div class="row g-3 mb-4">';
     files.forEach(file => {
         console.log('Processing file:', file.id, file.display_name || file.original_name);
@@ -663,6 +668,7 @@ function displayFiles(files) {
         const fileUrl = `/user/projects/${projectId}/files/${file.id}/download`;
         const uploaderName = (file.uploader && file.uploader.name) || 'Unknown';
         const description = file.description || '';
+        const folderName = (file.folder && file.folder.name) || 'Root';
 
         html += `
             <div class="col-md-6 col-lg-4" data-file-id="${file.id}">
@@ -680,6 +686,7 @@ function displayFiles(files) {
                             <div class="flex-grow-1 ms-3" style="min-width: 0;">
                                 <h6 class="mb-1 text-truncate" title="${displayName}">${displayName}</h6>
                                 <p class="text-muted small mb-0">${fileSize}</p>
+                                <small class="text-muted"><i class="bx bx-folder me-1"></i>${folderName}</small>
                             </div>
                         </div>
                         ${description ? `<p class="small text-muted mb-2">${description}</p>` : ''}

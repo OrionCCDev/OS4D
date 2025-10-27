@@ -20,16 +20,16 @@ class ProjectFolderFileController extends Controller
     {
         $folderId = $request->query('folder');
 
-        // Get files in the specified folder or project root
+        // Get files in the specified folder or ALL files in the project
         $query = ProjectFolderFile::where('project_id', $project->id)
             ->with(['uploader', 'folder'])
             ->latest();
 
         if ($folderId) {
+            // If folder is specified, only get files in that folder
             $query->where('folder_id', $folderId);
-        } else {
-            $query->whereNull('folder_id');
         }
+        // If no folder specified, get ALL files from ALL folders in the project
 
         $files = $query->get()->map(function($file) {
             return [
