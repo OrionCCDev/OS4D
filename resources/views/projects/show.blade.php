@@ -721,7 +721,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const filesToggle = document.getElementById('filesSection');
     const filesIcon = document.getElementById('filesToggleIcon');
 
-    if (filesToggle) {
+    console.log('Checking filesToggle and filesIcon:', filesToggle, filesIcon);
+
+    if (filesToggle && filesIcon) {
         filesToggle.addEventListener('show.bs.collapse', function() {
             filesIcon.classList.remove('bx-chevron-right');
             filesIcon.classList.add('bx-chevron-down');
@@ -737,14 +739,21 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             filesIcon.classList.add('bx-chevron-right');
         }
+    }
 
-        // Load files on page load
+    // Load files on page load - check if filesContainer exists
+    const filesContainer = document.getElementById('filesContainer');
+    console.log('filesContainer element:', filesContainer);
+
+    if (filesContainer) {
         console.log('DOMContentLoaded: Loading files section for project {{ $project->id }}');
         if (typeof loadFiles === 'function') {
             loadFiles();
         } else {
             console.error('loadFiles function not defined!');
         }
+    } else {
+        console.error('filesContainer element not found!');
     }
 });
 
