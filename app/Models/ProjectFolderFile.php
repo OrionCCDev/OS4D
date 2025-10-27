@@ -48,6 +48,10 @@ class ProjectFolderFile extends Model
      */
     public function getUrlAttribute()
     {
+        // Handle both public path and storage path
+        if (strpos($this->path, 'storage/') === 0) {
+            return url($this->path);
+        }
         return url(str_replace('\\', '/', $this->path));
     }
 

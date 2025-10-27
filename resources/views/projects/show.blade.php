@@ -758,8 +758,16 @@ function loadFiles() {
     const folderId = {{ $selectedFolder?->id ?? 'null' }};
     const container = document.getElementById('filesContainer');
 
+    // Show loading spinner
+    container.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary spinner-border-sm" role="status"><span class="visually-hidden">Loading files...</span></div></div>';
+
     fetch(`/projects/${projectId}/files?folder=${folderId ? folderId : ''}`)
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to load files');
+            }
+            return response.json();
+        })
         .then(files => {
             displayFiles(files);
         })

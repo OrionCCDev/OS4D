@@ -91,17 +91,26 @@ class ProjectFolderFileController extends Controller
         $extension = $file->getClientOriginalExtension();
         $filename = time() . '_' . uniqid() . '_' . Str::slug(pathinfo($originalName, PATHINFO_FILENAME)) . '.' . $extension;
 
-        // Move file to the directory
+        // Store the file using direct copy (most reliable)
+        $tmpPath = $file->getPathname();
+
+        if (!file_exists($tmpPath)) {
+            throw new \Exception('Temporary file not found: ' . $tmpPath);
+        }
+
         $relativePath = $folderPath . $filename;
         $fullFilePath = public_path($relativePath);
 
-        // Ensure the directory exists
+        // Ensure directory exists
         $directory = dirname($fullFilePath);
         if (!file_exists($directory)) {
             mkdir($directory, 0755, true);
         }
 
-        $file->move($directory, $filename);
+        // Direct copy (most reliable method)
+        if (!copy($tmpPath, $fullFilePath)) {
+            throw new \Exception('Failed to copy file to: ' . $fullFilePath);
+        }
 
         // Save file record
         $fileRecord = ProjectFolderFile::create([
