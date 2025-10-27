@@ -948,7 +948,7 @@ function showTimeline() {
         transform: translateY(-2px);
         box-shadow: 0 4px 16px rgba(0,0,0,0.15);
     }
-    
+
     /* Make timeline cards clickable */
     .timeline-content:hover .card {
         transform: scale(1.02);
