@@ -437,7 +437,11 @@
 
 .project-title-text {
     display: block;
-    white-space: nowrap;
+    white-space: normal;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    max-width: 100%;
+    text-align: center;
 }
 
 /* Pagination fixes */
@@ -477,6 +481,7 @@
         white-space: normal !important;
         word-wrap: break-word;
         hyphens: auto;
+        font-size: 12px !important;
     }
 
     .project-title-container {
@@ -484,7 +489,25 @@
         min-height: 60px !important;
         font-size: 12px !important;
         padding: 8px 12px !important;
+        max-width: 120px !important;
+        text-align: center;
     }
+}
+
+/* Grid view responsive sizing */
+.grid-view .project-title-container {
+    min-width: 80px;
+    min-height: 80px;
+    max-width: 200px;
+    width: auto;
+    padding: 12px 16px;
+}
+
+.grid-view .project-title-text {
+    white-space: normal;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    text-align: center;
 }
 
 .progress-ring-container {
@@ -539,7 +562,7 @@
 .list-view::before {
     content: 'Project Description Status Date Team Actions';
     display: grid;
-    grid-template-columns: 1.2fr 1.5fr 130px 140px 100px 140px;
+    grid-template-columns: 1.8fr 1.5fr 130px 140px 100px 140px;
     gap: 1.5rem;
     padding: 1.25rem 1.5rem;
     background: linear-gradient(to right, #f8f9fa, #fafbfc);
@@ -582,7 +605,7 @@
 .list-view .project-card .card-body {
     padding: 1.25rem 1.5rem;
     display: grid;
-    grid-template-columns: 1.2fr 1.5fr 130px 140px 100px 140px;
+    grid-template-columns: 1.8fr 1.5fr 130px 140px 100px 140px;
     gap: 1.5rem;
     align-items: center;
     height: auto;
@@ -600,7 +623,7 @@
 .list-view .project-title-container {
     min-width: 48px !important;
     min-height: 48px !important;
-    max-width: 48px !important;
+    max-width: 150px !important;
     max-height: 48px !important;
     flex-shrink: 0;
     border: 2px solid rgba(0, 0, 0, 0.05);
@@ -608,9 +631,15 @@
 }
 
 .list-view .project-title-text {
-    font-size: 14px !important;
+    font-size: 12px !important;
     line-height: 1.2;
     font-weight: 700;
+    white-space: normal !important;
+    word-wrap: break-word;
+    hyphens: auto;
+    overflow-wrap: break-word;
+    max-width: 100%;
+    text-align: center;
 }
 
 .list-view .project-details {
@@ -767,12 +796,12 @@
 /* Responsive table */
 @media (max-width: 1400px) {
     .list-view::before {
-        grid-template-columns: 1fr 1fr 120px 120px 100px;
+        grid-template-columns: 1.5fr 1fr 120px 120px 100px;
         content: 'Project Description Status Date Actions';
     }
 
     .list-view .project-card .card-body {
-        grid-template-columns: 1fr 1fr 120px 120px 100px;
+        grid-template-columns: 1.5fr 1fr 120px 120px 100px;
         gap: 1.25rem;
     }
 
@@ -783,12 +812,12 @@
 
 @media (max-width: 1024px) {
     .list-view::before {
-        grid-template-columns: 1.2fr 100px 110px 110px;
+        grid-template-columns: 1.5fr 100px 110px 110px;
         content: 'Project Status Date Actions';
     }
 
     .list-view .project-card .card-body {
-        grid-template-columns: 1.2fr 100px 110px 110px;
+        grid-template-columns: 1.5fr 100px 110px 110px;
         gap: 1rem;
     }
 
@@ -798,6 +827,10 @@
 
     .list-view .project-details .card-title {
         font-size: 0.938rem;
+    }
+
+    .list-view .project-title-container {
+        max-width: 120px !important;
     }
 }
 
@@ -829,12 +862,12 @@
     .list-view .project-title-container {
         min-width: 40px !important;
         min-height: 40px !important;
-        max-width: 40px !important;
+        max-width: 100px !important;
         max-height: 40px !important;
     }
 
     .list-view .project-title-text {
-        font-size: 11px !important;
+        font-size: 10px !important;
     }
 
     .list-view .card-title {
@@ -874,8 +907,12 @@
     .list-view .project-title-container {
         min-width: 36px !important;
         min-height: 36px !important;
-        max-width: 36px !important;
+        max-width: 80px !important;
         max-height: 36px !important;
+    }
+
+    .list-view .project-title-text {
+        font-size: 9px !important;
     }
 }
 </style>
