@@ -158,8 +158,8 @@
                                             <div class="folder-icon me-3" style="width: 48px; height: 48px; background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
                                                 <i class="bx bx-folder text-white" style="font-size: 24px;"></i>
                                             </div>
-                                            <div class="flex-grow-1" style="min-width: 0; padding-right: 80px;">
-                                                <h6 class="mb-1 fw-semibold text-truncate" title="{{ $folder->name }}" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ $folder->name }}</h6>
+                                            <div class="flex-grow-1" style="min-width: 0; padding-right: 90px; word-wrap: break-word;">
+                                                <h6 class="mb-1 fw-semibold" title="{{ $folder->name }}" style="overflow-wrap: break-word; word-break: break-word; line-height: 1.4;">{{ $folder->name }}</h6>
                                                 <small class="text-muted">{{ $folder->children_count }} subfolders</small>
                                             </div>
                                         </div>
@@ -225,8 +225,8 @@
                                             <div class="folder-icon me-3" style="width: 48px; height: 48px; background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
                                                 <i class="bx bx-folder text-white" style="font-size: 24px;"></i>
                                             </div>
-                                            <div class="flex-grow-1" style="min-width: 0; padding-right: 80px;">
-                                                <h6 class="mb-1 fw-semibold text-truncate" title="{{ $folder->name }}" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ $folder->name }}</h6>
+                                            <div class="flex-grow-1" style="min-width: 0; padding-right: 90px; word-wrap: break-word;">
+                                                <h6 class="mb-1 fw-semibold" title="{{ $folder->name }}" style="overflow-wrap: break-word; word-break: break-word; line-height: 1.4;">{{ $folder->name }}</h6>
                                                 <small class="text-muted">{{ $folder->children_count }} subfolders</small>
                                             </div>
                                         </div>
@@ -480,7 +480,7 @@
     }
 
     .folder-card .flex-grow-1 {
-        padding-right: 100px !important;
+        padding-right: 110px !important;
     }
 
     .table-responsive {
@@ -503,7 +503,7 @@
     }
 
     .folder-card .flex-grow-1 {
-        padding-right: 110px !important;
+        padding-right: 120px !important;
     }
 
     .table th,
