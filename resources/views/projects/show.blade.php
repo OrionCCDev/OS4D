@@ -739,8 +739,12 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         // Load files on page load
-        console.log('Page loaded, calling loadFiles()');
-        loadFiles();
+        console.log('DOMContentLoaded: Loading files section for project {{ $project->id }}');
+        if (typeof loadFiles === 'function') {
+            loadFiles();
+        } else {
+            console.error('loadFiles function not defined!');
+        }
     }
 });
 
@@ -761,9 +765,12 @@ function confirmDeleteFolder(folderId, folderName) {
 
 // File Management Functions
 function loadFiles() {
+    console.log('=== loadFiles() STARTED ===');
     const projectId = {{ $project->id }};
     const folderId = {{ $selectedFolder?->id ?? 'null' }};
     const container = document.getElementById('filesContainer');
+    console.log('Project ID:', projectId, 'Folder ID:', folderId);
+    console.log('Container:', container);
 
     // Show loading spinner
     container.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary spinner-border-sm" role="status"><span class="visually-hidden">Loading files...</span></div></div>';
