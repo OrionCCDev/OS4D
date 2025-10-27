@@ -904,20 +904,29 @@ document.getElementById('fileUploadForm').addEventListener('submit', function(e)
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
         }
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            return response.text().then(text => {
+                console.error('Server error:', text);
+                throw new Error('Upload failed: ' + response.statusText);
+            });
+        }
+        return response.json();
+    })
     .then(data => {
+        console.log('Upload response:', data);
         if (data.success) {
             bootstrap.Modal.getInstance(document.getElementById('fileUploadModal')).hide();
             this.reset();
             loadFiles();
             alert('File uploaded successfully');
         } else {
-            alert('Error uploading file: ' + (data.message || 'Unknown error'));
+            alert('Error uploading file: ' + (data.error || data.message || 'Unknown error'));
         }
     })
     .catch(error => {
-        console.error('Error:', error);
-        alert('Error uploading file');
+        console.error('Upload error:', error);
+        alert('Error uploading file: ' + error.message);
     })
     .finally(() => {
         submitBtn.disabled = false;

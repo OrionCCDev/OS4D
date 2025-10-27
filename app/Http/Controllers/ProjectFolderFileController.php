@@ -105,9 +105,12 @@ class ProjectFolderFileController extends Controller
             'path' => $relativePath,
         ]);
 
+        // Reload with relationships
+        $fileRecord = ProjectFolderFile::with(['uploader', 'folder'])->find($fileRecord->id);
+
         return response()->json([
             'success' => true,
-            'file' => $fileRecord->load('uploader', 'folder'),
+            'file' => $fileRecord->toArray(),
             'message' => 'File uploaded successfully'
         ]);
     }
