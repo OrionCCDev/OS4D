@@ -322,7 +322,6 @@ class DashboardController extends Controller
 
         // Tasks by priority - get actual tasks ordered by priority with eager loading
         $tasksByPriority = Task::with(['assignee:id,name,email', 'project:id,name', 'folder:id,name'])
-            ->select('tasks.*')
             ->orderByRaw("
                 CASE
                     WHEN priority = 'urgent' THEN 1
@@ -336,14 +335,10 @@ class DashboardController extends Controller
             ->orderBy('due_date', 'asc')
             ->orderBy('created_at', 'desc')
             ->limit(20)
-            ->get()
-            ->map(function($task) {
-                return $task->only(['id', 'title', 'status', 'priority', 'due_date', 'project', 'assignee']);
-            });
+            ->get();
 
         // Tasks by status - get actual tasks ordered by status priority with eager loading
         $tasksByStatus = Task::with(['assignee:id,name,email', 'project:id,name', 'folder:id,name'])
-            ->select('tasks.*')
             ->orderByRaw("
                 CASE
                     WHEN due_date < NOW() AND status != 'completed' THEN 1
@@ -363,10 +358,7 @@ class DashboardController extends Controller
             ->orderBy('due_date', 'asc')
             ->orderBy('created_at', 'desc')
             ->limit(20)
-            ->get()
-            ->map(function($task) {
-                return $task->only(['id', 'title', 'status', 'priority', 'due_date', 'project', 'assignee']);
-            });
+            ->get();
 
         // Top performers (users with most completed tasks) - Overall
         $topPerformers = User::withCount(['assignedTasks as completed_tasks_count' => function($query) {
