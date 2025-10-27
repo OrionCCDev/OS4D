@@ -20,6 +20,113 @@ class ProjectController extends Controller
         return view('projects.index', compact('projects'));
     }
 
+    /**
+     * Show all projects for regular users (read-only)
+     */
+    public function userIndex()
+    {
+        $projects = Project::latest()->get();
+        return view('user.projects.index', compact('projects'));
+    }
+
+    /**
+     * Show a project for regular users (read-only, filtered tasks)
+     */
+    public function userShow(Project $project)
+    {
+        $user = Auth::user();
+        $selectedFolderId = request()->query('folder');
+
+        // Fetch all folders for this project with task counts
+        $allFolders = ProjectFolder::where('project_id', $project->id)
+            ->withCount(['tasks'])
+            ->orderBy('name')
+            ->get();
+
+        // Group children by parent_id
+        $childrenByParent = [];
+        foreach ($allFolders as $f) {
+            $parentId = $f->parent_id ?: 0;
+            if (!isset($childrenByParent[$parentId])) {
+                $childrenByParent[$parentId] = [];
+            }
+            $childrenByParent[$parentId][] = $f;
+        }
+
+        // Attach children relation recursively for display
+        $attachChildren = function (ProjectFolder $node) use (&$attachChildren, &$childrenByParent) {
+            $childList = collect($childrenByParent[$node->id] ?? []);
+            $childList->each(function ($c) use (&$attachChildren) {
+                $attachChildren($c);
+            });
+            $node->setRelation('children', $childList);
+        };
+
+        // Root folders (parent_id null)
+        $rootFolders = collect($childrenByParent[0] ?? []);
+        $rootFolders->each(function ($root) use (&$attachChildren) {
+            $attachChildren($root);
+        });
+
+        // Determine selected folder
+        $selectedFolder = null;
+        $expandedFolderIds = [];
+        $breadcrumbs = [];
+        if ($selectedFolderId) {
+            $selectedFolder = $allFolders->firstWhere('id', (int) $selectedFolderId);
+            if (!$selectedFolder) {
+                $selectedFolderId = null;
+            } else {
+                // Build breadcrumbs
+                $current = $selectedFolder;
+                while ($current) {
+                    $breadcrumbs[] = $current;
+                    $current = $allFolders->firstWhere('id', $current->parent_id);
+                }
+                $breadcrumbs = array_reverse($breadcrumbs);
+            }
+        }
+
+        // Compute ancestor chain for auto-expansion
+        if ($selectedFolder) {
+            $current = $selectedFolder;
+            while ($current) {
+                $expandedFolderIds[] = (int) $current->id;
+                $current = $allFolders->firstWhere('id', (int) $current->parent_id);
+            }
+        }
+
+        // Collect descendant folder ids
+        $descendantFolderIds = [];
+        if ($selectedFolder) {
+            $stack = [(int) $selectedFolder->id];
+            while (!empty($stack)) {
+                $currentId = array_pop($stack);
+                $descendantFolderIds[] = $currentId;
+                $children = $childrenByParent[$currentId] ?? [];
+                foreach ($children as $child) {
+                    $stack[] = (int) $child->id;
+                }
+            }
+        }
+
+        // Load tasks filtered by user assignment: only show tasks assigned to the current user
+        $tasksQuery = $project->tasks()
+            ->where('assigned_to', $user->id) // Only user's tasks
+            ->with(['folder', 'creator', 'assignee'])
+            ->latest();
+
+        if (!empty($descendantFolderIds)) {
+            $tasksQuery->whereIn('folder_id', $descendantFolderIds);
+        }
+        $tasks = $tasksQuery->paginate(20);
+
+        // Load contractors for the project
+        $project->load('contractors');
+
+        return view('user.projects.show', compact('project', 'rootFolders', 'selectedFolder', 'tasks', 'descendantFolderIds', 'expandedFolderIds', 'allFolders', 'breadcrumbs'));
+    }
+
     public function create()
     {
         $projectManagers = ProjectManager::orderBy('name')->get();

@@ -229,6 +229,19 @@ Route::middleware('auth')->group(function () {
         });
     });
 
+    // User routes for viewing projects (read-only)
+    Route::prefix('user')->name('user.')->group(function () {
+        Route::get('projects', [ProjectController::class, 'userIndex'])->name('projects.index');
+        Route::get('projects/{project}', [ProjectController::class, 'userShow'])->name('projects.show');
+        Route::get('projects/{project}/files', [App\Http\Controllers\ProjectFolderFileController::class, 'index'])->name('projects.files.index');
+        Route::get('projects/{project}/files/{file}/download', [App\Http\Controllers\ProjectFolderFileController::class, 'download'])->name('projects.files.download');
+
+        // Explicitly bind the file parameter to ProjectFolderFile model
+        Route::bind('file', function ($value) {
+            return \App\Models\ProjectFolderFile::findOrFail($value);
+        });
+    });
+
     // Tasks - Restricted access for non-managers
     Route::middleware('task.access')->group(function () {
         Route::resource('tasks', TaskController::class)->except(['destroy']);
