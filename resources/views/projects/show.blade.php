@@ -682,6 +682,9 @@
     </div>
 
     <script>
+// Global manager status check
+const isManager = {{ Auth::user()->isManager() ? 'true' : 'false' }};
+
 document.addEventListener('DOMContentLoaded', function() {
     // Collapse/Expand functionality for sections
     const foldersToggle = document.getElementById('foldersSection');
@@ -821,21 +824,21 @@ function displayFiles(files) {
                             <small class="text-muted">
                                 <i class="bx bx-user me-1"></i>${file.uploader?.name || 'Unknown'}
                             </small>
-                            {{ Auth::user()->isManager() ?
-                            '<div class="btn-group btn-group-sm">
+                            ${isManager ? `
+                            <div class="btn-group btn-group-sm">
                                 <a href="${file.url}" target="_blank" class="btn btn-outline-primary" title="Download">
                                     <i class="bx bx-download"></i>
                                 </a>
-                                <button onclick="openEditFileModal(${file.id}, \'' + (file.display_name || file.original_name).replace(/'/g, "\\'") + '\', \'' + (file.description || '').replace(/'/g, "\\'") + '\')" class="btn btn-outline-secondary" title="Edit">
+                                <button onclick="openEditFileModal(${file.id}, '${(file.display_name || file.original_name).replace(/'/g, "\\'")}', '${(file.description || '').replace(/'/g, "\\'")}')" class="btn btn-outline-secondary" title="Edit">
                                     <i class="bx bx-edit"></i>
                                 </button>
-                                <button onclick="confirmDeleteFile(' + file.id + ', \'' + (file.display_name || file.original_name).replace(/'/g, "\\'") + '\')" class="btn btn-outline-danger" title="Delete">
+                                <button onclick="confirmDeleteFile(${file.id}, '${(file.display_name || file.original_name).replace(/'/g, "\\'")}')" class="btn btn-outline-danger" title="Delete">
                                     <i class="bx bx-trash"></i>
                                 </button>
-                            </div>' :
-                            '<a href="${file.url}" target="_blank" class="btn btn-sm btn-outline-primary">
+                            </div>` : `
+                            <a href="${file.url}" target="_blank" class="btn btn-sm btn-outline-primary">
                                 <i class="bx bx-download me-1"></i>Download
-                            </a>' }}
+                            </a>`}
                         </div>
                     </div>
                 </div>
