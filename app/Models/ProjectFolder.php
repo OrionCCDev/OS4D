@@ -37,6 +37,11 @@ class ProjectFolder extends Model
     {
         return $this->hasMany(Task::class, 'folder_id');
     }
+
+    public function files()
+    {
+        return $this->hasMany(ProjectFolderFile::class, 'folder_id');
+    }
 }
 
 

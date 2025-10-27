@@ -215,6 +215,13 @@ Route::middleware('auth')->group(function () {
         Route::resource('project-managers', ProjectManagerController::class);
         Route::resource('email-templates', EmailTemplateController::class)->parameters(['email-templates' => 'email_template'])->except(['show']);
         Route::resource('external-stakeholders', ExternalStakeholderController::class);
+
+        // Project folder files management
+        Route::get('projects/{project}/files', [App\Http\Controllers\ProjectFolderFileController::class, 'index'])->name('projects.files.index');
+        Route::post('projects/{project}/files', [App\Http\Controllers\ProjectFolderFileController::class, 'store'])->name('projects.files.store');
+        Route::put('projects/{project}/files/{file}', [App\Http\Controllers\ProjectFolderFileController::class, 'update'])->name('projects.files.update');
+        Route::delete('projects/{project}/files/{file}', [App\Http\Controllers\ProjectFolderFileController::class, 'destroy'])->name('projects.files.destroy');
+        Route::get('projects/{project}/files/{file}/download', [App\Http\Controllers\ProjectFolderFileController::class, 'download'])->name('projects.files.download');
     });
 
     // Tasks - Restricted access for non-managers

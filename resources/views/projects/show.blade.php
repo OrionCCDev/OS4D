@@ -277,6 +277,113 @@
                     </div>
                 </div>
 
+    <!-- Files Section -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <div class="d-flex align-items-center justify-content-between">
+                <h5 class="mb-0">
+                    <i class="bx bx-file me-2"></i>
+                    Project Files {{ $selectedFolder ? 'in "' . $selectedFolder->name . '"' : '' }}
+                </h5>
+                <div class="d-flex gap-2">
+                    @if(Auth::user()->isManager())
+                    <button class="btn btn-sm btn-primary" onclick="openFileUploadModal()">
+                        <i class="bx bx-upload me-1"></i>Upload File
+                    </button>
+                    @endif
+                    <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#filesSection" aria-expanded="true" aria-controls="filesSection">
+                        <i class="bx bx-chevron-down" id="filesToggleIcon"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="collapse show" id="filesSection">
+            <div class="card-body" id="filesContainer">
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- File Upload Modal -->
+    @if(Auth::user()->isManager())
+    <div class="modal fade" id="fileUploadModal" tabindex="-1" aria-labelledby="fileUploadModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="fileUploadModalLabel">
+                        <i class="bx bx-upload me-2"></i>Upload File
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="fileUploadForm" enctype="multipart/form-data">
+                    <div class="modal-body">
+                        @csrf
+                        <div class="mb-3">
+                            <label for="fileInput" class="form-label">File</label>
+                            <input type="file" class="form-control" id="fileInput" name="file" required>
+                            <small class="text-muted">Maximum file size: 100MB</small>
+                        </div>
+                        <div class="mb-3">
+                            <label for="displayNameInput" class="form-label">Display Name <span class="text-muted">(optional)</span></label>
+                            <input type="text" class="form-control" id="displayNameInput" name="display_name" placeholder="Leave empty to use original name">
+                        </div>
+                        <div class="mb-3">
+                            <label for="fileDescriptionInput" class="form-label">Description <span class="text-muted">(optional)</span></label>
+                            <textarea class="form-control" id="fileDescriptionInput" name="description" rows="3" placeholder="Add a description for this file"></textarea>
+                        </div>
+                        <input type="hidden" name="folder_id" id="currentFolderId" value="{{ $selectedFolder?->id }}">
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bx bx-upload me-1"></i>Upload
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit File Modal -->
+    <div class="modal fade" id="editFileModal" tabindex="-1" aria-labelledby="editFileModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editFileModalLabel">
+                        <i class="bx bx-edit me-2"></i>Edit File
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="editFileForm">
+                    <div class="modal-body">
+                        @csrf
+                        @method('PUT')
+                        <div class="mb-3">
+                            <label for="editDisplayNameInput" class="form-label">Display Name</label>
+                            <input type="text" class="form-control" id="editDisplayNameInput" name="display_name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editFileDescriptionInput" class="form-label">Description</label>
+                            <textarea class="form-control" id="editFileDescriptionInput" name="description" rows="3"></textarea>
+                        </div>
+                        <input type="hidden" id="editFileId" name="file_id">
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bx bx-save me-1"></i>Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    @endif
+
     <!-- Tasks Section -->
     <div class="card">
         <div class="card-header">
@@ -616,6 +723,31 @@ document.addEventListener('DOMContentLoaded', function() {
     } else {
         tasksIcon.classList.add('bx-chevron-right');
     }
+
+    // Files section toggle
+    const filesToggle = document.getElementById('filesSection');
+    const filesIcon = document.getElementById('filesToggleIcon');
+
+    if (filesToggle) {
+        filesToggle.addEventListener('show.bs.collapse', function() {
+            filesIcon.classList.remove('bx-chevron-right');
+            filesIcon.classList.add('bx-chevron-down');
+        });
+
+        filesToggle.addEventListener('hide.bs.collapse', function() {
+            filesIcon.classList.remove('bx-chevron-down');
+            filesIcon.classList.add('bx-chevron-right');
+        });
+
+        if (filesToggle.classList.contains('show')) {
+            filesIcon.classList.add('bx-chevron-down');
+        } else {
+            filesIcon.classList.add('bx-chevron-right');
+        }
+
+        // Load files
+        loadFiles();
+    }
 });
 
 // Folder deletion confirmation function
@@ -626,5 +758,235 @@ function confirmDeleteFolder(folderId, folderName) {
     const modal = new bootstrap.Modal(document.getElementById('deleteFolderModal'));
     modal.show();
 }
+
+// File Management Functions
+function loadFiles() {
+    const projectId = {{ $project->id }};
+    const folderId = {{ $selectedFolder?->id ?? 'null' }};
+    const container = document.getElementById('filesContainer');
+
+    fetch(`/projects/${projectId}/files?folder=${folderId ? folderId : ''}`)
+        .then(response => response.json())
+        .then(files => {
+            displayFiles(files);
+        })
+        .catch(error => {
+            console.error('Error loading files:', error);
+            container.innerHTML = '<p class="text-muted text-center">Failed to load files</p>';
+        });
+}
+
+function displayFiles(files) {
+    const container = document.getElementById('filesContainer');
+
+    if (files.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-5">
+                <i class="bx bx-file text-muted" style="font-size: 48px;"></i>
+                <p class="text-muted mt-3">No files in this folder</p>
+                @auth
+                @if(Auth::user()->isManager())
+                <button class="btn btn-primary btn-sm" onclick="openFileUploadModal()">
+                    <i class="bx bx-upload me-1"></i>Upload First File
+                </button>
+                @endif
+                @endauth
+            </div>
+        `;
+        return;
+    }
+
+    let html = '<div class="row g-3">';
+    files.forEach(file => {
+        const iconClass = getFileIconClass(file.mime_type);
+        html += `
+            <div class="col-md-6 col-lg-4" data-file-id="${file.id}">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-start mb-3">
+                            <div class="flex-shrink-0">
+                                <div class="avatar avatar-md">
+                                    <div class="avatar-initial bg-label-primary rounded">
+                                        <i class="${iconClass}"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex-grow-1 ms-3" style="min-width: 0;">
+                                <h6 class="mb-1 text-truncate" title="${file.display_name}">${file.display_name || file.original_name}</h6>
+                                <p class="text-muted small mb-0">${file.human_readable_size}</p>
+                            </div>
+                        </div>
+                        ${file.description ? `<p class="small text-muted mb-2">${file.description}</p>` : ''}
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <small class="text-muted">
+                                <i class="bx bx-user me-1"></i>${file.uploader?.name || 'Unknown'}
+                            </small>
+                            {{ Auth::user()->isManager() ?
+                            '<div class="btn-group btn-group-sm">
+                                <a href="${file.url}" target="_blank" class="btn btn-outline-primary" title="Download">
+                                    <i class="bx bx-download"></i>
+                                </a>
+                                <button onclick="openEditFileModal(${file.id}, \'' + (file.display_name || file.original_name).replace(/'/g, "\\'") + '\', \'' + (file.description || '').replace(/'/g, "\\'") + '\')" class="btn btn-outline-secondary" title="Edit">
+                                    <i class="bx bx-edit"></i>
+                                </button>
+                                <button onclick="confirmDeleteFile(' + file.id + ', \'' + (file.display_name || file.original_name).replace(/'/g, "\\'") + '\')" class="btn btn-outline-danger" title="Delete">
+                                    <i class="bx bx-trash"></i>
+                                </button>
+                            </div>' :
+                            '<a href="${file.url}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                <i class="bx bx-download me-1"></i>Download
+                            </a>' }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+function getFileIconClass(mimeType) {
+    if (!mimeType) return 'bx bx-file';
+
+    if (mimeType.includes('pdf')) return 'bx bxs-file-pdf';
+    if (mimeType.includes('image')) return 'bx bxs-file-image';
+    if (mimeType.includes('word') || mimeType.includes('document')) return 'bx bxs-file-doc';
+    if (mimeType.includes('sheet') || mimeType.includes('excel')) return 'bx bxs-file-blank';
+    if (mimeType.includes('zip') || mimeType.includes('archive')) return 'bx bxs-file-archive';
+    if (mimeType.includes('video')) return 'bx bxs-file';
+    if (mimeType.includes('text')) return 'bx bxs-file-txt';
+
+    return 'bx bx-file';
+}
+
+function openFileUploadModal() {
+    const modal = new bootstrap.Modal(document.getElementById('fileUploadModal'));
+    modal.show();
+}
+
+function openEditFileModal(fileId, displayName, description) {
+    document.getElementById('editFileId').value = fileId;
+    document.getElementById('editDisplayNameInput').value = displayName;
+    document.getElementById('editFileDescriptionInput').value = description;
+    const modal = new bootstrap.Modal(document.getElementById('editFileModal'));
+    modal.show();
+}
+
+function confirmDeleteFile(fileId, fileName) {
+    if (confirm(`Are you sure you want to delete "${fileName}"?`)) {
+        deleteFile(fileId);
+    }
+}
+
+function deleteFile(fileId) {
+    const projectId = {{ $project->id }};
+
+    fetch(`/projects/${projectId}/files/${fileId}`, {
+        method: 'DELETE',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            loadFiles();
+            alert('File deleted successfully');
+        } else {
+            alert('Error deleting file');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error deleting file');
+    });
+}
+
+// File upload form handler
+document.getElementById('fileUploadForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const formData = new FormData(this);
+    const projectId = {{ $project->id }};
+    const submitBtn = this.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Uploading...';
+
+    fetch(`/projects/${projectId}/files`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('fileUploadModal')).hide();
+            this.reset();
+            loadFiles();
+            alert('File uploaded successfully');
+        } else {
+            alert('Error uploading file: ' + (data.message || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error uploading file');
+    })
+    .finally(() => {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+    });
+});
+
+// Edit file form handler
+document.getElementById('editFileForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const fileId = document.getElementById('editFileId').value;
+    const projectId = {{ $project->id }};
+    const submitBtn = this.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+
+    const formData = {
+        display_name: document.getElementById('editDisplayNameInput').value,
+        description: document.getElementById('editFileDescriptionInput').value
+    };
+
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Saving...';
+
+    fetch(`/projects/${projectId}/files/${fileId}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+        },
+        body: JSON.stringify(formData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('editFileModal')).hide();
+            loadFiles();
+            alert('File updated successfully');
+        } else {
+            alert('Error updating file');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error updating file');
+    })
+    .finally(() => {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+    });
+});
     </script>
 @endsection
