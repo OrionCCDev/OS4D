@@ -844,13 +844,13 @@ function displayFiles(files) {
 
         html += `
             <div class="col-md-6 col-lg-4" data-file-id="${file.id}">
-                <div class="card h-100">
+                <div class="card h-100 border-0 shadow-sm" style="background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);">
                     <div class="card-body">
                         <div class="d-flex align-items-start mb-3">
                             <div class="flex-shrink-0">
                                 <div class="avatar avatar-md">
-                                    <div class="avatar-initial bg-label-primary rounded">
-                                        <i class="${iconClass}"></i>
+                                    <div class="avatar-initial bg-white shadow-sm rounded" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                                        <i class="${iconClass} text-white"></i>
                                     </div>
                                 </div>
                             </div>
