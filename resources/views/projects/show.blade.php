@@ -738,10 +738,17 @@ document.addEventListener('DOMContentLoaded', function() {
             filesIcon.classList.add('bx-chevron-right');
         }
 
-        // Load files
+        // Load files on page load
+        console.log('Page loaded, calling loadFiles()');
         loadFiles();
     }
 });
+
+// Function to reload files after upload
+function reloadFiles() {
+    console.log('reloadFiles() called');
+    loadFiles();
+}
 
 // Folder deletion confirmation function
 function confirmDeleteFolder(folderId, folderName) {
@@ -780,7 +787,8 @@ function loadFiles() {
             return response.json();
         })
         .then(files => {
-            console.log('Files loaded:', files);
+            console.log('Files loaded successfully:', files);
+            console.log('Files count:', Array.isArray(files) ? files.length : 'Not an array');
             displayFiles(files);
         })
         .catch(error => {
@@ -790,12 +798,22 @@ function loadFiles() {
 }
 
 function displayFiles(files) {
+    console.log('displayFiles() called with:', files);
     const container = document.getElementById('filesContainer');
 
+    if (!Array.isArray(files)) {
+        console.error('Files is not an array:', typeof files, files);
+        container.innerHTML = '<p class="text-danger text-center">Invalid response format</p>';
+        return;
+    }
+
     if (files.length === 0) {
+        console.log('No files to display');
         container.innerHTML = '';
         return;
     }
+
+    console.log('Displaying', files.length, 'files');
 
     let html = '<h6 class="mb-3"><i class="bx bx-file me-2"></i>Files (' + files.length + ')</h6><div class="row g-3 mb-4">';
     files.forEach(file => {
