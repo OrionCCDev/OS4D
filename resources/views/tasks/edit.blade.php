@@ -87,16 +87,16 @@
                 <div class="col-md-4 mb-3">
                     <label class="form-label">
                         <i class="bx bx-user me-1"></i>Assigned To
-                        @if(old('assigned_to', $task->assignee_id) != $task->assignee_id)
+                        @if(old('assigned_to', $task->assigned_to) != $task->assigned_to)
                             <span class="badge bg-warning ms-1">Reassigning</span>
                         @endif
                     </label>
                     <select name="assigned_to" id="assigned_to" class="form-select">
                         <option value="">Unassigned</option>
                         @foreach(\App\Models\User::where('status', 'active')->where('role', '!=', 'admin')->orderBy('name')->get() as $user)
-                            <option value="{{ $user->id }}" @selected(old('assigned_to', $task->assignee_id) == $user->id)>
+                            <option value="{{ $user->id }}" @selected(old('assigned_to', $task->assigned_to) == $user->id)>
                                 {{ $user->name }} ({{ $user->email }})
-                                @if($user->id == $task->assignee_id)
+                                @if($user->id == $task->assigned_to)
                                     - Current
                                 @endif
                             </option>
@@ -166,7 +166,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const assignedToSelect = document.getElementById('assigned_to');
 
     if (assignedToSelect) {
-        const originalAssignee = {{ $task->assignee_id ?? 'null' }};
+        const originalAssignee = {{ $task->assigned_to ?? 'null' }};
 
         assignedToSelect.addEventListener('change', function() {
             const newAssignee = parseInt(this.value) || null;
