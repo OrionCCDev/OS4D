@@ -31,7 +31,23 @@ class ProjectFolderFileController extends Controller
             $query->whereNull('folder_id');
         }
 
-        $files = $query->get();
+        $files = $query->get()->map(function($file) {
+            return [
+                'id' => $file->id,
+                'original_name' => $file->original_name,
+                'display_name' => $file->display_name,
+                'description' => $file->description,
+                'mime_type' => $file->mime_type,
+                'size_bytes' => $file->size_bytes,
+                'human_readable_size' => $file->human_readable_size,
+                'url' => $file->url,
+                'uploaded_by' => $file->uploaded_by,
+                'folder_id' => $file->folder_id,
+                'uploader' => $file->uploader ? ['name' => $file->uploader->name] : null,
+                'folder' => $file->folder ? ['name' => $file->folder->name] : null,
+                'created_at' => $file->created_at,
+            ];
+        });
 
         return response()->json($files);
     }
