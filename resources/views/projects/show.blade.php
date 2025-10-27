@@ -107,18 +107,23 @@
     </div>
     @endif
 
-    <!-- Folders Section -->
+    <!-- Folders and Files Section -->
     <div class="card mb-4">
                 <div class="card-header">
                     <div class="d-flex align-items-center justify-content-between">
                 <h5 class="mb-0">
                     <i class="bx bx-folder me-2"></i>
-                    {{ $selectedFolder ? 'Subfolders in "' . $selectedFolder->name . '"' : 'Project Folders' }}
+                    {{ $selectedFolder ? 'Subfolders in "' . $selectedFolder->name . '"' : 'Project Folders & Files' }}
                 </h5>
                 <div class="d-flex gap-2">
                     <a class="btn btn-sm btn-primary" href="{{ route('folders.create', ['project_id' => $project->id, 'parent_id' => $selectedFolder?->id]) }}">
                         <i class="bx bx-folder-plus me-1"></i>Add Folder
                     </a>
+                    @if(Auth::user()->isManager())
+                    <button class="btn btn-sm btn-primary" onclick="openFileUploadModal()">
+                        <i class="bx bx-upload me-1"></i>Upload File
+                    </button>
+                    @endif
                     <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#foldersSection" aria-expanded="true" aria-controls="foldersSection">
                         <i class="bx bx-chevron-down" id="foldersToggleIcon"></i>
                     </button>
@@ -127,8 +132,17 @@
         </div>
         <div class="collapse show" id="foldersSection">
             <div class="card-body">
+                <!-- Files Container -->
+                <div id="filesContainer" class="mb-4">
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary spinner-border-sm" role="status">
+                            <span class="visually-hidden">Loading files...</span>
+                        </div>
+                    </div>
+                </div>
+
                 @if($selectedFolder && $selectedFolder->children->count() > 0)
-                    <div class="row">
+                    <div class="row" id="foldersGrid">
                         @foreach($selectedFolder->children as $folder)
                             <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12 mb-4">
                                 <div class="card folder-card h-100 position-relative overflow-hidden" style="transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); border: 1px solid #e5e7eb; cursor: pointer;" onclick="window.location.href='{{ route('projects.show', ['project' => $project->id, 'folder' => $folder->id]) }}'">
@@ -195,7 +209,7 @@
                         @endforeach
                     </div>
                 @elseif(!$selectedFolder && $rootFolders->count() > 0)
-                    <div class="row">
+                    <div class="row" id="foldersGrid">
                         @foreach($rootFolders as $folder)
                             <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12 mb-4">
                                 <div class="card folder-card h-100 position-relative overflow-hidden" style="transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); border: 1px solid #e5e7eb; cursor: pointer;" onclick="window.location.href='{{ route('projects.show', ['project' => $project->id, 'folder' => $folder->id]) }}'">
@@ -261,7 +275,14 @@
                             </div>
                         @endforeach
                     </div>
-                @else
+                @endif
+
+                <!-- Empty state for folders only shown if no folders exist -->
+                @php
+                    $hasFolders = ($selectedFolder && $selectedFolder->children->count() > 0) || (!$selectedFolder && $rootFolders->count() > 0);
+                @endphp
+
+                @if(!$hasFolders)
                     <div class="text-center py-5">
                         <div class="mb-4">
                             <i class="bx bx-folder-plus" style="font-size: 4rem; color: #d1d5db;"></i>
@@ -276,37 +297,6 @@
             </div>
                     </div>
                 </div>
-
-    <!-- Files Section -->
-    <div class="card mb-4">
-        <div class="card-header">
-            <div class="d-flex align-items-center justify-content-between">
-                <h5 class="mb-0">
-                    <i class="bx bx-file me-2"></i>
-                    Project Files {{ $selectedFolder ? 'in "' . $selectedFolder->name . '"' : '' }}
-                </h5>
-                <div class="d-flex gap-2">
-                    @if(Auth::user()->isManager())
-                    <button class="btn btn-sm btn-primary" onclick="openFileUploadModal()">
-                        <i class="bx bx-upload me-1"></i>Upload File
-                    </button>
-                    @endif
-                    <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#filesSection" aria-expanded="true" aria-controls="filesSection">
-                        <i class="bx bx-chevron-down" id="filesToggleIcon"></i>
-                    </button>
-                </div>
-            </div>
-        </div>
-        <div class="collapse show" id="filesSection">
-            <div class="card-body" id="filesContainer">
-                <div class="text-center py-4">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <!-- File Upload Modal -->
     @if(Auth::user()->isManager())
@@ -783,23 +773,11 @@ function displayFiles(files) {
     const container = document.getElementById('filesContainer');
 
     if (files.length === 0) {
-        container.innerHTML = `
-            <div class="text-center py-5">
-                <i class="bx bx-file text-muted" style="font-size: 48px;"></i>
-                <p class="text-muted mt-3">No files in this folder</p>
-                @auth
-                @if(Auth::user()->isManager())
-                <button class="btn btn-primary btn-sm" onclick="openFileUploadModal()">
-                    <i class="bx bx-upload me-1"></i>Upload First File
-                </button>
-                @endif
-                @endauth
-            </div>
-        `;
+        container.innerHTML = '';
         return;
     }
 
-    let html = '<div class="row g-3">';
+    let html = '<h6 class="mb-3"><i class="bx bx-file me-2"></i>Files (' + files.length + ')</h6><div class="row g-3 mb-4">';
     files.forEach(file => {
         const iconClass = getFileIconClass(file.mime_type);
         html += `
