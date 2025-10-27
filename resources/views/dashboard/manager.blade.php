@@ -739,8 +739,8 @@
                                     @endphp
                                     <div class="timeline-item">
                                         <div class="timeline-marker bg-{{ $statusColor }}"></div>
-                                        <div class="timeline-content">
-                                            <div class="card border-{{ $statusColor }}">
+                                        <div class="timeline-content" onclick="window.location.href='{{ route('tasks.show', $task->id) }}'" style="cursor: pointer;">
+                                            <div class="card border-{{ $statusColor }}" style="transition: all 0.3s ease;">
                                                 <div class="card-header bg-{{ $statusColor }} {{ $statusColor == 'warning' ? 'text-dark' : 'text-white' }} d-flex justify-content-between align-items-center">
                                                     <h6 class="mb-0">
                                                         <i class="bx bx-calendar me-2"></i>{{ $taskDate->format('M d, Y') }}
@@ -936,18 +936,24 @@ function showTimeline() {
     z-index: 2;
 }
 
-.timeline-content {
-    position: relative;
-    background: #fff;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
+    .timeline-content {
+        position: relative;
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
 
-.timeline-content:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
-}
+    .timeline-content:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    }
+    
+    /* Make timeline cards clickable */
+    .timeline-content:hover .card {
+        transform: scale(1.02);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.2) !important;
+    }
 
 .timeline-content .card {
     border: none;
