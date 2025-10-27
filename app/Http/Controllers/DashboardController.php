@@ -639,7 +639,7 @@ class DashboardController extends Controller
             })
             ->orderByRaw('COALESCE(start_date, due_date) ASC')
             ->limit(10)
-            ->get(['id', 'title', 'description', 'status', 'priority', 'start_date', 'due_date', 'assignee_id', 'project_id', 'folder_id']);
+            ->get(['id', 'title', 'description', 'status', 'priority', 'start_date', 'due_date', 'assigned_to', 'project_id', 'folder_id']);
 
         // Build the final data array
         $data = [
