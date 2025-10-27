@@ -11,35 +11,83 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Helper function to add index if it doesn't exist
+        $addIndexIfNotExists = function($table, $indexName, $callback) use (&$addIndexIfNotExists) {
+            try {
+                $connection = Schema::getConnection();
+                $sm = $connection->getDoctrineSchemaManager();
+                $indexesFound = $sm->listTableIndexes($table);
+                $indexNames = array_keys($indexesFound);
+                
+                if (!in_array($indexName, $indexNames)) {
+                    Schema::table($table, $callback);
+                }
+            } catch (\Exception $e) {
+                // Index might exist, continue
+            }
+        };
+
         // Add indexes to tasks table for frequently queried columns
-        Schema::table('tasks', function (Blueprint $table) {
-            // Add indexes for common queries
+        $addIndexIfNotExists('tasks', 'tasks_status_idx', function(Blueprint $table) {
             $table->index('status', 'tasks_status_idx');
+        });
+        
+        $addIndexIfNotExists('tasks', 'tasks_priority_idx', function(Blueprint $table) {
             $table->index('priority', 'tasks_priority_idx');
+        });
+        
+        $addIndexIfNotExists('tasks', 'tasks_assigned_to_idx', function(Blueprint $table) {
             $table->index('assigned_to', 'tasks_assigned_to_idx');
+        });
+        
+        $addIndexIfNotExists('tasks', 'tasks_due_date_idx', function(Blueprint $table) {
             $table->index('due_date', 'tasks_due_date_idx');
+        });
+        
+        $addIndexIfNotExists('tasks', 'tasks_created_at_idx', function(Blueprint $table) {
             $table->index('created_at', 'tasks_created_at_idx');
+        });
+        
+        $addIndexIfNotExists('tasks', 'tasks_status_due_date_idx', function(Blueprint $table) {
             $table->index(['status', 'due_date'], 'tasks_status_due_date_idx');
+        });
+        
+        $addIndexIfNotExists('tasks', 'tasks_assigned_status_idx', function(Blueprint $table) {
             $table->index(['assigned_to', 'status'], 'tasks_assigned_status_idx');
+        });
+        
+        $addIndexIfNotExists('tasks', 'tasks_project_status_idx', function(Blueprint $table) {
             $table->index(['project_id', 'status'], 'tasks_project_status_idx');
         });
 
         // Add indexes to users table
-        Schema::table('users', function (Blueprint $table) {
+        $addIndexIfNotExists('users', 'users_role_idx', function(Blueprint $table) {
             $table->index('role', 'users_role_idx');
+        });
+        
+        $addIndexIfNotExists('users', 'users_status_idx', function(Blueprint $table) {
             $table->index('status', 'users_status_idx');
         });
 
         // Add indexes to projects table
-        Schema::table('projects', function (Blueprint $table) {
+        $addIndexIfNotExists('projects', 'projects_status_idx', function(Blueprint $table) {
             $table->index('status', 'projects_status_idx');
+        });
+        
+        $addIndexIfNotExists('projects', 'projects_owner_id_idx', function(Blueprint $table) {
             $table->index('owner_id', 'projects_owner_id_idx');
         });
 
         // Add indexes to notifications table
-        Schema::table('unified_notifications', function (Blueprint $table) {
+        $addIndexIfNotExists('unified_notifications', 'unified_notifications_user_read_idx', function(Blueprint $table) {
             $table->index(['user_id', 'is_read'], 'unified_notifications_user_read_idx');
+        });
+        
+        $addIndexIfNotExists('unified_notifications', 'unified_notifications_type_read_idx', function(Blueprint $table) {
             $table->index(['type', 'is_read'], 'unified_notifications_type_read_idx');
+        });
+        
+        $addIndexIfNotExists('unified_notifications', 'unified_notifications_created_at_idx', function(Blueprint $table) {
             $table->index('created_at', 'unified_notifications_created_at_idx');
         });
 
