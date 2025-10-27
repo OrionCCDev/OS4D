@@ -50,6 +50,11 @@ Route::get('/dashboard', [DashboardController::class, 'index'])->middleware(['au
 // Dashboard API routes for charts
 Route::get('/dashboard/chart-data', [DashboardController::class, 'getChartData'])->middleware(['auth', 'verified'])->name('dashboard.chart-data');
 
+// Evaluation routes
+Route::get('/evaluations', [App\Http\Controllers\EvaluationController::class, 'index'])->middleware(['auth', 'verified'])->name('evaluations.index');
+Route::get('/evaluations/{user}', [App\Http\Controllers\EvaluationController::class, 'show'])->middleware(['auth', 'verified'])->name('evaluations.show');
+Route::get('/evaluations/{user}/report', [App\Http\Controllers\EvaluationController::class, 'report'])->middleware(['auth', 'manager'])->name('evaluations.report');
+
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
