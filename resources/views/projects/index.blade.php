@@ -235,8 +235,12 @@
                                 </div>
                                 <div class="project-details">
                                     <h5 class="card-title" title="{{ $project->name }}">{{ $project->name }}</h5>
-                                    <p class="text-muted small">{{ Str::limit($project->description ?? 'No description available', 50) }}</p>
                                 </div>
+                            </div>
+
+                            <!-- Description Column -->
+                            <div class="description-column">
+                                <p class="text-muted small">{{ Str::limit($project->description ?? 'No description available', 120) }}</p>
                             </div>
 
                             <!-- Status Column -->
@@ -519,7 +523,8 @@
     background: white;
     border-radius: 12px;
     overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    border: 1px solid #e5e7eb;
 }
 
 .list-view .grid-view-content {
@@ -532,17 +537,17 @@
 
 /* Table Header */
 .list-view::before {
-    content: 'Project Status Start Date Team Actions';
+    content: 'Project Description Status Date Team Actions';
     display: grid;
-    grid-template-columns: 2fr 120px 120px 80px 120px;
-    gap: 1rem;
-    padding: 1rem;
-    background: #f8f9fa;
+    grid-template-columns: 1.2fr 1.5fr 130px 140px 100px 140px;
+    gap: 1.5rem;
+    padding: 1.25rem 1.5rem;
+    background: linear-gradient(to right, #f8f9fa, #fafbfc);
     border-bottom: 2px solid #e5e7eb;
     font-weight: 600;
     font-size: 0.75rem;
     text-transform: uppercase;
-    color: #6b7280;
+    color: #4b5563;
     letter-spacing: 0.05em;
     align-items: center;
     white-space: pre;
@@ -551,9 +556,9 @@
 .list-view .project-card {
     width: 100%;
     margin-bottom: 0;
-    border-bottom: 1px solid #f3f4f6;
+    border-bottom: 1px solid #f0f2f4;
     background: white;
-    transition: background-color 0.2s ease;
+    transition: all 0.2s ease;
 }
 
 .list-view .project-card:last-child {
@@ -561,7 +566,9 @@
 }
 
 .list-view .project-card:hover {
-    background: #f8f9fb;
+    background: linear-gradient(to right, #fefbff, #f8f9fa);
+    border-color: #ddd6fe;
+    box-shadow: inset 0 0 0 1px rgba(105, 108, 255, 0.1);
 }
 
 .list-view .project-card .card {
@@ -573,34 +580,37 @@
 }
 
 .list-view .project-card .card-body {
-    padding: 1rem;
+    padding: 1.25rem 1.5rem;
     display: grid;
-    grid-template-columns: 2fr 120px 120px 80px 120px;
-    gap: 1rem;
+    grid-template-columns: 1.2fr 1.5fr 130px 140px 100px 140px;
+    gap: 1.5rem;
     align-items: center;
     height: auto;
-    min-height: 70px;
+    min-height: 85px;
 }
 
 /* Project Info Column */
 .list-view .project-info-column {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 1rem;
     min-width: 0;
 }
 
 .list-view .project-title-container {
-    min-width: 40px !important;
-    min-height: 40px !important;
-    max-width: 40px !important;
-    max-height: 40px !important;
+    min-width: 48px !important;
+    min-height: 48px !important;
+    max-width: 48px !important;
+    max-height: 48px !important;
     flex-shrink: 0;
+    border: 2px solid rgba(0, 0, 0, 0.05);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
 .list-view .project-title-text {
-    font-size: 12px !important;
+    font-size: 14px !important;
     line-height: 1.2;
+    font-weight: 700;
 }
 
 .list-view .project-details {
@@ -609,25 +619,37 @@
 }
 
 .list-view .card-title {
-    margin-bottom: 0.25rem;
-    font-size: 0.95rem;
+    margin-bottom: 0.35rem;
+    font-size: 1rem;
     font-weight: 600;
-    line-height: 1.3;
-    color: #374151;
+    line-height: 1.4;
+    color: #1f2937;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
-.list-view .text-muted.small {
-    font-size: 0.75rem;
-    line-height: 1.3;
+.list-view .card-title:hover {
+    color: #696cff;
+}
+
+/* Description Column */
+.list-view .description-column {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+}
+
+.list-view .description-column .text-muted {
+    font-size: 0.813rem;
+    line-height: 1.5;
     color: #6b7280;
     margin: 0;
     display: -webkit-box;
-    -webkit-line-clamp: 1;
+    -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+    max-width: 100%;
 }
 
 /* Status Column */
@@ -637,25 +659,39 @@
 }
 
 .list-view .badge {
-    font-size: 0.7rem;
-    padding: 0.25rem 0.6rem;
-    border-radius: 6px;
+    font-size: 0.75rem;
+    padding: 0.35rem 0.85rem;
+    border-radius: 8px;
     font-weight: 500;
     white-space: nowrap;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
 /* Date Column */
 .list-view .date-column {
-    font-size: 0.8rem;
+    font-size: 0.813rem;
     color: #374151;
     font-weight: 500;
+    line-height: 1.5;
+}
+
+.list-view .date-column .text-muted {
+    color: #9ca3af;
+    font-size: 0.75rem;
+}
+
+.list-view .date-column .text-danger,
+.list-view .date-column .text-success {
+    font-size: 0.75rem;
+    font-weight: 600;
 }
 
 /* Team Column */
 .list-view .team-column {
-    font-size: 0.8rem;
-    color: #6b7280;
+    font-size: 0.813rem;
+    color: #4b5563;
     text-align: center;
+    font-weight: 500;
 }
 
 /* Actions Column */
@@ -667,10 +703,33 @@
 }
 
 .list-view .btn-sm {
-    padding: 0.375rem 0.75rem;
-    font-size: 0.75rem;
-    border-radius: 6px;
+    padding: 0.5rem;
+    font-size: 0.813rem;
+    border-radius: 8px;
     font-weight: 500;
+    min-width: 36px;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.list-view .btn-primary.btn-sm:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(105, 108, 255, 0.3);
+}
+
+.list-view .btn-outline-secondary.btn-sm:hover {
+    background-color: #f3f4f6;
+    border-color: #696cff;
+    color: #696cff;
+}
+
+.list-view .btn-outline-danger.btn-sm:hover {
+    background-color: #fee2e2;
+    border-color: #ef4444;
+    color: #dc2626;
 }
 
 .list-view .project-card-inner {
@@ -691,10 +750,10 @@
 }
 
 .list-view .position-absolute.top-2.end-2 button {
-    width: 28px;
-    height: 28px;
+    width: 32px;
+    height: 32px;
     padding: 0;
-    border-radius: 4px;
+    border-radius: 6px;
 }
 
 /* Hide elements not needed in table view */
@@ -706,14 +765,15 @@
 }
 
 /* Responsive table */
-@media (max-width: 1024px) {
+@media (max-width: 1400px) {
     .list-view::before {
-        grid-template-columns: 2fr 100px 100px 100px;
-        content: 'Project Status Date Actions';
+        grid-template-columns: 1fr 1fr 120px 120px 100px;
+        content: 'Project Description Status Date Actions';
     }
 
     .list-view .project-card .card-body {
-        grid-template-columns: 2fr 100px 100px 100px;
+        grid-template-columns: 1fr 1fr 120px 120px 100px;
+        gap: 1.25rem;
     }
 
     .list-view .team-column {
@@ -721,16 +781,39 @@
     }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
     .list-view::before {
-        grid-template-columns: 1fr 80px 80px;
-        content: 'Project Status Actions';
+        grid-template-columns: 1.2fr 100px 110px 110px;
+        content: 'Project Status Date Actions';
     }
 
     .list-view .project-card .card-body {
-        grid-template-columns: 1fr 80px 80px;
-        padding: 0.75rem;
+        grid-template-columns: 1.2fr 100px 110px 110px;
+        gap: 1rem;
+    }
+
+    .list-view .description-column {
+        display: none;
+    }
+
+    .list-view .project-details .card-title {
+        font-size: 0.938rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .list-view::before {
+        grid-template-columns: 1fr 100px 100px;
+        content: 'Project Status Actions';
+        padding: 1rem;
         gap: 0.75rem;
+    }
+
+    .list-view .project-card .card-body {
+        grid-template-columns: 1fr 100px 100px;
+        padding: 1rem;
+        gap: 0.75rem;
+        min-height: 75px;
     }
 
     .list-view .date-column,
@@ -739,43 +822,60 @@
     }
 
     .list-view .badge {
-        font-size: 0.65rem;
-        padding: 0.2rem 0.4rem;
+        font-size: 0.688rem;
+        padding: 0.3rem 0.65rem;
     }
 
     .list-view .project-title-container {
-        min-width: 32px !important;
-        min-height: 32px !important;
-        max-width: 32px !important;
-        max-height: 32px !important;
+        min-width: 40px !important;
+        min-height: 40px !important;
+        max-width: 40px !important;
+        max-height: 40px !important;
     }
 
     .list-view .project-title-text {
-        font-size: 10px !important;
+        font-size: 11px !important;
+    }
+
+    .list-view .card-title {
+        font-size: 0.875rem;
     }
 }
 
 @media (max-width: 480px) {
     .list-view::before {
-        grid-template-columns: 1fr 60px;
+        grid-template-columns: 1fr 80px;
         content: 'Project Actions';
+        padding: 0.875rem;
     }
 
     .list-view .project-card .card-body {
-        grid-template-columns: 1fr 60px;
-        padding: 0.75rem;
-        gap: 0.5rem;
-        min-height: 60px;
+        grid-template-columns: 1fr 80px;
+        padding: 0.875rem;
+        gap: 0.625rem;
+        min-height: 70px;
     }
 
     .list-view .status-column,
     .list-view .date-column,
-    .list-view .team-column {
+    .list-view .team-column,
+    .list-view .description-column {
         display: none;
     }
 
-    .list-view .actions-column .btn-outline-secondary {
+    .list-view .btn-outline-secondary {
         display: none;
+    }
+
+    .list-view .project-info-column {
+        gap: 0.625rem;
+    }
+
+    .list-view .project-title-container {
+        min-width: 36px !important;
+        min-height: 36px !important;
+        max-width: 36px !important;
+        max-height: 36px !important;
     }
 }
 </style>
