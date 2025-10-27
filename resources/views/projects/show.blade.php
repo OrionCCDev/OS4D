@@ -626,6 +626,45 @@
     background-color: #e1e4e8 !important;
     border-color: rgba(67, 89, 113, 0.3) !important;
 }
+
+/* File Card Hover Effects */
+.file-card-gradient {
+    position: relative;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.file-card-gradient:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15) !important;
+}
+
+.file-shine-overlay {
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg,
+        transparent,
+        rgba(255, 255, 255, 0.4) 50%,
+        transparent);
+    transition: left 0.5s;
+    pointer-events: none;
+    z-index: 2;
+}
+
+.file-card-gradient:hover .file-shine-overlay {
+    left: 100%;
+}
+
+.file-card-gradient:hover .avatar-initial {
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.file-card-gradient .avatar-initial {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
 </style>
 
     <!-- Delete Folder Confirmation Modal -->
@@ -844,8 +883,9 @@ function displayFiles(files) {
 
         html += `
             <div class="col-md-6 col-lg-4" data-file-id="${file.id}">
-                <div class="card h-100 border-0 shadow-sm" style="background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);">
-                    <div class="card-body">
+                <div class="card h-100 border-0 shadow-sm file-card-gradient" style="background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); position: relative; overflow: hidden; transition: all 0.3s ease;">
+                    <div class="file-shine-overlay"></div>
+                    <div class="card-body" style="position: relative; z-index: 1;">
                         <div class="d-flex align-items-start mb-3">
                             <div class="flex-shrink-0">
                                 <div class="avatar avatar-md">
