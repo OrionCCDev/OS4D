@@ -763,17 +763,22 @@ function loadFiles() {
 
     fetch(`/projects/${projectId}/files?folder=${folderId ? folderId : ''}`)
         .then(response => {
+            console.log('Response status:', response.status, response.statusText);
             if (!response.ok) {
-                throw new Error('Failed to load files');
+                return response.text().then(text => {
+                    console.error('Error response:', text);
+                    throw new Error('Failed to load files: ' + text);
+                });
             }
             return response.json();
         })
         .then(files => {
+            console.log('Files loaded:', files);
             displayFiles(files);
         })
         .catch(error => {
             console.error('Error loading files:', error);
-            container.innerHTML = '<p class="text-muted text-center">Failed to load files</p>';
+            container.innerHTML = '<p class="text-muted text-center">Failed to load files: ' + error.message + '</p>';
         });
 }
 

@@ -45,9 +45,9 @@ class ProjectFolderFileController extends Controller
                 'folder_id' => $file->folder_id,
                 'uploader' => $file->uploader ? ['name' => $file->uploader->name] : null,
                 'folder' => $file->folder ? ['name' => $file->folder->name] : null,
-                'created_at' => $file->created_at,
+                'created_at' => $file->created_at ? $file->created_at->toDateTimeString() : null,
             ];
-        });
+        })->values()->toArray();
 
         return response()->json($files);
     }
