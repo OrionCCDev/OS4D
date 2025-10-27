@@ -101,6 +101,14 @@
         </div>
         <div class="collapse show" id="foldersSection">
             <div class="card-body">
+                <!-- Files Container - Shows files in current folder -->
+                <div id="filesContainer" class="mb-4">
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary spinner-border-sm" role="status">
+                            <span class="visually-hidden">Loading files...</span>
+                        </div>
+                    </div>
+                </div>
 
                 @if($selectedFolder && $selectedFolder->children->count() > 0)
                     <div class="row" id="foldersGrid">
@@ -209,35 +217,6 @@
             </div>
                     </div>
                 </div>
-
-    <!-- Project Files Section - Shows all files from all folders -->
-    <div class="card mb-4">
-        <div class="card-header">
-            <div class="d-flex align-items-center justify-content-between">
-                <h5 class="mb-0">
-                    <i class="bx bx-file me-2"></i>
-                    Project Files (From All Folders)
-                </h5>
-                <div class="d-flex gap-2">
-                    <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#filesSection" aria-expanded="true" aria-controls="filesSection">
-                        <i class="bx bx-chevron-down" id="filesToggleIcon"></i>
-                    </button>
-                </div>
-            </div>
-        </div>
-        <div class="collapse show" id="filesSection">
-            <div class="card-body">
-                <!-- Files Container for all files -->
-                <div id="allFilesContainer">
-                    <div class="text-center py-4">
-                        <div class="spinner-border text-primary spinner-border-sm" role="status">
-                            <span class="visually-hidden">Loading files...</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <!-- Tasks Section -->
     <div class="card">
@@ -544,33 +523,9 @@ document.addEventListener('DOMContentLoaded', function() {
         tasksIcon.classList.add('bx-chevron-right');
     }
 
-    // Files section toggle
-    const filesToggle = document.getElementById('filesSection');
-    const filesIcon = document.getElementById('filesToggleIcon');
-
-    console.log('Checking filesToggle and filesIcon:', filesToggle, filesIcon);
-
-    if (filesToggle && filesIcon) {
-        filesToggle.addEventListener('show.bs.collapse', function() {
-            filesIcon.classList.remove('bx-chevron-right');
-            filesIcon.classList.add('bx-chevron-down');
-        });
-
-        filesToggle.addEventListener('hide.bs.collapse', function() {
-            filesIcon.classList.remove('bx-chevron-down');
-            filesIcon.classList.add('bx-chevron-right');
-        });
-
-        if (filesToggle.classList.contains('show')) {
-            filesIcon.classList.add('bx-chevron-down');
-        } else {
-            filesIcon.classList.add('bx-chevron-right');
-        }
-    }
-
-    // Load files on page load - check if allFilesContainer exists
-    const filesContainer = document.getElementById('allFilesContainer');
-    console.log('allFilesContainer element:', filesContainer);
+    // Load files on page load - check if filesContainer exists
+    const filesContainer = document.getElementById('filesContainer');
+    console.log('filesContainer element:', filesContainer);
 
     if (filesContainer) {
         console.log('DOMContentLoaded: Loading files section for project {{ $project->id }}');
@@ -580,7 +535,7 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('loadFiles function not defined!');
         }
     } else {
-        console.error('allFilesContainer element not found!');
+        console.error('filesContainer element not found!');
     }
 });
 
@@ -594,15 +549,16 @@ function reloadFiles() {
 function loadFiles() {
     console.log('=== loadFiles() STARTED ===');
     const projectId = {{ $project->id }};
-    const container = document.getElementById('allFilesContainer');
-    console.log('Project ID:', projectId);
+    const folderId = {{ $selectedFolder?->id ?? 'null' }};
+    const container = document.getElementById('filesContainer');
+    console.log('Project ID:', projectId, 'Folder ID:', folderId);
     console.log('Container:', container);
 
     // Show loading spinner
     container.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary spinner-border-sm" role="status"><span class="visually-hidden">Loading files...</span></div></div>';
 
-    // Load files from all folders (no folder parameter)
-    fetch(`/user/projects/${projectId}/files`, {
+    // Load files for the current folder
+    fetch(`/user/projects/${projectId}/files?folder=${folderId ? folderId : ''}`, {
         method: 'GET',
         credentials: 'include', // Include cookies for auth
         headers: {
@@ -623,7 +579,7 @@ function loadFiles() {
         .then(files => {
             console.log('Files loaded successfully:', files);
             console.log('Files count:', Array.isArray(files) ? files.length : 'Not an array');
-            displayFiles(files, projectId);
+            displayFiles(files, projectId, folderId);
         })
         .catch(error => {
             console.error('Error loading files:', error);
@@ -631,9 +587,9 @@ function loadFiles() {
         });
 }
 
-function displayFiles(files, projectId) {
+function displayFiles(files, projectId, folderId) {
     console.log('displayFiles() called with:', files);
-    const container = document.getElementById('allFilesContainer');
+    const container = document.getElementById('filesContainer');
 
     if (!container) {
         console.error('filesContainer element not found!');
@@ -648,13 +604,13 @@ function displayFiles(files, projectId) {
 
     if (files.length === 0) {
         console.log('No files to display');
-        container.innerHTML = '<div class="text-center py-4"><i class="bx bx-file" style="font-size: 4rem; color: #d1d5db;"></i><h5 class="text-muted mt-3">No files found in this project</h5></div>';
+        container.innerHTML = '';
         return;
     }
 
     console.log('Displaying', files.length, 'files to container');
 
-    let html = '<h6 class="mb-3"><i class="bx bx-file me-2"></i>Files (' + files.length + ')</h6><div class="row g-3 mb-4">';
+    let html = '<h6 class="mb-3"><i class="bx bx-file me-2"></i>Files in this folder (' + files.length + ')</h6><div class="row g-3 mb-4">';
     files.forEach(file => {
         console.log('Processing file:', file.id, file.display_name || file.original_name);
         const iconClass = getFileIconClass(file.mime_type || '');
@@ -663,7 +619,6 @@ function displayFiles(files, projectId) {
         const fileUrl = `/user/projects/${projectId}/files/${file.id}/download`;
         const uploaderName = (file.uploader && file.uploader.name) || 'Unknown';
         const description = file.description || '';
-        const folderName = (file.folder && file.folder.name) || 'Root';
 
         html += `
             <div class="col-md-6 col-lg-4" data-file-id="${file.id}">
@@ -681,7 +636,6 @@ function displayFiles(files, projectId) {
                             <div class="flex-grow-1 ms-3" style="min-width: 0;">
                                 <h6 class="mb-1 text-truncate" title="${displayName}">${displayName}</h6>
                                 <p class="text-muted small mb-0">${fileSize}</p>
-                                <small class="text-muted"><i class="bx bx-folder me-1"></i>${folderName}</small>
                             </div>
                         </div>
                         ${description ? `<p class="small text-muted mb-2">${description}</p>` : ''}
