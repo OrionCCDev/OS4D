@@ -181,10 +181,7 @@
                                             <td>{{ $performer['user']['name'] }}</td>
                                             <td>
                                                 <div class="d-flex align-items-center">
-                                                    <div class="progress me-2" style="width: 60px; height: 8px;">
-                                                        <div class="progress-bar" style="width: {{ $performer['performance_score'] }}%"></div>
-                                                    </div>
-                                                    <span class="small">{{ $performer['performance_score'] }}%</span>
+                                                    <span class="badge bg-primary">{{ $performer['performance_score'] }}</span>
                                                 </div>
                                             </td>
                                             <td>{{ $performer['completed_tasks'] }}/{{ $performer['total_tasks'] }}</td>

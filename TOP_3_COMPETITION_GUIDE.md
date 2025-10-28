@@ -68,7 +68,21 @@ Final Score = (Base Score × Experience Multiplier) - Penalties
 
 ---
 
-### Example 2: Good Worker with Some Issues
+### Example 2: Quantity vs Quality
+**Mahmoud** has:
+- 15 Completed = 150 points
+- Experience Multiplier = 1.0x (New)
+- 5 Rejected tasks = -40 points
+
+**Calculation:**
+- Base: 150 points
+- Multiplier: 1.0x = 150 points
+- Penalties: -40 points
+- **Final Score: 110 points** 🥈
+
+---
+
+### Example 3: Good Worker with Some Issues
 **Ahmed** completed 8 tasks:
 - 8 Completed = 80 points
 - Experience Multiplier = 1.1x (Beginner)
@@ -79,23 +93,9 @@ Final Score = (Base Score × Experience Multiplier) - Penalties
 - Base: 80 points
 - Multiplier: 1.1x = 88 points
 - Penalties: -18 points
-- **Final Score: 70 points** 🥈
+- **Final Score: 70 points** 🥉
 
----
-
-### Example 3: Quantity vs Quality
-**Mahmoud** has:
-- 15 Completed = 150 points
-- Experience Multiplier = 1.0x (New)
-- 5 Rejected tasks = -40 points
-
-**Calculation:**
-- Base: 150 points
-- Multiplier: 1.0x = 150 points
-- Penalties: -40 points
-- **Final Score: 110 points** 🥉
-
-**Even though Mahmoud completed more tasks, Mohamed ranks higher because her work is higher quality (no rejections or overdue tasks).**
+**Even though Ahmed has fewer penalties per task, Mahmoud ranks higher because he completed significantly more tasks (15 vs 8), giving him a higher base score that outweighs his penalties.**
 
 ---
 

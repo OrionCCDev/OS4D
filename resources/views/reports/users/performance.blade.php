@@ -102,11 +102,7 @@
                                     </td>
                                     <td>
                                         <div class="d-flex align-items-center">
-                                            <div class="progress me-2" style="width: 80px; height: 8px;">
-                                                <div class="progress-bar bg-{{ $ranking['performance_score'] >= 80 ? 'success' : ($ranking['performance_score'] >= 60 ? 'warning' : 'danger') }}"
-                                                     style="width: {{ $ranking['performance_score'] }}%"></div>
-                                            </div>
-                                            <span class="small fw-bold">{{ $ranking['performance_score'] }}%</span>
+                                            <span class="badge bg-primary">{{ $ranking['performance_score'] }}</span>
                                         </div>
                                     </td>
                                     <td>
@@ -120,13 +116,15 @@
                                     </td>
                                     <td>
                                         @php
-                                            $grade = $ranking['performance_score'] >= 90 ? 'A+' :
-                                                    ($ranking['performance_score'] >= 80 ? 'A' :
-                                                    ($ranking['performance_score'] >= 70 ? 'B+' :
-                                                    ($ranking['performance_score'] >= 60 ? 'B' :
-                                                    ($ranking['performance_score'] >= 50 ? 'C' : 'D'))));
+                                            // Grade calculation based on raw performance score
+                                            // Adjust thresholds for raw scores (typically 0-200+ range)
+                                            $grade = $ranking['performance_score'] >= 150 ? 'A+' :
+                                                    ($ranking['performance_score'] >= 120 ? 'A' :
+                                                    ($ranking['performance_score'] >= 100 ? 'B+' :
+                                                    ($ranking['performance_score'] >= 80 ? 'B' :
+                                                    ($ranking['performance_score'] >= 60 ? 'C' : 'D'))));
                                         @endphp
-                                        <span class="badge bg-{{ $ranking['performance_score'] >= 80 ? 'success' : ($ranking['performance_score'] >= 60 ? 'warning' : 'danger') }}">
+                                        <span class="badge bg-{{ $ranking['performance_score'] >= 120 ? 'success' : ($ranking['performance_score'] >= 80 ? 'warning' : 'danger') }}">
                                             {{ $grade }}
                                         </span>
                                     </td>

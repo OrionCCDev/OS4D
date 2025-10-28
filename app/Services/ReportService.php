@@ -595,13 +595,9 @@ class ReportService
         // Apply experience multiplier and subtract penalties
         $rawScore = ($baseScore * $experienceMultiplier) - $penalties;
 
-        // Normalize to 0-100 for display
-        // Max possible score is typically tasks × 10 × experience_multiplier
-        // For a user with 50 tasks and 1.4x multiplier: 50 × 10 × 1.4 = 700
-        $maxPossibleScore = max(100, ($tasks->count() * 10 * $experienceMultiplier));
-        $normalizedScore = min(100, max(0, ($rawScore / $maxPossibleScore) * 100));
-
-        return round($normalizedScore, 2);
+        // Return raw score (same as Dashboard Top 3 Competition)
+        // This ensures consistency across all ranking systems
+        return max(0, round($rawScore, 2));
     }
 
     /**
