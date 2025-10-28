@@ -243,7 +243,20 @@
                             @if($task->start_date && $task->due_date)
                                 <div class="mb-2">
                                     <small class="text-muted">Planned Duration</small>
-                                    <p class="mb-0 fw-semibold text-info">{{ $task->duration_formatted }}</p>
+                                    <p class="mb-0 fw-semibold text-info">
+                                        @php
+                                            $startDate = \Carbon\Carbon::parse($task->start_date)->startOfDay();
+                                            $dueDate = \Carbon\Carbon::parse($task->due_date)->startOfDay();
+                                            $taskDuration = $startDate->diffInDays($dueDate);
+                                        @endphp
+                                        @if($taskDuration == 0)
+                                            Same day
+                                        @elseif($taskDuration == 1)
+                                            1 day
+                                        @else
+                                            {{ $taskDuration }} days
+                                        @endif
+                                    </p>
                                 </div>
                             @endif
                             @if($task->start_date && $task->completed_at)

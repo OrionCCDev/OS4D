@@ -223,7 +223,13 @@
                                         @endphp
                                         <span class="badge bg-primary badge-sm">
                                             <i class="bx bx-time"></i>
-                                            {{ $taskDuration }}d duration
+                                            @if($taskDuration == 0)
+                                                Same day
+                                            @elseif($taskDuration == 1)
+                                                1d duration
+                                            @else
+                                                {{ $taskDuration }}d duration
+                                            @endif
                                         </span>
                                     @elseif($task->start_date || $task->due_date)
                                         <span class="badge bg-secondary badge-sm">
