@@ -353,46 +353,6 @@
                         @endif
                     </div>
                     @if($task->attachments->count())
-                        @if(Auth::user()->isManager())
-                            <!-- Manager Bulk Actions -->
-                            <div class="manager-bulk-actions mb-3">
-                                <div class="card border-warning">
-                                    <div class="card-header bg-warning bg-opacity-10 border-warning">
-                                        <h6 class="mb-0 text-warning">
-                                            <i class="bx bx-cog me-2"></i>Manager Controls - Required Files
-                                        </h6>
-                                    </div>
-                                    <div class="card-body">
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox" id="selectAllRequired">
-                                                    <label class="form-check-label" for="selectAllRequired">
-                                                        <strong>Select All Files</strong>
-                                                    </label>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <div class="btn-group" role="group">
-                                                    <button type="button" class="btn btn-success btn-sm" id="markAllRequired">
-                                                        <i class="bx bx-check-circle"></i> Mark Selected as Required
-                                                    </button>
-                                                    <button type="button" class="btn btn-outline-secondary btn-sm" id="unmarkAllRequired">
-                                                        <i class="bx bx-x-circle"></i> Unmark Selected
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="mt-2">
-                                            <small class="text-muted">
-                                                <i class="bx bx-info-circle me-1"></i>
-                                                Required files will be automatically attached to confirmation emails
-                                            </small>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        @endif
                         <div class="mb-4">
                             <div class="input-group search-container" style="max-width: 450px;">
                                 <span class="input-group-text border-end-0" style="border: 2px solid #e2e8f0; border-radius: 12px 0 0 12px;">
@@ -455,13 +415,6 @@
                                     }
                                 @endphp
                                 <div class="file-card-wrapper file-item" data-filename="{{ strtolower($att->original_name) }}">
-                                    @if(Auth::user()->isManager())
-                                        <div class="file-selection-checkbox">
-                                            <input type="checkbox" class="form-check-input file-select-checkbox"
-                                                   id="select_{{ $att->id }}"
-                                                   data-attachment-id="{{ $att->id }}">
-                                        </div>
-                                    @endif
                                     <div class="file-card file-type-{{ $fileTypeClass }}">
                                         <!-- Card Timestamp Header -->
                                         <div class="card-timestamp-header">
@@ -751,104 +704,6 @@
 
                 // Manager Controls for Required Files
                 @if(Auth::user()->isManager())
-                // Bulk selection functionality
-                const selectAllCheckbox = document.getElementById('selectAllRequired');
-                const fileCheckboxes = document.querySelectorAll('.file-select-checkbox');
-
-                if (selectAllCheckbox) {
-                    selectAllCheckbox.addEventListener('change', function() {
-                        fileCheckboxes.forEach(checkbox => {
-                            checkbox.checked = this.checked;
-                        });
-                    });
-                }
-
-                // Individual checkbox change
-                fileCheckboxes.forEach(checkbox => {
-                    checkbox.addEventListener('change', function() {
-                        const checkedCount = document.querySelectorAll('.file-select-checkbox:checked').length;
-                        const totalCount = fileCheckboxes.length;
-
-                        if (selectAllCheckbox) {
-                            selectAllCheckbox.checked = checkedCount === totalCount;
-                            selectAllCheckbox.indeterminate = checkedCount > 0 && checkedCount < totalCount;
-                        }
-                    });
-                });
-
-                // Bulk mark as required
-                document.getElementById('markAllRequired')?.addEventListener('click', function() {
-                    const selectedIds = Array.from(document.querySelectorAll('.file-select-checkbox:checked'))
-                        .map(checkbox => checkbox.dataset.attachmentId);
-
-                    if (selectedIds.length === 0) {
-                        showToast('warning', 'Please select at least one file');
-                        return;
-                    }
-
-                    bulkMarkAttachments(selectedIds, true);
-                });
-
-                // Bulk unmark
-                document.getElementById('unmarkAllRequired')?.addEventListener('click', function() {
-                    const selectedIds = Array.from(document.querySelectorAll('.file-select-checkbox:checked'))
-                        .map(checkbox => checkbox.dataset.attachmentId);
-
-                    if (selectedIds.length === 0) {
-                        showToast('warning', 'Please select at least one file');
-                        return;
-                    }
-
-                    bulkMarkAttachments(selectedIds, false);
-                });
-
-                // Function to bulk mark attachments
-                function bulkMarkAttachments(attachmentIds, isRequired) {
-                    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-
-                    fetch(`/tasks/{{ $task->id }}/attachments/bulk-mark-required`, {
-                        method: 'PUT',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': csrfToken
-                        },
-                        body: JSON.stringify({
-                            attachment_ids: attachmentIds,
-                            required_for_email: isRequired,
-                            required_notes: null
-                        })
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            showToast('success', data.message);
-
-                            // Update UI
-                            attachmentIds.forEach(id => {
-                                const toggle = document.getElementById(`required_${id}`);
-                                if (toggle) {
-                                    toggle.checked = isRequired;
-                                }
-                            });
-
-                            // Uncheck all selection checkboxes
-                            fileCheckboxes.forEach(checkbox => {
-                                checkbox.checked = false;
-                            });
-                            if (selectAllCheckbox) {
-                                selectAllCheckbox.checked = false;
-                                selectAllCheckbox.indeterminate = false;
-                            }
-                        } else {
-                            showToast('error', data.message || 'Failed to update file requirements');
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        showToast('error', 'Failed to update file requirements');
-                    });
-                }
-
                 // Handle required toggle switches - Auto-save on change
                 document.querySelectorAll('.required-toggle').forEach(toggle => {
                     toggle.addEventListener('change', function() {
@@ -1996,43 +1851,6 @@
 .required-badge .badge {
     font-size: 0.8rem;
     padding: 6px 10px;
-}
-
-.required-notes-text {
-    background: #e8f5e8;
-    border: 1px solid #c3e6c3;
-    border-radius: 4px;
-    padding: 8px;
-    margin-top: 8px;
-}
-
-/* File Selection Checkbox */
-.file-selection-checkbox {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    z-index: 10;
-    background: rgba(255, 255, 255, 0.9);
-    border-radius: 4px;
-    padding: 4px;
-}
-
-.file-card-wrapper {
-    position: relative;
-}
-
-.file-selection-checkbox .form-check-input {
-    margin: 0;
-    transform: scale(1.2);
-}
-
-/* Manager Bulk Actions */
-.manager-bulk-actions .card {
-    border-radius: 8px;
-}
-
-.manager-bulk-actions .btn-group .btn {
-    border-radius: 6px;
 }
 
 /* Toast Container */
