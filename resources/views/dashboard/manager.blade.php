@@ -117,6 +117,40 @@
         100% { transform: translateX(100%) translateY(100%) rotate(45deg); opacity: 0; }
     }
 
+    /* Pagination Styles */
+    .card-footer {
+        background-color: #fff;
+        border-top: 1px solid #e9ecef;
+    }
+
+    .pagination {
+        margin-bottom: 0;
+    }
+
+    .pagination .page-link {
+        color: #495057;
+        border-color: #dee2e6;
+        padding: 0.375rem 0.75rem;
+    }
+
+    .pagination .page-link:hover {
+        background-color: #e9ecef;
+        border-color: #dee2e6;
+    }
+
+    .pagination .page-item.active .page-link {
+        background-color: #007bff;
+        border-color: #007bff;
+        color: white;
+    }
+
+    .pagination .page-item.disabled .page-link {
+        color: #6c757d;
+        pointer-events: none;
+        background-color: #fff;
+        border-color: #dee2e6;
+    }
+
     .timeline {
         position: relative;
         padding: 20px 0;
@@ -275,10 +309,10 @@
                         </h5>
                         <small class="text-muted">Tasks approaching or exceeding due date</small>
                 </div>
-                    <small class="text-muted">{{ $data['urgent_tasks']->count() }} urgent tasks</small>
+                    <small class="text-muted">{{ $data['urgent_tasks']->total() }} urgent tasks</small>
                 </div>
                 <div class="card-body p-0">
-                    @if($data['urgent_tasks']->count() > 0)
+                    @if($data['urgent_tasks']->total() > 0)
                         <div class="table-responsive">
                             <table class="table table-hover mb-0">
                                 <thead class="table-light">
@@ -388,6 +422,16 @@
                                 </tbody>
                             </table>
                                 </div>
+                        <!-- Pagination -->
+                        @if($data['urgent_tasks']->hasPages())
+                        <div class="card-footer d-flex justify-content-center py-3">
+                            <nav aria-label="Urgent Tasks pagination">
+                                <ul class="pagination pagination-sm mb-0">
+                                    {{ $data['urgent_tasks']->links('pagination::bootstrap-4') }}
+                                </ul>
+                            </nav>
+                        </div>
+                        @endif
                     @else
                         <div class="text-center py-4">
                             <i class="bx bx-check-circle fs-1 text-success opacity-50"></i>
@@ -407,10 +451,10 @@
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="card-title mb-0 text-dark fw-semibold">Tasks by Status</h5>
-                    <small class="text-muted">{{ $data['tasks_by_status']->count() }} total tasks</small>
+                    <small class="text-muted">{{ $data['tasks_by_status']->total() }} total tasks</small>
                 </div>
                 <div class="card-body p-0">
-                    @if($data['tasks_by_status']->count() > 0)
+                    @if($data['tasks_by_status']->total() > 0)
                         <div class="table-responsive">
                             <table class="table table-hover mb-0">
                                 <thead class="table-light">
@@ -474,6 +518,16 @@
                                 </tbody>
                             </table>
                                 </div>
+                        <!-- Pagination -->
+                        @if($data['tasks_by_status']->hasPages())
+                        <div class="card-footer d-flex justify-content-center py-3">
+                            <nav aria-label="Tasks by Status pagination">
+                                <ul class="pagination pagination-sm mb-0">
+                                    {{ $data['tasks_by_status']->links('pagination::bootstrap-4') }}
+                                </ul>
+                            </nav>
+                        </div>
+                        @endif
                     @else
                         <div class="text-center py-4">
                             <i class="bx bx-task fs-1 text-muted opacity-50"></i>
@@ -489,10 +543,10 @@
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="card-title mb-0 text-dark fw-semibold">Tasks by Priority</h5>
-                    <small class="text-muted">{{ $data['tasks_by_priority']->count() }} total tasks</small>
+                    <small class="text-muted">{{ $data['tasks_by_priority']->total() }} total tasks</small>
                 </div>
                 <div class="card-body p-0">
-                    @if($data['tasks_by_priority']->count() > 0)
+                    @if($data['tasks_by_priority']->total() > 0)
                         <div class="table-responsive">
                             <table class="table table-hover mb-0">
                                 <thead class="table-light">
@@ -556,6 +610,16 @@
                                 </tbody>
                             </table>
                                 </div>
+                        <!-- Pagination -->
+                        @if($data['tasks_by_priority']->hasPages())
+                        <div class="card-footer d-flex justify-content-center py-3">
+                            <nav aria-label="Tasks by Priority pagination">
+                                <ul class="pagination pagination-sm mb-0">
+                                    {{ $data['tasks_by_priority']->links('pagination::bootstrap-4') }}
+                                </ul>
+                            </nav>
+                        </div>
+                        @endif
                     @else
                         <div class="text-center py-4">
                             <i class="bx bx-task fs-1 text-muted opacity-50"></i>
@@ -1492,9 +1556,34 @@ function showTimeline() {
 <script src="https://cdn.knightlab.com/libs/timeline3/latest/js/timeline.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    // Task Status Chart removed - now showing task list instead
+    // Scroll to top of section on pagination (better UX)
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add smooth scroll to pagination links
+        const paginationLinks = document.querySelectorAll('.pagination a.page-link');
 
-    // Task Priority Chart removed - now showing task list instead
+        paginationLinks.forEach(link => {
+            link.addEventListener('click', function() {
+                // Scroll to the top of the section being paginated
+                const card = this.closest('.card');
+                if (card) {
+                    // Store scroll position before navigation
+                    sessionStorage.setItem('lastScrollY', window.scrollY);
+                }
+            });
+        });
+
+        // Restore scroll position after page load
+        if (sessionStorage.getItem('lastScrollY')) {
+            setTimeout(() => {
+                const lastY = parseInt(sessionStorage.getItem('lastScrollY'));
+                window.scrollTo({
+                    top: Math.max(0, lastY - 100), // Show some content above
+                    behavior: 'smooth'
+                });
+                sessionStorage.removeItem('lastScrollY');
+            }, 100);
+        }
+    });
 
     // Competition period change function
     function changeCompetitionPeriod(period) {

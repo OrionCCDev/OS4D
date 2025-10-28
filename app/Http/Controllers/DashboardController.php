@@ -14,13 +14,13 @@ use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $user = Auth::user();
 
         // If user is a manager or admin, show comprehensive dashboard
         if ($user->isManager()) {
-            $data = $this->getDashboardData();
+            $data = $this->getDashboardData($request);
             return view('dashboard.manager', compact('data'));
         }
 
@@ -264,14 +264,24 @@ class DashboardController extends Controller
         }
     }
 
-    public function getDashboardData()
+    public function getDashboardData(?Request $request = null)
     {
-        // Try to get cached data first
-        $user = auth()->user();
+        // Get pagination parameters
+        $urgentPage = $request?->get('urgent_page') ?? 1;
+        $statusPage = $request?->get('status_page') ?? 1;
+        $priorityPage = $request?->get('priority_page') ?? 1;
+        $perPage = 5; // 5 tasks per page as requested
+
+        // Try to get cached data first (only for non-paginated data)
+        $user = Auth::user();
+        if (!$user) {
+            return [];
+        }
         $cacheKey = 'dashboard_data_' . $user->id;
         $cachedData = cache()->get($cacheKey);
-        
-        if ($cachedData) {
+
+        // Only use cache for first page loads
+        if ($cachedData && $urgentPage == 1 && $statusPage == 1 && $priorityPage == 1) {
             return $cachedData;
         }
 
@@ -284,15 +294,15 @@ class DashboardController extends Controller
         $totalUsers = cache()->remember('total_users', 300, function() {
             return User::count();
         });
-        
+
         $totalTasks = cache()->remember('total_tasks', 300, function() {
             return Task::count();
         });
-        
+
         $totalProjects = cache()->remember('total_projects', 300, function() {
             return Project::count();
         });
-        
+
         $activeUsers = cache()->remember('active_users', 300, function() use ($now) {
             return User::whereHas('assignedTasks', function($query) {
                 $query->whereIn('status', ['assigned', 'in_progress', 'in_review']);
@@ -334,8 +344,8 @@ class DashboardController extends Controller
             ")
             ->orderBy('due_date', 'asc')
             ->orderBy('created_at', 'desc')
-            ->limit(20)
-            ->get();
+            ->paginate($perPage, ['*'], 'priority_page')
+            ->appends($request?->query() ?? []);
 
         // Tasks by status - get actual tasks ordered by status priority with eager loading
         $tasksByStatus = Task::with(['assignee:id,name,email', 'project:id,name', 'folder:id,name'])
@@ -357,8 +367,8 @@ class DashboardController extends Controller
             ")
             ->orderBy('due_date', 'asc')
             ->orderBy('created_at', 'desc')
-            ->limit(20)
-            ->get();
+            ->paginate($perPage, ['*'], 'status_page')
+            ->appends($request?->query() ?? []);
 
         // Top performers (users with most completed tasks) - Overall
         $topPerformers = User::withCount(['assignedTasks as completed_tasks_count' => function($query) {
@@ -614,8 +624,8 @@ class DashboardController extends Controller
                 END
             ")
             ->orderBy('due_date', 'asc')
-            ->limit(10)
-            ->get();
+            ->paginate($perPage, ['*'], 'urgent_page')
+            ->appends($request?->query() ?? []);
 
         // Timeline tasks - Moved from Blade to here for better performance
         $endDate = $now->copy()->addDays(20);
