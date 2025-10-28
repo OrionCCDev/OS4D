@@ -1259,21 +1259,34 @@ document.addEventListener('DOMContentLoaded', function() {
             externalBtn.disabled = true;
             externalBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
 
-            // Get data from the main form (not the modal)
-            const toEmails = document.getElementById('to_emails').value;
-            const ccEmails = document.getElementById('cc_emails').value;
-            const subject = document.getElementById('subject').value;
-            const body = document.getElementById('body').value;
+            // Get data from the modal fields (which are already populated)
+            const projectManagerEmail = document.getElementById('projectManagerEmail').value;
+            const ccEmails = document.getElementById('ccEmails').value;
+            const suggestedSubject = document.getElementById('suggestedSubject').value;
+            const emailBodyPreview = document.getElementById('emailBodyPreview').textContent;
 
-            console.log('Form data:', { toEmails, ccEmails, subject, body });
+            console.log('Modal data:', {
+                projectManagerEmail,
+                ccEmails,
+                suggestedSubject,
+                emailBodyPreview: emailBodyPreview.substring(0, 100) + '...'
+            });
 
-            // Create form data manually to ensure all required fields are present
+            // Validate that we have the required data
+            if (!projectManagerEmail || !suggestedSubject) {
+                alert('❌ Missing required email data. Please try opening the modal again.');
+                externalBtn.disabled = false;
+                externalBtn.innerHTML = '<i class="bx bx-check-double me-2"></i>Done (Mark as Sent)';
+                return;
+            }
+
+            // Create form data manually using the modal data
             const formData = new FormData();
-            formData.append('to_emails', toEmails);
+            formData.append('to_emails', projectManagerEmail);
             formData.append('cc_emails', ccEmails || '');
-            formData.append('bcc_emails', document.getElementById('bcc_emails')?.value || '');
-            formData.append('subject', subject);
-            formData.append('body', body);
+            formData.append('bcc_emails', ''); // BCC is not shown in modal
+            formData.append('subject', suggestedSubject);
+            formData.append('body', emailBodyPreview);
             formData.append('save_draft', '1');
 
             // Save draft first if needed
