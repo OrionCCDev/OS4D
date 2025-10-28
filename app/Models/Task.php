@@ -590,14 +590,15 @@ class Task extends Model
 
     public function getDaysRemainingAttribute()
     {
-        if ($this->status !== 'completed' && $this->due_date) {
+        if ($this->due_date) {
             $today = now()->startOfDay();
             $dueDate = $this->due_date->startOfDay();
 
             if ($dueDate->gte($today)) {
                 return $dueDate->diffInDays($today);
             } else {
-                return -$dueDate->diffInDays($today); // Negative for overdue
+                // If due date has passed, show negative days (overdue)
+                return -$dueDate->diffInDays($today);
             }
         }
         return null;
@@ -605,15 +606,70 @@ class Task extends Model
 
     public function getIsOverdueAttribute()
     {
-        if (!$this->due_date || $this->status === 'completed') {
+        if (!$this->due_date) {
             return false;
         }
 
-        // Compare dates only, not times - a task is overdue if due date is before today
+        // NEW LOGIC: Task is overdue if due date has passed AND no email confirmation has been sent
         $today = now()->startOfDay();
         $dueDate = $this->due_date->startOfDay();
 
-        return $dueDate->lt($today);
+        // If due date hasn't passed yet, not overdue
+        if ($dueDate->gte($today)) {
+            return false;
+        }
+
+        // Check if email confirmation has been sent
+        $emailSent = $this->hasEmailConfirmationSent();
+
+        // Task is overdue if due date passed AND no email sent
+        return !$emailSent;
+    }
+
+    /**
+     * Check if email confirmation has been sent for this task
+     */
+    public function hasEmailConfirmationSent()
+    {
+        // Check if relationship is already loaded (for testing/mocking)
+        if ($this->relationLoaded('emailPreparations')) {
+            return $this->emailPreparations
+                ->where('status', 'sent')
+                ->whereNotNull('sent_at')
+                ->isNotEmpty();
+        }
+
+        // Otherwise use query builder
+        return $this->emailPreparations()
+            ->where('status', 'sent')
+            ->whereNotNull('sent_at')
+            ->exists();
+    }
+
+    /**
+     * Get the date when email confirmation was sent
+     */
+    public function getEmailConfirmationSentAt()
+    {
+        // Check if relationship is already loaded (for testing/mocking)
+        if ($this->relationLoaded('emailPreparations')) {
+            $emailPrep = $this->emailPreparations
+                ->where('status', 'sent')
+                ->whereNotNull('sent_at')
+                ->sortByDesc('sent_at')
+                ->first();
+
+            return $emailPrep ? $emailPrep->sent_at : null;
+        }
+
+        // Otherwise use query builder
+        $emailPreparation = $this->emailPreparations()
+            ->where('status', 'sent')
+            ->whereNotNull('sent_at')
+            ->orderBy('sent_at', 'desc')
+            ->first();
+
+        return $emailPreparation ? $emailPreparation->sent_at : null;
     }
 
     public function getStatusBadgeClassAttribute()

@@ -28,14 +28,15 @@ class TaskScoringService
             $breakdown['in_progress'] = 5;
         }
 
-        // On-time completion bonus
-        if ($task->status === 'completed' && $task->completed_at && $task->due_date) {
-            if ($task->completed_at <= $task->due_date) {
+        // On-time email sending bonus - NEW LOGIC: based on email confirmation sending
+        if ($task->hasEmailConfirmationSent() && $task->due_date) {
+            $emailSentAt = $task->getEmailConfirmationSentAt();
+            if ($emailSentAt && $emailSentAt->startOfDay() <= $task->due_date->startOfDay()) {
                 $score += 3;
-                $breakdown['on_time_bonus'] = 3;
+                $breakdown['on_time_email_bonus'] = 3;
             } else {
                 $score -= 2;
-                $breakdown['late_penalty'] = -2;
+                $breakdown['late_email_penalty'] = -2;
             }
         }
 
@@ -52,8 +53,8 @@ class TaskScoringService
             $breakdown['quality_bonus'] = 2;
         }
 
-        // Overdue penalty - only if due date is before today (not including today)
-        if ($task->due_date && $task->due_date->startOfDay() < now()->startOfDay() && !in_array($task->status, ['completed', 'cancelled'])) {
+        // Overdue penalty - NEW LOGIC: based on email confirmation sending, not task completion
+        if ($task->is_overdue) {
             $score -= 5;
             $breakdown['overdue_penalty'] = -5;
         }
