@@ -12,6 +12,7 @@ use App\Mail\TaskNotificationMail;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
+use App\Services\TaskScoringService;
 
 class Task extends Model
 {
@@ -661,6 +662,25 @@ class Task extends Model
             'critical' => 'bg-dark',      // ⚫ Black - critical (higher than urgent)
             default => 'bg-primary'       // 🔵 Blue - default normal
         };
+    }
+
+    /**
+     * Calculate task score using TaskScoringService
+     */
+    public function getTaskScore($user = null)
+    {
+        $scoringService = new TaskScoringService();
+        return $scoringService->calculateTaskScore($this, $user);
+    }
+
+    /**
+     * Get task score explanation for popover
+     */
+    public function getTaskScoreExplanation($user = null)
+    {
+        $scoringService = new TaskScoringService();
+        $scoreData = $scoringService->calculateTaskScore($this, $user);
+        return $scoringService->getScoreExplanation($scoreData);
     }
 
     // New workflow methods

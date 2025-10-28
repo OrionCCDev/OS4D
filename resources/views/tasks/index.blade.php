@@ -90,6 +90,7 @@
                         <th>Status</th>
                         <th>Priority</th>
                         <th>Due Date</th>
+                        <th>Score</th>
                         <th>Statistics</th>
                         <th>Actions</th>
                     </tr>
@@ -168,6 +169,38 @@
                             @else
                                 <span class="text-muted">—</span>
                             @endif
+                        </td>
+                        <td>
+                            @php
+                                $taskScore = $task->getTaskScore($task->assignee);
+                                $scoreData = $taskScore['score'];
+                                $scoreExplanations = $task->getTaskScoreExplanation($task->assignee);
+                            @endphp
+                            <div class="d-flex align-items-center">
+                                <span class="badge bg-primary me-2"
+                                      data-bs-toggle="popover"
+                                      data-bs-trigger="click"
+                                      data-bs-placement="top"
+                                      data-bs-html="true"
+                                      data-bs-content="
+                                        <div class='text-start'>
+                                            <h6 class='mb-2'>Task Score Breakdown</h6>
+                                            @foreach($scoreExplanations as $explanation)
+                                                <div class='mb-1'>{!! $explanation !!}</div>
+                                            @endforeach
+                                            <hr class='my-2'>
+                                            <strong>Total Score: {{ $scoreData }}</strong>
+                                        </div>
+                                      "
+                                      style="cursor: pointer;">
+                                    {{ $scoreData }}
+                                </span>
+                                @if($taskScore['is_overdue'])
+                                    <i class="bx bx-error-circle text-danger" title="Overdue"></i>
+                                @elseif($taskScore['is_on_time'])
+                                    <i class="bx bx-check-circle text-success" title="On Time"></i>
+                                @endif
+                            </div>
                         </td>
                         <td>
                             @if($task->status === 'completed')
@@ -467,6 +500,14 @@ function assignTask(taskId) {
     document.getElementById('assignTaskForm').action = `/tasks/${taskId}/assign`;
     new bootstrap.Modal(document.getElementById('assignTaskModal')).show();
 }
+
+// Initialize popovers for task scores
+document.addEventListener('DOMContentLoaded', function() {
+    var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
+    var popoverList = popoverTriggerList.map(function (popoverTriggerEl) {
+        return new bootstrap.Popover(popoverTriggerEl);
+    });
+});
 </script>
 
 @endsection
