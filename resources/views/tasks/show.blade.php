@@ -353,6 +353,46 @@
                         @endif
                     </div>
                     @if($task->attachments->count())
+                        @if(Auth::user()->isManager())
+                            <!-- Manager Bulk Actions -->
+                            <div class="manager-bulk-actions mb-3">
+                                <div class="card border-warning">
+                                    <div class="card-header bg-warning bg-opacity-10 border-warning">
+                                        <h6 class="mb-0 text-warning">
+                                            <i class="bx bx-cog me-2"></i>Manager Controls - Required Files
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="selectAllRequired">
+                                                    <label class="form-check-label" for="selectAllRequired">
+                                                        <strong>Select All Files</strong>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="btn-group" role="group">
+                                                    <button type="button" class="btn btn-success btn-sm" id="markAllRequired">
+                                                        <i class="bx bx-check-circle"></i> Mark Selected as Required
+                                                    </button>
+                                                    <button type="button" class="btn btn-outline-secondary btn-sm" id="unmarkAllRequired">
+                                                        <i class="bx bx-x-circle"></i> Unmark Selected
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="mt-2">
+                                            <small class="text-muted">
+                                                <i class="bx bx-info-circle me-1"></i>
+                                                Required files will be automatically attached to confirmation emails
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
                         <div class="mb-4">
                             <div class="input-group search-container" style="max-width: 450px;">
                                 <span class="input-group-text border-end-0" style="border: 2px solid #e2e8f0; border-radius: 12px 0 0 12px;">
@@ -415,6 +455,13 @@
                                     }
                                 @endphp
                                 <div class="file-card-wrapper file-item" data-filename="{{ strtolower($att->original_name) }}">
+                                    @if(Auth::user()->isManager())
+                                        <div class="file-selection-checkbox">
+                                            <input type="checkbox" class="form-check-input file-select-checkbox"
+                                                   id="select_{{ $att->id }}"
+                                                   data-attachment-id="{{ $att->id }}">
+                                        </div>
+                                    @endif
                                     <div class="file-card file-type-{{ $fileTypeClass }}">
                                         <!-- Card Timestamp Header -->
                                         <div class="card-timestamp-header">
@@ -439,6 +486,47 @@
 
                                         <!-- File Card Body -->
                                         <div class="file-card-body">
+                                            @if(Auth::user()->isManager())
+                                                <!-- Manager Controls for Required Files -->
+                                                <div class="manager-controls mb-3">
+                                                    <div class="form-check form-switch">
+                                                        <input class="form-check-input required-toggle"
+                                                               type="checkbox"
+                                                               id="required_{{ $att->id }}"
+                                                               data-attachment-id="{{ $att->id }}"
+                                                               {{ $att->required_for_email ? 'checked' : '' }}>
+                                                        <label class="form-check-label" for="required_{{ $att->id }}">
+                                                            <strong>Required for Email</strong>
+                                                        </label>
+                                                    </div>
+                                                    <div class="required-notes mt-2" id="notes_{{ $att->id }}" style="{{ $att->required_for_email ? '' : 'display: none;' }}">
+                                                        <textarea class="form-control form-control-sm"
+                                                                  placeholder="Add notes explaining why this file is required..."
+                                                                  rows="2"
+                                                                  data-attachment-id="{{ $att->id }}">{{ $att->required_notes }}</textarea>
+                                                        <div class="mt-2">
+                                                            <button class="btn btn-sm btn-primary save-notes"
+                                                                    data-attachment-id="{{ $att->id }}">
+                                                                <i class="bx bx-save"></i> Save Notes
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            @else
+                                                <!-- User View - Show if file is required -->
+                                                @if($att->required_for_email)
+                                                    <div class="required-badge mb-2">
+                                                        <span class="badge bg-success">
+                                                            <i class="bx bx-check-circle"></i> Required for Email
+                                                        </span>
+                                                        @if($att->required_notes)
+                                                            <div class="required-notes-text mt-1">
+                                                                <small class="text-muted">{{ $att->required_notes }}</small>
+                                                            </div>
+                                                        @endif
+                                                    </div>
+                                                @endif
+                                            @endif
                                             <div class="file-meta">
                                                 <div class="meta-badge uploader-badge">
                                                     <i class="bx bx-user"></i>
@@ -677,6 +765,208 @@
                         });
                     }
                 });
+
+                // Manager Controls for Required Files
+                @if(Auth::user()->isManager())
+                // Bulk selection functionality
+                const selectAllCheckbox = document.getElementById('selectAllRequired');
+                const fileCheckboxes = document.querySelectorAll('.file-select-checkbox');
+
+                if (selectAllCheckbox) {
+                    selectAllCheckbox.addEventListener('change', function() {
+                        fileCheckboxes.forEach(checkbox => {
+                            checkbox.checked = this.checked;
+                        });
+                    });
+                }
+
+                // Individual checkbox change
+                fileCheckboxes.forEach(checkbox => {
+                    checkbox.addEventListener('change', function() {
+                        const checkedCount = document.querySelectorAll('.file-select-checkbox:checked').length;
+                        const totalCount = fileCheckboxes.length;
+
+                        if (selectAllCheckbox) {
+                            selectAllCheckbox.checked = checkedCount === totalCount;
+                            selectAllCheckbox.indeterminate = checkedCount > 0 && checkedCount < totalCount;
+                        }
+                    });
+                });
+
+                // Bulk mark as required
+                document.getElementById('markAllRequired')?.addEventListener('click', function() {
+                    const selectedIds = Array.from(document.querySelectorAll('.file-select-checkbox:checked'))
+                        .map(checkbox => checkbox.dataset.attachmentId);
+
+                    if (selectedIds.length === 0) {
+                        showToast('warning', 'Please select at least one file');
+                        return;
+                    }
+
+                    bulkMarkAttachments(selectedIds, true);
+                });
+
+                // Bulk unmark
+                document.getElementById('unmarkAllRequired')?.addEventListener('click', function() {
+                    const selectedIds = Array.from(document.querySelectorAll('.file-select-checkbox:checked'))
+                        .map(checkbox => checkbox.dataset.attachmentId);
+
+                    if (selectedIds.length === 0) {
+                        showToast('warning', 'Please select at least one file');
+                        return;
+                    }
+
+                    bulkMarkAttachments(selectedIds, false);
+                });
+
+                // Function to bulk mark attachments
+                function bulkMarkAttachments(attachmentIds, isRequired) {
+                    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+                    fetch(`/tasks/{{ $task->id }}/attachments/bulk-mark-required`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': csrfToken
+                        },
+                        body: JSON.stringify({
+                            attachment_ids: attachmentIds,
+                            required_for_email: isRequired,
+                            required_notes: null
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            showToast('success', data.message);
+
+                            // Update UI
+                            attachmentIds.forEach(id => {
+                                const toggle = document.getElementById(`required_${id}`);
+                                if (toggle) {
+                                    toggle.checked = isRequired;
+                                    const notesDiv = document.getElementById(`notes_${id}`);
+                                    if (notesDiv) {
+                                        notesDiv.style.display = isRequired ? 'block' : 'none';
+                                    }
+                                }
+                            });
+
+                            // Uncheck all selection checkboxes
+                            fileCheckboxes.forEach(checkbox => {
+                                checkbox.checked = false;
+                            });
+                            if (selectAllCheckbox) {
+                                selectAllCheckbox.checked = false;
+                                selectAllCheckbox.indeterminate = false;
+                            }
+                        } else {
+                            showToast('error', data.message || 'Failed to update file requirements');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        showToast('error', 'Failed to update file requirements');
+                    });
+                }
+
+                // Handle required toggle switches
+                document.querySelectorAll('.required-toggle').forEach(toggle => {
+                    toggle.addEventListener('change', function() {
+                        const attachmentId = this.dataset.attachmentId;
+                        const isRequired = this.checked;
+                        const notesDiv = document.getElementById(`notes_${attachmentId}`);
+
+                        // Show/hide notes section
+                        if (isRequired) {
+                            notesDiv.style.display = 'block';
+                        } else {
+                            notesDiv.style.display = 'none';
+                        }
+
+                        // Save the requirement status
+                        saveAttachmentRequirement(attachmentId, isRequired, null);
+                    });
+                });
+
+                // Handle save notes buttons
+                document.querySelectorAll('.save-notes').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const attachmentId = this.dataset.attachmentId;
+                        const notesTextarea = document.querySelector(`textarea[data-attachment-id="${attachmentId}"]`);
+                        const notes = notesTextarea.value.trim();
+                        const toggle = document.getElementById(`required_${attachmentId}`);
+
+                        // Save the notes
+                        saveAttachmentRequirement(attachmentId, toggle.checked, notes);
+                    });
+                });
+
+                // Function to save attachment requirement
+                function saveAttachmentRequirement(attachmentId, isRequired, notes) {
+                    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+                    fetch(`/tasks/{{ $task->id }}/attachments/${attachmentId}/mark-required`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': csrfToken
+                        },
+                        body: JSON.stringify({
+                            required_for_email: isRequired,
+                            required_notes: notes
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Show success message
+                            showToast('success', data.message);
+
+                            // Update UI if needed
+                            if (isRequired) {
+                                const toggle = document.getElementById(`required_${attachmentId}`);
+                                toggle.checked = true;
+                            }
+                        } else {
+                            showToast('error', data.message || 'Failed to update file requirement');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        showToast('error', 'Failed to update file requirement');
+                    });
+                }
+
+                // Toast notification function
+                function showToast(type, message) {
+                    // Create toast element
+                    const toast = document.createElement('div');
+                    toast.className = `toast align-items-center text-white bg-${type === 'success' ? 'success' : 'danger'} border-0`;
+                    toast.setAttribute('role', 'alert');
+                    toast.innerHTML = `
+                        <div class="d-flex">
+                            <div class="toast-body">
+                                <i class="bx ${type === 'success' ? 'bx-check-circle' : 'bx-error-circle'} me-2"></i>
+                                ${message}
+                            </div>
+                            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                        </div>
+                    `;
+
+                    // Add to page
+                    document.body.appendChild(toast);
+
+                    // Initialize and show toast
+                    const bsToast = new bootstrap.Toast(toast);
+                    bsToast.show();
+
+                    // Remove from DOM after hiding
+                    toast.addEventListener('hidden.bs.toast', () => {
+                        document.body.removeChild(toast);
+                    });
+                }
+                @endif
             </script>
 
             <!-- Task History -->
@@ -1718,6 +2008,94 @@
 </div>
 
 <style>
+/* Manager Controls Styling */
+.manager-controls {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+}
+
+.manager-controls .form-check-label {
+    font-weight: 600;
+    color: #495057;
+    margin-left: 8px;
+}
+
+.manager-controls .form-check-input:checked {
+    background-color: #28a745;
+    border-color: #28a745;
+}
+
+.required-notes textarea {
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    resize: vertical;
+    font-size: 0.875rem;
+}
+
+.required-notes textarea:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.save-notes {
+    font-size: 0.8rem;
+    padding: 6px 12px;
+}
+
+/* Required Badge Styling */
+.required-badge .badge {
+    font-size: 0.8rem;
+    padding: 6px 10px;
+}
+
+.required-notes-text {
+    background: #e8f5e8;
+    border: 1px solid #c3e6c3;
+    border-radius: 4px;
+    padding: 8px;
+    margin-top: 8px;
+}
+
+/* File Selection Checkbox */
+.file-selection-checkbox {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 10;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 4px;
+    padding: 4px;
+}
+
+.file-card-wrapper {
+    position: relative;
+}
+
+.file-selection-checkbox .form-check-input {
+    margin: 0;
+    transform: scale(1.2);
+}
+
+/* Manager Bulk Actions */
+.manager-bulk-actions .card {
+    border-radius: 8px;
+}
+
+.manager-bulk-actions .btn-group .btn {
+    border-radius: 6px;
+}
+
+/* Toast Container */
+.toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1055;
+}
+
 .timeline {
     position: relative;
     padding-left: 30px;
