@@ -1,7 +1,7 @@
 <?php
 
-// Task Scoring System
-// This file contains methods to calculate individual task scores
+// Task Scoring System - Fixed Version
+// Upload this file to: app/Services/TaskScoringService.php
 
 namespace App\Services;
 
@@ -47,7 +47,7 @@ class TaskScoringService
         }
 
         // Quality bonus (based on completion without rejections)
-        if ($task->status === 'completed' && !$this->hasBeenRejected($task)) {
+        if ($task->status === 'completed' && $task->status !== 'rejected') {
             $score += 2;
             $breakdown['quality_bonus'] = 2;
         }
@@ -85,7 +85,7 @@ class TaskScoringService
             'priority' => $task->priority,
             'is_overdue' => $task->due_date && $task->due_date < now() && !in_array($task->status, ['completed', 'cancelled']),
             'is_on_time' => $task->status === 'completed' && $task->completed_at && $task->due_date && $task->completed_at <= $task->due_date,
-            'has_been_rejected' => $this->hasBeenRejected($task),
+            'has_been_rejected' => $task->status === 'rejected',
         ];
     }
 
@@ -104,15 +104,6 @@ class TaskScoringService
         ];
 
         return $bonuses[$priority] ?? 0;
-    }
-
-    /**
-     * Check if task has been rejected (simplified check)
-     */
-    private function hasBeenRejected($task)
-    {
-        // Check if task status is rejected
-        return $task->status === 'rejected';
     }
 
     /**
