@@ -504,6 +504,25 @@
                             </div>
                         </div>
 
+                        <!-- Email Sending Methods Notice -->
+                        <div class="alert alert-info" style="background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);">
+                            <h5>📧 Choose Your Email Sending Method</h5>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6><i class="bx bx-send me-2"></i>Send via Server (Recommended)</h6>
+                                    <p class="mb-2">✅ Automatically attaches required files<br>
+                                    ✅ Reliable delivery<br>
+                                    ✅ Professional email templates</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6><i class="bx bxl-gmail me-2"></i>Send via Gmail</h6>
+                                    <p class="mb-2">⚠️ Manual file attachment required<br>
+                                    ✅ Uses your Gmail account<br>
+                                    ✅ Appears in your Sent folder</p>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Email Template Selector -->
                         <div class="template-selector">
                             <div class="template-header">
@@ -631,12 +650,12 @@
                                 </button>  --}}
 
                                 <button type="button" class="btn btn-enhanced btn-warning" id="sendViaGmailBtn">
-                                    <i class="bx bxl-gmail me-2"></i>Send via Gmail (Recommended)
+                                    <i class="bx bxl-gmail me-2"></i>Send via Gmail (Manual Attach)
                                 </button>
 
-                                {{--  <button type="submit" class="btn btn-enhanced btn-success" id="sendViaServerBtn" name="send_email" value="1">
-                                    <i class="bx bx-send me-2"></i>Send via Server
-                                </button>  --}}
+                                <button type="submit" class="btn btn-enhanced btn-success" id="sendViaServerBtn" name="send_email" value="1">
+                                    <i class="bx bx-send me-2"></i>Send via Server (Auto Attach Required Files)
+                                </button>
 
                                 {{--  <button type="button" class="btn btn-enhanced btn-warning" id="directSendBtn">
                                     <i class="bx bx-send me-2"></i>Send & Continue (Direct)
@@ -754,7 +773,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const requiredFiles = await getRequiredFilesInfo();
             const requiredFilesSection = document.getElementById('requiredFilesSection');
             const requiredFilesList = document.getElementById('requiredFilesList');
-            
+
             if (requiredFiles.length > 0) {
                 let filesHtml = '<ul class="list-unstyled mb-0">';
                 requiredFiles.forEach(file => {
@@ -765,7 +784,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     </li>`;
                 });
                 filesHtml += '</ul>';
-                
+
                 requiredFilesList.innerHTML = filesHtml;
                 requiredFilesSection.style.display = 'block';
             } else {
@@ -1211,7 +1230,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         console.log('Gmail URL constructed:', gmailUrl.toString());
 
-        if (confirm('This will open Gmail in a new tab with your email pre-filled.\n\n⚠️ Note: You will need to manually attach any required files.\n\nClick OK to continue.')) {
+        if (confirm('This will open Gmail in a new tab with your email pre-filled.\n\n⚠️ IMPORTANT: Gmail cannot automatically attach files.\nYou will need to manually attach the required files in Gmail.\n\nClick OK to continue.')) {
             console.log('User confirmed - proceeding with Gmail workflow');
             // First save a draft automatically
             saveDraftForGmail().then(() => {
@@ -1224,10 +1243,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     setTimeout(async () => {
                         // Get required files information
                         const requiredFiles = await getRequiredFilesInfo();
-                        let message = '✅ Gmail opened!\n\n📌 Next Steps:\n1. Attach any required files in Gmail\n2. Review and send the email\n3. Come back here and click "Mark as Sent" button';
-                        
+                        let message = '✅ Gmail opened!\n\n📌 Next Steps:\n1. MANUALLY attach the required files in Gmail\n2. Review and send the email\n3. Come back here and click "Mark as Sent" button';
+
                         if (requiredFiles.length > 0) {
-                            message += '\n\n📎 Required Files to Attach:\n';
+                            message += '\n\n📎 Required Files to MANUALLY Attach:\n';
                             requiredFiles.forEach(file => {
                                 message += `• ${file.name}\n`;
                             });
@@ -1235,7 +1254,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         } else {
                             message += '\n\n✅ No required files to attach.';
                         }
-                        
+
+                        message += '\n\n⚠️ Remember: Files are NOT automatically attached in Gmail!';
+
                         alert(message);
                     }, 500);
                 } else {
@@ -1256,7 +1277,7 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             const response = await fetch(`/tasks/{{ $task->id }}/required-files`);
             const data = await response.json();
-            
+
             if (data.success) {
                 return data.files;
             } else {
