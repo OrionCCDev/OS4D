@@ -428,7 +428,7 @@ class ReportService
             'on_time_rate' => $completedTasks->count() > 0 ? round(($onTimeTasks->count() / $completedTasks->count()) * 100, 2) : 0,
             'average_completion_time' => $this->calculateAverageCompletionTime($completedTasks),
             'tasks_by_priority' => $this->groupTasksByPriority($tasks),
-            'performance_score' => $this->calculatePerformanceScore($tasks),
+            'performance_score' => $this->calculatePerformanceScore($tasks, $user),
         ];
     }
 
@@ -542,22 +542,79 @@ class ReportService
     /**
      * Calculate performance score
      */
-    private function calculatePerformanceScore($tasks)
+    private function calculatePerformanceScore($tasks, $user = null)
     {
         if ($tasks->isEmpty()) {
             return 0;
         }
 
+        // Get task counts based on status
         $completedTasks = $tasks->where('status', 'completed');
-        $completionRate = ($completedTasks->count() / $tasks->count()) * 100;
-
-        $onTimeTasks = $completedTasks->filter(function ($task) {
-            return $task->completed_at && $task->due_date && $task->completed_at <= $task->due_date;
+        $inProgressTasks = $tasks->whereIn('status', ['in_progress', 'workingon', 'assigned']);
+        $rejectedTasks = $tasks->where('status', 'rejected');
+        $overdueTasks = $tasks->filter(function ($task) {
+            return $task->due_date && $task->due_date < now()
+                && !in_array($task->status, ['completed', 'cancelled']);
         });
 
-        $onTimeRate = $completedTasks->count() > 0 ? ($onTimeTasks->count() / $completedTasks->count()) * 100 : 0;
+        // On-time and late completions
+        $onTimeCompleted = $completedTasks->filter(function ($task) {
+            return $task->completed_at && $task->due_date
+                && $task->completed_at <= $task->due_date;
+        });
 
-        return round(($completionRate * 0.6) + ($onTimeRate * 0.4), 2);
+        $lateCompleted = $completedTasks->filter(function ($task) {
+            return $task->completed_at && $task->due_date
+                && $task->completed_at > $task->due_date;
+        });
+
+        // Calculate points (same as Top 3 Competition)
+        $completedScore = $completedTasks->count() * 10;
+        $inProgressScore = $inProgressTasks->count() * 5;
+        $onTimeBonus = $onTimeCompleted->count() * 3;
+
+        // Completion rate bonus
+        $completionRate = $tasks->count() > 0
+            ? ($completedTasks->count() / $tasks->count()) * 100
+            : 0;
+        $completionRateBonus = $completionRate * 0.5;
+
+        // Penalties
+        $rejectionPenalty = $rejectedTasks->count() * 8;
+        $overduePenalty = $overdueTasks->count() * 5;
+        $lateCompletionPenalty = $lateCompleted->count() * 2;
+
+        // Experience multiplier (same as Top 3 Competition)
+        $totalTasksAllTime = $user ? $user->assignedTasks()->count() : 0;
+        $experienceMultiplier = $this->calculateExperienceMultiplierForReports($totalTasksAllTime);
+
+        // Calculate base score
+        $baseScore = $completedScore + $inProgressScore + $onTimeBonus + $completionRateBonus;
+        $penalties = $rejectionPenalty + $overduePenalty + $lateCompletionPenalty;
+
+        // Apply experience multiplier and subtract penalties
+        $rawScore = ($baseScore * $experienceMultiplier) - $penalties;
+
+        // Normalize to 0-100 for display
+        // Max possible score is typically tasks × 10 × experience_multiplier
+        // For a user with 50 tasks and 1.4x multiplier: 50 × 10 × 1.4 = 700
+        $maxPossibleScore = max(100, ($tasks->count() * 10 * $experienceMultiplier));
+        $normalizedScore = min(100, max(0, ($rawScore / $maxPossibleScore) * 100));
+
+        return round($normalizedScore, 2);
+    }
+
+    /**
+     * Calculate experience multiplier for reports (same as Top 3 Competition)
+     */
+    private function calculateExperienceMultiplierForReports($totalTasks)
+    {
+        if ($totalTasks == 0) return 1.0;
+        if ($totalTasks <= 5) return 1.0;      // New
+        if ($totalTasks <= 15) return 1.1;     // Beginner
+        if ($totalTasks <= 30) return 1.2;     // Experienced
+        if ($totalTasks <= 50) return 1.3;     // Veteran
+        return 1.4;                             // Expert
     }
 
     /**
