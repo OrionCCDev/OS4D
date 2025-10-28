@@ -499,18 +499,6 @@
                                                             <strong>Required for Email</strong>
                                                         </label>
                                                     </div>
-                                                    <div class="required-notes mt-2" id="notes_{{ $att->id }}" style="{{ $att->required_for_email ? '' : 'display: none;' }}">
-                                                        <textarea class="form-control form-control-sm"
-                                                                  placeholder="Add notes explaining why this file is required..."
-                                                                  rows="2"
-                                                                  data-attachment-id="{{ $att->id }}">{{ $att->required_notes }}</textarea>
-                                                        <div class="mt-2">
-                                                            <button class="btn btn-sm btn-primary save-notes"
-                                                                    data-attachment-id="{{ $att->id }}">
-                                                                <i class="bx bx-save"></i> Save Notes
-                                                            </button>
-                                                        </div>
-                                                    </div>
                                                 </div>
                                             @else
                                                 <!-- User View - Show if file is required -->
@@ -519,11 +507,6 @@
                                                         <span class="badge bg-success">
                                                             <i class="bx bx-check-circle"></i> Required for Email
                                                         </span>
-                                                        @if($att->required_notes)
-                                                            <div class="required-notes-text mt-1">
-                                                                <small class="text-muted">{{ $att->required_notes }}</small>
-                                                            </div>
-                                                        @endif
                                                     </div>
                                                 @endif
                                             @endif
@@ -845,10 +828,6 @@
                                 const toggle = document.getElementById(`required_${id}`);
                                 if (toggle) {
                                     toggle.checked = isRequired;
-                                    const notesDiv = document.getElementById(`notes_${id}`);
-                                    if (notesDiv) {
-                                        notesDiv.style.display = isRequired ? 'block' : 'none';
-                                    }
                                 }
                             });
 
@@ -870,40 +849,19 @@
                     });
                 }
 
-                // Handle required toggle switches
+                // Handle required toggle switches - Auto-save on change
                 document.querySelectorAll('.required-toggle').forEach(toggle => {
                     toggle.addEventListener('change', function() {
                         const attachmentId = this.dataset.attachmentId;
                         const isRequired = this.checked;
-                        const notesDiv = document.getElementById(`notes_${attachmentId}`);
 
-                        // Show/hide notes section
-                        if (isRequired) {
-                            notesDiv.style.display = 'block';
-                        } else {
-                            notesDiv.style.display = 'none';
-                        }
-
-                        // Save the requirement status
-                        saveAttachmentRequirement(attachmentId, isRequired, null);
-                    });
-                });
-
-                // Handle save notes buttons
-                document.querySelectorAll('.save-notes').forEach(button => {
-                    button.addEventListener('click', function() {
-                        const attachmentId = this.dataset.attachmentId;
-                        const notesTextarea = document.querySelector(`textarea[data-attachment-id="${attachmentId}"]`);
-                        const notes = notesTextarea.value.trim();
-                        const toggle = document.getElementById(`required_${attachmentId}`);
-
-                        // Save the notes
-                        saveAttachmentRequirement(attachmentId, toggle.checked, notes);
+                        // Save the requirement status immediately
+                        saveAttachmentRequirement(attachmentId, isRequired);
                     });
                 });
 
                 // Function to save attachment requirement
-                function saveAttachmentRequirement(attachmentId, isRequired, notes) {
+                function saveAttachmentRequirement(attachmentId, isRequired) {
                     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
                     fetch(`/tasks/{{ $task->id }}/attachments/${attachmentId}/mark-required`, {
@@ -914,27 +872,28 @@
                         },
                         body: JSON.stringify({
                             required_for_email: isRequired,
-                            required_notes: notes
+                            required_notes: null
                         })
                     })
                     .then(response => response.json())
                     .then(data => {
                         if (data.success) {
                             // Show success message
-                            showToast('success', data.message);
-
-                            // Update UI if needed
-                            if (isRequired) {
-                                const toggle = document.getElementById(`required_${attachmentId}`);
-                                toggle.checked = true;
-                            }
+                            const action = isRequired ? 'marked as required' : 'unmarked as required';
+                            showToast('success', `File ${action} for email successfully.`);
                         } else {
                             showToast('error', data.message || 'Failed to update file requirement');
+                            // Revert the toggle if save failed
+                            const toggle = document.getElementById(`required_${attachmentId}`);
+                            toggle.checked = !isRequired;
                         }
                     })
                     .catch(error => {
                         console.error('Error:', error);
                         showToast('error', 'Failed to update file requirement');
+                        // Revert the toggle if save failed
+                        const toggle = document.getElementById(`required_${attachmentId}`);
+                        toggle.checked = !isRequired;
                     });
                 }
 
@@ -2013,14 +1972,15 @@
     background: #f8f9fa;
     border: 1px solid #e9ecef;
     border-radius: 8px;
-    padding: 15px;
-    margin-bottom: 15px;
+    padding: 12px;
+    margin-bottom: 12px;
 }
 
 .manager-controls .form-check-label {
     font-weight: 600;
     color: #495057;
     margin-left: 8px;
+    font-size: 0.9rem;
 }
 
 .manager-controls .form-check-input:checked {
@@ -2028,21 +1988,8 @@
     border-color: #28a745;
 }
 
-.required-notes textarea {
-    border: 1px solid #ced4da;
-    border-radius: 6px;
-    resize: vertical;
-    font-size: 0.875rem;
-}
-
-.required-notes textarea:focus {
-    border-color: #80bdff;
-    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
-}
-
-.save-notes {
-    font-size: 0.8rem;
-    padding: 6px 12px;
+.manager-controls .form-check-input {
+    transform: scale(1.1);
 }
 
 /* Required Badge Styling */
