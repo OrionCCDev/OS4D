@@ -66,21 +66,21 @@ class DashboardController extends Controller
         // Upcoming due dates (next 7 days)
         $upcomingTasks = $user->assignedTasks()->with(['project', 'folder'])
             ->whereBetween('due_date', [$now, $now->copy()->addDays(7)])
-            ->whereNotIn('status', ['completed', 'approved'])
+            ->whereNotIn('status', ['completed'])
             ->orderBy('due_date', 'asc')
             ->get();
 
         // Overdue tasks with pagination
         $overdueTasks = $user->assignedTasks()->with(['project', 'folder'])
             ->where('due_date', '<', $now)
-            ->whereNotIn('status', ['completed', 'approved'])
+            ->whereNotIn('status', ['completed'])
             ->orderBy('due_date', 'asc')
             ->paginate(5, ['*'], 'overdue_page');
 
         // Upcoming due dates with pagination
         $upcomingTasksPaginated = $user->assignedTasks()->with(['project', 'folder'])
             ->whereBetween('due_date', [$now, $now->copy()->addDays(7)])
-            ->whereNotIn('status', ['completed', 'approved'])
+            ->whereNotIn('status', ['completed'])
             ->orderBy('due_date', 'asc')
             ->paginate(5, ['*'], 'upcoming_page');
 
@@ -113,9 +113,13 @@ class DashboardController extends Controller
                     WHEN status = 'waiting_sending_client_consultant_approve' THEN 7
                     WHEN status = 'waiting_client_consultant_approve' THEN 8
                     WHEN status = 'approved' THEN 9
-                    WHEN status = 'completed' THEN 10
-                    WHEN status = 'cancelled' THEN 11
-                    ELSE 12
+                    WHEN status = 'ready_for_email' THEN 10
+                    WHEN status = 'on_client_consultant_review' THEN 11
+                    WHEN status = 'in_review_after_client_consultant_reply' THEN 12
+                    WHEN status = 're_submit_required' THEN 13
+                    WHEN status = 'completed' THEN 14
+                    WHEN status = 'cancelled' THEN 15
+                    ELSE 16
                 END
             ")
             ->orderBy('due_date', 'asc')
@@ -360,9 +364,13 @@ class DashboardController extends Controller
                     WHEN status = 'waiting_sending_client_consultant_approve' THEN 7
                     WHEN status = 'waiting_client_consultant_approve' THEN 8
                     WHEN status = 'approved' THEN 9
-                    WHEN status = 'completed' THEN 10
-                    WHEN status = 'cancelled' THEN 11
-                    ELSE 12
+                    WHEN status = 'ready_for_email' THEN 10
+                    WHEN status = 'on_client_consultant_review' THEN 11
+                    WHEN status = 'in_review_after_client_consultant_reply' THEN 12
+                    WHEN status = 're_submit_required' THEN 13
+                    WHEN status = 'completed' THEN 14
+                    WHEN status = 'cancelled' THEN 15
+                    ELSE 16
                 END
             ")
             ->orderBy('due_date', 'asc')
