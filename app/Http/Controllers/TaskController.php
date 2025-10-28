@@ -525,6 +525,100 @@ class TaskController extends Controller
         }
     }
 
+    public function markAttachmentAsRequired(Request $request, Task $task, TaskAttachment $attachment)
+    {
+        // Only managers can mark files as required
+        if (!Auth::user()->isManager()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Access denied. Only managers can mark files as required for email.'
+            ], 403);
+        }
+
+        abort_unless($attachment->task_id === $task->id, 403);
+
+        $request->validate([
+            'required_for_email' => 'required|boolean',
+            'required_notes' => 'nullable|string|max:500'
+        ]);
+
+        $attachment->update([
+            'required_for_email' => $request->required_for_email,
+            'required_notes' => $request->required_notes
+        ]);
+
+        $action = $request->required_for_email ? 'marked as required' : 'unmarked as required';
+
+        // Create history record
+        $task->histories()->create([
+            'user_id' => Auth::id(),
+            'action' => 'attachment_requirement_changed',
+            'description' => "File '{$attachment->original_name}' {$action} for email" .
+                           ($request->required_notes ? ". Notes: {$request->required_notes}" : ""),
+            'metadata' => [
+                'attachment_id' => $attachment->id,
+                'required_for_email' => $request->required_for_email,
+                'required_notes' => $request->required_notes
+            ]
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => "File {$action} for email successfully.",
+            'attachment' => $attachment->fresh()
+        ]);
+    }
+
+    public function bulkMarkAttachmentsAsRequired(Request $request, Task $task)
+    {
+        // Only managers can mark files as required
+        if (!Auth::user()->isManager()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Access denied. Only managers can mark files as required for email.'
+            ], 403);
+        }
+
+        $request->validate([
+            'attachment_ids' => 'required|array',
+            'attachment_ids.*' => 'exists:task_attachments,id',
+            'required_for_email' => 'required|boolean',
+            'required_notes' => 'nullable|string|max:500'
+        ]);
+
+        $attachments = $task->attachments()->whereIn('id', $request->attachment_ids)->get();
+
+        foreach ($attachments as $attachment) {
+            $attachment->update([
+                'required_for_email' => $request->required_for_email,
+                'required_notes' => $request->required_notes
+            ]);
+        }
+
+        $action = $request->required_for_email ? 'marked as required' : 'unmarked as required';
+        $count = $attachments->count();
+
+        // Create history record
+        $task->histories()->create([
+            'user_id' => Auth::id(),
+            'action' => 'bulk_attachment_requirement_changed',
+            'description' => "{$count} files {$action} for email" .
+                           ($request->required_notes ? ". Notes: {$request->required_notes}" : ""),
+            'metadata' => [
+                'attachment_ids' => $request->attachment_ids,
+                'required_for_email' => $request->required_for_email,
+                'required_notes' => $request->required_notes,
+                'count' => $count
+            ]
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => "{$count} files {$action} for email successfully.",
+            'updated_count' => $count
+        ]);
+    }
+
     public function deleteAttachment(Task $task, TaskAttachment $attachment)
     {
         abort_unless($attachment->task_id === $task->id, 403);

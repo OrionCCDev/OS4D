@@ -269,6 +269,11 @@ class Task extends Model
         return $this->hasMany(TaskAttachment::class);
     }
 
+    public function requiredAttachments()
+    {
+        return $this->hasMany(TaskAttachment::class)->where('required_for_email', true);
+    }
+
     public function customNotifications()
     {
         return $this->hasMany(CustomNotification::class, 'data->task_id');

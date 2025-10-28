@@ -106,21 +106,42 @@ class TaskConfirmationMail extends Mailable
     {
         $attachments = [];
 
+        // Process email preparation attachments (manually uploaded for this email)
         if ($this->emailPreparation->attachments) {
-            \Log::info('TaskConfirmationMail: Processing attachments - Count: ' . count($this->emailPreparation->attachments));
+            \Log::info('TaskConfirmationMail: Processing email preparation attachments - Count: ' . count($this->emailPreparation->attachments));
             foreach ($this->emailPreparation->attachments as $attachmentPath) {
                 $fullPath = storage_path('app/' . $attachmentPath);
-                \Log::info('TaskConfirmationMail: Checking attachment: ' . $fullPath . ' - Exists: ' . (file_exists($fullPath) ? 'Yes' : 'No'));
+                \Log::info('TaskConfirmationMail: Checking email preparation attachment: ' . $fullPath . ' - Exists: ' . (file_exists($fullPath) ? 'Yes' : 'No'));
                 if (file_exists($fullPath)) {
                     $fileSize = filesize($fullPath);
-                    \Log::info('TaskConfirmationMail: Adding attachment: ' . basename($attachmentPath) . ' - Size: ' . $fileSize . ' bytes');
+                    \Log::info('TaskConfirmationMail: Adding email preparation attachment: ' . basename($attachmentPath) . ' - Size: ' . $fileSize . ' bytes');
                     $attachments[] = Attachment::fromStorage($attachmentPath);
                 } else {
-                    \Log::error('TaskConfirmationMail: Attachment file not found: ' . $fullPath);
+                    \Log::error('TaskConfirmationMail: Email preparation attachment file not found: ' . $fullPath);
                 }
             }
         } else {
-            \Log::info('TaskConfirmationMail: No attachments found in email preparation');
+            \Log::info('TaskConfirmationMail: No email preparation attachments found');
+        }
+
+        // Automatically attach only task attachments marked as required for email
+        $requiredTaskAttachments = $this->task->requiredAttachments;
+        if ($requiredTaskAttachments && $requiredTaskAttachments->count() > 0) {
+            \Log::info('TaskConfirmationMail: Processing required task attachments - Count: ' . $requiredTaskAttachments->count());
+            foreach ($requiredTaskAttachments as $taskAttachment) {
+                $fullPath = storage_path('app/public/' . $taskAttachment->path);
+                \Log::info('TaskConfirmationMail: Checking required task attachment: ' . $fullPath . ' - Exists: ' . (file_exists($fullPath) ? 'Yes' : 'No'));
+                if (file_exists($fullPath)) {
+                    $fileSize = filesize($fullPath);
+                    \Log::info('TaskConfirmationMail: Adding required task attachment: ' . $taskAttachment->original_name . ' - Size: ' . $fileSize . ' bytes');
+                    $attachments[] = Attachment::fromStorage('public/' . $taskAttachment->path)
+                        ->as($taskAttachment->original_name);
+                } else {
+                    \Log::error('TaskConfirmationMail: Required task attachment file not found: ' . $fullPath);
+                }
+            }
+        } else {
+            \Log::info('TaskConfirmationMail: No required task attachments found');
         }
 
         \Log::info('TaskConfirmationMail: Total attachments prepared: ' . count($attachments));

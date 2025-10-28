@@ -17,6 +17,12 @@ class TaskAttachment extends Model
         'size_bytes',
         'disk',
         'path',
+        'required_for_email',
+        'required_notes',
+    ];
+
+    protected $casts = [
+        'required_for_email' => 'boolean',
     ];
 
     public function task()

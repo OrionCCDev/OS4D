@@ -103,16 +103,18 @@ class SendTaskConfirmationEmailJob implements ShouldQueue
             ];
 
             // Prepare attachments for Gmail OAuth service (optimized to prevent memory issues)
+            $emailData['attachments'] = [];
+
+            // Process email preparation attachments (manually uploaded for this email)
             if ($this->emailPreparation->attachments && is_array($this->emailPreparation->attachments)) {
-                Log::info('Job: Processing attachments for email - Count: ' . count($this->emailPreparation->attachments));
-                $emailData['attachments'] = [];
+                Log::info('Job: Processing email preparation attachments - Count: ' . count($this->emailPreparation->attachments));
 
                 foreach ($this->emailPreparation->attachments as $attachmentPath) {
                     $fullPath = storage_path('app/' . $attachmentPath);
-                    Log::info('Job: Checking attachment: ' . $fullPath . ' - Exists: ' . (file_exists($fullPath) ? 'Yes' : 'No'));
+                    Log::info('Job: Checking email preparation attachment: ' . $fullPath . ' - Exists: ' . (file_exists($fullPath) ? 'Yes' : 'No'));
 
                     if (!file_exists($fullPath)) {
-                        Log::error('Job: Attachment file not found: ' . $fullPath);
+                        Log::error('Job: Email preparation attachment file not found: ' . $fullPath);
                         continue;
                     }
 
@@ -122,11 +124,11 @@ class SendTaskConfirmationEmailJob implements ShouldQueue
                     // Validate file size (100MB limit)
                     $maxSize = 100 * 1024 * 1024; // 100MB in bytes
                     if ($fileSize > $maxSize) {
-                        Log::error('Job: Attachment file too large: ' . basename($attachmentPath) . ' - Size: ' . $fileSize . ' bytes');
-                        throw new \Exception('Attachment file too large: ' . basename($attachmentPath) . '. Maximum size is 100MB.');
+                        Log::error('Job: Email preparation attachment file too large: ' . basename($attachmentPath) . ' - Size: ' . $fileSize . ' bytes');
+                        throw new \Exception('Email preparation attachment file too large: ' . basename($attachmentPath) . '. Maximum size is 100MB.');
                     }
 
-                    Log::info('Job: Adding attachment: ' . basename($attachmentPath) . ' - Size: ' . $fileSize . ' bytes - MIME: ' . $mimeType);
+                    Log::info('Job: Adding email preparation attachment: ' . basename($attachmentPath) . ' - Size: ' . $fileSize . ' bytes - MIME: ' . $mimeType);
 
                     // Use file_get_contents for attachments - this is necessary for email encoding
                     // The memory issue is acceptable because we're in a queue job with extended timeout
@@ -139,11 +141,51 @@ class SendTaskConfirmationEmailJob implements ShouldQueue
                     // Free up memory after each attachment
                     gc_collect_cycles();
                 }
-
-                Log::info('Job: Total attachments prepared: ' . count($emailData['attachments']));
             } else {
-                Log::info('Job: No attachments found in email preparation');
+                Log::info('Job: No email preparation attachments found');
             }
+
+            // Automatically attach only task attachments marked as required for email
+            $requiredTaskAttachments = $this->task->requiredAttachments;
+            if ($requiredTaskAttachments && $requiredTaskAttachments->count() > 0) {
+                Log::info('Job: Processing required task attachments - Count: ' . $requiredTaskAttachments->count());
+
+                foreach ($requiredTaskAttachments as $taskAttachment) {
+                    $fullPath = storage_path('app/public/' . $taskAttachment->path);
+                    Log::info('Job: Checking required task attachment: ' . $fullPath . ' - Exists: ' . (file_exists($fullPath) ? 'Yes' : 'No'));
+
+                    if (!file_exists($fullPath)) {
+                        Log::error('Job: Required task attachment file not found: ' . $fullPath);
+                        continue;
+                    }
+
+                    $fileSize = filesize($fullPath);
+                    $mimeType = mime_content_type($fullPath) ?: 'application/octet-stream';
+
+                    // Validate file size (100MB limit)
+                    $maxSize = 100 * 1024 * 1024; // 100MB in bytes
+                    if ($fileSize > $maxSize) {
+                        Log::error('Job: Required task attachment file too large: ' . $taskAttachment->original_name . ' - Size: ' . $fileSize . ' bytes');
+                        throw new \Exception('Required task attachment file too large: ' . $taskAttachment->original_name . '. Maximum size is 100MB.');
+                    }
+
+                    Log::info('Job: Adding required task attachment: ' . $taskAttachment->original_name . ' - Size: ' . $fileSize . ' bytes - MIME: ' . $mimeType);
+
+                    // Use file_get_contents for attachments - this is necessary for email encoding
+                    $emailData['attachments'][] = [
+                        'filename' => $taskAttachment->original_name,
+                        'mime_type' => $mimeType,
+                        'content' => file_get_contents($fullPath)
+                    ];
+
+                    // Free up memory after each attachment
+                    gc_collect_cycles();
+                }
+            } else {
+                Log::info('Job: No required task attachments found');
+            }
+
+            Log::info('Job: Total attachments prepared: ' . count($emailData['attachments']));
 
             if (!empty($ccEmails)) {
                 $emailData['cc'] = $ccEmails;
