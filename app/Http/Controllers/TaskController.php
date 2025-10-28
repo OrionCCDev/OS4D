@@ -525,6 +525,28 @@ class TaskController extends Controller
         }
     }
 
+    public function getRequiredFilesForEmail(Task $task)
+    {
+        // Get only files marked as required for email
+        $requiredFiles = $task->requiredAttachments()->get();
+        
+        $files = [];
+        foreach ($requiredFiles as $file) {
+            $files[] = [
+                'id' => $file->id,
+                'name' => $file->original_name,
+                'size' => $file->size_bytes,
+                'download_url' => route('tasks.attachments.download', $file)
+            ];
+        }
+        
+        return response()->json([
+            'success' => true,
+            'files' => $files,
+            'count' => count($files)
+        ]);
+    }
+
     public function markAttachmentAsRequired(Request $request, Task $task, TaskAttachment $attachment)
     {
         // Only managers can mark files as required

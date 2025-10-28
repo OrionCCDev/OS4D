@@ -492,7 +492,17 @@
                                 <strong>Task:</strong> {{ $task->title }}<br>
                                 <small>Project: {{ $task->project->name ?? 'N/A' }} | Due: {{ $task->due_date ? $task->due_date->format('M d, Y') : 'No due date' }}</small>
                             </div>
+                        </div>
+
+                        <!-- Required Files Information -->
+                        <div id="requiredFilesSection" class="alert alert-success" style="display: none;">
+                            <i class="bx bx-paperclip"></i>
+                            <div>
+                                <strong>Required Files for Email:</strong>
+                                <div id="requiredFilesList" class="mt-2"></div>
+                                <small class="text-muted">These files will be automatically attached when using "Send via Server" or need to be manually attached when using "Send via Gmail".</small>
                             </div>
+                        </div>
 
                         <!-- Email Template Selector -->
                         <div class="template-selector">
@@ -737,6 +747,45 @@ document.addEventListener('DOMContentLoaded', function() {
         sendViaGmailBtn: !!sendViaGmailBtn,
         markAsSentBtn: !!markAsSentBtn
     });
+
+    // Load required files information
+    async function loadRequiredFiles() {
+        try {
+            const requiredFiles = await getRequiredFilesInfo();
+            const requiredFilesSection = document.getElementById('requiredFilesSection');
+            const requiredFilesList = document.getElementById('requiredFilesList');
+            
+            if (requiredFiles.length > 0) {
+                let filesHtml = '<ul class="list-unstyled mb-0">';
+                requiredFiles.forEach(file => {
+                    filesHtml += `<li class="mb-1">
+                        <i class="bx bx-file me-2"></i>
+                        <strong>${file.name}</strong>
+                        <small class="text-muted">(${formatFileSize(file.size)})</small>
+                    </li>`;
+                });
+                filesHtml += '</ul>';
+                
+                requiredFilesList.innerHTML = filesHtml;
+                requiredFilesSection.style.display = 'block';
+            } else {
+                requiredFilesSection.style.display = 'none';
+            }
+        } catch (error) {
+            console.error('Error loading required files:', error);
+        }
+    }
+
+    // Format file size
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    loadRequiredFiles();
 
     // Email templates
     const taskTitle = '{{ addslashes($task->title) }}';
@@ -1172,8 +1221,22 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.log('Gmail window opened:', gmailWindow);
 
                 if (gmailWindow) {
-                    setTimeout(() => {
-                        alert('✅ Gmail opened!\n\n📌 Next Steps:\n1. Attach any required files in Gmail\n2. Review and send the email\n3. Come back here and click "Mark as Sent" button');
+                    setTimeout(async () => {
+                        // Get required files information
+                        const requiredFiles = await getRequiredFilesInfo();
+                        let message = '✅ Gmail opened!\n\n📌 Next Steps:\n1. Attach any required files in Gmail\n2. Review and send the email\n3. Come back here and click "Mark as Sent" button';
+                        
+                        if (requiredFiles.length > 0) {
+                            message += '\n\n📎 Required Files to Attach:\n';
+                            requiredFiles.forEach(file => {
+                                message += `• ${file.name}\n`;
+                            });
+                            message += '\n💡 Tip: You can download these files from the task page if needed.';
+                        } else {
+                            message += '\n\n✅ No required files to attach.';
+                        }
+                        
+                        alert(message);
                     }, 500);
                 } else {
                     alert('❌ Gmail window was blocked by popup blocker!\n\nPlease allow popups for this site and try again.');
@@ -1186,6 +1249,23 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('User cancelled Gmail opening');
         }
         });
+    }
+
+    // Get required files information from API
+    async function getRequiredFilesInfo() {
+        try {
+            const response = await fetch(`/tasks/{{ $task->id }}/required-files`);
+            const data = await response.json();
+            
+            if (data.success) {
+                return data.files;
+            } else {
+                return [];
+            }
+        } catch (error) {
+            console.error('Error fetching required files:', error);
+            return [];
+        }
     }
 
     // Save draft for Gmail workflow

@@ -251,6 +251,7 @@ Route::middleware('auth')->group(function () {
         Route::delete('tasks/{task}/attachments/{attachment}', [TaskController::class, 'deleteAttachment'])->name('tasks.attachments.delete');
         Route::put('tasks/{task}/attachments/{attachment}/mark-required', [TaskController::class, 'markAttachmentAsRequired'])->name('tasks.attachments.mark-required');
         Route::put('tasks/{task}/attachments/bulk-mark-required', [TaskController::class, 'bulkMarkAttachmentsAsRequired'])->name('tasks.attachments.bulk-mark-required');
+        Route::get('tasks/{task}/required-files', [TaskController::class, 'getRequiredFilesForEmail'])->name('tasks.required-files');
 
         // Task workflow routes
         Route::post('tasks/{task}/accept', [TaskController::class, 'acceptTask'])->name('tasks.accept');
