@@ -14,6 +14,7 @@ use App\Models\TaskTimeExtensionRequest;
 use App\Models\UnifiedNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -1046,32 +1047,46 @@ class TaskController extends Controller
             $user = Auth::user();
             $sentVia = $request->input('sent_via', 'gmail_manual');
 
-            // Update email preparation status
-            $emailPreparation->update([
-                'status' => 'sent',
-                'sent_at' => now(),
-                'sent_via' => $sentVia,
-            ]);
+            // Start database transaction to ensure data consistency
+            DB::beginTransaction();
 
-            // Update task status to on_client_consultant_review
-            $task->update(['status' => 'on_client_consultant_review']);
+            try {
+                // Update email preparation status
+                $emailPreparation->update([
+                    'status' => 'sent',
+                    'sent_at' => now(),
+                    'sent_via' => $sentVia,
+                ]);
 
-            // Add task history entry for email sent
-            $this->addEmailSentHistory($task, $emailPreparation, $user, $sentVia);
+                // Update task status to on_client_consultant_review
+                $task->update(['status' => 'on_client_consultant_review']);
 
-            // Add task history entry for status change to waiting for review
-            $this->addWaitingForReviewHistory($task, $user);
+                // Add task history entry for email sent (with error handling)
+                $this->addEmailSentHistory($task, $emailPreparation, $user, $sentVia);
 
-            // Send in-app notifications to managers
-            $this->sendInAppNotificationsToManagers($task, $emailPreparation, $user);
+                // Add task history entry for status change to waiting for review (with error handling)
+                $this->addWaitingForReviewHistory($task, $user);
 
-            Log::info('Email marked as sent manually for task: ' . $task->id . ' by user: ' . Auth::id());
+                // Send in-app notifications to managers (with error handling)
+                $this->sendInAppNotificationsToManagers($task, $emailPreparation, $user);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Email marked as sent successfully! Task status updated to "On Client/Consultant Review".',
-                'redirect_url' => route('tasks.show', $task->id)
-            ]);
+                // Commit the transaction
+                DB::commit();
+
+                Log::info('Email marked as sent manually for task: ' . $task->id . ' by user: ' . Auth::id());
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Email marked as sent successfully! Task status updated to "On Client/Consultant Review".',
+                    'redirect_url' => route('tasks.show', $task->id)
+                ]);
+
+            } catch (\Exception $e) {
+                // Rollback the transaction on any error
+                DB::rollback();
+                throw $e;
+            }
+
         } catch (\Exception $e) {
             Log::error('Failed to mark email as sent for task: ' . $task->id . ' - ' . $e->getMessage());
             Log::error('Exception trace: ' . $e->getTraceAsString());
@@ -1099,7 +1114,7 @@ class TaskController extends Controller
             $ccEmails = $emailPreparation->cc_emails ? array_filter(array_map('trim', explode(',', $emailPreparation->cc_emails))) : [];
             $bccEmails = $emailPreparation->bcc_emails ? array_filter(array_map('trim', explode(',', $emailPreparation->bcc_emails))) : [];
 
-            $task->histories()->create([
+            $historyData = [
                 'user_id' => $user->id,
                 'action' => 'email_marked_sent',
                 'description' => "Email marked as sent by {$user->name} via {$sentVia}",
@@ -1114,11 +1129,15 @@ class TaskController extends Controller
                     'attachment_count' => is_array($emailPreparation->attachments) ? count($emailPreparation->attachments) : 0,
                     'email_preparation_id' => $emailPreparation->id
                 ]
-            ]);
+            ];
+
+            $task->histories()->create($historyData);
 
             Log::info('Task history entry created for email marked as sent - Task: ' . $task->id);
         } catch (\Exception $e) {
             Log::error('Failed to create task history for email marked as sent: ' . $e->getMessage());
+            // Don't re-throw the exception to prevent the entire operation from failing
+            // The main operation (marking email as sent) should still succeed
         }
     }
 
@@ -1128,7 +1147,7 @@ class TaskController extends Controller
     private function addWaitingForReviewHistory(Task $task, $user)
     {
         try {
-            $task->histories()->create([
+            $historyData = [
                 'user_id' => $user->id,
                 'action' => 'status_changed',
                 'description' => "Task status changed to 'On Client/Consultant Review' - waiting for client and consultant responses",
@@ -1141,11 +1160,14 @@ class TaskController extends Controller
                     'waiting_for' => ['client_response', 'consultant_response'],
                     'next_action' => 'monitor_responses'
                 ]
-            ]);
+            ];
+
+            $task->histories()->create($historyData);
 
             Log::info('Task history entry created for waiting for review status - Task: ' . $task->id);
         } catch (\Exception $e) {
             Log::error('Failed to create task history for waiting for review status: ' . $e->getMessage());
+            // Don't re-throw the exception to prevent the entire operation from failing
         }
     }
 
@@ -1158,60 +1180,68 @@ class TaskController extends Controller
             $managers = User::whereIn('role', ['admin', 'manager', 'sub-admin'])->get();
 
             Log::info('Found ' . $managers->count() . ' managers to notify about email marked as sent for task: ' . $task->id);
-            foreach ($managers as $manager) {
-                Log::info('Manager: ' . $manager->name . ' (' . $manager->email . ') - Role: ' . $manager->role);
-            }
 
             if ($managers->isEmpty()) {
                 Log::warning('No managers found to notify about email marked as sent');
                 return;
             }
 
+            $toEmails = array_filter(array_map('trim', explode(',', $emailPreparation->to_emails)));
+
             foreach ($managers as $manager) {
-                // Send notification about email being marked as sent
-                \App\Models\UnifiedNotification::createTaskNotification(
-                    $manager->id,
-                    'email_marked_sent',
-                    'Email Marked as Sent',
-                    $user->name . ' marked confirmation email as sent for task "' . $task->title . '" to: ' . implode(', ', array_filter(array_map('trim', explode(',', $emailPreparation->to_emails)))),
-                    [
-                        'task_id' => $task->id,
-                        'task_title' => $task->title,
-                        'sender_id' => $user->id,
-                        'sender_name' => $user->name,
-                        'email_preparation_id' => $emailPreparation->id,
-                        'to_emails' => implode(', ', array_filter(array_map('trim', explode(',', $emailPreparation->to_emails)))),
-                        'subject' => $emailPreparation->subject,
-                        'action_url' => route('tasks.show', $task->id)
-                    ],
-                    $task->id,
-                    'normal'
-                );
+                try {
+                    // Send notification about email being marked as sent
+                    UnifiedNotification::createTaskNotification(
+                        $manager->id,
+                        'email_marked_sent',
+                        'Email Marked as Sent',
+                        $user->name . ' marked confirmation email as sent for task "' . $task->title . '" to: ' . implode(', ', $toEmails),
+                        [
+                            'task_id' => $task->id,
+                            'task_title' => $task->title,
+                            'sender_id' => $user->id,
+                            'sender_name' => $user->name,
+                            'email_preparation_id' => $emailPreparation->id,
+                            'to_emails' => implode(', ', $toEmails),
+                            'subject' => $emailPreparation->subject,
+                            'action_url' => route('tasks.show', $task->id)
+                        ],
+                        $task->id,
+                        'normal'
+                    );
 
-                // Send notification about task waiting for review
-                \App\Models\UnifiedNotification::createTaskNotification(
-                    $manager->id,
-                    'task_waiting_for_review',
-                    'Task Waiting for Review',
-                    'Task "' . $task->title . '" is now waiting for client/consultant review after email was sent to: ' . implode(', ', array_filter(array_map('trim', explode(',', $emailPreparation->to_emails)))),
-                    [
-                        'task_id' => $task->id,
-                        'task_title' => $task->title,
-                        'sender_id' => $user->id,
-                        'sender_name' => $user->name,
-                        'email_preparation_id' => $emailPreparation->id,
-                        'to_emails' => implode(', ', array_filter(array_map('trim', explode(',', $emailPreparation->to_emails)))),
-                        'subject' => $emailPreparation->subject,
-                        'action_url' => route('tasks.show', $task->id)
-                    ],
-                    $task->id,
-                    'high'
-                );
+                    // Send notification about task waiting for review
+                    UnifiedNotification::createTaskNotification(
+                        $manager->id,
+                        'task_waiting_for_review',
+                        'Task Waiting for Review',
+                        'Task "' . $task->title . '" is now waiting for client/consultant review after email was sent to: ' . implode(', ', $toEmails),
+                        [
+                            'task_id' => $task->id,
+                            'task_title' => $task->title,
+                            'sender_id' => $user->id,
+                            'sender_name' => $user->name,
+                            'email_preparation_id' => $emailPreparation->id,
+                            'to_emails' => implode(', ', $toEmails),
+                            'subject' => $emailPreparation->subject,
+                            'action_url' => route('tasks.show', $task->id)
+                        ],
+                        $task->id,
+                        'high'
+                    );
 
-                Log::info('In-app notifications sent to manager: ' . $manager->email . ' for task: ' . $task->id);
+                    Log::info('Notifications sent to manager: ' . $manager->name . ' for task: ' . $task->id);
+
+                } catch (\Exception $e) {
+                    Log::error('Failed to send notification to manager ' . $manager->name . ': ' . $e->getMessage());
+                    // Continue with other managers even if one fails
+                }
             }
+
+            Log::info('Manager notifications completed for task: ' . $task->id);
         } catch (\Exception $e) {
-            Log::error('Failed to send in-app notifications to managers: ' . $e->getMessage());
+            Log::error('Failed to send manager notifications: ' . $e->getMessage());
+            // Don't re-throw the exception to prevent the entire operation from failing
         }
     }
 
