@@ -1259,8 +1259,21 @@ document.addEventListener('DOMContentLoaded', function() {
             externalBtn.disabled = true;
             externalBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
 
-            // First ensure we have an email preparation
-            const formData = new FormData(emailForm);
+            // Get data from the main form (not the modal)
+            const toEmails = document.getElementById('to_emails').value;
+            const ccEmails = document.getElementById('cc_emails').value;
+            const subject = document.getElementById('subject').value;
+            const body = document.getElementById('body').value;
+
+            console.log('Form data:', { toEmails, ccEmails, subject, body });
+
+            // Create form data manually to ensure all required fields are present
+            const formData = new FormData();
+            formData.append('to_emails', toEmails);
+            formData.append('cc_emails', ccEmails || '');
+            formData.append('bcc_emails', document.getElementById('bcc_emails')?.value || '');
+            formData.append('subject', subject);
+            formData.append('body', body);
             formData.append('save_draft', '1');
 
             // Save draft first if needed
