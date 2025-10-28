@@ -56,16 +56,25 @@
                                 $isAccepted = in_array($task->status, ['accepted', 'in_progress', 'workingon', 'submitted_for_review', 'in_review', 'approved', 'completed']);
                                 $isApproaching = $daysUntilStart <= 3 && $daysUntilStart >= 0;
                                 $isOverdue = $daysUntilStart < 0;
+
+                                // Only show overdue to start if:
+                                // 1. Task is not accepted/in progress AND
+                                // 2. Start date has passed AND
+                                // 3. Task is assigned (not pending/unassigned)
+                                $shouldShowOverdue = $isOverdue && !$isAccepted && $task->status === 'assigned';
                             @endphp
 
-                            @if($isAccepted && $daysUntilStart <= 0)
+                            @if($shouldShowOverdue)
+                                <span class="badge bg-danger fs-6 px-3 py-2">
+                                    <i class="bx bx-time-five me-1"></i>
+                                    {{ abs($daysUntilStart) }} days overdue to start
+                                </span>
+                            @elseif($isAccepted && $daysUntilStart <= 0)
                                 {{-- Don't show anything if task is accepted and start date has passed --}}
-                            @else
-                                <span class="badge bg-{{ $isOverdue ? 'danger' : ($isApproaching && !$isAccepted ? 'danger' : 'success') }} fs-6 px-3 py-2">
-                                    <i class="bx bx-{{ $isOverdue ? 'time-five' : ($isApproaching && !$isAccepted ? 'time-five' : 'timer') }} me-1"></i>
-                                    @if($isOverdue)
-                                        {{ abs($daysUntilStart) }} days overdue to start
-                                    @elseif($daysUntilStart == 0)
+                            @elseif($daysUntilStart >= 0)
+                                <span class="badge bg-{{ $isApproaching && !$isAccepted ? 'warning' : 'info' }} fs-6 px-3 py-2">
+                                    <i class="bx bx-timer me-1"></i>
+                                    @if($daysUntilStart == 0)
                                         Starts today
                                     @elseif($daysUntilStart == 1)
                                         Starts tomorrow

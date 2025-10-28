@@ -185,14 +185,25 @@
                                             $isAccepted = in_array($task->status, ['accepted', 'in_progress', 'workingon', 'submitted_for_review', 'in_review', 'approved', 'completed']);
                                             $isApproaching = $daysUntilStart <= 3 && $daysUntilStart >= 0;
                                             $isOverdue = $daysUntilStart < 0;
+
+                                            // Only show overdue to start if:
+                                            // 1. Task is not accepted/in progress AND
+                                            // 2. Start date has passed AND
+                                            // 3. Task is assigned (not pending/unassigned)
+                                            $shouldShowOverdue = $isOverdue && !$isAccepted && $task->status === 'assigned';
                                         @endphp
 
-                                        @if(!($isAccepted && $daysUntilStart <= 0))
-                                            <span class="badge {{ $isOverdue ? 'bg-danger' : ($isApproaching && !$isAccepted ? 'bg-warning' : 'bg-info') }} badge-sm">
+                                        @if($shouldShowOverdue)
+                                            <span class="badge bg-danger badge-sm">
                                                 <i class="bx bx-calendar"></i>
-                                                @if($isOverdue)
-                                                    {{ abs($daysUntilStart) }}d overdue
-                                                @elseif($daysUntilStart == 0)
+                                                {{ abs($daysUntilStart) }}d overdue
+                                            </span>
+                                        @elseif($isAccepted && $daysUntilStart <= 0)
+                                            {{-- Don't show anything if task is accepted and start date has passed --}}
+                                        @elseif($daysUntilStart >= 0)
+                                            <span class="badge {{ $isApproaching && !$isAccepted ? 'bg-warning' : 'bg-info' }} badge-sm">
+                                                <i class="bx bx-calendar"></i>
+                                                @if($daysUntilStart == 0)
                                                     Starts today
                                                 @elseif($daysUntilStart == 1)
                                                     Starts tomorrow
