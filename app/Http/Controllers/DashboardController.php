@@ -455,7 +455,10 @@ class DashboardController extends Controller
                     : 0;
 
                 return $user;
-            });
+            })
+            ->sortByDesc('monthly_performance_score')
+            ->take(3)
+            ->values();
 
         // If no monthly performers found, get any users with assigned tasks as fallback
         if ($monthlyTopPerformers->count() == 0) {
@@ -507,7 +510,10 @@ class DashboardController extends Controller
                         : 0;
 
                     return $user;
-                });
+                })
+                ->sortByDesc('monthly_performance_score')
+                ->take(3)
+                ->values();
         }
 
         // Tasks per user
