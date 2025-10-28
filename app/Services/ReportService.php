@@ -444,6 +444,9 @@ class ReportService
             $query->where('id', $filters['user_id']);
         }
 
+        // Only include users with assigned tasks (consistent with Dashboard)
+        $query->whereHas('assignedTasks');
+
         $users = $query->get();
 
         $rankings = $users->map(function ($user) use ($filters) {
