@@ -504,25 +504,6 @@
                             </div>
                         </div>
 
-                        <!-- Email Sending Methods Notice -->
-                        <div class="alert alert-info" style="background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);">
-                            <h5>📧 Choose Your Email Sending Method</h5>
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <h6><i class="bx bx-send me-2"></i>Send via Server (Recommended)</h6>
-                                    <p class="mb-2">✅ Automatically attaches required files<br>
-                                    ✅ Reliable delivery<br>
-                                    ✅ Professional email templates</p>
-                                </div>
-                                <div class="col-md-6">
-                                    <h6><i class="bx bxl-gmail me-2"></i>Send via Gmail</h6>
-                                    <p class="mb-2">⚠️ Manual file attachment required<br>
-                                    ✅ Uses your Gmail account<br>
-                                    ✅ Appears in your Sent folder</p>
-                                </div>
-                            </div>
-                        </div>
-
                         <!-- Email Template Selector -->
                         <div class="template-selector">
                             <div class="template-header">
@@ -777,10 +758,17 @@ document.addEventListener('DOMContentLoaded', function() {
             if (requiredFiles.length > 0) {
                 let filesHtml = '<ul class="list-unstyled mb-0">';
                 requiredFiles.forEach(file => {
-                    filesHtml += `<li class="mb-1">
-                        <i class="bx bx-file me-2"></i>
-                        <strong>${file.name}</strong>
-                        <small class="text-muted">(${formatFileSize(file.size)})</small>
+                    filesHtml += `<li class="mb-2 d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center">
+                            <i class="bx bx-file me-2"></i>
+                            <div>
+                                <strong>${file.name}</strong>
+                                <small class="text-muted d-block">(${formatFileSize(file.size)})</small>
+                            </div>
+                        </div>
+                        <a href="${file.download_url}" class="btn btn-sm btn-outline-primary" download>
+                            <i class="bx bx-download me-1"></i>Download
+                        </a>
                     </li>`;
                 });
                 filesHtml += '</ul>';
