@@ -1249,6 +1249,95 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Mark as sent functionality for external email (from modal)
+    function markAsSentExternal() {
+        console.log('Mark as Sent External button clicked!');
+        if (confirm('Are you sure you have sent the email from your external Gmail application? This will mark the task as sent and update its status.')) {
+            console.log('User confirmed - proceeding with mark as sent external');
+
+            const externalBtn = document.getElementById('markAsSentExternalBtn');
+            externalBtn.disabled = true;
+            externalBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+
+            // First ensure we have an email preparation
+            const formData = new FormData(emailForm);
+            formData.append('save_draft', '1');
+
+            // Save draft first if needed
+            console.log('Saving draft before marking as sent...');
+            fetch('{{ route("tasks.store-email-preparation", $task) }}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'Accept': 'application/json'
+                },
+                body: formData
+            })
+            .then(response => {
+                console.log('Draft save response status:', response.status);
+                return response.json();
+            })
+            .then(draftData => {
+                console.log('Draft save response data:', draftData);
+                if (draftData.success) {
+                    console.log('Draft ensured for mark as sent - now calling mark as sent API');
+                    // Now mark as sent
+                    console.log('Calling mark as sent API:', '{{ route("tasks.mark-email-sent", $task) }}');
+                    return fetch('{{ route("tasks.mark-email-sent", $task) }}', {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            sent_via: 'gmail_manual'
+                        })
+                    });
+                } else {
+                    throw new Error(draftData.message || 'Failed to save draft');
+                }
+            })
+            .then(response => {
+                console.log('Mark as sent response status:', response.status);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Mark as sent response data:', data);
+                if (data.success) {
+                    showSuccessMessage(data.message || 'Email marked as sent successfully! Task status updated to "On Client/Consultant Review".');
+                    // Hide the modal
+                    sendFromOutsideModal.hide();
+                    // Show continue button as backup (with null checks)
+                    if (continueToNextStepBtn) continueToNextStepBtn.style.display = 'inline-flex';
+                    if (directNavBtn) directNavBtn.style.display = 'inline-flex';
+                    // Immediate redirect without delay
+                    setTimeout(() => {
+                        window.location.href = data.redirect_url || '{{ route("tasks.show", $task) }}';
+                    }, 1000);
+                } else {
+                    let errorMessage = data.message || 'Failed to mark email as sent';
+                    if (data.debug) {
+                        console.error('Debug info:', data.debug);
+                        errorMessage += '\n\nDebug info: ' + JSON.stringify(data.debug, null, 2);
+                    }
+                    alert('❌ ' + errorMessage);
+                    externalBtn.disabled = false;
+                    externalBtn.innerHTML = '<i class="bx bx-check-double me-2"></i>Done (Mark as Sent)';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('❌ Error marking email as sent. Please try again.');
+                externalBtn.disabled = false;
+                externalBtn.innerHTML = '<i class="bx bx-check-double me-2"></i>Done (Mark as Sent)';
+            });
+        }
+    }
+
     // Mark as sent functionality
     function markAsSent() {
         console.log('Mark as Sent button clicked!');
@@ -1586,12 +1675,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Mark as Sent functionality for external email
     document.getElementById('markAsSentExternalBtn').addEventListener('click', function() {
-        // Show confirmation dialog
-        if (confirm('Are you sure you have sent the email from your external Gmail application? This will mark the task as sent and update its status.')) {
-            // Call the same functionality as the "Mark as Sent (After Gmail)" button
-            markAsSent();
-            sendFromOutsideModal.hide();
-        }
+        markAsSentExternal();
     });
 
     // Helper function to show copy success feedback
