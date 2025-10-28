@@ -138,7 +138,7 @@ class MonthlyReportEmailService
         $totalTasks = $tasks->count();
         $completedTasks = $tasks->where('status', 'completed')->count();
         $inProgressTasks = $tasks->whereIn('status', ['in_progress', 'workingon', 'assigned'])->count();
-        $overdueTasks = $tasks->where('due_date', '<', now())
+        $overdueTasks = $tasks->where('due_date', '<', now()->startOfDay())
             ->whereNotIn('status', ['completed', 'cancelled'])
             ->count();
 
@@ -153,7 +153,7 @@ class MonthlyReportEmailService
                     'total_tasks' => $projectTasks->count(),
                     'completed_tasks' => $projectTasks->where('status', 'completed')->count(),
                     'in_progress_tasks' => $projectTasks->whereIn('status', ['in_progress', 'workingon', 'assigned'])->count(),
-                    'overdue_tasks' => $projectTasks->where('due_date', '<', now())
+                    'overdue_tasks' => $projectTasks->where('due_date', '<', now()->startOfDay())
                         ->whereNotIn('status', ['completed', 'cancelled'])
                         ->count(),
                     'completion_rate' => $projectTasks->count() > 0 ?
@@ -192,7 +192,7 @@ class MonthlyReportEmailService
 
         $totalTasks = $tasks->count();
         $completedTasks = $tasks->where('status', 'completed')->count();
-        $overdueTasks = $tasks->where('due_date', '<', now())
+        $overdueTasks = $tasks->where('due_date', '<', now()->startOfDay())
             ->whereNotIn('status', ['completed', 'cancelled'])
             ->count();
 
@@ -238,7 +238,7 @@ class MonthlyReportEmailService
         $completedTasks = $tasks->where('status', 'completed')->count();
         $inProgressTasks = $tasks->whereIn('status', ['in_progress', 'workingon', 'assigned'])->count();
         $rejectedTasks = $tasks->where('status', 'rejected')->count();
-        $overdueTasks = $tasks->where('due_date', '<', now())
+        $overdueTasks = $tasks->where('due_date', '<', now()->startOfDay())
             ->whereNotIn('status', ['completed', 'cancelled'])
             ->count();
         $onTimeCompleted = $tasks->where('status', 'completed')

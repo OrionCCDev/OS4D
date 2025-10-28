@@ -67,7 +67,7 @@ class ReportService
             $totalTasks = $tasks->count();
             $completedTasks = $tasks->where('status', 'completed')->count();
             $overdueTasks = $tasks->where('status', '!=', 'completed')
-                ->where('due_date', '<', now())
+                ->where('due_date', '<', now()->startOfDay())
                 ->count();
 
             // Debug logging for task statuses
@@ -173,7 +173,7 @@ class ReportService
 
             // Overdue and on-time analysis
             $overdueTasks = $tasks->where('status', '!=', 'completed')
-                ->where('due_date', '<', now())
+                ->where('due_date', '<', now()->startOfDay())
                 ->count();
 
             $onTimeTasks = $completedTasks->filter(function ($task) {
@@ -202,7 +202,7 @@ class ReportService
                     'completed_tasks' => $userCompletedTasks,
                     'pending_tasks' => $userTasks->whereIn('status', ['pending', 'assigned', 'in_progress', 'workingon'])->count(),
                     'overdue_tasks' => $userTasks->where('status', '!=', 'completed')
-                        ->where('due_date', '<', now())
+                        ->where('due_date', '<', now()->startOfDay())
                         ->count(),
                     'completion_rate' => $userTotalTasks > 0 ? round(($userCompletedTasks / $userTotalTasks) * 100, 2) : 0,
                     'avg_task_duration' => $this->calculateAverageTaskDuration($userTasks),
@@ -227,8 +227,8 @@ class ReportService
                     'due_date' => $task->due_date,
                     'completed_at' => $task->completed_at,
                     'completion_notes' => $task->completion_notes,
-                    'is_overdue' => $task->status != 'completed' && $task->due_date && $task->due_date < now(),
-                    'days_overdue' => $task->status != 'completed' && $task->due_date && $task->due_date < now()
+                    'is_overdue' => $task->status != 'completed' && $task->due_date && $task->due_date->startOfDay() < now()->startOfDay(),
+                    'days_overdue' => $task->status != 'completed' && $task->due_date && $task->due_date->startOfDay() < now()->startOfDay()
                         ? now()->diffInDays($task->due_date)
                         : 0,
                     'days_remaining' => $task->status != 'completed' && $task->due_date
@@ -376,7 +376,7 @@ class ReportService
             'completed_tasks' => $allTasks->where('status', 'completed')->count(),
             'in_progress_tasks' => $allTasks->whereIn('status', ['in_progress', 'workingon', 'assigned'])->count(),
             'overdue_tasks' => $allTasks->where('status', '!=', 'completed')
-                ->where('due_date', '<', now())
+                ->where('due_date', '<', now()->startOfDay())
                 ->count(),
             'completion_rate' => $allTasks->count() > 0 ? round(($allTasks->where('status', 'completed')->count() / $allTasks->count()) * 100, 2) : 0,
             'tasks_by_priority' => $this->groupTasksByPriority($allTasks),
@@ -422,7 +422,7 @@ class ReportService
             'completed_tasks' => $completedTasks->count(),
             'on_time_tasks' => $onTimeTasks->count(),
             'overdue_tasks' => $tasks->where('status', '!=', 'completed')
-                ->where('due_date', '<', now())
+                ->where('due_date', '<', now()->startOfDay())
                 ->count(),
             'completion_rate' => $tasks->count() > 0 ? round(($completedTasks->count() / $tasks->count()) * 100, 2) : 0,
             'on_time_rate' => $completedTasks->count() > 0 ? round(($onTimeTasks->count() / $completedTasks->count()) * 100, 2) : 0,
@@ -556,7 +556,7 @@ class ReportService
         $inProgressTasks = $tasks->whereIn('status', ['in_progress', 'workingon', 'assigned']);
         $rejectedTasks = $tasks->where('status', 'rejected');
         $overdueTasks = $tasks->filter(function ($task) {
-            return $task->due_date && $task->due_date < now()
+            return $task->due_date && $task->due_date->startOfDay() < now()->startOfDay()
                 && !in_array($task->status, ['completed', 'cancelled']);
         });
 

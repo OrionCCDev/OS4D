@@ -181,7 +181,7 @@ class PerformanceCalculator
             return $task->completed_at && $task->due_date && $task->completed_at < $task->due_date;
         });
         $overdueTasks = $tasks->where('status', '!=', 'completed')
-            ->where('due_date', '<', now());
+            ->where('due_date', '<', now()->startOfDay());
         $rejectedTasks = $tasks->where('status', 'rejected');
 
         $completionRate = $totalTasks > 0 ? ($completedTasks->count() / $totalTasks) * 100 : 0;

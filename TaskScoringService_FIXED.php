@@ -52,8 +52,8 @@ class TaskScoringService
             $breakdown['quality_bonus'] = 2;
         }
 
-        // Overdue penalty
-        if ($task->due_date && $task->due_date < now() && !in_array($task->status, ['completed', 'cancelled'])) {
+        // Overdue penalty - only if due date is before today (not including today)
+        if ($task->due_date && $task->due_date->startOfDay() < now()->startOfDay() && !in_array($task->status, ['completed', 'cancelled'])) {
             $score -= 5;
             $breakdown['overdue_penalty'] = -5;
         }

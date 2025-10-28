@@ -426,7 +426,7 @@ class DashboardController extends Controller
                 $query->where('status', 'rejected');
             }])
             ->withCount(['assignedTasks as overdue_tasks_count' => function($query) {
-                $query->where('due_date', '<', now())
+                $query->where('due_date', '<', now()->startOfDay())
                       ->whereNotIn('status', ['completed', 'cancelled']);
             }])
             ->withCount(['assignedTasks as on_time_completed_count' => function($query) {
@@ -481,7 +481,7 @@ class DashboardController extends Controller
                     $query->where('status', 'rejected');
                 }])
                 ->withCount(['assignedTasks as overdue_tasks_count' => function($query) {
-                    $query->where('due_date', '<', now())
+                    $query->where('due_date', '<', now()->startOfDay())
                           ->whereNotIn('status', ['completed', 'cancelled']);
                 }])
                 ->withCount(['assignedTasks as on_time_completed_count' => function($query) {
@@ -745,7 +745,7 @@ class DashboardController extends Controller
                 $query->where('status', 'rejected');
             }])
             ->withCount(['assignedTasks as overdue_tasks_count' => function($query) {
-                $query->where('due_date', '<', now())
+                $query->where('due_date', '<', now()->startOfDay())
                       ->whereNotIn('status', ['completed', 'cancelled']);
             }])
             ->withCount(['assignedTasks as on_time_completed_count' => function($query) {

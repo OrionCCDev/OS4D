@@ -697,7 +697,7 @@ class ReportController extends Controller
             'completed_tasks' => $allTasks->where('status', 'completed')->count(),
             'in_progress_tasks' => $allTasks->where('status', 'in_progress')->count(),
             'pending_tasks' => $allTasks->where('status', 'pending')->count(),
-            'overdue_tasks' => $allTasks->where('due_date', '<', now())->where('status', '!=', 'completed')->count(),
+            'overdue_tasks' => $allTasks->where('due_date', '<', now()->startOfDay())->where('status', '!=', 'completed')->count(),
             'completion_rate' => $allTasks->count() > 0 ? round(($allTasks->where('status', 'completed')->count() / $allTasks->count()) * 100, 2) : 0,
         ];
 
@@ -769,7 +769,7 @@ class ReportController extends Controller
 
         $totalTasks = $tasks->count();
         $completedTasks = $tasks->where('status', 'completed')->count();
-        $overdueTasks = $tasks->where('due_date', '<', now())
+        $overdueTasks = $tasks->where('due_date', '<', now()->startOfDay())
             ->whereNotIn('status', ['completed', 'cancelled'])
             ->count();
 
@@ -815,7 +815,7 @@ class ReportController extends Controller
         $completedTasks = $tasks->where('status', 'completed')->count();
         $inProgressTasks = $tasks->whereIn('status', ['in_progress', 'workingon', 'assigned'])->count();
         $rejectedTasks = $tasks->where('status', 'rejected')->count();
-        $overdueTasks = $tasks->where('due_date', '<', now())
+        $overdueTasks = $tasks->where('due_date', '<', now()->startOfDay())
             ->whereNotIn('status', ['completed', 'cancelled'])
             ->count();
         $onTimeCompleted = $tasks->where('status', 'completed')
@@ -927,7 +927,7 @@ class ReportController extends Controller
             'completed_tasks' => $allTasks->where('status', 'completed')->count(),
             'in_progress_tasks' => $allTasks->whereIn('status', ['in_progress', 'workingon', 'assigned'])->count(),
             'pending_tasks' => $allTasks->where('status', 'pending')->count(),
-            'overdue_tasks' => $allTasks->where('due_date', '<', now())->where('status', '!=', 'completed')->count(),
+            'overdue_tasks' => $allTasks->where('due_date', '<', now()->startOfDay())->where('status', '!=', 'completed')->count(),
             'completion_rate' => $allTasks->count() > 0 ? round(($allTasks->where('status', 'completed')->count() / $allTasks->count()) * 100, 2) : 0,
         ];
 
