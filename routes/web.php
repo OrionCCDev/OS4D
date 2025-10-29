@@ -491,7 +491,7 @@ Route::middleware('auth')->group(function () {
 });
 
 // Email webhook routes (no authentication required for webhooks)
-Route::post('/webhook/email/incoming', [EmailController::class, 'handleIncomingEmail'])->name('email.webhook.incoming');
+Route::post('/webhook/email/incoming', [EmailController::class, 'handleIncomingEmail'])->name('email.webhook.incoming.alternative');
 Route::post('/webhook/email/test', [App\Http\Controllers\EmailMonitoringController::class, 'testWebhook'])->name('email.webhook.test');
 
 // Email reply webhook routes

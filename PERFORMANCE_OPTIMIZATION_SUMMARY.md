@@ -42,9 +42,11 @@
 Run this in cPanel terminal:
 ```bash
 php artisan config:cache
-php artisan route:cache
+php artisan route:cache  # Fixed duplicate route name issue
 php artisan view:cache
 ```
+
+**Note:** Fixed duplicate route name `email.webhook.incoming` - renamed one to `email.webhook.incoming.alternative`
 
 ### Step 2: Clear Application Cache
 ```bash
