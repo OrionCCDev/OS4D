@@ -739,12 +739,8 @@
                   </div>
                 </li>
 
-                <!-- User Ranking Display -->
-                @if(Auth::user()->isRegularUser())
-                @php
-                    $reportService = new \App\Services\ReportService();
-                    $userRanking = $reportService->getUserRankings(Auth::user()->id, 'overall');
-                @endphp
+                <!-- User Ranking Display (cached via View Composer) -->
+                @if(Auth::user()->isRegularUser() && isset($userRanking) && $userRanking && isset($userRanking['user_ranking']) && $userRanking['user_ranking'])
        <li class="nav-item me-3 me-xl-1">
          <div class="nav-link d-flex align-items-center bg-gradient rounded" style="cursor: default; padding: 0.5rem 0.75rem;">
            <div class="d-flex align-items-center">
@@ -1767,9 +1763,9 @@
                   });
                 }
 
-                // Poll every 5s for faster updates - refresh both areas
+                // Poll every 30s for better performance (changed from 5s)
                 refreshAllNotifications();
-                setInterval(refreshAllNotifications, 5000);
+                setInterval(refreshAllNotifications, 30000);
 
                 // Refresh notifications when page becomes visible (user switches back to tab)
                 document.addEventListener("visibilitychange", function() {
@@ -2094,14 +2090,14 @@
                 // Initialize bottom chat
                 fetchBottomCount();
 
-                // Poll every 20s - refresh both areas
+                // Poll every 30s - refresh both areas (optimized for performance)
                 setInterval(function() {
                   if (typeof refreshAllNotifications === 'function') {
                     refreshAllNotifications();
                   } else {
                     refreshBottomChat();
                   }
-                }, 20000);
+                }, 30000);
 
                 // Show bottom chat popup initially (always visible)
                 setTimeout(() => {

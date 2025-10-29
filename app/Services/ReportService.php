@@ -9,6 +9,7 @@ use App\Models\PerformanceMetric;
 use App\Models\EmployeeEvaluation;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 
 class ReportService
 {
@@ -687,52 +688,59 @@ class ReportService
 
     /**
      * Get user rankings for dashboard display
+     * CACHED for performance - rankings update every 5 minutes
      */
     public function getUserRankings($userId, $period = 'overall')
     {
-        $user = User::findOrFail($userId);
+        $cacheKey = "user_rankings_{$period}_{$userId}";
 
-        // Get all users for comparison
-        $allUsers = User::where('role', '!=', 'admin')->get();
+        return Cache::remember($cacheKey, 300, function () use ($userId, $period) {
+            $user = User::findOrFail($userId);
 
-        $rankings = $allUsers->map(function ($u) use ($period) {
-            $filters = [];
+            // Get all users for comparison - only users with tasks
+            $allUsers = User::where('role', '!=', 'admin')
+                ->whereHas('assignedTasks')
+                ->get();
 
-            // Apply period filter
-            if ($period === 'monthly') {
-                $filters = [
-                    'date_from' => now()->startOfMonth(),
-                    'date_to' => now()->endOfMonth()
+            $rankings = $allUsers->map(function ($u) use ($period) {
+                $filters = [];
+
+                // Apply period filter
+                if ($period === 'monthly') {
+                    $filters = [
+                        'date_from' => now()->startOfMonth(),
+                        'date_to' => now()->endOfMonth()
+                    ];
+                }
+
+                $userReport = $this->getUserPerformanceReport($u->id, $filters);
+                return [
+                    'user_id' => $u->id,
+                    'user_name' => $u->name,
+                    'performance_score' => $userReport['performance_score'],
+                    'completion_rate' => $userReport['completion_rate'],
+                    'total_tasks' => $userReport['total_tasks'],
+                    'completed_tasks' => $userReport['completed_tasks'],
                 ];
-            }
+            })->sortByDesc('performance_score')->values();
 
-            $userReport = $this->getUserPerformanceReport($u->id, $filters);
+            // Add ranking numbers and find current user
+            $userRanking = null;
+            $rankings = $rankings->map(function ($item, $index) use ($userId, &$userRanking) {
+                $item['rank'] = $index + 1;
+                if ($item['user_id'] == $userId) {
+                    $userRanking = $item;
+                }
+                return $item;
+            });
+
             return [
-                'user_id' => $u->id,
-                'user_name' => $u->name,
-                'performance_score' => $userReport['performance_score'],
-                'completion_rate' => $userReport['completion_rate'],
-                'total_tasks' => $userReport['total_tasks'],
-                'completed_tasks' => $userReport['completed_tasks'],
+                'user_ranking' => $userRanking,
+                'total_users' => $rankings->count(),
+                'period' => $period,
+                'top_3' => $rankings->take(3)->values(),
             ];
-        })->sortByDesc('performance_score')->values();
-
-        // Add ranking numbers and find current user
-        $userRanking = null;
-        $rankings = $rankings->map(function ($item, $index) use ($userId, &$userRanking) {
-            $item['rank'] = $index + 1;
-            if ($item['user_id'] == $userId) {
-                $userRanking = $item;
-            }
-            return $item;
         });
-
-        return [
-            'user_ranking' => $userRanking,
-            'total_users' => $rankings->count(),
-            'period' => $period,
-            'top_3' => $rankings->take(3)->values(),
-        ];
     }
 
     /**
