@@ -28,6 +28,9 @@
         "pestphp/pest": "^4.1",
         "pestphp/pest-plugin-laravel": "^4.0"
     },
+    "suggest": {
+        "ext-redis": "Required for Redis broadcasting and caching (VPS/Dedicated hosting only). Not needed for shared hosting with database caching."
+    },
     "autoload": {
         "psr-4": {
             "App\\": "app/",
