@@ -5,6 +5,8 @@ namespace App\Services;
 use App\Models\UnifiedNotification;
 use App\Models\User;
 use App\Models\Email;
+use App\Events\NewNotification;
+use App\Events\NotificationCountUpdated;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 
@@ -16,7 +18,24 @@ class NotificationService
     public function createTaskNotification($userId, $type, $title, $message, $data = [], $taskId = null, $priority = 'normal')
     {
         try {
-            return UnifiedNotification::createTaskNotification($userId, $type, $title, $message, $data, $taskId, $priority);
+            $notification = UnifiedNotification::createTaskNotification($userId, $type, $title, $message, $data, $taskId, $priority);
+
+            // Broadcast the new notification in real-time
+            if ($notification) {
+                broadcast(new NewNotification($notification))->toOthers();
+
+                // Broadcast updated counts
+                $counts = $this->getNotificationCounts($userId);
+                broadcast(new NotificationCountUpdated($userId, $counts))->toOthers();
+
+                Log::info('Task notification created and broadcasted', [
+                    'notification_id' => $notification->id,
+                    'user_id' => $userId,
+                    'type' => $type
+                ]);
+            }
+
+            return $notification;
         } catch (\Exception $e) {
             Log::error('Error creating task notification: ' . $e->getMessage());
             return null;
@@ -29,7 +48,24 @@ class NotificationService
     public function createEmailNotification($userId, $type, $title, $message, $data = [], $emailId = null, $priority = 'normal')
     {
         try {
-            return UnifiedNotification::createEmailNotification($userId, $type, $title, $message, $data, $emailId, $priority);
+            $notification = UnifiedNotification::createEmailNotification($userId, $type, $title, $message, $data, $emailId, $priority);
+
+            // Broadcast the new notification in real-time
+            if ($notification) {
+                broadcast(new NewNotification($notification))->toOthers();
+
+                // Broadcast updated counts
+                $counts = $this->getNotificationCounts($userId);
+                broadcast(new NotificationCountUpdated($userId, $counts))->toOthers();
+
+                Log::info('Email notification created and broadcasted', [
+                    'notification_id' => $notification->id,
+                    'user_id' => $userId,
+                    'type' => $type
+                ]);
+            }
+
+            return $notification;
         } catch (\Exception $e) {
             Log::error('Error creating email notification: ' . $e->getMessage());
             return null;
@@ -147,6 +183,22 @@ class NotificationService
             'task_unread' => $taskUnread,
             'email_unread' => $emailUnread,
             'read' => $total - $unread,
+        ];
+    }
+
+    /**
+     * Get notification counts for broadcasting (simplified version for real-time updates)
+     */
+    public function getNotificationCounts($userId)
+    {
+        $taskUnread = UnifiedNotification::getUnreadCountForUser($userId, 'task');
+        $emailUnread = UnifiedNotification::getUnreadCountForUser($userId, 'email');
+        $total = $taskUnread + $emailUnread;
+
+        return [
+            'total' => $total,
+            'task' => $taskUnread,
+            'email' => $emailUnread,
         ];
     }
 

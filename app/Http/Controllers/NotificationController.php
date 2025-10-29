@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Services\NotificationService;
 use App\Models\UnifiedNotification;
+use App\Events\NotificationRead;
+use App\Events\NotificationCountUpdated;
 
 class NotificationController extends Controller
 {
@@ -118,9 +120,16 @@ class NotificationController extends Controller
         $success = $this->notificationService->markAsRead($id, $user->id);
 
         if ($success) {
+            // Get updated counts
+            $counts = $this->notificationService->getNotificationCounts($user->id);
+
+            // Broadcast the read event
+            broadcast(new NotificationRead($id, $user->id, $counts))->toOthers();
+
             return response()->json([
                 'success' => true,
-                'message' => 'Notification marked as read'
+                'message' => 'Notification marked as read',
+                'counts' => $counts
             ]);
         }
 
@@ -140,9 +149,16 @@ class NotificationController extends Controller
 
         $count = $this->notificationService->markAllAsRead($user->id, $category);
 
+        // Get updated counts
+        $counts = $this->notificationService->getNotificationCounts($user->id);
+
+        // Broadcast the count update
+        broadcast(new NotificationCountUpdated($user->id, $counts))->toOthers();
+
         return response()->json([
             'success' => true,
-            'message' => "Marked {$count} notifications as read"
+            'message' => "Marked {$count} notifications as read",
+            'counts' => $counts
         ]);
     }
 

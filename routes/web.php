@@ -550,4 +550,54 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/notifications/{id}', [App\Http\Controllers\NotificationController::class, 'destroy'])->name('notifications.destroy');
 });
 
+// Broadcasting Test Routes (Development/Testing Only - Remove or disable in production)
+Route::middleware(['auth'])->group(function () {
+    // Test notification broadcasting
+    Route::get('/test-notification', function() {
+        $user = auth()->user();
+
+        $notification = \App\Models\UnifiedNotification::create([
+            'user_id' => $user->id,
+            'category' => 'task',
+            'type' => 'test',
+            'title' => 'Test Notification',
+            'message' => 'This is a test broadcast notification sent at ' . now()->format('H:i:s'),
+            'priority' => 'normal',
+            'is_read' => false,
+            'status' => 'active',
+        ]);
+
+        // Broadcast the notification
+        broadcast(new \App\Events\NewNotification($notification));
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Test notification broadcasted',
+            'notification' => $notification
+        ]);
+    })->name('test.notification');
+
+    // Test notification count update
+    Route::get('/test-notification-count', function() {
+        $user = auth()->user();
+        $notificationService = app(\App\Services\NotificationService::class);
+
+        $counts = $notificationService->getNotificationCounts($user->id);
+
+        // Broadcast count update
+        broadcast(new \App\Events\NotificationCountUpdated($user->id, $counts));
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Notification counts broadcasted',
+            'counts' => $counts
+        ]);
+    })->name('test.notification-count');
+
+    // WebSocket connection test
+    Route::get('/test-websocket', function() {
+        return view('test-websocket');
+    })->name('test.websocket');
+});
+
 require __DIR__ . '/auth.php';

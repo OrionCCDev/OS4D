@@ -30,6 +30,7 @@
 
     <meta name="description" content="Dashboard Analytics for {{ config('app.name', 'Laravel') }}" />
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="user-id" content="{{ auth()->id() }}">
 
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="{{ asset('DAssets/assets/img/favicon/favicon.ico') }}" />
@@ -2447,4 +2448,13 @@
                 }
               }
             </style>
+
+            {{-- Laravel Echo for Real-time Broadcasting --}}
+            @vite(['resources/js/echo-config.js'])
+
+            {{-- Real-time Notification System --}}
+            <script src="{{ asset('js/notifications-realtime.js') }}"></script>
+
+            {{-- Note: AJAX polling functions (fetchEmailCount, fetchTaskCount) are kept above as fallback --}}
+            {{-- The real-time system will automatically disable AJAX polling when WebSocket is connected --}}
 
