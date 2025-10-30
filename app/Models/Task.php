@@ -600,10 +600,11 @@ class Task extends Model
             $dueDate = $this->due_date->startOfDay();
 
             if ($dueDate->gte($today)) {
-                return $dueDate->diffInDays($today);
+                // Days from today TO due date
+                return $today->diffInDays($dueDate);
             } else {
                 // If due date has passed, show negative days (overdue)
-                return -$dueDate->diffInDays($today);
+                return -$today->diffInDays($dueDate);
             }
         }
         return null;
