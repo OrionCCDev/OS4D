@@ -570,7 +570,7 @@
 
             <div class="navbar-nav-right d-flex align-items-center" id="navbar-collapse">
               <!-- Search -->
-              <div class="navbar-nav align-items-center">
+              {{--  <div class="navbar-nav align-items-center">
                 <div class="nav-item d-flex align-items-center">
                   <i class="bx bx-search fs-4 lh-0 text-white"></i>
                   <input
@@ -581,7 +581,7 @@
                     style="background: transparent; color: white;"
                   />
                 </div>
-              </div>
+              </div>  --}}
               <!-- /Search -->
 
               <ul class="navbar-nav flex-row align-items-center ms-auto">

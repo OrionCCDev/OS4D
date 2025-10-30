@@ -110,6 +110,41 @@
       }
       .auth-parallax .orb.o1 { top: -120px; left: 35%; }
       .auth-parallax .orb.o2 { bottom: -160px; left: -120px; width: 560px; height: 560px; background: radial-gradient(closest-side, rgba(38,198,218,0.16), rgba(38,198,218,0)); }
+      /* Architectural patterns */
+      .auth-parallax .pattern-grid {
+        position: absolute;
+        inset: -20%;
+        background-image:
+          linear-gradient(rgba(255,255,255,0.08) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255,255,255,0.08) 1px, transparent 1px);
+        background-size: 48px 48px, 48px 48px;
+        background-position: 0 0, 0 0;
+        opacity: .18;
+        mix-blend-mode: overlay;
+        will-change: transform;
+      }
+      .auth-parallax .pattern-iso {
+        position: absolute;
+        inset: -30%;
+        background-image:
+          repeating-linear-gradient(60deg, rgba(255,255,255,0.06) 0 2px, transparent 2px 40px),
+          repeating-linear-gradient(-60deg, rgba(255,255,255,0.05) 0 2px, transparent 2px 40px);
+        opacity: .10;
+        mix-blend-mode: soft-light;
+        will-change: transform;
+      }
+      .auth-parallax .pattern-svg {
+        position: absolute;
+        width: 220%;
+        height: 220%;
+        left: -60%;
+        top: -60%;
+        opacity: .12;
+        pointer-events: none;
+        mix-blend-mode: overlay;
+      }
+      .auth-parallax .pattern-svg path { stroke: rgba(255,255,255,0.18); stroke-width: 1; vector-effect: non-scaling-stroke; stroke-dasharray: 6 10; animation: dashMove 18s linear infinite; }
+      @keyframes dashMove { to { stroke-dashoffset: -320; } }
       .auth-parallax .logo-float {
         top: 15%;
         right: 8%;
@@ -177,6 +212,8 @@
 
     <div class="auth-gradient" aria-hidden="true"></div>
     <div class="auth-parallax" aria-hidden="true">
+      <div class="layer pattern-grid" data-depth="0.03" data-speed="0.2" data-ampx="10" data-ampy="8"></div>
+      <div class="layer pattern-iso" data-depth="0.015" data-speed="0.18" data-ampx="8" data-ampy="6"></div>
       <div class="layer orb o1" data-depth="0.02" data-speed="0.3" data-ampx="20" data-ampy="12"></div>
       <div class="layer orb o2" data-depth="0.03" data-speed="0.25" data-ampx="26" data-ampy="16"></div>
       <div class="layer bubble b1" data-depth="0.05" data-speed="0.45" data-ampx="18" data-ampy="10"></div>
@@ -188,6 +225,24 @@
       <div class="layer logo-float" data-depth="0.10" data-speed="0.4" data-ampx="14" data-ampy="10">
         <img class="logo-interactive" src="{{ asset('DAssets/logo-blue.webp') }}" alt="Logo floating layer" />
       </div>
+      <!-- Thin architectural strokes SVG overlay -->
+      <svg class="pattern-svg layer" data-depth="0.01" viewBox="0 0 1200 1200" preserveAspectRatio="none" aria-hidden="true">
+        <defs>
+          <linearGradient id="g1" x1="0" x2="1" y1="0" y2="1">
+            <stop offset="0%" stop-color="#ffffff" stop-opacity="0.22"/>
+            <stop offset="100%" stop-color="#ffffff" stop-opacity="0.08"/>
+          </linearGradient>
+        </defs>
+        <g fill="none" stroke="url(#g1)">
+          <path d="M0,100 L1200,400"/>
+          <path d="M0,300 L1200,600"/>
+          <path d="M0,500 L1200,800"/>
+          <path d="M0,700 L1200,1000"/>
+          <path d="M200,0 L500,1200"/>
+          <path d="M500,0 L800,1200"/>
+          <path d="M800,0 L1100,1200"/>
+        </g>
+      </svg>
     </div>
 
     <div class="container-xxl">
