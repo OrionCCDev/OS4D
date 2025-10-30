@@ -494,6 +494,92 @@ class ReportController extends Controller
 
                 return $pdf->download($filename);
 
+            case 'tasks':
+                // Get task completion report data
+                $taskReport = $this->reportService->getTaskCompletionReport($filters);
+
+                // Get all tasks (not paginated) for PDF export
+                $tasksQuery = \App\Models\Task::with(['project', 'assignee', 'creator']);
+
+                // Apply same filters as in getTaskCompletionReport
+                if (!empty($filters['project_id']) && $filters['project_id'] !== 'all') {
+                    $tasksQuery->where('project_id', $filters['project_id']);
+                }
+
+                if (!empty($filters['user_id']) && $filters['user_id'] !== 'all') {
+                    $tasksQuery->where('assigned_to', $filters['user_id']);
+                }
+
+                if (!empty($filters['status']) && is_array($filters['status']) && !in_array('all', $filters['status'])) {
+                    $hasOverdue = in_array('overdue', $filters['status']);
+                    $otherStatuses = array_diff($filters['status'], ['overdue']);
+
+                    if ($hasOverdue && !empty($otherStatuses)) {
+                        $tasksQuery->where(function($q) use ($otherStatuses) {
+                            $q->whereIn('status', $otherStatuses)
+                              ->orWhere(function($subQ) {
+                                  $subQ->where('status', '!=', 'completed')
+                                       ->where('due_date', '<', now()->startOfDay());
+                              });
+                        });
+                    } elseif ($hasOverdue) {
+                        $tasksQuery->where('status', '!=', 'completed')
+                                  ->where('due_date', '<', now()->startOfDay());
+                    } elseif (!empty($otherStatuses)) {
+                        $tasksQuery->whereIn('status', $otherStatuses);
+                    }
+                }
+
+                if (!empty($filters['priority']) && is_array($filters['priority']) && !in_array('all', $filters['priority'])) {
+                    $tasksQuery->whereIn('priority', $filters['priority']);
+                }
+
+                if (!empty($filters['date_from'])) {
+                    $tasksQuery->where('created_at', '>=', $filters['date_from']);
+                }
+
+                if (!empty($filters['date_to'])) {
+                    $tasksQuery->where('created_at', '<=', $filters['date_to']);
+                }
+
+                if (!empty($filters['search'])) {
+                    $searchTerm = $filters['search'];
+                    $tasksQuery->where(function($q) use ($searchTerm) {
+                        $q->where('title', 'like', "%{$searchTerm}%")
+                          ->orWhere('description', 'like', "%{$searchTerm}%")
+                          ->orWhereHas('project', function($projectQuery) use ($searchTerm) {
+                              $projectQuery->where('name', 'like', "%{$searchTerm}%");
+                          })
+                          ->orWhereHas('assignee', function($userQuery) use ($searchTerm) {
+                              $userQuery->where('name', 'like', "%{$searchTerm}%");
+                          });
+                    });
+                }
+
+                $tasks = $tasksQuery->orderBy('created_at', 'desc')->get();
+
+                // Add filter names for display
+                if (!empty($filters['project_id'])) {
+                    $project = \App\Models\Project::find($filters['project_id']);
+                    $filters['project_name'] = $project ? $project->name : 'Unknown';
+                }
+
+                if (!empty($filters['user_id'])) {
+                    $user = \App\Models\User::find($filters['user_id']);
+                    $filters['user_name'] = $user ? $user->name : 'Unknown';
+                }
+
+                $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('reports.pdf.tasks', [
+                    'taskReport' => $taskReport,
+                    'tasks' => $tasks,
+                    'filters' => $filters,
+                ]);
+
+                $pdf->setPaper('a4', 'portrait');
+                $filename = 'tasks-report-' . now()->format('Y-m-d') . '.pdf';
+
+                return $pdf->download($filename);
+
             default:
                 // Check if it's a user performance report (format: user-{id})
                 if (preg_match('/^user-(\d+)$/', $reportType, $matches)) {
