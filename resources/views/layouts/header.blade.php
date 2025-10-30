@@ -70,9 +70,35 @@
     <!--! Template customizer & Theme config files MUST be included after core stylesheets and helpers.js in the <head> section -->
     <!--? Config:  Mandatory theme config file contain global vars & default theme options, Set your preferred theme option in this file.  -->
     <script src="{{ asset('DAssets/assets/js/config.js') }}"></script>
+    <style>
+      /* Avatar zoom sequence after login */
+      .nav-profile-avatar img { will-change: transform, filter; transform-origin: center center; }
+      @keyframes avatarZoomInOut {
+        0% { transform: scale(0.86); filter: saturate(1) brightness(0.98); }
+        40% { transform: scale(1.12); filter: saturate(1.1) brightness(1.02); }
+        100% { transform: scale(1); filter: none; }
+      }
+      .avatar-zoom-seq { animation: avatarZoomInOut .9s cubic-bezier(.2,.7,.2,1) 40ms both; }
+    </style>
   </head>
 
   <body>
+    <script>
+      window.__justLoggedIn = {!! json_encode(session('justLoggedIn', false)) !!};
+      (function() {
+        if (!window.__justLoggedIn) return;
+        function run() {
+          var imgs = document.querySelectorAll('.nav-profile-avatar img');
+          imgs.forEach(function(img) {
+            img.classList.add('avatar-zoom-seq');
+            img.addEventListener('animationend', function() { img.classList.remove('avatar-zoom-seq'); }, { once: true });
+          });
+        }
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', run);
+        } else { run(); }
+      })();
+    </script>
     <!-- Layout wrapper -->
     <div class="layout-wrapper layout-content-navbar">
       <div class="layout-container">
