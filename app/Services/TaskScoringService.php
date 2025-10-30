@@ -145,12 +145,12 @@ class TaskScoringService
             $explanations[] = "🔄 In progress: +{$scoreData['breakdown']['in_progress']} points";
         }
 
-        if (isset($scoreData['breakdown']['on_time_bonus'])) {
-            $explanations[] = "⏰ On-time completion: +{$scoreData['breakdown']['on_time_bonus']} points";
+        if (isset($scoreData['breakdown']['on_time_email_bonus'])) {
+            $explanations[] = "⏰ On-time email confirmation: +{$scoreData['breakdown']['on_time_email_bonus']} points";
         }
 
-        if (isset($scoreData['breakdown']['late_penalty'])) {
-            $explanations[] = "⏰ Late completion: {$scoreData['breakdown']['late_penalty']} points";
+        if (isset($scoreData['breakdown']['late_email_penalty'])) {
+            $explanations[] = "⏰ Late email confirmation: {$scoreData['breakdown']['late_email_penalty']} points";
         }
 
         if (isset($scoreData['breakdown']['priority_bonus'])) {
