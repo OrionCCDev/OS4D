@@ -34,7 +34,10 @@ class UserEvaluationService
             'in_progress_tasks' => $userTasks->where('status', 'in_progress')->count(),
             'rejected_tasks' => $userTasks->where('status', 'rejected')->count(),
             'overdue_tasks' => $userTasks->filter(function($task) use ($now) {
-                return $task->due_date && $task->due_date < $now && !in_array($task->status, ['completed', 'approved']);
+                return $task->due_date
+                    && $task->due_date->startOfDay() < $now->startOfDay()
+                    && !in_array($task->status, ['completed', 'approved'])
+                    && !$task->hasEmailConfirmationSent();
             })->count(),
             'on_time_completions' => $userTasks->filter(function($task) {
                 return $task->status === 'completed' && $task->completed_at && $task->due_date && 
