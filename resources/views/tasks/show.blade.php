@@ -1532,6 +1532,35 @@
                         </div>
                     </div>
 
+                    @php
+                        $taskScoreData = $task->getTaskScore($task->assignee);
+                        $taskScore = $taskScoreData['score'];
+                        $scoreExplanations = $task->getTaskScoreExplanation($task->assignee);
+                    @endphp
+
+                    <div class="row g-3 align-items-stretch">
+                        <div class="col-12 col-md-5">
+                            <div class="bg-light rounded p-3 h-100 d-flex flex-column justify-content-center text-center">
+                                <div class="mb-1 text-muted">Current Task Score</div>
+                                <div class="display-6 fw-bold text-primary">{{ $taskScore }}</div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-7">
+                            <div class="border rounded p-3 h-100">
+                                <div class="fw-semibold mb-2">Score Breakdown</div>
+                                @if(!empty($scoreExplanations))
+                                    <ul class="mb-0 ps-3">
+                                        @foreach($scoreExplanations as $explanation)
+                                            <li class="mb-1">{!! $explanation !!}</li>
+                                        @endforeach
+                                    </ul>
+                                @else
+                                    <div class="text-muted">No score components yet.</div>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+
                     @if($task->completion_time)
                         <div class="bg-light rounded p-3 text-center mb-3">
                             <h4 class="mb-1 text-success">{{ $task->completion_time }}</h4>
