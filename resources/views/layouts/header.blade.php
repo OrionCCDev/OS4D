@@ -79,6 +79,39 @@
         100% { transform: scale(1); filter: none; }
       }
       .avatar-zoom-seq { animation: avatarZoomInOut .9s cubic-bezier(.2,.7,.2,1) 40ms both; }
+
+      /* Post-login full-screen overlay */
+      .login-transition {
+        position: fixed;
+        inset: 0;
+        z-index: 2000;
+        display: none; /* enabled via JS when needed */
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        background: radial-gradient(1200px 600px at 10% 10%, rgba(25,118,210,0.14), transparent 60%),
+                    radial-gradient(900px 500px at 90% 20%, rgba(126,87,194,0.12), transparent 60%),
+                    linear-gradient(120deg, #0d47a1, #1976d2 35%, #26c6da 60%, #7e57c2);
+        background-size: 200% 200%;
+        animation: ltGradient 18s ease-in-out infinite;
+      }
+      @keyframes ltGradient { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+      .lt-content { text-align: center; color: #fff; transform: translateY(8px); opacity: 0; animation: ltEnter .6s cubic-bezier(.2,.7,.2,1) .08s forwards; }
+      @keyframes ltEnter { to { transform: none; opacity: 1; } }
+      .lt-logo { width: 120px; height: auto; display: block; margin: 0 auto 14px; filter: drop-shadow(0 14px 28px rgba(0,0,0,0.25)); animation: ltPulse 1.2s ease-in-out infinite; }
+      @keyframes ltPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.06); } }
+      .lt-title { font-weight: 700; letter-spacing: 0.2px; margin: 0; font-size: 28px; color: #ffffff; text-shadow: 0 2px 8px rgba(0,0,0,0.25); }
+      .lt-sub { opacity: .95; margin-top: 8px; font-size: 15px; color: #ffffff; text-shadow: 0 1px 6px rgba(0,0,0,0.2); }
+      .lt-rings { position: relative; width: 220px; height: 220px; margin: 22px auto 0; }
+      .lt-ring { position: absolute; inset: 0; border-radius: 50%; border: 2px solid rgba(255,255,255,0.35); animation: ltRing 1.6s ease-in-out infinite; }
+      .lt-ring.r2 { inset: 16px; border-color: rgba(255,255,255,0.25); animation-delay: .2s; }
+      .lt-ring.r3 { inset: 32px; border-color: rgba(255,255,255,0.18); animation-delay: .4s; }
+      @keyframes ltRing { 0% { transform: scale(.92); opacity: .8; } 50% { transform: scale(1.04); opacity: 1; } 100% { transform: scale(.92); opacity: .8; } }
+      .login-transition.lt-hide { animation: ltFade 1.2s ease forwards; }
+      @keyframes ltFade { to { opacity: 0; visibility: hidden; } }
+      @media (prefers-reduced-motion: reduce) {
+        .login-transition, .lt-content, .lt-logo, .lt-ring { animation: none !important; }
+      }
     </style>
   </head>
 
@@ -97,6 +130,33 @@
         if (document.readyState === 'loading') {
           document.addEventListener('DOMContentLoaded', run);
         } else { run(); }
+      })();
+    </script>
+    <!-- Post-login interstitial overlay -->
+    <div id="loginTransition" class="login-transition" aria-hidden="true">
+      <div class="lt-content">
+        <img class="lt-logo" src="{{ asset('DAssets/logo-blue.webp') }}" alt="Orion Designers" />
+        <h6 class="lt-title">Welcome back, {{ Auth::user()->name ?? 'User' }}</h6>
+        <div class="lt-sub">Loading your dashboard…</div>
+        <div class="lt-rings">
+          <div class="lt-ring r1"></div>
+          <div class="lt-ring r2"></div>
+          <div class="lt-ring r3"></div>
+        </div>
+      </div>
+    </div>
+    <script>
+      (function() {
+        if (!window.__justLoggedIn) return;
+        var overlay = document.getElementById('loginTransition');
+        if (!overlay) return;
+        function show() { overlay.style.display = 'flex'; }
+        function hide() { overlay.classList.add('lt-hide'); setTimeout(function(){ overlay.remove(); }, 520); }
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', show);
+        } else { show(); }
+        // Auto hide after a longer, polished transition
+        setTimeout(hide, 3000);
       })();
     </script>
     <!-- Layout wrapper -->
