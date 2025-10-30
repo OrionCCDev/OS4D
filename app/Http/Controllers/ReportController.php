@@ -519,12 +519,18 @@ class ReportController extends Controller
                             $q->whereIn('status', $otherStatuses)
                               ->orWhere(function($subQ) {
                                   $subQ->where('status', '!=', 'completed')
-                                       ->where('due_date', '<', now()->startOfDay());
+                                       ->where('due_date', '<', now()->startOfDay())
+                                       ->whereDoesntHave('emailPreparations', function($e){
+                                           $e->where('status', 'sent')->whereNotNull('sent_at');
+                                       });
                               });
                         });
                     } elseif ($hasOverdue) {
                         $tasksQuery->where('status', '!=', 'completed')
-                                  ->where('due_date', '<', now()->startOfDay());
+                                  ->where('due_date', '<', now()->startOfDay())
+                                  ->whereDoesntHave('emailPreparations', function($e){
+                                      $e->where('status', 'sent')->whereNotNull('sent_at');
+                                  });
                     } elseif (!empty($otherStatuses)) {
                         $tasksQuery->whereIn('status', $otherStatuses);
                     }

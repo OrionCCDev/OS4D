@@ -355,13 +355,19 @@ class ReportService
                     $q->whereIn('status', $otherStatuses)
                       ->orWhere(function($subQ) {
                           $subQ->where('status', '!=', 'completed')
-                               ->where('due_date', '<', now()->startOfDay());
+                               ->where('due_date', '<', now()->startOfDay())
+                               ->whereDoesntHave('emailPreparations', function($e){
+                                   $e->where('status', 'sent')->whereNotNull('sent_at');
+                               });
                       });
                 });
             } elseif ($hasOverdue) {
                 // Only overdue selected
                 $query->where('status', '!=', 'completed')
-                      ->where('due_date', '<', now()->startOfDay());
+                      ->where('due_date', '<', now()->startOfDay())
+                      ->whereDoesntHave('emailPreparations', function($e){
+                          $e->where('status', 'sent')->whereNotNull('sent_at');
+                      });
             } elseif (!empty($otherStatuses)) {
                 // Only normal statuses selected
                 $query->whereIn('status', $otherStatuses);
