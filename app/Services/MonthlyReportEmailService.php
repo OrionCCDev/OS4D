@@ -140,6 +140,9 @@ class MonthlyReportEmailService
         $inProgressTasks = $tasks->whereIn('status', ['in_progress', 'workingon', 'assigned'])->count();
         $overdueTasks = $tasks->where('due_date', '<', now()->startOfDay())
             ->whereNotIn('status', ['completed', 'cancelled'])
+            ->filter(function($task) {
+                return !$task->hasEmailConfirmationSent();
+            })
             ->count();
 
         // Group by project
@@ -155,6 +158,9 @@ class MonthlyReportEmailService
                     'in_progress_tasks' => $projectTasks->whereIn('status', ['in_progress', 'workingon', 'assigned'])->count(),
                     'overdue_tasks' => $projectTasks->where('due_date', '<', now()->startOfDay())
                         ->whereNotIn('status', ['completed', 'cancelled'])
+                        ->filter(function($task) {
+                            return !$task->hasEmailConfirmationSent();
+                        })
                         ->count(),
                     'completion_rate' => $projectTasks->count() > 0 ?
                         round(($projectTasks->where('status', 'completed')->count() / $projectTasks->count()) * 100, 1) : 0,
@@ -194,6 +200,9 @@ class MonthlyReportEmailService
         $completedTasks = $tasks->where('status', 'completed')->count();
         $overdueTasks = $tasks->where('due_date', '<', now()->startOfDay())
             ->whereNotIn('status', ['completed', 'cancelled'])
+            ->filter(function($task) {
+                return !$task->hasEmailConfirmationSent();
+            })
             ->count();
 
         $onTimeTasks = $tasks->where('status', 'completed')
@@ -240,6 +249,9 @@ class MonthlyReportEmailService
         $rejectedTasks = $tasks->where('status', 'rejected')->count();
         $overdueTasks = $tasks->where('due_date', '<', now()->startOfDay())
             ->whereNotIn('status', ['completed', 'cancelled'])
+            ->filter(function($task) {
+                return !$task->hasEmailConfirmationSent();
+            })
             ->count();
         $onTimeCompleted = $tasks->where('status', 'completed')
             ->filter(function($task) {

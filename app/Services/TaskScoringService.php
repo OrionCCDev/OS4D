@@ -84,7 +84,7 @@ class TaskScoringService
             'breakdown' => $breakdown,
             'status' => $task->status,
             'priority' => $task->priority,
-            'is_overdue' => $task->due_date && $task->due_date->startOfDay() < now()->startOfDay() && !in_array($task->status, ['completed', 'cancelled']),
+            'is_overdue' => $task->is_overdue, // Use Task model's accessor (checks email confirmation)
             'is_on_time' => $task->status === 'completed' && $task->completed_at && $task->due_date && $task->completed_at <= $task->due_date,
             'has_been_rejected' => $this->hasBeenRejected($task),
         ];

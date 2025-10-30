@@ -46,6 +46,9 @@ class DashboardController extends Controller
             'in_review' => $userTasks->where('status', 'in_review')->count(),
             'overdue' => $userTasks->where('due_date', '<', $now)
                 ->whereNotIn('status', ['completed', 'approved'])
+                ->filter(function($task) {
+                    return !$task->hasEmailConfirmationSent();
+                })
                 ->count(),
             'due_soon' => $userTasks->whereBetween('due_date', [$now, $now->copy()->addDays(7)])
                 ->whereNotIn('status', ['completed', 'approved'])
@@ -70,10 +73,13 @@ class DashboardController extends Controller
             ->orderBy('due_date', 'asc')
             ->get();
 
-        // Overdue tasks with pagination
-        $overdueTasks = $user->assignedTasks()->with(['project', 'folder'])
+        // Overdue tasks with pagination (only if no email confirmation sent)
+        $overdueTasks = $user->assignedTasks()->with(['project', 'folder', 'emailPreparations'])
             ->where('due_date', '<', $now)
             ->whereNotIn('status', ['completed'])
+            ->whereDoesntHave('emailPreparations', function($q) {
+                $q->where('status', 'sent')->whereNotNull('sent_at');
+            })
             ->orderBy('due_date', 'asc')
             ->paginate(5, ['*'], 'overdue_page');
 
@@ -323,6 +329,9 @@ class DashboardController extends Controller
             'in_review' => Task::where('status', 'in_review')->count(),
             'overdue' => Task::where('due_date', '<', $now)
                 ->whereNotIn('status', ['completed', 'approved'])
+                ->whereDoesntHave('emailPreparations', function($q) {
+                    $q->where('status', 'sent')->whereNotNull('sent_at');
+                })
                 ->count(),
             'due_soon' => Task::whereBetween('due_date', [$now, $now->copy()->addDays(7)])
                 ->whereNotIn('status', ['completed', 'approved'])
@@ -426,8 +435,12 @@ class DashboardController extends Controller
                 $query->where('status', 'rejected');
             }])
             ->withCount(['assignedTasks as overdue_tasks_count' => function($query) {
+                // Task is overdue if due date passed AND no email confirmation sent
                 $query->where('due_date', '<', now()->startOfDay())
-                      ->whereNotIn('status', ['completed', 'cancelled']);
+                      ->whereNotIn('status', ['completed', 'cancelled'])
+                      ->whereDoesntHave('emailPreparations', function($q) {
+                          $q->where('status', 'sent')->whereNotNull('sent_at');
+                      });
             }])
             ->withCount(['assignedTasks as on_time_completed_count' => function($query) {
                 $query->where('status', 'completed')
@@ -557,10 +570,13 @@ class DashboardController extends Controller
             ->orderBy('due_date', 'asc')
             ->get();
 
-        // Overdue tasks
-        $overdueTasks = Task::with(['assignee', 'project'])
+        // Overdue tasks (only if no email confirmation sent)
+        $overdueTasks = Task::with(['assignee', 'project', 'emailPreparations'])
             ->where('due_date', '<', $now)
             ->whereNotIn('status', ['completed', 'approved'])
+            ->whereDoesntHave('emailPreparations', function($q) {
+                $q->where('status', 'sent')->whereNotNull('sent_at');
+            })
             ->orderBy('due_date', 'asc')
             ->get();
 
@@ -620,10 +636,13 @@ class DashboardController extends Controller
         $urgentTasks = Task::with(['assignee:id,name', 'project:id,name', 'folder:id,name'])
             ->select('tasks.*')
             ->where(function($query) use ($now) {
-                // Tasks that are overdue (past due date and not completed)
+                // Tasks that are overdue (past due date, not completed, and no email sent)
                 $query->where(function($q) use ($now) {
                     $q->where('due_date', '<', $now)
-                      ->whereNotIn('status', ['completed', 'cancelled']);
+                      ->whereNotIn('status', ['completed', 'cancelled'])
+                      ->whereDoesntHave('emailPreparations', function($subQ) {
+                          $subQ->where('status', 'sent')->whereNotNull('sent_at');
+                      });
                 })
                 // OR tasks approaching due date (within next 7 days)
                 ->orWhere(function($q) use ($now) {
@@ -745,8 +764,12 @@ class DashboardController extends Controller
                 $query->where('status', 'rejected');
             }])
             ->withCount(['assignedTasks as overdue_tasks_count' => function($query) {
+                // Task is overdue if due date passed AND no email confirmation sent
                 $query->where('due_date', '<', now()->startOfDay())
-                      ->whereNotIn('status', ['completed', 'cancelled']);
+                      ->whereNotIn('status', ['completed', 'cancelled'])
+                      ->whereDoesntHave('emailPreparations', function($q) {
+                          $q->where('status', 'sent')->whereNotNull('sent_at');
+                      });
             }])
             ->withCount(['assignedTasks as on_time_completed_count' => function($query) {
                 $query->where('status', 'completed')
