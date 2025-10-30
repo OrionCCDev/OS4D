@@ -345,7 +345,27 @@ class ReportService
         }
 
         if (!empty($filters['status']) && is_array($filters['status']) && !in_array('all', $filters['status'])) {
-            $query->whereIn('status', $filters['status']);
+            // Check if 'overdue' is in the status filter
+            $hasOverdue = in_array('overdue', $filters['status']);
+            $otherStatuses = array_diff($filters['status'], ['overdue']);
+
+            if ($hasOverdue && !empty($otherStatuses)) {
+                // Both overdue and other statuses selected
+                $query->where(function($q) use ($otherStatuses) {
+                    $q->whereIn('status', $otherStatuses)
+                      ->orWhere(function($subQ) {
+                          $subQ->where('status', '!=', 'completed')
+                               ->where('due_date', '<', now()->startOfDay());
+                      });
+                });
+            } elseif ($hasOverdue) {
+                // Only overdue selected
+                $query->where('status', '!=', 'completed')
+                      ->where('due_date', '<', now()->startOfDay());
+            } elseif (!empty($otherStatuses)) {
+                // Only normal statuses selected
+                $query->whereIn('status', $otherStatuses);
+            }
         }
 
         if (!empty($filters['priority']) && is_array($filters['priority']) && !in_array('all', $filters['priority'])) {

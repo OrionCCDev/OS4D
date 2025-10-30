@@ -12,15 +12,9 @@
             <button class="btn btn-outline-primary" onclick="refreshReport()">
                 <i class="bx bx-refresh me-1"></i>Refresh
             </button>
-            <div class="dropdown">
-                <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                    <i class="bx bx-download me-1"></i>Export
-                </button>
-                <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="#" onclick="exportReport('pdf', 'tasks')">Export as PDF</a></li>
-                    <li><a class="dropdown-item" href="#" onclick="exportReport('excel', 'tasks')">Export as Excel</a></li>
-                </ul>
-            </div>
+            <button class="btn btn-primary" onclick="exportReport('pdf', 'tasks')">
+                <i class="bx bx-download me-1"></i>Export PDF
+            </button>
         </div>
     </div>
 
@@ -58,6 +52,7 @@
                             <option value="in_progress" {{ in_array('in_progress', $filters['status'] ?? []) ? 'selected' : '' }}>In Progress</option>
                             <option value="completed" {{ in_array('completed', $filters['status'] ?? []) ? 'selected' : '' }}>Completed</option>
                             <option value="cancelled" {{ in_array('cancelled', $filters['status'] ?? []) ? 'selected' : '' }}>Cancelled</option>
+                            <option value="overdue" {{ in_array('overdue', $filters['status'] ?? []) ? 'selected' : '' }}>Overdue</option>
                         </select>
                     </div>
                     <div class="col-md-3">
@@ -329,12 +324,10 @@
                                     <th>Task</th>
                                     <th>Project</th>
                                     <th>Assignee</th>
-                                    <th>Status</th>
-                                    <th>Priority</th>
+                                    <th>Status & Priority</th>
                                     <th>Start Date</th>
                                     <th>Due Date</th>
                                     <th>Duration</th>
-                                    <th>Created</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
@@ -373,14 +366,14 @@
                                         @endif
                                     </td>
                                     <td>
-                                        <span class="badge bg-{{ $task->status === 'completed' ? 'success' : ($task->status === 'in_progress' ? 'warning' : ($task->status === 'pending' ? 'info' : 'danger')) }}">
-                                            {{ ucfirst(str_replace('_', ' ', $task->status)) }}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-{{ $task->priority === 'high' ? 'danger' : ($task->priority === 'medium' ? 'warning' : 'info') }}">
-                                            {{ ucfirst($task->priority) }}
-                                        </span>
+                                        <div class="d-flex flex-column gap-1">
+                                            <span class="badge bg-{{ $task->status === 'completed' ? 'success' : ($task->status === 'in_progress' ? 'warning' : ($task->status === 'pending' ? 'info' : 'danger')) }}">
+                                                {{ ucfirst(str_replace('_', ' ', $task->status)) }}
+                                            </span>
+                                            <span class="badge bg-{{ $task->priority === 'high' ? 'danger' : ($task->priority === 'medium' ? 'warning' : 'info') }}">
+                                                {{ ucfirst($task->priority) }} Priority
+                                            </span>
+                                        </div>
                                     </td>
                                     <td>
                                         @if($task->start_date)
@@ -411,19 +404,18 @@
                                                 $startDate = \Carbon\Carbon::parse($task->start_date);
                                                 $dueDate = \Carbon\Carbon::parse($task->due_date);
                                                 $duration = $startDate->diffInDays($dueDate);
+                                                $isSameDay = $startDate->isSameDay($dueDate);
                                             @endphp
-                                            <span class="fw-semibold text-primary">
-                                                {{ $duration }} {{ $duration == 1 ? 'day' : 'days' }}
-                                            </span>
+                                            @if($isSameDay)
+                                                <span class="fw-semibold text-success">Same day</span>
+                                            @else
+                                                <span class="fw-semibold text-primary">
+                                                    {{ $duration }} {{ $duration == 1 ? 'day' : 'days' }}
+                                                </span>
+                                            @endif
                                         @else
                                             <span class="text-muted">N/A</span>
                                         @endif
-                                    </td>
-                                    <td>
-                                        <div class="d-flex flex-column">
-                                            <span class="fw-semibold">{{ \Carbon\Carbon::parse($task->created_at)->format('M d, Y') }}</span>
-                                            <small class="text-muted">{{ \Carbon\Carbon::parse($task->created_at)->format('H:i') }}</small>
-                                        </div>
                                     </td>
                                     <td>
                                         <div class="d-flex gap-1">
@@ -494,7 +486,8 @@ function clearFilters() {
 
 function exportReport(format, type) {
     const baseUrl = '{{ url("reports/export") }}';
-    const url = `${baseUrl}/${format}/${type}`;
+    const params = new URLSearchParams(window.location.search);
+    const url = `${baseUrl}/${format}/${type}?${params.toString()}`;
     window.open(url, '_blank');
 }
 
