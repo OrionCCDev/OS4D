@@ -236,6 +236,27 @@
                 {{--  <span class="badge rounded-pill bg-primary ms-auto">engineering@orion-contracting.com</span>  --}}
               </a>
             </li>
+
+            <!-- Client & Consultant Management - Managers only -->
+            <li class="menu-item {{ request()->routeIs('clients.*') || request()->routeIs('consultants.*') ? 'active open' : '' }}">
+              <a href="javascript:void(0);" class="menu-link menu-toggle">
+                <i class="menu-icon tf-icons bx bx-user-check"></i>
+                <div data-i18n="Client & Consultant">Client & Consultant</div>
+              </a>
+
+              <ul class="menu-sub">
+                <li class="menu-item {{ request()->routeIs('clients.*') ? 'active' : '' }}">
+                  <a href="{{ route('clients.index') }}" class="menu-link">
+                    <div data-i18n="Clients">Clients</div>
+                  </a>
+                </li>
+                <li class="menu-item {{ request()->routeIs('consultants.*') ? 'active' : '' }}">
+                  <a href="{{ route('consultants.index') }}" class="menu-link">
+                    <div data-i18n="Consultants">Consultants</div>
+                  </a>
+                </li>
+              </ul>
+            </li>
             @endif
 {{--
             <!-- Layouts -->

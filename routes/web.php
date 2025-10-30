@@ -213,6 +213,8 @@ Route::middleware('auth')->group(function () {
         Route::resource('folders', ProjectFolderController::class)->parameters(['folders' => 'folder'])->except(['show']);
         Route::resource('contractors', ContractorController::class)->except(['show']);
         Route::resource('project-managers', ProjectManagerController::class);
+        Route::resource('clients', App\Http\Controllers\ClientController::class);
+        Route::resource('consultants', App\Http\Controllers\ConsultantController::class);
         Route::resource('email-templates', EmailTemplateController::class)->parameters(['email-templates' => 'email_template'])->except(['show']);
         Route::resource('external-stakeholders', ExternalStakeholderController::class);
 

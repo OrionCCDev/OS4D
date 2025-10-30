@@ -152,6 +152,16 @@ class User extends Authenticatable
         return $this->role === 'user';
     }
 
+    public function isClient()
+    {
+        return $this->role === 'client';
+    }
+
+    public function isConsultant()
+    {
+        return $this->role === 'consultant';
+    }
+
     /**
      * Check if user can delete anything
      * Sub-admin cannot delete anything
