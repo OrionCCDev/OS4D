@@ -58,26 +58,8 @@
                                 $today = now();
                                 $next20Days = $today->copy()->addDays(19); // 19 days from today = 20 days total
 
-                                // Debug: Let's see what tasks we have
-                                $allTasks = collect($userData['recent_tasks'] ?? []);
-
-                                // If no tasks from recent_tasks, try to get all user tasks
-                                if ($allTasks->isEmpty()) {
-                                    $allTasks = collect(\App\Models\Task::where('assigned_to', auth()->id())
-                                        ->whereNotNull('start_date')
-                                        ->get());
-                                }
-
-                                $timelineTasks = $allTasks->filter(function($task) use ($today, $next20Days) {
-                                    if (!$task->start_date) {
-                                        return false;
-                                    }
-
-                                    $startDate = \Carbon\Carbon::parse($task->start_date);
-                                    $isInRange = $startDate >= $today->startOfDay() && $startDate <= $next20Days->endOfDay();
-
-                                    return $isInRange;
-                                })->sortBy('start_date');
+                                // Use timeline_tasks from controller (already filtered for next 20 days)
+                                $timelineTasks = collect($userData['timeline_tasks'] ?? []);
 
                                 // Group tasks by date to handle multiple tasks on same date
                                 $tasksByDate = [];

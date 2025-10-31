@@ -35,8 +35,9 @@ class DashboardController extends Controller
         $now = now();
         $reportService = new \App\Services\ReportService();
 
-        // User's task statistics - Get all tasks as collection first
-        $userTasks = $user->assignedTasks()->get();
+        // User's task statistics - Get all tasks with relationships loaded
+        $userTasks = $user->assignedTasks()->with(['project', 'folder'])->get();
+
         $taskStats = [
             'total' => $userTasks->count(),
             'completed' => $userTasks->where('status', 'completed')->count(),
@@ -60,14 +61,15 @@ class DashboardController extends Controller
             ? round(($taskStats['completed'] / $taskStats['total']) * 100, 1)
             : 0;
 
-        // Recent tasks (last 10) - use collection
-        $recentTasks = $userTasks->sortByDesc('created_at')->take(10);
+        // Recent tasks (last 10) - already has relationships loaded from $userTasks
+        $recentTasks = $userTasks->sortByDesc('created_at')->take(10)->values();
 
-        // Upcoming due dates (next 7 days) - use collection
+        // Upcoming due dates (next 7 days) - already has relationships loaded
         $upcomingTasks = $userTasks
             ->whereBetween('due_date', [$now, $now->copy()->addDays(7)])
             ->whereNotIn('status', ['completed'])
-            ->sortBy('due_date');
+            ->sortBy('due_date')
+            ->values();
 
         // Overdue tasks with pagination (only if no email confirmation sent)
         $overdueTasks = $user->assignedTasks()->with(['project', 'folder', 'emailPreparations'])
@@ -136,7 +138,11 @@ class DashboardController extends Controller
 
             $completed = $userTasks
                 ->where('status', 'completed')
-                ->whereBetween('completed_at', [$weekStart, $weekEnd])
+                ->filter(function($task) use ($weekStart, $weekEnd) {
+                    // Handle completed_at being null - use updated_at as fallback
+                    $completedDate = $task->completed_at ?? $task->updated_at;
+                    return $completedDate && $completedDate >= $weekStart && $completedDate <= $weekEnd;
+                })
                 ->count();
 
             $weeklyTrend[] = [
@@ -145,11 +151,22 @@ class DashboardController extends Controller
             ];
         }
 
-        // User's recent activity (last 30 days) - use collection
+        // User's recent activity (last 30 days) - already has relationships
         $recentActivity = $userTasks
             ->where('created_at', '>=', $now->copy()->subDays(30))
             ->sortByDesc('created_at')
-            ->take(5);
+            ->take(5)
+            ->values();
+
+        // Timeline tasks for next 20 days (used in timeline view)
+        $timelineTasks = $userTasks
+            ->filter(function($task) use ($now) {
+                return $task->start_date &&
+                       $task->start_date >= $now->startOfDay() &&
+                       $task->start_date <= $now->copy()->addDays(19)->endOfDay();
+            })
+            ->sortBy('start_date')
+            ->values();
 
         // User's notifications
         $notifications = $user->customNotifications()
@@ -163,12 +180,20 @@ class DashboardController extends Controller
             'tasks_this_week' => $userTasks->where('created_at', '>=', $now->copy()->startOfWeek())->count(),
             'tasks_this_month' => $userTasks->where('created_at', '>=', $now->copy()->startOfMonth())->count(),
             'completed_this_week' => $userTasks->where('status', 'completed')
-                ->where('completed_at', '>=', $now->copy()->startOfWeek())->count(),
+                ->filter(function($task) use ($now) {
+                    $completedDate = $task->completed_at ?? $task->updated_at;
+                    return $completedDate && $completedDate >= $now->copy()->startOfWeek();
+                })
+                ->count(),
             'completed_this_month' => $userTasks->where('status', 'completed')
-                ->where('completed_at', '>=', $now->copy()->startOfMonth())->count(),
+                ->filter(function($task) use ($now) {
+                    $completedDate = $task->completed_at ?? $task->updated_at;
+                    return $completedDate && $completedDate >= $now->copy()->startOfMonth();
+                })
+                ->count(),
         ];
 
-        // Get user rankings with error handling
+        // Get user rankings with error handling and default values
         try {
             $overallRanking = $reportService->getUserRankings($user->id, 'overall');
         } catch (\Exception $e) {
@@ -177,7 +202,7 @@ class DashboardController extends Controller
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
-            $overallRanking = null;
+            $overallRanking = $this->getDefaultRanking($user, 'overall');
         }
 
         try {
@@ -188,13 +213,22 @@ class DashboardController extends Controller
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
-            $monthlyRanking = null;
+            $monthlyRanking = $this->getDefaultRanking($user, 'monthly');
+        }
+
+        // Ensure rankings have the expected structure
+        if (!$overallRanking || !isset($overallRanking['user_ranking'])) {
+            $overallRanking = $this->getDefaultRanking($user, 'overall');
+        }
+        if (!$monthlyRanking || !isset($monthlyRanking['user_ranking'])) {
+            $monthlyRanking = $this->getDefaultRanking($user, 'monthly');
         }
 
         return [
             'user' => $user,
             'task_stats' => $taskStats,
             'recent_tasks' => $recentTasks,
+            'timeline_tasks' => $timelineTasks,
             'upcoming_tasks' => $upcomingTasks,
             'upcoming_tasks_paginated' => $upcomingTasksPaginated,
             'overdue_tasks' => $overdueTasks,
@@ -208,6 +242,27 @@ class DashboardController extends Controller
                 'overall' => $overallRanking,
                 'monthly' => $monthlyRanking,
             ],
+        ];
+    }
+
+    /**
+     * Get default ranking structure when rankings fail
+     */
+    private function getDefaultRanking($user, $period = 'overall')
+    {
+        return [
+            'user_ranking' => [
+                'user_id' => $user->id,
+                'user_name' => $user->name,
+                'rank' => 0,
+                'performance_score' => 0,
+                'completion_rate' => 0,
+                'total_tasks' => 0,
+                'completed_tasks' => 0,
+            ],
+            'total_users' => 1,
+            'period' => $period,
+            'top_3' => [],
         ];
     }
 
