@@ -169,6 +169,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form id="bulkEvaluationForm">
+                @csrf
                 <div class="modal-body">
                     <div class="alert alert-info">
                         <i class="bx bx-info-circle me-2"></i>
@@ -439,34 +440,68 @@ document.getElementById('bulkEvaluationForm').addEventListener('submit', functio
 
     const url = '{{ route("reports.evaluations.bulk.pdf") }}';
 
+    // Check for CSRF token
+    const csrfToken = document.querySelector('meta[name="csrf-token"]');
+    if (!csrfToken) {
+        console.error('CSRF token meta tag not found');
+        submitButton.innerHTML = originalText;
+        submitButton.disabled = false;
+        alert('Security token not found. Please refresh the page and try again.');
+        return;
+    }
+
+    // Debug: Log the URL and form data
+    console.log('Submitting to URL:', url);
+    console.log('Form data:', {
+        evaluation_type: formData.get('evaluation_type'),
+        year: formData.get('year'),
+        month: formData.get('month'),
+        quarter: formData.get('quarter'),
+        _token: formData.get('_token')
+    });
+
     fetch(url, {
         method: 'POST',
         body: formData,
         headers: {
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-        }
+            'X-CSRF-TOKEN': csrfToken.getAttribute('content'),
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        credentials: 'same-origin'
     })
     .then(response => {
+        console.log('Response status:', response.status);
+        console.log('Response headers:', response.headers);
+
         // Check if response is ok
         if (!response.ok) {
             // If it's not ok, try to get error message
             return response.text().then(text => {
-                throw new Error(`HTTP ${response.status}: ${text}`);
+                console.error('Error response:', text);
+                try {
+                    const errorData = JSON.parse(text);
+                    throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+                } catch (e) {
+                    throw new Error(`HTTP ${response.status}: ${text.substring(0, 200)}`);
+                }
             });
         }
 
         // Check if response is a PDF (content-type should be application/pdf)
         const contentType = response.headers.get('content-type');
+        console.log('Content-Type:', contentType);
+
         if (contentType && contentType.includes('application/pdf')) {
             return response.blob();
         } else {
             // If it's not a PDF, it might be an error response
             return response.text().then(text => {
+                console.error('Non-PDF response:', text);
                 try {
                     const errorData = JSON.parse(text);
                     throw new Error(errorData.message || 'Unknown error occurred');
                 } catch (e) {
-                    throw new Error(text || 'Unknown error occurred');
+                    throw new Error(text.substring(0, 200) || 'Unknown error occurred');
                 }
             });
         }
@@ -534,25 +569,39 @@ document.getElementById('bulkEvaluationForm').addEventListener('submit', functio
         submitButton.innerHTML = originalText;
         submitButton.disabled = false;
 
-        console.error('Error:', error);
+        console.error('Fetch Error:', error);
+        console.error('Error stack:', error.stack);
+
+        // Determine error type and message
+        let errorMessage = 'Failed to generate evaluation';
+        if (error.message) {
+            if (error.message.includes('Failed to fetch')) {
+                errorMessage = 'Network error: Could not connect to server. Please check your internet connection and try again.';
+            } else if (error.message.includes('NetworkError')) {
+                errorMessage = 'Network error: Request blocked. Please check your connection.';
+            } else {
+                errorMessage = error.message;
+            }
+        }
 
         // Show error message in a more user-friendly way
         const errorAlert = document.createElement('div');
         errorAlert.className = 'alert alert-danger alert-dismissible fade show position-fixed';
-        errorAlert.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+        errorAlert.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px; max-width: 500px;';
         errorAlert.innerHTML = `
             <i class="bx bx-error-circle me-2"></i>
-            <strong>Error!</strong> ${error.message || 'Failed to generate evaluation'}
+            <strong>Error!</strong><br>
+            ${errorMessage}
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         `;
         document.body.appendChild(errorAlert);
 
-        // Auto-hide after 5 seconds
+        // Auto-hide after 10 seconds (longer to read error)
         setTimeout(() => {
             if (errorAlert.parentNode) {
                 errorAlert.remove();
             }
-        }, 5000);
+        }, 10000);
     });
 });
 </script>
