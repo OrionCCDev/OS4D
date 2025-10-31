@@ -35,8 +35,8 @@ class DashboardController extends Controller
         $now = now();
         $reportService = new \App\Services\ReportService();
 
-        // User's task statistics
-        $userTasks = $user->assignedTasks();
+        // User's task statistics - Get all tasks as collection first
+        $userTasks = $user->assignedTasks()->get();
         $taskStats = [
             'total' => $userTasks->count(),
             'completed' => $userTasks->where('status', 'completed')->count(),
@@ -60,18 +60,14 @@ class DashboardController extends Controller
             ? round(($taskStats['completed'] / $taskStats['total']) * 100, 1)
             : 0;
 
-        // Recent tasks (last 10)
-        $recentTasks = $user->assignedTasks()->with(['project', 'folder'])
-            ->latest()
-            ->limit(10)
-            ->get();
+        // Recent tasks (last 10) - use collection
+        $recentTasks = $userTasks->sortByDesc('created_at')->take(10);
 
-        // Upcoming due dates (next 7 days)
-        $upcomingTasks = $user->assignedTasks()->with(['project', 'folder'])
+        // Upcoming due dates (next 7 days) - use collection
+        $upcomingTasks = $userTasks
             ->whereBetween('due_date', [$now, $now->copy()->addDays(7)])
             ->whereNotIn('status', ['completed'])
-            ->orderBy('due_date', 'asc')
-            ->get();
+            ->sortBy('due_date');
 
         // Overdue tasks with pagination (only if no email confirmation sent)
         $overdueTasks = $user->assignedTasks()->with(['project', 'folder', 'emailPreparations'])
@@ -138,7 +134,7 @@ class DashboardController extends Controller
             $weekStart = $now->copy()->subWeeks($i)->startOfWeek();
             $weekEnd = $weekStart->copy()->endOfWeek();
 
-            $completed = $user->assignedTasks()
+            $completed = $userTasks
                 ->where('status', 'completed')
                 ->whereBetween('completed_at', [$weekStart, $weekEnd])
                 ->count();
@@ -149,12 +145,11 @@ class DashboardController extends Controller
             ];
         }
 
-        // User's recent activity (last 30 days)
-        $recentActivity = $user->assignedTasks()->where('created_at', '>=', $now->copy()->subDays(30))
-            ->with(['project', 'folder'])
-            ->orderBy('created_at', 'desc')
-            ->limit(5)
-            ->get();
+        // User's recent activity (last 30 days) - use collection
+        $recentActivity = $userTasks
+            ->where('created_at', '>=', $now->copy()->subDays(30))
+            ->sortByDesc('created_at')
+            ->take(5);
 
         // User's notifications
         $notifications = $user->customNotifications()
@@ -173,9 +168,28 @@ class DashboardController extends Controller
                 ->where('completed_at', '>=', $now->copy()->startOfMonth())->count(),
         ];
 
-        // Get user rankings
-        $overallRanking = $reportService->getUserRankings($user->id, 'overall');
-        $monthlyRanking = $reportService->getUserRankings($user->id, 'monthly');
+        // Get user rankings with error handling
+        try {
+            $overallRanking = $reportService->getUserRankings($user->id, 'overall');
+        } catch (\Exception $e) {
+            Log::error('Failed to get overall rankings for user dashboard', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            $overallRanking = null;
+        }
+
+        try {
+            $monthlyRanking = $reportService->getUserRankings($user->id, 'monthly');
+        } catch (\Exception $e) {
+            Log::error('Failed to get monthly rankings for user dashboard', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            $monthlyRanking = null;
+        }
 
         return [
             'user' => $user,
