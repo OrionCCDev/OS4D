@@ -776,6 +776,24 @@ class ReportService
                 return $item;
             });
 
+            // If user ranking is null (user has no tasks), provide default values
+            if ($userRanking === null) {
+                $userReport = $this->getUserPerformanceReport($userId, $period === 'monthly' ? [
+                    'date_from' => now()->startOfMonth(),
+                    'date_to' => now()->endOfMonth()
+                ] : []);
+                
+                $userRanking = [
+                    'user_id' => $userId,
+                    'user_name' => $user->name,
+                    'rank' => $rankings->count() + 1,
+                    'performance_score' => $userReport['performance_score'],
+                    'completion_rate' => $userReport['completion_rate'],
+                    'total_tasks' => $userReport['total_tasks'],
+                    'completed_tasks' => $userReport['completed_tasks'],
+                ];
+            }
+
             return [
                 'user_ranking' => $userRanking,
                 'total_users' => $rankings->count(),
