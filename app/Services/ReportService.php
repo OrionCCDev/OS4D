@@ -796,7 +796,7 @@ class ReportService
 
             return [
                 'user_ranking' => $userRanking,
-                'total_users' => $rankings->count(),
+                'total_users' => max($rankings->count(), $userRanking['rank']),
                 'period' => $period,
                 'top_3' => $rankings->take(3)->values(),
             ];
