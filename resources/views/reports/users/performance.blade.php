@@ -460,6 +460,8 @@ document.getElementById('bulkEvaluationForm').addEventListener('submit', functio
         _token: formData.get('_token')
     });
 
+    let downloadSuccessful = false;
+
     fetch(url, {
         method: 'POST',
         body: formData,
@@ -507,6 +509,14 @@ document.getElementById('bulkEvaluationForm').addEventListener('submit', functio
         }
     })
     .then(blob => {
+        // Verify blob is valid
+        if (!blob || blob.size === 0) {
+            throw new Error('Received empty or invalid PDF file');
+        }
+
+        // Mark download as successful before attempting download
+        downloadSuccessful = true;
+
         // Create a download link and trigger download
         const downloadUrl = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -535,7 +545,9 @@ document.getElementById('bulkEvaluationForm').addEventListener('submit', functio
         // Clean up
         setTimeout(() => {
             window.URL.revokeObjectURL(downloadUrl);
-            document.body.removeChild(a);
+            if (document.body.contains(a)) {
+                document.body.removeChild(a);
+            }
         }, 100);
 
         // Restore button state
@@ -543,7 +555,10 @@ document.getElementById('bulkEvaluationForm').addEventListener('submit', functio
         submitButton.disabled = false;
 
         // Close modal
-        bootstrap.Modal.getInstance(document.getElementById('bulkEvaluationModal')).hide();
+        const modal = bootstrap.Modal.getInstance(document.getElementById('bulkEvaluationModal'));
+        if (modal) {
+            modal.hide();
+        }
 
         // Show success message
         const successAlert = document.createElement('div');
@@ -565,43 +580,49 @@ document.getElementById('bulkEvaluationForm').addEventListener('submit', functio
         }, 5000);
     })
     .catch(error => {
-        // Restore button state
-        submitButton.innerHTML = originalText;
-        submitButton.disabled = false;
+        // Only show error if download was not successful
+        if (!downloadSuccessful) {
+            // Restore button state
+            submitButton.innerHTML = originalText;
+            submitButton.disabled = false;
 
-        console.error('Fetch Error:', error);
-        console.error('Error stack:', error.stack);
+            console.error('Fetch Error:', error);
+            console.error('Error stack:', error.stack);
 
-        // Determine error type and message
-        let errorMessage = 'Failed to generate evaluation';
-        if (error.message) {
-            if (error.message.includes('Failed to fetch')) {
-                errorMessage = 'Network error: Could not connect to server. Please check your internet connection and try again.';
-            } else if (error.message.includes('NetworkError')) {
-                errorMessage = 'Network error: Request blocked. Please check your connection.';
-            } else {
-                errorMessage = error.message;
+            // Determine error type and message
+            let errorMessage = 'Failed to generate evaluation';
+            if (error.message) {
+                if (error.message.includes('Failed to fetch')) {
+                    errorMessage = 'Network error: Could not connect to server. Please check your internet connection and try again.';
+                } else if (error.message.includes('NetworkError')) {
+                    errorMessage = 'Network error: Request blocked. Please check your connection.';
+                } else {
+                    errorMessage = error.message;
+                }
             }
+
+            // Show error message in a more user-friendly way
+            const errorAlert = document.createElement('div');
+            errorAlert.className = 'alert alert-danger alert-dismissible fade show position-fixed';
+            errorAlert.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px; max-width: 500px;';
+            errorAlert.innerHTML = `
+                <i class="bx bx-error-circle me-2"></i>
+                <strong>Error!</strong><br>
+                ${errorMessage}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.body.appendChild(errorAlert);
+
+            // Auto-hide after 10 seconds (longer to read error)
+            setTimeout(() => {
+                if (errorAlert.parentNode) {
+                    errorAlert.remove();
+                }
+            }, 10000);
+        } else {
+            // If download was successful, just log the error but don't show it to user
+            console.warn('Minor error after successful download:', error);
         }
-
-        // Show error message in a more user-friendly way
-        const errorAlert = document.createElement('div');
-        errorAlert.className = 'alert alert-danger alert-dismissible fade show position-fixed';
-        errorAlert.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px; max-width: 500px;';
-        errorAlert.innerHTML = `
-            <i class="bx bx-error-circle me-2"></i>
-            <strong>Error!</strong><br>
-            ${errorMessage}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        `;
-        document.body.appendChild(errorAlert);
-
-        // Auto-hide after 10 seconds (longer to read error)
-        setTimeout(() => {
-            if (errorAlert.parentNode) {
-                errorAlert.remove();
-            }
-        }, 10000);
     });
 });
 </script>
