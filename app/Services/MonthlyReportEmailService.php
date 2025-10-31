@@ -214,8 +214,9 @@ class MonthlyReportEmailService
         $completionRate = $totalTasks > 0 ? round(($completedTasks / $totalTasks) * 100, 1) : 0;
         $onTimeRate = $completedTasks > 0 ? round(($onTimeTasks / $completedTasks) * 100, 1) : 0;
 
-        // Calculate performance score
-        $performanceScore = $this->calculateAdvancedPerformanceScore($user, $startDate, $endDate);
+        // Use ReportService for consistent performance score calculation across all reports
+        // This matches the calculation used in manual evaluation generation
+        $performanceScore = $this->reportService->calculatePerformanceScore($tasks, $user);
 
         return [
             'total_tasks' => $totalTasks,
@@ -228,74 +229,10 @@ class MonthlyReportEmailService
     }
 
     /**
-     * Calculate advanced performance score
+     * @deprecated This method has been removed. Use ReportService::calculatePerformanceScore() instead
+     *             for consistent scoring across all reports and rankings. This ensures the monthly email
+     *             uses the same calculation as manual evaluation generation.
      */
-    private function calculateAdvancedPerformanceScore($user, $startDate = null, $endDate = null)
-    {
-        $query = $user->assignedTasks();
-
-        if ($startDate && $endDate) {
-            $query->whereBetween('created_at', [$startDate, $endDate]);
-        }
-
-        $tasks = $query->get();
-
-        if ($tasks->isEmpty()) {
-            return 0;
-        }
-
-        $completedTasks = $tasks->where('status', 'completed')->count();
-        $inProgressTasks = $tasks->whereIn('status', ['in_progress', 'workingon', 'assigned'])->count();
-        $rejectedTasks = $tasks->where('status', 'rejected')->count();
-        $overdueTasks = $tasks->where('due_date', '<', now()->startOfDay())
-            ->whereNotIn('status', ['completed', 'cancelled'])
-            ->filter(function($task) {
-                return !$task->hasEmailConfirmationSent();
-            })
-            ->count();
-        $onTimeCompleted = $tasks->where('status', 'completed')
-            ->filter(function($task) {
-                return $task->completed_at && $task->due_date &&
-                       $task->completed_at <= $task->due_date;
-            })->count();
-
-        $totalTasks = $tasks->count();
-        $completionRate = $totalTasks > 0 ? ($completedTasks / $totalTasks) * 100 : 0;
-
-        // Base score from completed tasks
-        $baseScore = $completedTasks * 10;
-
-        // Bonus for in-progress tasks
-        $progressBonus = $inProgressTasks * 5;
-
-        // Penalties
-        $rejectionPenalty = $rejectedTasks * 15;
-        $overduePenalty = $overdueTasks * 10;
-
-        // On-time bonus
-        $onTimeBonus = $onTimeCompleted * 5;
-
-        // Experience multiplier
-        $experienceMultiplier = $this->calculateExperienceMultiplier($totalTasks);
-
-        // Calculate final score
-        $rawScore = ($baseScore + $progressBonus + $onTimeBonus - $rejectionPenalty - $overduePenalty) * $experienceMultiplier;
-        $finalScore = max(0, min(100, $rawScore));
-
-        return round($finalScore, 1);
-    }
-
-    /**
-     * Calculate experience multiplier
-     */
-    private function calculateExperienceMultiplier($totalTasks)
-    {
-        if ($totalTasks >= 50) return 1.2;      // Experienced
-        if ($totalTasks >= 20) return 1.1;      // Intermediate
-        if ($totalTasks >= 10) return 1.0;      // Standard
-        if ($totalTasks >= 5) return 0.9;       // New
-        return 0.8;                             // Very new
-    }
 
     /**
      * Generate PDF report for user
