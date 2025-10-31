@@ -885,8 +885,8 @@ class ReportController extends Controller
         $completionRate = $totalTasks > 0 ? round(($completedTasks / $totalTasks) * 100, 1) : 0;
         $onTimeRate = $completedTasks > 0 ? round(($onTimeTasks / $completedTasks) * 100, 1) : 0;
 
-        // Calculate performance score (similar to dashboard logic)
-        $performanceScore = $this->calculateAdvancedPerformanceScore($user, $startDate, $endDate);
+        // Use ReportService for consistent performance score calculation across all reports
+        $performanceScore = $this->reportService->calculatePerformanceScore($tasks, $user);
 
         return [
             'total_tasks' => $totalTasks,
@@ -900,6 +900,12 @@ class ReportController extends Controller
 
     /**
      * Calculate advanced performance score for a user
+     *
+     * @deprecated This method is deprecated. Use ReportService::calculatePerformanceScore() instead
+     *             for consistent scoring across all reports and rankings.
+     *
+     * This method used different scoring parameters than the main ranking system,
+     * causing inconsistent results. Kept for backward compatibility only.
      */
     private function calculateAdvancedPerformanceScore($user, $startDate = null, $endDate = null)
     {
@@ -958,6 +964,9 @@ class ReportController extends Controller
 
     /**
      * Calculate experience multiplier based on total tasks
+     *
+     * @deprecated This method is deprecated. Use ReportService::calculateExperienceMultiplierForReports() instead.
+     *             This method used different multiplier ranges (0.8-1.2x) compared to the main system (1.0-1.4x).
      */
     private function calculateExperienceMultiplier($totalTasks)
     {
@@ -1177,6 +1186,14 @@ class ReportController extends Controller
     public function generateBulkEvaluationPdf(Request $request)
     {
         try {
+            Log::info('Starting bulk evaluation PDF generation', [
+                'user_id' => auth()->id(),
+                'evaluation_type' => $request->evaluation_type,
+                'year' => $request->year,
+                'month' => $request->month,
+                'quarter' => $request->quarter,
+            ]);
+
             $request->validate([
                 'evaluation_type' => 'required|in:monthly,quarterly,annual',
                 'year' => 'required|integer|min:2020|max:2030',
@@ -1216,12 +1233,15 @@ class ReportController extends Controller
             // Get all non-admin users
             $users = User::where('role', '!=', 'admin')->get();
 
+            Log::info("Found {$users->count()} users to evaluate");
+
             $evaluations = [];
             $totalEvaluations = 0;
 
             // Generate or update evaluation for each user
             foreach ($users as $user) {
-                $metrics = $this->calculateUserMetrics($user, $startDate, $endDate);
+                try {
+                    $metrics = $this->calculateUserMetrics($user, $startDate, $endDate);
 
                 // Create or update evaluation
                 $evaluation = EmployeeEvaluation::updateOrCreate(
@@ -1241,13 +1261,32 @@ class ReportController extends Controller
                     ]
                 );
 
-                $evaluations[] = [
-                    'user' => $user,
-                    'evaluation' => $evaluation,
-                    'metrics' => $metrics,
-                ];
+                    $evaluations[] = [
+                        'user' => $user,
+                        'evaluation' => $evaluation,
+                        'metrics' => $metrics,
+                    ];
 
-                $totalEvaluations++;
+                    $totalEvaluations++;
+                } catch (\Exception $e) {
+                    Log::error("Error evaluating user {$user->id} ({$user->name})", [
+                        'error' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString()
+                    ]);
+                    // Continue with other users instead of failing completely
+                    continue;
+                }
+            }
+
+            Log::info("Successfully evaluated {$totalEvaluations} users");
+
+            // Check if we have any successful evaluations
+            if (empty($evaluations)) {
+                Log::error('No users could be evaluated successfully');
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No users could be evaluated. Please check the logs for details.'
+                ], 500);
             }
 
             // Sort evaluations by performance score (highest first)
@@ -1261,6 +1300,8 @@ class ReportController extends Controller
             }
 
             // Generate PDF
+            Log::info('Generating PDF with ' . count($evaluations) . ' evaluations');
+
             $pdf = Pdf::loadView('reports.pdf.bulk-evaluations', [
                 'evaluations' => $evaluations,
                 'periodLabel' => $periodLabel,
@@ -1275,10 +1316,27 @@ class ReportController extends Controller
             $pdf->setPaper('a4', 'portrait');
             $filename = 'All_Users_Evaluation_' . $request->evaluation_type . '_' . $periodLabel . '_' . now()->format('Y-m-d') . '.pdf';
 
+            Log::info('PDF generated successfully', ['filename' => $filename]);
+
             return $pdf->download($filename);
 
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::error('Validation error in bulk evaluation', [
+                'errors' => $e->errors(),
+                'message' => $e->getMessage()
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation error: ' . $e->getMessage(),
+                'errors' => $e->errors()
+            ], 422);
         } catch (\Exception $e) {
-            Log::error('Error generating bulk evaluation PDF: ' . $e->getMessage());
+            Log::error('Error generating bulk evaluation PDF', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return response()->json([
                 'success' => false,
                 'message' => 'Error generating evaluation: ' . $e->getMessage()

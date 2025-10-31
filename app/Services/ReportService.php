@@ -585,9 +585,10 @@ class ReportService
     }
 
     /**
-     * Calculate performance score
+     * Calculate performance score (same as Top 3 Competition)
+     * Made public for consistency across all ranking calculations
      */
-    private function calculatePerformanceScore($tasks, $user = null)
+    public function calculatePerformanceScore($tasks, $user = null)
     {
         if ($tasks->isEmpty()) {
             return 0;
