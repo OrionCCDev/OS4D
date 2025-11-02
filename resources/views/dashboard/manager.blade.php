@@ -675,13 +675,13 @@
                     </h5>
                     <div class="d-flex align-items-center gap-2">
                         <div class="btn-group" role="group">
-                            <button type="button" class="btn btn-sm btn-outline-light active" data-period="month" onclick="changeCompetitionPeriod('month')">
+                            <button type="button" class="btn btn-sm btn-outline-light active" data-period="month" onclick="changeCompetitionPeriod('month', event)">
                                 <i class="bx bx-calendar me-1"></i>This Month
                             </button>
-                            <button type="button" class="btn btn-sm btn-outline-light" data-period="quarter" onclick="changeCompetitionPeriod('quarter')">
+                            <button type="button" class="btn btn-sm btn-outline-light" data-period="quarter" onclick="changeCompetitionPeriod('quarter', event)">
                                 <i class="bx bx-calendar me-1"></i>This Quarter
                             </button>
-                            <button type="button" class="btn btn-sm btn-outline-light" data-period="year" onclick="changeCompetitionPeriod('year')">
+                            <button type="button" class="btn btn-sm btn-outline-light" data-period="year" onclick="changeCompetitionPeriod('year', event)">
                                 <i class="bx bx-calendar me-1"></i>This Year
                             </button>
                         </div>
@@ -945,52 +945,8 @@
     </div>
 
 @push('styles')
-<script>
-// Global functions for timeline management - available immediately
-console.log('Timeline functions loaded');
-
-function showFallbackContent() {
-    console.log('showFallbackContent called');
-    try {
-        document.getElementById('timeline-fallback').style.display = 'none';
-        document.getElementById('timeline-embed').style.display = 'none';
-        document.getElementById('timeline-error').style.display = 'none';
-        document.getElementById('timeline-sample').style.display = 'block';
-        console.log('Fallback content shown successfully');
-    } catch (error) {
-        console.error('Error showing fallback content:', error);
-    }
-}
-
-function retryTimeline() {
-    console.log('retryTimeline called');
-    location.reload();
-}
-
-function showError(message) {
-    console.log('showError called:', message);
-    document.getElementById('timeline-fallback').style.display = 'none';
-    document.getElementById('timeline-embed').style.display = 'none';
-    document.getElementById('timeline-sample').style.display = 'none';
-    document.getElementById('timeline-error').style.display = 'block';
-    document.getElementById('timeline-error').innerHTML = `
-        <div class="alert alert-warning">
-            <h5><i class="bx bx-error-circle me-2"></i>Timeline Loading Issue</h5>
-            <p>${message}</p>
-            <button class="btn btn-primary btn-sm" onclick="retryTimeline()">Retry Loading</button>
-            <button class="btn btn-outline-secondary btn-sm ms-2" onclick="showFallbackContent()">Show Sample Data</button>
-        </div>
-    `;
-}
-
-function showTimeline() {
-    console.log('showTimeline called');
-    document.getElementById('timeline-fallback').style.display = 'none';
-    document.getElementById('timeline-error').style.display = 'none';
-    document.getElementById('timeline-sample').style.display = 'none';
-    document.getElementById('timeline-embed').style.display = 'block';
-}
-</script>
+<!-- TimelineJS CDN CSS -->
+<link title="timeline-styles" rel="stylesheet" href="https://cdn.knightlab.com/libs/timeline3/latest/css/timeline.css">
 <style>
 /* Manager Dashboard Styles */
 
@@ -1585,9 +1541,55 @@ function showTimeline() {
 
 @push('scripts')
 <!-- TimelineJS CDN -->
-<link title="timeline-styles" rel="stylesheet" href="https://cdn.knightlab.com/libs/timeline3/latest/css/timeline.css">
 <script src="https://cdn.knightlab.com/libs/timeline3/latest/js/timeline.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Global functions for timeline management - available immediately
+console.log('Timeline functions loaded');
+
+function showFallbackContent() {
+    console.log('showFallbackContent called');
+    try {
+        document.getElementById('timeline-fallback').style.display = 'none';
+        document.getElementById('timeline-embed').style.display = 'none';
+        document.getElementById('timeline-error').style.display = 'none';
+        document.getElementById('timeline-sample').style.display = 'block';
+        console.log('Fallback content shown successfully');
+    } catch (error) {
+        console.error('Error showing fallback content:', error);
+    }
+}
+
+function retryTimeline() {
+    console.log('retryTimeline called');
+    location.reload();
+}
+
+function showError(message) {
+    console.log('showError called:', message);
+    document.getElementById('timeline-fallback').style.display = 'none';
+    document.getElementById('timeline-embed').style.display = 'none';
+    document.getElementById('timeline-sample').style.display = 'none';
+    document.getElementById('timeline-error').style.display = 'block';
+    document.getElementById('timeline-error').innerHTML = `
+        <div class="alert alert-warning">
+            <h5><i class="bx bx-error-circle me-2"></i>Timeline Loading Issue</h5>
+            <p>${message}</p>
+            <button class="btn btn-primary btn-sm" onclick="retryTimeline()">Retry Loading</button>
+            <button class="btn btn-outline-secondary btn-sm ms-2" onclick="showFallbackContent()">Show Sample Data</button>
+        </div>
+    `;
+}
+
+function showTimeline() {
+    console.log('showTimeline called');
+    document.getElementById('timeline-fallback').style.display = 'none';
+    document.getElementById('timeline-error').style.display = 'none';
+    document.getElementById('timeline-sample').style.display = 'none';
+    document.getElementById('timeline-embed').style.display = 'block';
+}
+
+</script>
 <script>
     // Scroll to top of section on pagination (better UX)
     document.addEventListener('DOMContentLoaded', function() {
@@ -1619,14 +1621,16 @@ function showTimeline() {
     });
 
     // Competition period change function
-    function changeCompetitionPeriod(period) {
+    function changeCompetitionPeriod(period, event) {
         // Remove active class from all buttons
         document.querySelectorAll('[data-period]').forEach(btn => {
             btn.classList.remove('active');
         });
 
         // Add active class to clicked button
-        event.target.closest('button').classList.add('active');
+        if (event && event.target) {
+            event.target.closest('button').classList.add('active');
+        }
 
         // Update content based on period
         const content = document.getElementById('competitionContent');
