@@ -529,7 +529,7 @@ class TaskController extends Controller
     {
         // Get only files marked as required for email
         $requiredFiles = $task->requiredAttachments()->get();
-        
+
         $files = [];
         foreach ($requiredFiles as $file) {
             $files[] = [
@@ -539,7 +539,7 @@ class TaskController extends Controller
                 'download_url' => route('tasks.attachments.download', $file)
             ];
         }
-        
+
         return response()->json([
             'success' => true,
             'files' => $files,
@@ -1906,7 +1906,7 @@ private function sendApprovalEmailViaGmail(Task $task, User $approver)
         }
 
         $request->validate([
-            'completion_notes' => 'required|string|max:2000'
+            'completion_notes' => 'nullable|string|max:2000'
         ]);
 
         try {
@@ -1920,7 +1920,9 @@ private function sendApprovalEmailViaGmail(Task $task, User $approver)
             $task->histories()->create([
                 'user_id' => Auth::id(),
                 'action' => 'submitted_for_review',
-                'description' => 'Task submitted for review with completion notes.',
+                'description' => $request->completion_notes
+                    ? 'Task submitted for review with completion notes.'
+                    : 'Task submitted for review.',
                 'metadata' => [
                     'status_change' => 'in_progress_to_submitted_for_review',
                     'completion_notes' => $request->completion_notes
