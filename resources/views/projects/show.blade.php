@@ -301,7 +301,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="fileUploadModalLabel">
-                        <i class="bx bx-upload me-2"></i>Upload File
+                        <i class="bx bx-upload me-2"></i>Upload Files
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
@@ -309,19 +309,27 @@
                     <div class="modal-body">
                         @csrf
                         <div class="mb-3">
-                            <label for="fileInput" class="form-label">File</label>
-                            <input type="file" class="form-control" id="fileInput" name="file" required>
-                            <small class="text-muted">Maximum file size: 100MB</small>
+                            <label for="fileInput" class="form-label">Files</label>
+                            <input type="file" class="form-control" id="fileInput" name="files[]" multiple required>
+                            <small class="text-muted">Maximum file size: 100MB per file. You can select multiple files.</small>
                         </div>
                         <div class="mb-3">
                             <label for="displayNameInput" class="form-label">Display Name <span class="text-muted">(optional)</span></label>
-                            <input type="text" class="form-control" id="displayNameInput" name="display_name" placeholder="Leave empty to use original name">
+                            <input type="text" class="form-control" id="displayNameInput" name="display_name" placeholder="Leave empty to use original names">
+                            <small class="text-muted">Note: Display name will only apply if uploading a single file.</small>
                         </div>
                         <div class="mb-3">
                             <label for="fileDescriptionInput" class="form-label">Description <span class="text-muted">(optional)</span></label>
-                            <textarea class="form-control" id="fileDescriptionInput" name="description" rows="3" placeholder="Add a description for this file"></textarea>
+                            <textarea class="form-control" id="fileDescriptionInput" name="description" rows="3" placeholder="Add a description"></textarea>
+                            <small class="text-muted">Note: Description will only apply if uploading a single file.</small>
                         </div>
                         <input type="hidden" name="folder_id" id="currentFolderId" value="{{ $selectedFolder?->id }}">
+                        <div id="uploadProgress" class="mt-3" style="display: none;">
+                            <div class="progress">
+                                <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+                            </div>
+                            <small class="text-muted mt-1 d-block" id="uploadStatus"></small>
+                        </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -988,52 +996,119 @@ function deleteFile(fileId) {
 }
 
 // File upload form handler
-document.getElementById('fileUploadForm').addEventListener('submit', function(e) {
+document.getElementById('fileUploadForm').addEventListener('submit', async function(e) {
     e.preventDefault();
 
-    const formData = new FormData(this);
+    const fileInput = document.getElementById('fileInput');
+    const files = fileInput.files;
     const projectId = {{ $project->id }};
     const submitBtn = this.querySelector('button[type="submit"]');
     const originalText = submitBtn.innerHTML;
+    const progressContainer = document.getElementById('uploadProgress');
+    const progressBar = progressContainer.querySelector('.progress-bar');
+    const uploadStatus = document.getElementById('uploadStatus');
+
+    const displayName = document.getElementById('displayNameInput').value;
+    const description = document.getElementById('fileDescriptionInput').value;
+    const folderId = document.getElementById('currentFolderId').value;
+
+    if (files.length === 0) {
+        alert('Please select at least one file');
+        return;
+    }
 
     submitBtn.disabled = true;
     submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Uploading...';
+    progressContainer.style.display = 'block';
 
-    fetch(`/projects/${projectId}/files`, {
-        method: 'POST',
-        body: formData,
-        headers: {
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+    let uploadedCount = 0;
+    let failedCount = 0;
+    const totalFiles = files.length;
+
+    try {
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            const formData = new FormData();
+
+            formData.append('file', file);
+            formData.append('folder_id', folderId);
+
+            // Only apply display name and description if uploading a single file
+            if (totalFiles === 1) {
+                if (displayName) formData.append('display_name', displayName);
+                if (description) formData.append('description', description);
+            }
+
+            formData.append('_token', document.querySelector('meta[name="csrf-token"]').content);
+
+            // Update progress
+            const progress = ((i) / totalFiles) * 100;
+            progressBar.style.width = progress + '%';
+            uploadStatus.textContent = `Uploading ${i + 1} of ${totalFiles}: ${file.name}`;
+
+            try {
+                const response = await fetch(`/projects/${projectId}/files`, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    }
+                });
+
+                if (!response.ok) {
+                    const text = await response.text();
+                    console.error('Server error:', text);
+                    throw new Error('Upload failed: ' + response.statusText);
+                }
+
+                const data = await response.json();
+
+                if (data.success) {
+                    uploadedCount++;
+                } else {
+                    failedCount++;
+                    console.error('Upload failed for file:', file.name, data.error);
+                }
+            } catch (error) {
+                failedCount++;
+                console.error('Upload error for file:', file.name, error);
+            }
         }
-    })
-    .then(response => {
-        if (!response.ok) {
-            return response.text().then(text => {
-                console.error('Server error:', text);
-                throw new Error('Upload failed: ' + response.statusText);
-            });
+
+        // Complete progress
+        progressBar.style.width = '100%';
+        uploadStatus.textContent = `Upload complete: ${uploadedCount} succeeded, ${failedCount} failed`;
+
+        // Show result message
+        if (failedCount === 0) {
+            alert(`All ${uploadedCount} file(s) uploaded successfully!`);
+        } else if (uploadedCount === 0) {
+            alert(`All ${failedCount} file(s) failed to upload.`);
+        } else {
+            alert(`${uploadedCount} file(s) uploaded successfully, ${failedCount} failed.`);
         }
-        return response.json();
-    })
-    .then(data => {
-        console.log('Upload response:', data);
-        if (data.success) {
+
+        // Reload files and close modal if at least one succeeded
+        if (uploadedCount > 0) {
+            loadFiles();
             bootstrap.Modal.getInstance(document.getElementById('fileUploadModal')).hide();
             this.reset();
-            loadFiles();
-            alert('File uploaded successfully');
-        } else {
-            alert('Error uploading file: ' + (data.error || data.message || 'Unknown error'));
         }
-    })
-    .catch(error => {
+
+    } catch (error) {
         console.error('Upload error:', error);
-        alert('Error uploading file: ' + error.message);
-    })
-    .finally(() => {
+        alert('Error uploading files: ' + error.message);
+    } finally {
         submitBtn.disabled = false;
         submitBtn.innerHTML = originalText;
-    });
+
+        // Hide progress after a delay
+        setTimeout(() => {
+            progressContainer.style.display = 'none';
+            progressBar.style.width = '0%';
+            uploadStatus.textContent = '';
+        }, 3000);
+    }
 });
 
 // Edit file form handler

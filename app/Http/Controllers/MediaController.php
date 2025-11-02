@@ -11,8 +11,11 @@ class MediaController extends Controller
 {
     public function upload(Request $request)
     {
+        // Support both single and multiple file uploads
         $validated = $request->validate([
-            'file' => ['required', 'file', 'max:20480'],
+            'file' => ['nullable', 'file', 'max:20480'],
+            'files' => ['nullable', 'array'],
+            'files.*' => ['file', 'max:20480'],
             'folder' => ['nullable', 'string'],
         ]);
 
@@ -25,17 +28,54 @@ class MediaController extends Controller
             mkdir($uploadDir, 0755, true);
         }
 
-        // Generate unique filename
-        $originalName = $request->file('file')->getClientOriginalName();
-        $extension = $request->file('file')->getClientOriginalExtension();
-        $filename = time() . '_' . uniqid() . '_' . Str::slug(pathinfo($originalName, PATHINFO_FILENAME)) . '.' . $extension;
-        $filePath = "uploads/media" . ($folder ? "/{$folder}" : '') . "/{$filename}";
-        $fullPath = public_path($filePath);
+        $uploadedFiles = [];
+        $files = [];
 
-        // Move file to public directory
-        $request->file('file')->move($uploadDir, $filename);
+        // Handle multiple files
+        if ($request->hasFile('files')) {
+            $files = $request->file('files');
+        }
+        // Handle single file (backward compatibility)
+        elseif ($request->hasFile('file')) {
+            $files = [$request->file('file')];
+        }
 
-        return response()->json(['ok' => true, 'path' => $filePath, 'url' => url($filePath)]);
+        if (empty($files)) {
+            return response()->json(['ok' => false, 'error' => 'No files provided'], 400);
+        }
+
+        foreach ($files as $file) {
+            // Generate unique filename
+            $originalName = $file->getClientOriginalName();
+            $extension = $file->getClientOriginalExtension();
+            $filename = time() . '_' . uniqid() . '_' . Str::slug(pathinfo($originalName, PATHINFO_FILENAME)) . '.' . $extension;
+            $filePath = "uploads/media" . ($folder ? "/{$folder}" : '') . "/{$filename}";
+
+            // Move file to public directory
+            $file->move($uploadDir, $filename);
+
+            $uploadedFiles[] = [
+                'path' => $filePath,
+                'url' => url($filePath),
+                'original_name' => $originalName,
+            ];
+        }
+
+        // Return single file format for backward compatibility
+        if (count($uploadedFiles) === 1) {
+            return response()->json([
+                'ok' => true,
+                'path' => $uploadedFiles[0]['path'],
+                'url' => $uploadedFiles[0]['url']
+            ]);
+        }
+
+        // Return multiple files format
+        return response()->json([
+            'ok' => true,
+            'files' => $uploadedFiles,
+            'count' => count($uploadedFiles)
+        ]);
     }
 
     public function list(Request $request)
