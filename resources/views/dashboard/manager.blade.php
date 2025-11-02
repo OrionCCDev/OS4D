@@ -756,6 +756,138 @@
         </div>
     </div>
 
+    <!-- Competition Period Switcher Script - Loaded immediately after card -->
+    <script>
+        // Define functions globally and immediately to ensure they're available
+        window.changeCompetitionPeriod = function(period, event) {
+            console.log('changeCompetitionPeriod called with period:', period);
+
+            // Remove active class from all buttons
+            document.querySelectorAll('[data-period]').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // Add active class to clicked button
+            if (event && event.target) {
+                event.target.closest('button').classList.add('active');
+            }
+
+            // Update content based on period
+            const content = document.getElementById('competitionContent');
+
+            // Show loading state
+            content.innerHTML = `
+                <div class="text-center py-4">
+                    <div class="spinner-border text-light" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="text-white-50 mt-2">Loading ${period} data...</p>
+                </div>
+            `;
+
+            // Fetch data via AJAX
+            fetch('{{ route('dashboard.top-performers') }}?period=' + period, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => {
+                console.log('Response received:', response);
+                return response.json();
+            })
+            .then(data => {
+                console.log('Data received:', data);
+                if (data.success && data.performers) {
+                    window.renderCompetitionData(data.performers);
+                } else {
+                    window.showNoData();
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching performance data:', error);
+                window.showNoData();
+            });
+        };
+
+        window.renderCompetitionData = function(performers) {
+            const content = document.getElementById('competitionContent');
+
+            if (!performers || performers.length === 0) {
+                window.showNoData();
+                return;
+            }
+
+            let html = '<div class="row">';
+            performers.forEach((performer, index) => {
+                let medalClass = 'bronze-medal';
+                if (index === 0) medalClass = 'gold-medal';
+                else if (index === 1) medalClass = 'silver-medal';
+
+                const rejectionRateHtml = performer.rejection_rate > 0
+                    ? `<small class="text-warning"><i class="bx bx-error-circle me-1"></i>${Number(performer.rejection_rate).toFixed(1)}% rejection rate</small>`
+                    : '';
+
+                const overdueRateHtml = performer.overdue_rate > 0
+                    ? `<small class="text-warning ms-2"><i class="bx bx-time-five me-1"></i>${Number(performer.overdue_rate).toFixed(1)}% overdue rate</small>`
+                    : '';
+
+                html += `
+                    <div class="col-12 mb-3">
+                        <div class="d-flex align-items-center p-3 rounded-3" style="background: rgba(255,255,255,0.1);">
+                            <div class="rank-badge me-3">
+                                <i class="bx bx-medal ${medalClass}" style="font-size: 2rem;"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1 text-white fw-semibold">${performer.name}</h6>
+                                <div class="d-flex align-items-center gap-3">
+                                    <small class="text-white-50">
+                                        <i class="bx bx-check-circle me-1"></i>
+                                        ${performer.completed_tasks_count ?? 0} completed
+                                    </small>
+                                    <small class="text-white-50">
+                                        <i class="bx bx-time me-1"></i>
+                                        ${performer.in_progress_tasks_count ?? 0} in progress
+                                    </small>
+                                    <small class="text-white-50">
+                                        <i class="bx bx-list-ul me-1"></i>
+                                        ${performer.total_tasks_count ?? 0} total
+                                    </small>
+                                </div>
+                                ${rejectionRateHtml}
+                                ${overdueRateHtml}
+                                <div class="mt-1">
+                                    <span class="badge bg-success bg-opacity-20 text-dark">
+                                        Performance Score: ${performer.performance_score ?? 0}
+                                    </span>
+                                    <span class="badge bg-info bg-opacity-20 text-dark ms-1">
+                                        Completion Rate: ${Number(performer.completion_rate ?? 0).toFixed(1)}%
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            content.innerHTML = html;
+        };
+
+        window.showNoData = function() {
+            const content = document.getElementById('competitionContent');
+            content.innerHTML = `
+                <div class="text-center py-4">
+                    <i class="bx bx-trophy fs-1 text-white-50"></i>
+                    <p class="text-white-50 mt-2">No performance data available</p>
+                    <small class="text-white-50">Start assigning tasks to see competition results</small>
+                </div>
+            `;
+        };
+
+        console.log('Competition period functions loaded successfully');
+    </script>
+
         <!-- Recent Activity -->
         <div class="col-lg-6 col-md-6 col-12 mb-4">
             <div class="card">
@@ -1620,132 +1752,8 @@ function showTimeline() {
         }
     });
 
-    // Competition period change function - Define globally to ensure it's accessible
-    window.changeCompetitionPeriod = function(period, event) {
-        console.log('changeCompetitionPeriod called with period:', period);
-
-        // Remove active class from all buttons
-        document.querySelectorAll('[data-period]').forEach(btn => {
-            btn.classList.remove('active');
-        });
-
-        // Add active class to clicked button
-        if (event && event.target) {
-            event.target.closest('button').classList.add('active');
-        }
-
-        // Update content based on period
-        const content = document.getElementById('competitionContent');
-
-        // Show loading state
-        content.innerHTML = `
-            <div class="text-center py-4">
-                <div class="spinner-border text-light" role="status">
-                    <span class="visually-hidden">Loading...</span>
-                </div>
-                <p class="text-white-50 mt-2">Loading ${period} data...</p>
-            </div>
-        `;
-
-        // Fetch data via AJAX
-        fetch(`{{ route('dashboard.top-performers') }}?period=${period}`, {
-            method: 'GET',
-            headers: {
-                'Accept': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        })
-        .then(response => {
-            console.log('Response received:', response);
-            return response.json();
-        })
-        .then(data => {
-            console.log('Data received:', data);
-            if (data.success && data.performers) {
-                renderCompetitionData(data.performers);
-            } else {
-                showNoData();
-            }
-        })
-        .catch(error => {
-            console.error('Error fetching performance data:', error);
-            showNoData();
-        });
-    };
-
-    window.renderCompetitionData = function(performers) {
-        const content = document.getElementById('competitionContent');
-
-        if (!performers || performers.length === 0) {
-            showNoData();
-            return;
-        }
-
-        let html = '<div class="row">';
-        performers.forEach((performer, index) => {
-            let medalClass = 'bronze-medal';
-            if (index === 0) medalClass = 'gold-medal';
-            else if (index === 1) medalClass = 'silver-medal';
-
-            const rejectionRateHtml = performer.rejection_rate > 0
-                ? `<small class="text-warning"><i class="bx bx-error-circle me-1"></i>${Number(performer.rejection_rate).toFixed(1)}% rejection rate</small>`
-                : '';
-
-            const overdueRateHtml = performer.overdue_rate > 0
-                ? `<small class="text-warning ms-2"><i class="bx bx-time-five me-1"></i>${Number(performer.overdue_rate).toFixed(1)}% overdue rate</small>`
-                : '';
-
-            html += `
-                <div class="col-12 mb-3">
-                    <div class="d-flex align-items-center p-3 rounded-3" style="background: rgba(255,255,255,0.1);">
-                        <div class="rank-badge me-3">
-                            <i class="bx bx-medal ${medalClass}" style="font-size: 2rem;"></i>
-                        </div>
-                        <div class="flex-grow-1">
-                            <h6 class="mb-1 text-white fw-semibold">${performer.name}</h6>
-                            <div class="d-flex align-items-center gap-3">
-                                <small class="text-white-50">
-                                    <i class="bx bx-check-circle me-1"></i>
-                                    ${performer.completed_tasks_count ?? 0} completed
-                                </small>
-                                <small class="text-white-50">
-                                    <i class="bx bx-time me-1"></i>
-                                    ${performer.in_progress_tasks_count ?? 0} in progress
-                                </small>
-                                <small class="text-white-50">
-                                    <i class="bx bx-list-ul me-1"></i>
-                                    ${performer.total_tasks_count ?? 0} total
-                                </small>
-                            </div>
-                            ${rejectionRateHtml}
-                            ${overdueRateHtml}
-                            <div class="mt-1">
-                                <span class="badge bg-success bg-opacity-20 text-dark">
-                                    Performance Score: ${performer.performance_score ?? 0}
-                                </span>
-                                <span class="badge bg-info bg-opacity-20 text-dark ms-1">
-                                    Completion Rate: ${Number(performer.completion_rate ?? 0).toFixed(1)}%
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-        });
-        html += '</div>';
-        content.innerHTML = html;
-    };
-
-    window.showNoData = function() {
-        const content = document.getElementById('competitionContent');
-        content.innerHTML = `
-            <div class="text-center py-4">
-                <i class="bx bx-trophy fs-1 text-white-50"></i>
-                <p class="text-white-50 mt-2">No performance data available</p>
-                <small class="text-white-50">Start assigning tasks to see competition results</small>
-            </div>
-        `;
-    };
+    // Competition period functions are defined inline after the card (see line ~760)
+    // This ensures they load before any other scripts that might cause errors
 
     // Timeline functions are now defined globally in the styles section
 
