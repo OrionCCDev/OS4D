@@ -458,10 +458,12 @@ class DashboardController extends Controller
             }])
             ->withCount(['assignedTasks as on_time_completed_count' => function($query) {
                 $query->where('status', 'completed')
+                      ->whereNotNull('completed_at')
                       ->whereRaw('completed_at <= due_date');
             }])
             ->withCount(['assignedTasks as late_completed_count' => function($query) {
                 $query->where('status', 'completed')
+                      ->whereNotNull('completed_at')
                       ->whereRaw('completed_at > due_date');
             }])
             ->whereHas('assignedTasks')
@@ -513,10 +515,12 @@ class DashboardController extends Controller
                 }])
                 ->withCount(['assignedTasks as on_time_completed_count' => function($query) {
                     $query->where('status', 'completed')
+                          ->whereNotNull('completed_at')
                           ->whereRaw('completed_at <= due_date');
                 }])
                 ->withCount(['assignedTasks as late_completed_count' => function($query) {
                     $query->where('status', 'completed')
+                          ->whereNotNull('completed_at')
                           ->whereRaw('completed_at > due_date');
                 }])
                 ->whereHas('assignedTasks')
@@ -788,24 +792,32 @@ class DashboardController extends Controller
             ->withCount(['assignedTasks as on_time_completed_count' => function($query) use ($startDate, $endDate) {
                 $query->where('status', 'completed')
                       ->where(function($q) use ($startDate, $endDate) {
-                          $q->whereBetween('completed_at', [$startDate, $endDate])
-                            ->orWhere(function($subQ) use ($startDate, $endDate) {
-                                $subQ->whereNull('completed_at')
-                                     ->whereBetween('updated_at', [$startDate, $endDate]);
-                            });
-                      })
-                      ->whereRaw('completed_at <= due_date');
+                          $q->where(function($subQ) use ($startDate, $endDate) {
+                              $subQ->whereBetween('completed_at', [$startDate, $endDate])
+                                   ->whereNotNull('completed_at')
+                                   ->whereRaw('completed_at <= due_date');
+                          })
+                          ->orWhere(function($subQ) use ($startDate, $endDate) {
+                              $subQ->whereNull('completed_at')
+                                   ->whereBetween('updated_at', [$startDate, $endDate])
+                                   ->whereRaw('updated_at <= due_date');
+                          });
+                      });
             }])
             ->withCount(['assignedTasks as late_completed_count' => function($query) use ($startDate, $endDate) {
                 $query->where('status', 'completed')
                       ->where(function($q) use ($startDate, $endDate) {
-                          $q->whereBetween('completed_at', [$startDate, $endDate])
-                            ->orWhere(function($subQ) use ($startDate, $endDate) {
-                                $subQ->whereNull('completed_at')
-                                     ->whereBetween('updated_at', [$startDate, $endDate]);
-                            });
-                      })
-                      ->whereRaw('completed_at > due_date');
+                          $q->where(function($subQ) use ($startDate, $endDate) {
+                              $subQ->whereBetween('completed_at', [$startDate, $endDate])
+                                   ->whereNotNull('completed_at')
+                                   ->whereRaw('completed_at > due_date');
+                          })
+                          ->orWhere(function($subQ) use ($startDate, $endDate) {
+                              $subQ->whereNull('completed_at')
+                                   ->whereBetween('updated_at', [$startDate, $endDate])
+                                   ->whereRaw('updated_at > due_date');
+                          });
+                      });
             }])
             ->whereHas('assignedTasks', function($query) use ($startDate, $endDate) {
                 $query->whereBetween('created_at', [$startDate, $endDate]);
