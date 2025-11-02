@@ -49,6 +49,7 @@ Route::get('/dashboard', [DashboardController::class, 'index'])->middleware(['au
 
 // Dashboard API routes for charts
 Route::get('/dashboard/chart-data', [DashboardController::class, 'getChartData'])->middleware(['auth', 'verified'])->name('dashboard.chart-data');
+Route::get('/dashboard/top-performers', [DashboardController::class, 'getTopPerformersAjax'])->middleware(['auth', 'verified'])->name('dashboard.top-performers');
 
 // Evaluation routes
 Route::get('/evaluations', [App\Http\Controllers\EvaluationController::class, 'index'])->middleware(['auth', 'verified'])->name('evaluations.index');

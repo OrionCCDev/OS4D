@@ -785,15 +785,31 @@ class DashboardController extends Controller
                           $q->where('status', 'sent')->whereNotNull('sent_at');
                       });
             }])
-            ->withCount(['assignedTasks as on_time_completed_count' => function($query) {
+            ->withCount(['assignedTasks as on_time_completed_count' => function($query) use ($startDate, $endDate) {
                 $query->where('status', 'completed')
+                      ->where(function($q) use ($startDate, $endDate) {
+                          $q->whereBetween('completed_at', [$startDate, $endDate])
+                            ->orWhere(function($subQ) use ($startDate, $endDate) {
+                                $subQ->whereNull('completed_at')
+                                     ->whereBetween('updated_at', [$startDate, $endDate]);
+                            });
+                      })
                       ->whereRaw('completed_at <= due_date');
             }])
-            ->withCount(['assignedTasks as late_completed_count' => function($query) {
+            ->withCount(['assignedTasks as late_completed_count' => function($query) use ($startDate, $endDate) {
                 $query->where('status', 'completed')
+                      ->where(function($q) use ($startDate, $endDate) {
+                          $q->whereBetween('completed_at', [$startDate, $endDate])
+                            ->orWhere(function($subQ) use ($startDate, $endDate) {
+                                $subQ->whereNull('completed_at')
+                                     ->whereBetween('updated_at', [$startDate, $endDate]);
+                            });
+                      })
                       ->whereRaw('completed_at > due_date');
             }])
-            ->whereHas('assignedTasks')
+            ->whereHas('assignedTasks', function($query) use ($startDate, $endDate) {
+                $query->whereBetween('created_at', [$startDate, $endDate]);
+            })
             ->orderBy('completed_tasks_count', 'desc')
             ->orderBy('in_progress_tasks_count', 'desc')
             ->orderBy('total_tasks_count', 'desc')
@@ -971,5 +987,41 @@ class DashboardController extends Controller
         }
 
         return response()->json($data);
+    }
+
+    /**
+     * Get top performers for a given period (AJAX endpoint)
+     */
+    public function getTopPerformersAjax(Request $request)
+    {
+        $period = $request->get('period', 'month');
+        
+        // Validate period
+        if (!in_array($period, ['month', 'quarter', 'year'])) {
+            return response()->json(['error' => 'Invalid period'], 400);
+        }
+
+        $performers = $this->getTopPerformersForPeriod($period);
+        
+        // Format the data for JSON response
+        $formattedPerformers = $performers->map(function($performer) {
+            return [
+                'id' => $performer->id,
+                'name' => $performer->name,
+                'completed_tasks_count' => $performer->completed_tasks_count ?? 0,
+                'in_progress_tasks_count' => $performer->in_progress_tasks_count ?? 0,
+                'total_tasks_count' => $performer->total_tasks_count ?? 0,
+                'performance_score' => $performer->performance_score ?? 0,
+                'completion_rate' => $performer->completion_rate ?? 0,
+                'rejection_rate' => $performer->rejection_rate ?? 0,
+                'overdue_rate' => $performer->overdue_rate ?? 0,
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'period' => $period,
+            'performers' => $formattedPerformers->take(3) // Return only top 3
+        ]);
     }
 }

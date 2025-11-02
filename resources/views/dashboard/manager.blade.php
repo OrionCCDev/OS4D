@@ -1631,8 +1631,7 @@ function showTimeline() {
         // Update content based on period
         const content = document.getElementById('competitionContent');
 
-        // You can implement AJAX calls here to fetch different period data
-        // For now, we'll just show a loading state
+        // Show loading state
         content.innerHTML = `
             <div class="text-center py-4">
                 <div class="spinner-border text-light" role="status">
@@ -1642,11 +1641,100 @@ function showTimeline() {
             </div>
         `;
 
-        // Simulate loading (replace with actual AJAX call)
-        setTimeout(() => {
-            // Reload the page to show updated data
-            window.location.reload();
-        }, 1000);
+        // Fetch data via AJAX
+        fetch(`{{ route('dashboard.top-performers') }}?period=${period}`, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.performers) {
+                renderCompetitionData(data.performers);
+            } else {
+                showNoData();
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching performance data:', error);
+            showNoData();
+        });
+    }
+
+    function renderCompetitionData(performers) {
+        const content = document.getElementById('competitionContent');
+        
+        if (!performers || performers.length === 0) {
+            showNoData();
+            return;
+        }
+
+        let html = '<div class="row">';
+        performers.forEach((performer, index) => {
+            let medalClass = 'bronze-medal';
+            if (index === 0) medalClass = 'gold-medal';
+            else if (index === 1) medalClass = 'silver-medal';
+
+            const rejectionRateHtml = performer.rejection_rate > 0 
+                ? `<small class="text-warning"><i class="bx bx-error-circle me-1"></i>${Number(performer.rejection_rate).toFixed(1)}% rejection rate</small>`
+                : '';
+            
+            const overdueRateHtml = performer.overdue_rate > 0
+                ? `<small class="text-warning ms-2"><i class="bx bx-time-five me-1"></i>${Number(performer.overdue_rate).toFixed(1)}% overdue rate</small>`
+                : '';
+
+            html += `
+                <div class="col-12 mb-3">
+                    <div class="d-flex align-items-center p-3 rounded-3" style="background: rgba(255,255,255,0.1);">
+                        <div class="rank-badge me-3">
+                            <i class="bx bx-medal ${medalClass}" style="font-size: 2rem;"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h6 class="mb-1 text-white fw-semibold">${performer.name}</h6>
+                            <div class="d-flex align-items-center gap-3">
+                                <small class="text-white-50">
+                                    <i class="bx bx-check-circle me-1"></i>
+                                    ${performer.completed_tasks_count ?? 0} completed
+                                </small>
+                                <small class="text-white-50">
+                                    <i class="bx bx-time me-1"></i>
+                                    ${performer.in_progress_tasks_count ?? 0} in progress
+                                </small>
+                                <small class="text-white-50">
+                                    <i class="bx bx-list-ul me-1"></i>
+                                    ${performer.total_tasks_count ?? 0} total
+                                </small>
+                            </div>
+                            ${rejectionRateHtml}
+                            ${overdueRateHtml}
+                            <div class="mt-1">
+                                <span class="badge bg-success bg-opacity-20 text-dark">
+                                    Performance Score: ${performer.performance_score ?? 0}
+                                </span>
+                                <span class="badge bg-info bg-opacity-20 text-dark ms-1">
+                                    Completion Rate: ${Number(performer.completion_rate ?? 0).toFixed(1)}%
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        html += '</div>';
+        content.innerHTML = html;
+    }
+
+    function showNoData() {
+        const content = document.getElementById('competitionContent');
+        content.innerHTML = `
+            <div class="text-center py-4">
+                <i class="bx bx-trophy fs-1 text-white-50"></i>
+                <p class="text-white-50 mt-2">No performance data available</p>
+                <small class="text-white-50">Start assigning tasks to see competition results</small>
+            </div>
+        `;
     }
 
     // Timeline functions are now defined globally in the styles section
