@@ -819,9 +819,7 @@ class DashboardController extends Controller
                           });
                       });
             }])
-            ->whereHas('assignedTasks', function($query) use ($startDate, $endDate) {
-                $query->whereBetween('created_at', [$startDate, $endDate]);
-            })
+            ->whereHas('assignedTasks')
             ->orderBy('completed_tasks_count', 'desc')
             ->orderBy('in_progress_tasks_count', 'desc')
             ->orderBy('total_tasks_count', 'desc')
