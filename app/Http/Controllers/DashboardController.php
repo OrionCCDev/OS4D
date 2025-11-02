@@ -16,17 +16,32 @@ class DashboardController extends Controller
 {
     public function index(Request $request)
     {
-        $user = Auth::user();
+        try {
+            $user = Auth::user();
 
-        // If user is a manager or admin, show comprehensive dashboard
-        if ($user->isManager()) {
-            $data = $this->getDashboardData($request);
-            return view('dashboard.manager', compact('data'));
+            // If user is a manager or admin, show comprehensive dashboard
+            if ($user->isManager()) {
+                $data = $this->getDashboardData($request);
+                return view('dashboard.manager', compact('data'));
+            }
+
+            // For regular users, show enhanced user dashboard
+            $userData = $this->getUserDashboardData();
+            return view('dashboard.user', compact('userData'));
+        } catch (\Exception $e) {
+            Log::error('Dashboard index error', [
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            // Return user-friendly error page
+            return response()->view('errors.dashboard', [
+                'message' => 'Unable to load dashboard. Please contact support if this persists.',
+                'error' => config('app.debug') ? $e->getMessage() : null
+            ], 500);
         }
-
-        // For regular users, show enhanced user dashboard
-        $userData = $this->getUserDashboardData();
-        return view('dashboard.user', compact('userData'));
     }
 
     public function getUserDashboardData()
@@ -290,19 +305,27 @@ class DashboardController extends Controller
 
     public function getDashboardData(?Request $request = null)
     {
-        // Get pagination parameters
-        $urgentPage = $request?->get('urgent_page') ?? 1;
-        $statusPage = $request?->get('status_page') ?? 1;
-        $priorityPage = $request?->get('priority_page') ?? 1;
-        $perPage = 5; // 5 tasks per page as requested
+        try {
+            // Get pagination parameters
+            $urgentPage = $request?->get('urgent_page') ?? 1;
+            $statusPage = $request?->get('status_page') ?? 1;
+            $priorityPage = $request?->get('priority_page') ?? 1;
+            $perPage = 5; // 5 tasks per page as requested
 
-        // Try to get cached data first (only for non-paginated data)
-        $user = Auth::user();
-        if (!$user) {
-            return [];
-        }
-        $cacheKey = 'dashboard_data_' . $user->id;
-        $cachedData = cache()->get($cacheKey);
+            // Try to get cached data first (only for non-paginated data)
+            $user = Auth::user();
+            if (!$user) {
+                return $this->getEmptyDashboardData();
+            }
+            $cacheKey = 'dashboard_data_' . $user->id;
+
+            // Safely try to get cached data
+            try {
+                $cachedData = cache()->get($cacheKey);
+            } catch (\Exception $e) {
+                Log::warning('Cache retrieval failed', ['error' => $e->getMessage()]);
+                $cachedData = null;
+            }
 
         // Only use cache for first page loads
         if ($cachedData && $urgentPage == 1 && $statusPage == 1 && $priorityPage == 1) {
@@ -746,10 +769,77 @@ class DashboardController extends Controller
             'timeline_tasks' => $timelineTasks,
         ];
 
-        // Cache the entire dashboard data for 2 minutes
-        cache()->put($cacheKey, $data, 120);
+            // Cache the entire dashboard data for 2 minutes
+            try {
+                cache()->put($cacheKey, $data, 120);
+            } catch (\Exception $e) {
+                Log::warning('Cache storage failed', ['error' => $e->getMessage()]);
+            }
 
-        return $data;
+            return $data;
+
+        } catch (\Exception $e) {
+            Log::error('getDashboardData failed', [
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            // Return safe empty data structure
+            return $this->getEmptyDashboardData();
+        }
+    }
+
+    /**
+     * Return empty dashboard data structure for error cases
+     */
+    private function getEmptyDashboardData()
+    {
+        return [
+            'overview' => [
+                'total_users' => 0,
+                'active_users' => 0,
+                'total_tasks' => 0,
+                'total_projects' => 0,
+                'completion_rate' => 0,
+                'weekly_completed' => 0,
+                'monthly_completed' => 0,
+                'avg_completion_time' => 0,
+            ],
+            'task_stats' => [
+                'total' => 0,
+                'completed' => 0,
+                'in_progress' => 0,
+                'pending' => 0,
+                'assigned' => 0,
+                'in_review' => 0,
+                'overdue' => 0,
+                'due_soon' => 0,
+                'completion_rate' => 0,
+            ],
+            'project_stats' => [
+                'total' => 0,
+                'active' => 0,
+                'completed' => 0,
+                'on_hold' => 0,
+            ],
+            'tasks_by_priority' => new \Illuminate\Pagination\LengthAwarePaginator([], 0, 5),
+            'tasks_by_status' => new \Illuminate\Pagination\LengthAwarePaginator([], 0, 5),
+            'top_performers' => collect(),
+            'monthly_top_performers' => collect(),
+            'quarterly_top_performers' => collect(),
+            'yearly_top_performers' => collect(),
+            'tasks_per_user' => collect(),
+            'recent_activity' => collect(),
+            'upcoming_due_dates' => collect(),
+            'overdue_tasks' => collect(),
+            'monthly_trend' => [],
+            'tasks_by_project' => collect(),
+            'recent_notifications' => collect(),
+            'urgent_tasks' => new \Illuminate\Pagination\LengthAwarePaginator([], 0, 5),
+            'timeline_tasks' => collect(),
+        ];
     }
 
     /**
