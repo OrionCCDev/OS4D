@@ -793,8 +793,8 @@ class DashboardController extends Controller
                 $query->where('status', 'completed')
                       ->where(function($q) use ($startDate, $endDate) {
                           $q->where(function($subQ) use ($startDate, $endDate) {
-                              $subQ->whereBetween('completed_at', [$startDate, $endDate])
-                                   ->whereNotNull('completed_at')
+                              $subQ->whereNotNull('completed_at')
+                                   ->whereBetween('completed_at', [$startDate, $endDate])
                                    ->whereRaw('completed_at <= due_date');
                           })
                           ->orWhere(function($subQ) use ($startDate, $endDate) {
@@ -808,8 +808,8 @@ class DashboardController extends Controller
                 $query->where('status', 'completed')
                       ->where(function($q) use ($startDate, $endDate) {
                           $q->where(function($subQ) use ($startDate, $endDate) {
-                              $subQ->whereBetween('completed_at', [$startDate, $endDate])
-                                   ->whereNotNull('completed_at')
+                              $subQ->whereNotNull('completed_at')
+                                   ->whereBetween('completed_at', [$startDate, $endDate])
                                    ->whereRaw('completed_at > due_date');
                           })
                           ->orWhere(function($subQ) use ($startDate, $endDate) {
