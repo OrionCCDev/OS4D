@@ -694,6 +694,27 @@ class DashboardController extends Controller
             ->limit(10)
             ->get(['id', 'title', 'description', 'status', 'priority', 'start_date', 'due_date', 'assigned_to', 'project_id', 'folder_id']);
 
+        // Get quarterly and yearly performers with error handling
+        try {
+            $quarterlyTopPerformers = $this->getTopPerformersForPeriod('quarter');
+        } catch (\Exception $e) {
+            Log::error('Failed to get quarterly top performers', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            $quarterlyTopPerformers = collect();
+        }
+
+        try {
+            $yearlyTopPerformers = $this->getTopPerformersForPeriod('year');
+        } catch (\Exception $e) {
+            Log::error('Failed to get yearly top performers', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            $yearlyTopPerformers = collect();
+        }
+
         // Build the final data array
         $data = [
             'overview' => [
@@ -712,8 +733,8 @@ class DashboardController extends Controller
             'tasks_by_status' => $tasksByStatus,
             'top_performers' => $topPerformers,
             'monthly_top_performers' => $monthlyTopPerformers,
-            'quarterly_top_performers' => $this->getTopPerformersForPeriod('quarter'),
-            'yearly_top_performers' => $this->getTopPerformersForPeriod('year'),
+            'quarterly_top_performers' => $quarterlyTopPerformers,
+            'yearly_top_performers' => $yearlyTopPerformers,
             'tasks_per_user' => $tasksPerUser,
             'recent_activity' => $recentActivity,
             'upcoming_due_dates' => $upcomingDueDates,
@@ -746,8 +767,11 @@ class DashboardController extends Controller
                 $endDate = $now->copy()->endOfMonth();
                 break;
             case 'quarter':
-                $startDate = $now->copy()->startOfQuarter();
-                $endDate = $now->copy()->endOfQuarter();
+                // Calculate quarter manually for compatibility
+                $currentQuarter = ceil($now->month / 3);
+                $startMonth = (($currentQuarter - 1) * 3) + 1;
+                $startDate = $now->copy()->month($startMonth)->startOfMonth();
+                $endDate = $startDate->copy()->addMonths(2)->endOfMonth();
                 break;
             case 'year':
                 $startDate = $now->copy()->startOfYear();
@@ -845,7 +869,10 @@ class DashboardController extends Controller
                     : 0;
 
                 return $user;
-            });
+            })
+            ->sortByDesc('performance_score')
+            ->take(3)
+            ->values();
     }
 
     /**
@@ -1004,34 +1031,48 @@ class DashboardController extends Controller
      */
     public function getTopPerformersAjax(Request $request)
     {
-        $period = $request->get('period', 'month');
-        
-        // Validate period
-        if (!in_array($period, ['month', 'quarter', 'year'])) {
-            return response()->json(['error' => 'Invalid period'], 400);
+        try {
+            $period = $request->get('period', 'month');
+
+            // Validate period
+            if (!in_array($period, ['month', 'quarter', 'year'])) {
+                return response()->json(['error' => 'Invalid period'], 400);
+            }
+
+            $performers = $this->getTopPerformersForPeriod($period);
+
+            // Format the data for JSON response
+            $formattedPerformers = $performers->map(function($performer) {
+                return [
+                    'id' => $performer->id,
+                    'name' => $performer->name,
+                    'completed_tasks_count' => $performer->completed_tasks_count ?? 0,
+                    'in_progress_tasks_count' => $performer->in_progress_tasks_count ?? 0,
+                    'total_tasks_count' => $performer->total_tasks_count ?? 0,
+                    'performance_score' => $performer->performance_score ?? 0,
+                    'completion_rate' => $performer->completion_rate ?? 0,
+                    'rejection_rate' => $performer->rejection_rate ?? 0,
+                    'overdue_rate' => $performer->overdue_rate ?? 0,
+                ];
+            });
+
+            return response()->json([
+                'success' => true,
+                'period' => $period,
+                'performers' => $formattedPerformers->take(3) // Return only top 3
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to get top performers via AJAX', [
+                'period' => $request->get('period', 'unknown'),
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'error' => 'Failed to retrieve top performers data',
+                'message' => 'An error occurred while fetching the performance data. Please try again later.'
+            ], 500);
         }
-
-        $performers = $this->getTopPerformersForPeriod($period);
-        
-        // Format the data for JSON response
-        $formattedPerformers = $performers->map(function($performer) {
-            return [
-                'id' => $performer->id,
-                'name' => $performer->name,
-                'completed_tasks_count' => $performer->completed_tasks_count ?? 0,
-                'in_progress_tasks_count' => $performer->in_progress_tasks_count ?? 0,
-                'total_tasks_count' => $performer->total_tasks_count ?? 0,
-                'performance_score' => $performer->performance_score ?? 0,
-                'completion_rate' => $performer->completion_rate ?? 0,
-                'rejection_rate' => $performer->rejection_rate ?? 0,
-                'overdue_rate' => $performer->overdue_rate ?? 0,
-            ];
-        });
-
-        return response()->json([
-            'success' => true,
-            'period' => $period,
-            'performers' => $formattedPerformers->take(3) // Return only top 3
-        ]);
     }
 }
