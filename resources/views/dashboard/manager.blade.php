@@ -1620,8 +1620,10 @@ function showTimeline() {
         }
     });
 
-    // Competition period change function
-    function changeCompetitionPeriod(period, event) {
+    // Competition period change function - Define globally to ensure it's accessible
+    window.changeCompetitionPeriod = function(period, event) {
+        console.log('changeCompetitionPeriod called with period:', period);
+
         // Remove active class from all buttons
         document.querySelectorAll('[data-period]').forEach(btn => {
             btn.classList.remove('active');
@@ -1653,8 +1655,12 @@ function showTimeline() {
                 'X-Requested-With': 'XMLHttpRequest'
             }
         })
-        .then(response => response.json())
+        .then(response => {
+            console.log('Response received:', response);
+            return response.json();
+        })
         .then(data => {
+            console.log('Data received:', data);
             if (data.success && data.performers) {
                 renderCompetitionData(data.performers);
             } else {
@@ -1665,11 +1671,11 @@ function showTimeline() {
             console.error('Error fetching performance data:', error);
             showNoData();
         });
-    }
+    };
 
-    function renderCompetitionData(performers) {
+    window.renderCompetitionData = function(performers) {
         const content = document.getElementById('competitionContent');
-        
+
         if (!performers || performers.length === 0) {
             showNoData();
             return;
@@ -1681,10 +1687,10 @@ function showTimeline() {
             if (index === 0) medalClass = 'gold-medal';
             else if (index === 1) medalClass = 'silver-medal';
 
-            const rejectionRateHtml = performer.rejection_rate > 0 
+            const rejectionRateHtml = performer.rejection_rate > 0
                 ? `<small class="text-warning"><i class="bx bx-error-circle me-1"></i>${Number(performer.rejection_rate).toFixed(1)}% rejection rate</small>`
                 : '';
-            
+
             const overdueRateHtml = performer.overdue_rate > 0
                 ? `<small class="text-warning ms-2"><i class="bx bx-time-five me-1"></i>${Number(performer.overdue_rate).toFixed(1)}% overdue rate</small>`
                 : '';
@@ -1728,9 +1734,9 @@ function showTimeline() {
         });
         html += '</div>';
         content.innerHTML = html;
-    }
+    };
 
-    function showNoData() {
+    window.showNoData = function() {
         const content = document.getElementById('competitionContent');
         content.innerHTML = `
             <div class="text-center py-4">
@@ -1739,7 +1745,7 @@ function showTimeline() {
                 <small class="text-white-50">Start assigning tasks to see competition results</small>
             </div>
         `;
-    }
+    };
 
     // Timeline functions are now defined globally in the styles section
 
