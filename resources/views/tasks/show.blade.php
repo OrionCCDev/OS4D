@@ -80,8 +80,7 @@
             </div>
         </div>
         <div class="d-flex gap-2">
-            @if(Auth::user()->isManager() || ($task->status !== 'submitted_for_review' && $task->status !== 'in_review'
-            && $task->status !== 'approved' && $task->status !== 'completed'))
+            @if(Auth::user()->isManager() || ($task->status !== 'submitted_for_review' && $task->status !== 'in_review' && $task->status !== 'approved' && $task->status !== 'completed'))
             <a href="{{ route('tasks.edit', ['task' => $task, 'redirect_to' => 'project.show']) }}"
                 class="btn btn-primary">
                 <i class="bx bx-edit me-1"></i>Edit Task
@@ -324,8 +323,7 @@
                         <h4 class="mb-0 fw-bold text-dark" style="font-size: 1.75rem;">
                             <i class="bx bx-folder-open me-2 text-primary"></i>Task Files
                         </h4>
-                        @if(Auth::user()->isManager() || ($task->status !== 'submitted_for_review' && $task->status !==
-                        'in_review' && $task->status !== 'approved' && $task->status !== 'completed'))
+                        @if(Auth::user()->isManager() || ($task->status !== 'submitted_for_review' && $task->status !== 'in_review' && $task->status !== 'approved' && $task->status !== 'completed'))
                         <div class="upload-section" id="uploadSection">
                             <form action="{{ route('tasks.attachments.upload', $task) }}" method="POST"
                                 enctype="multipart/form-data" id="uploadForm">
@@ -525,10 +523,7 @@
                                                 <span>Download</span>
                                             </a>
                                             @php($currentUser = Auth::user())
-                                            @if(($currentUser->isManager() && $currentUser->canDelete()) ||
-                                            (!$currentUser->isManager() && $att->uploaded_by === $currentUser->id &&
-                                            $task->status !== 'submitted_for_review' && $task->status !== 'in_review' &&
-                                            $task->status !== 'approved' && $task->status !== 'completed'))
+                                            @if(($currentUser->isManager() && $currentUser->canDelete()) || (!$currentUser->isManager() && $att->uploaded_by === $currentUser->id && $task->status !== 'submitted_for_review' && $task->status !== 'in_review' && $task->status !== 'approved' && $task->status !== 'completed'))
                                             <form action="{{ route('tasks.attachments.delete', [$task, $att]) }}"
                                                 method="POST" onsubmit="return confirm('Delete attachment?')"
                                                 class="delete-form">
@@ -883,44 +878,35 @@
                                     @endif
                                     {{-- Only show notes in metadata if they're not already included in the description
                                     --}}
-                                    @if(isset($history->metadata['notes']) && $history->metadata['notes'] &&
-                                    !str_contains($history->description, $history->metadata['notes']))
+                                    @if(isset($history->metadata['notes']) && $history->metadata['notes'] && !str_contains($history->description, $history->metadata['notes']))
                                     <div class="mt-2 p-2 bg-light rounded">
                                         <strong class="text-info"><i
                                                 class="bx bx-comment-detail me-1"></i>Notes:</strong>
                                         <p class="mb-0 mt-1">{{ $history->metadata['notes'] }}</p>
                                     </div>
                                     @endif
-                                    @if(isset($history->metadata['internal_notes']) &&
-                                    $history->metadata['internal_notes'])
+                                    @if(isset($history->metadata['internal_notes']) && $history->metadata['internal_notes'])
                                     <div class="mt-2 p-2 bg-light rounded">
                                         <strong class="text-primary"><i class="bx bx-message-detail me-1"></i>Internal
                                             Notes:</strong>
                                         <p class="mb-0 mt-1">{{ $history->metadata['internal_notes'] }}</p>
                                     </div>
                                     @endif
-                                    @if(isset($history->metadata['client_response_notes']) &&
-                                    $history->metadata['client_response_notes'] && !str_contains($history->description,
-                                    $history->metadata['client_response_notes']))
+                                    @if(isset($history->metadata['client_response_notes']) && $history->metadata['client_response_notes'] && !str_contains($history->description, $history->metadata['client_response_notes']))
                                     <div class="mt-2 p-2 bg-primary bg-opacity-10 rounded border border-primary">
                                         <strong class="text-primary"><i class="bx bx-user me-1"></i>Client
                                             Response:</strong>
                                         <p class="mb-0 mt-1">{{ $history->metadata['client_response_notes'] }}</p>
                                     </div>
                                     @endif
-                                    @if(isset($history->metadata['consultant_response_notes']) &&
-                                    $history->metadata['consultant_response_notes'] &&
-                                    !str_contains($history->description,
-                                    $history->metadata['consultant_response_notes']))
+                                    @if(isset($history->metadata['consultant_response_notes']) && $history->metadata['consultant_response_notes'] && !str_contains($history->description, $history->metadata['consultant_response_notes']))
                                     <div class="mt-2 p-2 bg-info bg-opacity-10 rounded border border-info">
                                         <strong class="text-info"><i class="bx bx-user-check me-1"></i>Consultant
                                             Response:</strong>
                                         <p class="mb-0 mt-1">{{ $history->metadata['consultant_response_notes'] }}</p>
                                     </div>
                                     @endif
-                                    @if(isset($history->metadata['manager_override_notes']) &&
-                                    $history->metadata['manager_override_notes'] && !str_contains($history->description,
-                                    $history->metadata['manager_override_notes']))
+                                    @if(isset($history->metadata['manager_override_notes']) && $history->metadata['manager_override_notes'] && !str_contains($history->description, $history->metadata['manager_override_notes']))
                                     <div class="mt-2 p-2 bg-danger bg-opacity-10 rounded border border-danger">
                                         <strong class="text-danger"><i class="bx bx-shield-x me-1"></i>Manager
                                             Override:</strong>
@@ -936,8 +922,7 @@
                                     @endif
 
                                     {{-- Special display for email marked sent actions --}}
-                                    @if($history->action === 'email_marked_sent' &&
-                                    isset($history->metadata['email_subject']))
+                                    @if($history->action === 'email_marked_sent' && isset($history->metadata['email_subject']))
                                     <div class="mt-2 p-2 bg-success bg-opacity-10 rounded border border-success">
                                         <strong class="text-success"><i class="bx bx-check-double me-1"></i>Email
                                             Details:</strong>
@@ -964,8 +949,7 @@
                                     </div>
                                     @endif
 
-                                    @if($history->action === 'require_resubmit_enhanced' &&
-                                    isset($history->metadata['resubmit_notes']))
+                                    @if($history->action === 'require_resubmit_enhanced' && isset($history->metadata['resubmit_notes']))
                                     <div class="mt-2 p-2 bg-warning bg-opacity-10 rounded border border-warning">
                                         <strong class="text-warning"><i class="bx bx-refresh me-1"></i>Resubmission
                                             Instructions:</strong>
@@ -992,8 +976,7 @@
                                                         }}</small>
                                                 </div>
                                             </div>
-                                            @if(isset($history->metadata['client_notes']) ||
-                                            isset($history->metadata['consultant_notes']))
+                                            @if(isset($history->metadata['client_notes']) || isset($history->metadata['consultant_notes']))
                                             <div class="mt-2 pt-2 border-top">
                                                 <small class="text-muted">
                                                     <strong>Based on feedback:</strong>
