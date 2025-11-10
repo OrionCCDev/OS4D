@@ -61,8 +61,9 @@
                             <i class="bx bx-time-five me-1"></i>
                             {{ abs($daysUntilStart) }} days overdue to start
                         </span>
-                        @elseif($isAccepted && $daysUntilStart <= 0) {{-- Don't show anything if task is accepted and
-                            start date has passed --}} @elseif($daysUntilStart>= 0)
+                        @elseif($isAccepted && $daysUntilStart <= 0)
+                            {{-- Don't show anything if task is accepted and start date has passed --}}
+                        @elseif($daysUntilStart >= 0)
                             <span
                                 class="badge bg-{{ $isApproaching && !$isAccepted ? 'warning' : 'info' }} fs-6 px-3 py-2">
                                 <i class="bx bx-timer me-1"></i>
@@ -74,8 +75,8 @@
                                 {{ $daysUntilStart }} days until start
                                 @endif
                             </span>
-                            @endif
-                            @endif
+                        @endif
+                        @endif
             </div>
         </div>
         <div class="d-flex gap-2">
