@@ -20,6 +20,14 @@ class AuthenticatedSessionController extends Controller
     }
 
     /**
+     * Display the lightweight login view.
+     */
+    public function createLight(): View
+    {
+        return view('auth.login-light');
+    }
+
+    /**
      * Handle an incoming authentication request.
      */
     public function store(LoginRequest $request): RedirectResponse
