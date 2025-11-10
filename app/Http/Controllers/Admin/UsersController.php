@@ -8,10 +8,22 @@ use App\Http\Requests\UpdateUserRequest;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 
 class UsersController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware(function ($request, $next) {
+            if (Auth::user()?->isSupAdmin()) {
+                abort(403);
+            }
+
+            return $next($request);
+        })->only(['create', 'store', 'edit', 'update', 'destroy']);
+    }
+
     public function index(): View
     {
         $users = User::latest()->paginate(15);
@@ -108,6 +120,10 @@ class UsersController extends Controller
 
     public function destroy(User $user): RedirectResponse
     {
+        if (!Auth::user()->canDelete()) {
+            return redirect()->route('admin.users.index')->with('error', 'You do not have permission to delete users.');
+        }
+
         // remove stored image if not default
         // Never delete default.png, default.jpg, 1.png, default_user.jpg, or default-user.jpg
         $old = $user->img;

@@ -2,9 +2,14 @@
 
 @section('content')
 <div class="container container-p-y">
+  @php($currentUser = auth()->user())
   <div class="d-flex align-items-center justify-content-between mb-3">
     <h4 class="mb-0">Users</h4>
-    <a href="{{ route('admin.users.create') }}" class="btn btn-primary">Add User</a>
+    @if($currentUser?->isSupAdmin())
+      <span class="btn btn-primary disabled" aria-disabled="true" title="You do not have permission to add users.">Add User</span>
+    @else
+      <a href="{{ route('admin.users.create') }}" class="btn btn-primary">Add User</a>
+    @endif
   </div>
 
   @if(session('status'))
@@ -50,13 +55,19 @@
             </td>
             <td>{{ $user->created_at->format('Y-m-d') }}</td>
             <td class="text-end">
-              <a href="{{ route('admin.users.edit', $user) }}" class="btn btn-sm btn-outline-secondary">
-                <i class="bx bx-edit"></i> Edit
-              </a>
+              @if($currentUser?->isSupAdmin())
+                <span class="btn btn-sm btn-outline-secondary disabled" aria-disabled="true">
+                  <i class="bx bx-edit"></i> Edit
+                </span>
+              @else
+                <a href="{{ route('admin.users.edit', $user) }}" class="btn btn-sm btn-outline-secondary">
+                  <i class="bx bx-edit"></i> Edit
+                </a>
+              @endif
               <form action="{{ route('admin.users.destroy', $user) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete this user?')">
                 @csrf
                 @method('DELETE')
-                <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                <button type="submit" class="btn btn-sm btn-outline-danger" {{ $currentUser?->canDelete() ? '' : 'disabled' }}>Delete</button>
               </form>
             </td>
           </tr>

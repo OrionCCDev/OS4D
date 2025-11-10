@@ -154,12 +154,22 @@
                                                title="Edit Folder">
                                                 <i class="bx bx-edit"></i>
                                             </a>
-                                            <button type="button"
-                                                    class="btn btn-sm btn-outline-danger"
-                                                    onclick="event.stopPropagation(); confirmDeleteFolder('{{ $folder->id }}', '{{ addslashes($folder->name) }}');"
-                                                    title="Delete Folder">
-                                                <i class="bx bx-trash"></i>
-                                            </button>
+                                            @if(auth()->user()->canDelete())
+                                                <button type="button"
+                                                        class="btn btn-sm btn-outline-danger"
+                                                        onclick="event.stopPropagation(); confirmDeleteFolder('{{ $folder->id }}', '{{ addslashes($folder->name) }}');"
+                                                        title="Delete Folder">
+                                                    <i class="bx bx-trash"></i>
+                                                </button>
+                                            @else
+                                                <button type="button"
+                                                        class="btn btn-sm btn-outline-danger disabled"
+                                                        aria-disabled="true"
+                                                        onclick="event.stopPropagation();"
+                                                        title="You do not have permission to delete folders.">
+                                                    <i class="bx bx-trash"></i>
+                                                </button>
+                                            @endif
                                         </div>
                                     </div>
 
@@ -221,12 +231,22 @@
                                                title="Edit Folder">
                                                 <i class="bx bx-edit"></i>
                                             </a>
-                                            <button type="button"
-                                                    class="btn btn-sm btn-outline-danger"
-                                                    onclick="event.stopPropagation(); confirmDeleteFolder('{{ $folder->id }}', '{{ addslashes($folder->name) }}');"
-                                                    title="Delete Folder">
-                                                <i class="bx bx-trash"></i>
-                                            </button>
+                                            @if(auth()->user()->canDelete())
+                                                <button type="button"
+                                                        class="btn btn-sm btn-outline-danger"
+                                                        onclick="event.stopPropagation(); confirmDeleteFolder('{{ $folder->id }}', '{{ addslashes($folder->name) }}');"
+                                                        title="Delete Folder">
+                                                    <i class="bx bx-trash"></i>
+                                                </button>
+                                            @else
+                                                <button type="button"
+                                                        class="btn btn-sm btn-outline-danger disabled"
+                                                        aria-disabled="true"
+                                                        onclick="event.stopPropagation();"
+                                                        title="You do not have permission to delete folders.">
+                                                    <i class="bx bx-trash"></i>
+                                                </button>
+                                            @endif
                                         </div>
                                     </div>
 
@@ -473,13 +493,19 @@
                                                 <a href="{{ route('tasks.edit', ['task' => $task, 'redirect_to' => 'project.folder', 'folder_id' => $selectedFolder ? $selectedFolder->id : null]) }}" class="btn btn-sm btn-outline-secondary">
                                                     <i class="bx bx-edit"></i>
                                                 </a>
-                                    <form action="{{ route('tasks.destroy', $task) }}" method="POST" class="d-inline">
-                                        @csrf
-                                        @method('DELETE')
-                                                    <button class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this task?')">
+                                                @if(auth()->user()->canDelete())
+                                                    <form action="{{ route('tasks.destroy', $task) }}" method="POST" class="d-inline">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this task?')">
+                                                            <i class="bx bx-trash"></i>
+                                                        </button>
+                                                    </form>
+                                                @else
+                                                    <button type="button" class="btn btn-sm btn-outline-danger disabled" aria-disabled="true" title="You do not have permission to delete tasks.">
                                                         <i class="bx bx-trash"></i>
                                                     </button>
-                                    </form>
+                                                @endif
                                             </div>
                                 </td>
                             </tr>
@@ -717,6 +743,7 @@
     <script>
 // Global manager status check
 const isManager = {{ Auth::user()->isManager() ? 'true' : 'false' }};
+const canDelete = {{ Auth::user()->canDelete() ? 'true' : 'false' }};
 
 document.addEventListener('DOMContentLoaded', function() {
     // Collapse/Expand functionality for sections
@@ -808,6 +835,10 @@ function reloadFiles() {
 
 // Folder deletion confirmation function
 function confirmDeleteFolder(folderId, folderName) {
+    if (!canDelete) {
+        alert('You do not have permission to delete folders.');
+        return;
+    }
     document.getElementById('folderNameToDelete').textContent = folderName;
     const form = document.getElementById('deleteFolderForm');
     form.action = `/folders/${folderId}`;
@@ -919,9 +950,11 @@ function displayFiles(files) {
                                 <button onclick="openEditFileModal(${file.id}, '${displayName.replace(/'/g, "\\'")}', '${description.replace(/'/g, "\\'")}')" class="btn btn-outline-secondary" title="Edit">
                                     <i class="bx bx-edit"></i>
                                 </button>
-                                <button onclick="confirmDeleteFile(${file.id}, '${displayName.replace(/'/g, "\\'")}')" class="btn btn-outline-danger" title="Delete">
+                                ${canDelete ? `<button onclick="confirmDeleteFile(${file.id}, '${displayName.replace(/'/g, "\\'")}')" class="btn btn-outline-danger" title="Delete">
                                     <i class="bx bx-trash"></i>
-                                </button>
+                                </button>` : `<button class="btn btn-outline-danger disabled" aria-disabled="true" title="You do not have permission to delete files.">
+                                    <i class="bx bx-trash"></i>
+                                </button>`}
                             </div>` : `<a href="${fileUrl}" download="${displayName}" class="btn btn-sm btn-outline-primary">
                                 <i class="bx bx-download me-1"></i>Download
                             </a>`}
@@ -965,6 +998,10 @@ function openEditFileModal(fileId, displayName, description) {
 }
 
 function confirmDeleteFile(fileId, fileName) {
+    if (!canDelete) {
+        alert('You do not have permission to delete files.');
+        return;
+    }
     if (confirm(`Are you sure you want to delete "${fileName}"?`)) {
         deleteFile(fileId);
     }

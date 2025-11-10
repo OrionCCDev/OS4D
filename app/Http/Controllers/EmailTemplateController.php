@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\EmailTemplate;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class EmailTemplateController extends Controller
 {
@@ -55,6 +56,10 @@ class EmailTemplateController extends Controller
 
     public function destroy(EmailTemplate $email_template)
     {
+        if (!Auth::user()->canDelete()) {
+            return redirect()->route('email-templates.index')->with('error', 'You do not have permission to delete email templates.');
+        }
+
         $email_template->delete();
         return redirect()->route('email-templates.index')->with('success', 'Template deleted');
     }

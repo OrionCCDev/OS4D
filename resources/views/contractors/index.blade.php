@@ -33,11 +33,15 @@
                         <td>{{ $contractor->mobile }}</td>
                         <td class="text-end">
                             <a href="{{ route('contractors.edit', $contractor) }}" class="btn btn-sm btn-outline-secondary">Edit</a>
-                            <form action="{{ route('contractors.destroy', $contractor) }}" method="POST" class="d-inline">
-                                @csrf
-                                @method('DELETE')
-                                <button class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this contractor?')">Delete</button>
-                            </form>
+                            @if(auth()->user()->canDelete())
+                                <form action="{{ route('contractors.destroy', $contractor) }}" method="POST" class="d-inline">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this contractor?')">Delete</button>
+                                </form>
+                            @else
+                                <button type="button" class="btn btn-sm btn-outline-danger disabled" aria-disabled="true" title="You do not have permission to delete contractors.">Delete</button>
+                            @endif
                         </td>
                     </tr>
                 @endforeach

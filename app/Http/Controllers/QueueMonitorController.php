@@ -136,6 +136,10 @@ class QueueMonitorController extends Controller
             abort(403, 'Access denied.');
         }
 
+        if (!auth()->user()->canDelete()) {
+            return redirect()->back()->with('error', 'You do not have permission to delete queue jobs.');
+        }
+
         try {
             Artisan::call('queue:forget', ['id' => $jobId]);
 
@@ -153,6 +157,10 @@ class QueueMonitorController extends Controller
     {
         if (!auth()->user()->isManager()) {
             abort(403, 'Access denied.');
+        }
+
+        if (!auth()->user()->canDelete()) {
+            return redirect()->back()->with('error', 'You do not have permission to delete failed jobs.');
         }
 
         try {

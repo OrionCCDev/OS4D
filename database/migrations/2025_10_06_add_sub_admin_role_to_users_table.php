@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            // Update the role enum to include sub-admin
-            $table->enum('role', ['admin', 'manager', 'sub-admin', 'user'])->default('user')->change();
+            // Update the role enum to include sub-admin and sup-admin
+            $table->enum('role', ['admin', 'manager', 'sub-admin', 'sup-admin', 'user'])->default('user')->change();
         });
     }
 

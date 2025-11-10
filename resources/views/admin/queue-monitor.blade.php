@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
+@php($canDelete = auth()->user()->canDelete())
 <div class="container mx-auto px-4 py-8">
     <div class="mb-8">
         <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">Queue Monitor</h1>
@@ -183,12 +184,18 @@
                             Retry All
                         </button>
                     </form>
-                    <form action="{{ route('admin.queue.flush') }}" method="POST" class="inline" onsubmit="return confirm('Are you sure you want to delete all failed jobs?');">
-                        @csrf
-                        <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-sm font-medium">
+                    @if($canDelete)
+                        <form action="{{ route('admin.queue.flush') }}" method="POST" class="inline" onsubmit="return confirm('Are you sure you want to delete all failed jobs?');">
+                            @csrf
+                            <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-sm font-medium">
+                                Flush All
+                            </button>
+                        </form>
+                    @else
+                        <button type="button" class="bg-red-200 text-red-600 px-4 py-2 rounded text-sm font-medium cursor-not-allowed" title="You do not have permission to delete jobs." disabled>
                             Flush All
                         </button>
-                    </form>
+                    @endif
                 </div>
             </div>
             <div class="overflow-x-auto">
@@ -220,10 +227,14 @@
                                             @csrf
                                             <button type="submit" class="text-blue-600 hover:text-blue-800">Retry</button>
                                         </form>
-                                        <form action="{{ route('admin.queue.delete', $job['uuid']) }}" method="POST" class="inline" onsubmit="return confirm('Are you sure?');">
-                                            @csrf
-                                            <button type="submit" class="text-red-600 hover:text-red-800">Delete</button>
-                                        </form>
+                                        @if($canDelete)
+                                            <form action="{{ route('admin.queue.delete', $job['uuid']) }}" method="POST" class="inline" onsubmit="return confirm('Are you sure?');">
+                                                @csrf
+                                                <button type="submit" class="text-red-600 hover:text-red-800">Delete</button>
+                                            </form>
+                                        @else
+                                            <span class="text-red-400 cursor-not-allowed" title="You do not have permission to delete jobs.">Delete</span>
+                                        @endif
                                     </div>
                                 </td>
                             </tr>

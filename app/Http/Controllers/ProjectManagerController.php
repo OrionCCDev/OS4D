@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\ProjectManager;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class ProjectManagerController extends Controller
 {
@@ -78,6 +79,10 @@ class ProjectManagerController extends Controller
      */
     public function destroy(ProjectManager $project_manager)
     {
+        if (!Auth::user()->canDelete()) {
+            return redirect()->route('project-managers.index')->with('error', 'You do not have permission to delete project managers.');
+        }
+
         // Check if manager has projects
         if ($project_manager->projects()->count() > 0) {
             return redirect()->back()->with('error', 'Cannot delete Project Manager with assigned projects. Please reassign projects first.');

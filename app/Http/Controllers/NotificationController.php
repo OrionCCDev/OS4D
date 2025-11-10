@@ -152,6 +152,13 @@ class NotificationController extends Controller
     public function destroy($id)
     {
         $user = Auth::user();
+        if (!$user->canDelete()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You do not have permission to delete notifications'
+            ], 403);
+        }
+
         $success = $this->notificationService->delete($id, $user->id);
 
         if ($success) {

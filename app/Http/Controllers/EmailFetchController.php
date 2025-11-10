@@ -646,6 +646,13 @@ class EmailFetchController extends Controller
         $action = $request->get('action');
         $emailIds = $request->get('email_ids', []);
 
+        if ($action === 'delete' && !$user->canDelete()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You do not have permission to delete emails.'
+            ], 403);
+        }
+
         if (empty($emailIds)) {
             return response()->json([
                 'success' => false,

@@ -497,7 +497,8 @@
                                                     <i class="bx bx-download"></i>
                                                     <span>Download</span>
                                                 </a>
-                                                @if(Auth::user()->isManager() || (($att->uploaded_by === Auth::id()) && $task->status !== 'submitted_for_review' && $task->status !== 'in_review' && $task->status !== 'approved' && $task->status !== 'completed'))
+                                                @php($currentUser = Auth::user())
+                                                @if(($currentUser->isManager() && $currentUser->canDelete()) || (!$currentUser->isManager() && $att->uploaded_by === $currentUser->id && $task->status !== 'submitted_for_review' && $task->status !== 'in_review' && $task->status !== 'approved' && $task->status !== 'completed'))
                                                     <form action="{{ route('tasks.attachments.delete', [$task, $att]) }}" method="POST" onsubmit="return confirm('Delete attachment?')" class="delete-form">
                                                         @csrf
                                                         @method('DELETE')
@@ -506,6 +507,11 @@
                                                             <span>Delete</span>
                                                         </button>
                                                     </form>
+                                                @elseif($currentUser->isManager())
+                                                    <span class="action-btn delete-btn disabled" title="You do not have permission to delete attachments." aria-disabled="true">
+                                                        <i class="bx bx-trash"></i>
+                                                        <span>Delete</span>
+                                                    </span>
                                                 @endif
                                             </div>
                                         </div>
@@ -1791,7 +1797,7 @@
                         <label class="form-label">Assign to User</label>
                         <select name="assigned_to" class="form-select" required>
                             <option value="">Select user</option>
-                            @foreach(\App\Models\User::where('id', '!=', auth()->id())->where('role', 'user')->orderBy('name')->get() as $user)
+                            @foreach(\App\Models\User::where('id', '!=', auth()->id())->whereIn('role', ['user', 'sub-admin', 'sup-admin'])->orderBy('name')->get() as $user)
                                 <option value="{{ $user->id }}">{{ $user->name }}</option>
                             @endforeach
                         </select>

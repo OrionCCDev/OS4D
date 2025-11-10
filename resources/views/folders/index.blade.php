@@ -23,11 +23,15 @@
                         <td>{{ $folder->parent?->name }}</td>
                         <td class="text-end">
                             <a href="{{ route('folders.edit', $folder) }}" class="btn btn-sm btn-outline-secondary">Edit</a>
-                            <form action="{{ route('folders.destroy', $folder) }}" method="POST" class="d-inline">
-                                @csrf
-                                @method('DELETE')
-                                <button class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this folder?')">Delete</button>
-                            </form>
+                            @if(auth()->user()->canDelete())
+                                <form action="{{ route('folders.destroy', $folder) }}" method="POST" class="d-inline">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this folder?')">Delete</button>
+                                </form>
+                            @else
+                                <button type="button" class="btn btn-sm btn-outline-danger disabled" aria-disabled="true" title="You do not have permission to delete folders.">Delete</button>
+                            @endif
                         </td>
                     </tr>
                 @endforeach

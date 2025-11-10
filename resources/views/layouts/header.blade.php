@@ -251,7 +251,7 @@
             </li>
             @endif
 
-            @if(Auth::user()->role === 'admin')
+            @if(in_array(Auth::user()->role, ['admin', 'sup-admin']))
             <!-- Users - Admin only -->
             <li class="menu-item {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
               <a href="{{ route('admin.users.index') }}" class="menu-link">

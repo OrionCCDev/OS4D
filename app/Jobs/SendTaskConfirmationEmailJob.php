@@ -397,7 +397,7 @@ class SendTaskConfirmationEmailJob implements ShouldQueue
     private function sendInAppNotificationsToManagers(): void
     {
         try {
-            $managers = User::whereIn('role', ['admin', 'manager', 'sub-admin'])->get();
+            $managers = User::whereIn('role', ['admin', 'manager', 'sub-admin', 'sup-admin'])->get();
 
             Log::info('Found ' . $managers->count() . ' managers to notify about email sent for task: ' . $this->task->id);
             foreach ($managers as $manager) {

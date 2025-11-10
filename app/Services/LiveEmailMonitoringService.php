@@ -298,7 +298,7 @@ class LiveEmailMonitoringService
             }
 
             // Notify ALL managers and admins (not just User 1)
-            $managers = User::whereIn('role', ['admin', 'manager', 'sub-admin'])->get();
+            $managers = User::whereIn('role', ['admin', 'manager', 'sub-admin', 'sup-admin'])->get();
             foreach ($managers as $manager) {
                 $users[] = $manager;
             }
@@ -314,7 +314,7 @@ class LiveEmailMonitoringService
             }
 
             // Always notify ALL managers and admins for new emails (not just User 1)
-            $managers = User::whereIn('role', ['admin', 'manager', 'sub-admin'])->get();
+            $managers = User::whereIn('role', ['admin', 'manager', 'sub-admin', 'sup-admin'])->get();
             foreach ($managers as $manager) {
                 $users[] = $manager;
             }

@@ -57,13 +57,19 @@
                                             <a class="dropdown-item" href="{{ route('external-stakeholders.edit', $stakeholder) }}">
                                                 <i class="bx bx-edit-alt me-1"></i> Edit
                                             </a>
-                                            <form action="{{ route('external-stakeholders.destroy', $stakeholder) }}" method="POST" class="d-inline">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="dropdown-item text-danger" onclick="return confirm('Are you sure you want to delete this stakeholder?')">
+                                            @if(auth()->user()->canDelete())
+                                                <form action="{{ route('external-stakeholders.destroy', $stakeholder) }}" method="POST" class="d-inline">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="dropdown-item text-danger" onclick="return confirm('Are you sure you want to delete this stakeholder?')">
+                                                        <i class="bx bx-trash me-1"></i> Delete
+                                                    </button>
+                                                </form>
+                                            @else
+                                                <span class="dropdown-item text-danger disabled" aria-disabled="true" title="You do not have permission to delete stakeholders.">
                                                     <i class="bx bx-trash me-1"></i> Delete
-                                                </button>
-                                            </form>
+                                                </span>
+                                            @endif
                                         </div>
                                     </div>
                                 </td>

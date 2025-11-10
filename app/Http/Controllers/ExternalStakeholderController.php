@@ -85,6 +85,11 @@ class ExternalStakeholderController extends Controller
             abort(403, 'Access denied. Only managers can manage external stakeholders.');
         }
 
+        if (!Auth::user()->canDelete()) {
+            return redirect()->route('external-stakeholders.index')
+                ->with('error', 'You do not have permission to delete external stakeholders.');
+        }
+
         $externalStakeholder->delete();
 
         return redirect()->route('external-stakeholders.index')

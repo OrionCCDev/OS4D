@@ -23,11 +23,15 @@
                         <td>{{ $template->is_active ? 'Yes' : 'No' }}</td>
                         <td class="text-end">
                             <a href="{{ route('email-templates.edit', $template) }}" class="btn btn-sm btn-outline-secondary">Edit</a>
-                            <form action="{{ route('email-templates.destroy', $template) }}" method="POST" class="d-inline">
-                                @csrf
-                                @method('DELETE')
-                                <button class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this template?')">Delete</button>
-                            </form>
+                            @if(auth()->user()->canDelete())
+                                <form action="{{ route('email-templates.destroy', $template) }}" method="POST" class="d-inline">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this template?')">Delete</button>
+                                </form>
+                            @else
+                                <button type="button" class="btn btn-sm btn-outline-danger disabled" aria-disabled="true" title="You do not have permission to delete templates.">Delete</button>
+                            @endif
                         </td>
                     </tr>
                 @endforeach

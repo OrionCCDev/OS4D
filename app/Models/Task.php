@@ -501,7 +501,7 @@ class Task extends Model
     private function notifyManagers(string $type, string $title, string $message)
     {
         // Include all manager roles: admin, manager, and sub-admin
-        $managers = User::whereIn('role', ['admin', 'manager', 'sub-admin'])->get();
+        $managers = User::whereIn('role', ['admin', 'manager', 'sub-admin', 'sup-admin'])->get();
         $currentUserId = Auth::id();
 
         foreach ($managers as $manager) {

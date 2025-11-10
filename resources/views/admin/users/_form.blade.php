@@ -36,6 +36,9 @@
     <select id="role" name="role" class="form-select" required>
       <option value="user" {{ old('role', $user->role ?? 'user') === 'user' ? 'selected' : '' }}>User</option>
       <option value="admin" {{ old('role', $user->role ?? 'user') === 'admin' ? 'selected' : '' }}>Admin</option>
+      <option value="sup-admin" {{ old('role', $user->role ?? 'user') === 'sup-admin' ? 'selected' : '' }}>Sup Admin</option>
+      <option value="manager" {{ old('role', $user->role ?? 'user') === 'manager' ? 'selected' : '' }}>Manager</option>
+      <option value="sub-admin" {{ old('role', $user->role ?? 'user') === 'sub-admin' ? 'selected' : '' }}>Sub Admin</option>
     </select>
   </div>
   <div class="col-md-6">

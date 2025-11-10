@@ -215,12 +215,22 @@
                                        onclick="event.preventDefault(); event.stopPropagation(); window.location.href='{{ route('projects.edit', $project) }}';">
                                         <i class="bx bx-edit"></i>
                                     </a>
-                                    <button type="button"
-                                            class="btn btn-outline-danger position-relative"
-                                            style="z-index: 2;"
-                                            onclick="event.preventDefault(); event.stopPropagation(); confirmDeleteProject('{{ $project->id }}', '{{ addslashes($project->name) }}', {{ $project->tasks()->count() }}, {{ $project->folders()->count() }});">
-                                        <i class="bx bx-trash"></i>
-                                    </button>
+                                    @if(auth()->user()->canDelete())
+                                        <button type="button"
+                                                class="btn btn-outline-danger position-relative"
+                                                style="z-index: 2;"
+                                                onclick="event.preventDefault(); event.stopPropagation(); confirmDeleteProject('{{ $project->id }}', '{{ addslashes($project->name) }}', {{ $project->tasks()->count() }}, {{ $project->folders()->count() }});">
+                                            <i class="bx bx-trash"></i>
+                                        </button>
+                                    @else
+                                        <button type="button"
+                                                class="btn btn-outline-danger position-relative disabled"
+                                                style="z-index: 2; cursor: not-allowed;"
+                                                aria-disabled="true"
+                                                title="You do not have permission to delete projects.">
+                                            <i class="bx bx-trash"></i>
+                                        </button>
+                                    @endif
                                 </div>
                             </div>
                         </div>
@@ -299,12 +309,22 @@
                                    onclick="event.preventDefault(); event.stopPropagation(); window.location.href='{{ route('projects.edit', $project) }}';">
                                     <i class="bx bx-edit"></i>
                                 </a>
-                                <button type="button"
-                                        class="btn btn-outline-danger btn-sm position-relative"
-                                        style="z-index: 2;"
-                                        onclick="event.preventDefault(); event.stopPropagation(); confirmDeleteProject('{{ $project->id }}', '{{ addslashes($project->name) }}', {{ $project->tasks()->count() }}, {{ $project->folders()->count() }});">
-                                    <i class="bx bx-trash"></i>
-                                </button>
+                                @if(auth()->user()->canDelete())
+                                    <button type="button"
+                                            class="btn btn-outline-danger btn-sm position-relative"
+                                            style="z-index: 2;"
+                                            onclick="event.preventDefault(); event.stopPropagation(); confirmDeleteProject('{{ $project->id }}', '{{ addslashes($project->name) }}', {{ $project->tasks()->count() }}, {{ $project->folders()->count() }});">
+                                        <i class="bx bx-trash"></i>
+                                    </button>
+                                @else
+                                    <button type="button"
+                                            class="btn btn-outline-danger btn-sm position-relative disabled"
+                                            style="z-index: 2; cursor: not-allowed;"
+                                            aria-disabled="true"
+                                            title="You do not have permission to delete projects.">
+                                        <i class="bx bx-trash"></i>
+                                    </button>
+                                @endif
                             </div>
                         </div>
                     </div>

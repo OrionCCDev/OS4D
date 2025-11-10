@@ -63,13 +63,19 @@
                                     <a href="{{ route('project-managers.edit', $manager) }}" class="btn btn-sm btn-outline-secondary" title="Edit">
                                         <i class="bx bx-edit"></i>
                                     </a>
-                                    <form action="{{ route('project-managers.destroy', $manager) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this project manager?')">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
+                                    @if(auth()->user()->canDelete())
+                                        <form action="{{ route('project-managers.destroy', $manager) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this project manager?')">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
+                                                <i class="bx bx-trash"></i>
+                                            </button>
+                                        </form>
+                                    @else
+                                        <button type="button" class="btn btn-sm btn-outline-danger disabled" aria-disabled="true" title="You do not have permission to delete project managers.">
                                             <i class="bx bx-trash"></i>
                                         </button>
-                                    </form>
+                                    @endif
                                 </div>
                             </td>
                         </tr>

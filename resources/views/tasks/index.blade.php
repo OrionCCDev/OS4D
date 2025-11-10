@@ -297,7 +297,7 @@
                                     </button>
                                 @endif
 
-                                @if(Auth::user()->isManager())
+                                @if(Auth::user()->isManager() && auth()->user()->canDelete())
                                 <form action="{{ route('tasks.destroy', $task) }}" method="POST" class="d-inline">
                                     @csrf
                                     @method('DELETE')
@@ -305,6 +305,10 @@
                                         <i class="bx bx-trash"></i>
                                     </button>
                                 </form>
+                                @elseif(Auth::user()->isManager())
+                                    <button type="button" class="btn btn-sm btn-outline-danger disabled" aria-disabled="true" title="You do not have permission to delete tasks.">
+                                        <i class="bx bx-trash"></i>
+                                    </button>
                                 @endif
                             </div>
                         </td>
@@ -332,7 +336,7 @@
                         <label class="form-label">Assign to User</label>
                         <select name="assigned_to" class="form-select" required>
                             <option value="">Select user</option>
-                            @foreach(\App\Models\User::where('id', '!=', auth()->id())->where('role', 'user')->orderBy('name')->get() as $user)
+                            @foreach(\App\Models\User::where('id', '!=', auth()->id())->whereIn('role', ['user', 'sub-admin', 'sup-admin'])->orderBy('name')->get() as $user)
                                 <option value="{{ $user->id }}">{{ $user->name }}</option>
                             @endforeach
                         </select>
@@ -473,7 +477,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <label class="form-label">Assign To</label>
                         <select name="assigned_to" class="form-select" required>
                             <option value="">Select User</option>
-                            @foreach(\App\Models\User::where('role', 'user')->orderBy('name')->get() as $user)
+                            @foreach(\App\Models\User::whereIn('role', ['user', 'sub-admin', 'sup-admin'])->orderBy('name')->get() as $user)
                                 <option value="{{ $user->id }}">{{ $user->name }}</option>
                             @endforeach
                         </select>

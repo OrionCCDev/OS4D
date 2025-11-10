@@ -74,7 +74,7 @@ class TaskController extends Controller
             ? ProjectFolder::where('project_id', $selectedProjectId)->orderBy('name')->get()
             : ProjectFolder::orderBy('name')->get();
         $users = User::where('id', '!=', Auth::id())
-            ->where('role', 'user')
+            ->whereIn('role', ['user', 'sub-admin', 'sup-admin'])
             ->orderBy('name')
             ->get();
 
@@ -1293,7 +1293,7 @@ class TaskController extends Controller
     private function sendInAppNotificationsToManagers(Task $task, $emailPreparation, $user)
     {
         try {
-            $managers = User::whereIn('role', ['admin', 'manager', 'sub-admin'])->get();
+            $managers = User::whereIn('role', ['admin', 'manager', 'sub-admin', 'sup-admin'])->get();
 
             Log::info('Found ' . $managers->count() . ' managers to notify about email marked as sent for task: ' . $task->id);
 
@@ -2710,7 +2710,7 @@ private function sendApprovalEmailViaGmail(Task $task, User $approver)
             // Notify managers - send notification directly to avoid skipping
             try {
                 // Get managers first for logging
-                $managers = User::whereIn('role', ['admin', 'manager', 'sub-admin'])->get();
+                $managers = User::whereIn('role', ['admin', 'manager', 'sub-admin', 'sup-admin'])->get();
                 Log::info("Time extension: Notifying {$managers->count()} managers");
 
                 $assigneeName = $task->assignee ? $task->assignee->name : 'Unknown user';

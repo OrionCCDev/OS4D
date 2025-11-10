@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Project;
 use App\Models\ProjectFolder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -75,6 +76,13 @@ class ProjectFolderController extends Controller
         // Store project_id and parent_id before deletion
         $projectId = $folder->project_id;
         $parentId = $folder->parent_id;
+
+        if (!Auth::user()->canDelete()) {
+            return redirect()->route('projects.show', [
+                'project' => $projectId,
+                'folder' => $parentId
+            ])->with('error', 'You do not have permission to delete folders.');
+        }
 
         // Remove physical directory for this folder (and its subfolders)
         try {

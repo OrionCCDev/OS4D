@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Contractor;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class ContractorController extends Controller
 {
@@ -53,6 +54,10 @@ class ContractorController extends Controller
 
     public function destroy(Contractor $contractor)
     {
+        if (!Auth::user()->canDelete()) {
+            return redirect()->route('contractors.index')->with('error', 'You do not have permission to delete contractors.');
+        }
+
         $contractor->delete();
         return redirect()->route('contractors.index')->with('success', 'Contractor deleted');
     }

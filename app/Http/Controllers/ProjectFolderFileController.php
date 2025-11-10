@@ -210,9 +210,15 @@ class ProjectFolderFileController extends Controller
             return response()->json(['error' => 'File not found in this project'], 404);
         }
 
+        $user = Auth::user();
+
         // Check if user is a manager
-        if (!Auth::user()->isManager()) {
+        if (!$user->isManager()) {
             return response()->json(['error' => 'Only managers can delete files'], 403);
+        }
+
+        if (!$user->canDelete()) {
+            return response()->json(['error' => 'You do not have permission to delete files'], 403);
         }
 
         // Delete physical file
