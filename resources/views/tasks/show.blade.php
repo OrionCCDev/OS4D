@@ -986,7 +986,12 @@
                 <div class="card-body">
                     <div class="d-grid gap-2">
                         <!-- USER ACTIONS -->
-                        @if($task->assigned_to === auth()->id())
+                        @php
+                            $viewerId = auth()->id();
+                            $isAssignee = $task->assigned_to === $viewerId;
+                        @endphp
+
+                        @if($isAssignee)
                             {{-- Time Extension Request Button --}}
                             @if($task->status !== 'completed')
                                 @php
@@ -1184,25 +1189,27 @@
                                     </div>
                                 </div>
                             @endif
-                        @elseif(in_array($task->status, ['pending', 'assigned', null]) && $task->assigned_to !== auth()->id())
-                            <div class="alert alert-info text-center mb-0">
-                                <i class="bx bx-info-circle me-2"></i>
-                                <strong>Task Assigned</strong><br>
-                                <small>This task has been assigned to {{ $task->assignee->name ?? 'another user' }}. Waiting for them to accept and start working.</small>
-                            </div>
-                        @elseif($task->status === 'on_client_consultant_review' || $task->combined_response_status)
-                            <div class="card border-primary mb-3">
-                                <div class="card-header bg-primary text-white">
-                                    <h6 class="mb-0"><i class="bx bx-envelope me-2"></i>Client/Consultant Responses</h6>
+                        @else
+                            @if(in_array($task->status, ['pending', 'assigned', null]))
+                                <div class="alert alert-info text-center mb-0">
+                                    <i class="bx bx-info-circle me-2"></i>
+                                    <strong>Task Assigned</strong><br>
+                                    <small>This task has been assigned to {{ $task->assignee->name ?? 'another user' }}. Waiting for them to accept and start working.</small>
                                 </div>
-                                <div class="card-body">
-                                    <div class="alert alert-info mb-2">
-                                        <strong>Status:</strong>
-                                        <span class="badge bg-info">{{ $task->combined_response_status ?? 'Pending Responses' }}</span>
+                            @elseif($task->status === 'on_client_consultant_review' || $task->combined_response_status)
+                                <div class="card border-primary mb-3">
+                                    <div class="card-header bg-primary text-white">
+                                        <h6 class="mb-0"><i class="bx bx-envelope me-2"></i>Client/Consultant Responses</h6>
                                     </div>
-                                    <p class="mb-0 text-muted">Only the assigned user or manager can update responses.</p>
+                                    <div class="card-body">
+                                        <div class="alert alert-info mb-2">
+                                            <strong>Status:</strong>
+                                            <span class="badge bg-info">{{ $task->combined_response_status ?? 'Pending Responses' }}</span>
+                                        </div>
+                                        <p class="mb-0 text-muted">Only the assigned user or manager can update responses.</p>
+                                    </div>
                                 </div>
-                            </div>
+                            @endif
                         @endif
 
                         <!-- MANAGER ACTIONS -->
