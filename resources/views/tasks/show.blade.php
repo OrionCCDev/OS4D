@@ -522,7 +522,9 @@
                                                 <i class="bx bx-download"></i>
                                                 <span>Download</span>
                                             </a>
-                                            @php($currentUser = Auth::user())
+                                            @php
+                                                $currentUser = Auth::user();
+                                            @endphp
                                             @if(($currentUser->isManager() && $currentUser->canDelete()) || (!$currentUser->isManager() && $att->uploaded_by === $currentUser->id && $task->status !== 'submitted_for_review' && $task->status !== 'in_review' && $task->status !== 'approved' && $task->status !== 'completed'))
                                             <form action="{{ route('tasks.attachments.delete', [$task, $att]) }}"
                                                 method="POST" onsubmit="return confirm('Delete attachment?')"
