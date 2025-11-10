@@ -987,12 +987,11 @@
                     <div class="d-grid gap-2">
                         <!-- USER ACTIONS -->
                         @if($task->assigned_to === auth()->id())
-                            {{-- Time Extension Request Button - Always visible except for completed tasks --}}
+                            {{-- Time Extension Request Button --}}
                             @if($task->status !== 'completed')
                                 @php
                                     $hasPendingRequest = $task->timeExtensionRequests()->where('status', 'pending')->exists();
                                 @endphp
-
                                 @if(!$hasPendingRequest)
                                     <button class="btn btn-outline-warning w-100 mb-2" onclick="showTimeExtensionModal({{ $task->id }})">
                                         <i class="bx bx-time me-2"></i>Request Time Extension
@@ -1005,158 +1004,143 @@
                                 @endif
                             @endif
 
-                            {{-- Status: Assigned - User can accept task --}}
-                            @if($task->status === 'assigned')
-                                <form action="{{ route('tasks.accept', $task) }}" method="POST">
-                                    @csrf
-                                    <button type="submit" class="btn btn-success w-100">
-                                        <i class="bx bx-check-circle me-2"></i>Accept Task & Start Working
+                            @php($taskStatus = $task->status)
+
+                            @switch($taskStatus)
+                                @case('assigned')
+                                    <form action="{{ route('tasks.accept', $task) }}" method="POST">
+                                        @csrf
+                                        <button type="submit" class="btn btn-success w-100">
+                                            <i class="bx bx-check-circle me-2"></i>Accept Task & Start Working
+                                        </button>
+                                    </form>
+                                    <small class="text-muted text-center">Click to accept this task and start working on it</small>
+                                    @break
+
+                                @case('in_progress')
+                                    <button class="btn btn-primary w-100" onclick="submitForReview({{ $task->id }})">
+                                        <i class="bx bx-send me-2"></i>Submit for Review
                                     </button>
-                                </form>
-                                <small class="text-muted text-center">Click to accept this task and start working on it</small>
+                                    <small class="text-muted text-center">Complete your work and submit it for manager review</small>
+                                    @break
 
-                            {{-- Status: In Progress - User can submit for review --}}
-                            @elseif($task->status === 'in_progress')
-                                <button class="btn btn-primary w-100" onclick="submitForReview({{ $task->id }})">
-                                    <i class="bx bx-send me-2"></i>Submit for Review
-                                </button>
-                                <small class="text-muted text-center">Complete your work and submit it for manager review</small>
-
-                            {{-- Status: Submitted for Review - Waiting --}}
-                            @elseif($task->status === 'submitted_for_review')
-                                <div class="alert alert-warning text-center mb-0">
-                                    <i class="bx bx-time-five me-2"></i>
-                                    <strong>Waiting for Manager</strong><br>
-                                    <small>Task submitted for review. Manager will review and start the review process.</small>
-                                </div>
-
-                            {{-- Status: In Review - Manager is reviewing --}}
-                            @elseif($task->status === 'in_review')
-                                <div class="alert alert-info text-center mb-0">
-                                    <i class="bx bx-search me-2"></i>
-                                    <strong>Under Review</strong><br>
-                                    <small>Manager is currently reviewing your task.</small>
-                                </div>
-
-                            {{-- Status: Ready for Email - Internal approval done --}}
-                            @elseif($task->status === 'ready_for_email')
-                                <div class="alert alert-success text-center mb-3">
-                                    <i class="bx bx-check-circle me-2"></i>
-                                    <strong>Internally Approved!</strong><br>
-                                    <small>Manager approved. Now send confirmation email to clients/consultants.</small>
-                                </div>
-                                <div class="d-grid gap-2">
-                                    <a href="{{ route('tasks.prepare-email', $task) }}" class="btn btn-primary">
-                                        <i class="bx bx-envelope me-2"></i>Prepare Confirmation Email
-                                    </a>
-                                    {{-- Send Free Mail button hidden as requested --}}
-                                    {{-- @if(Auth::user()->id === $task->assigned_to || Auth::user()->isManager())
-                                    <a href="{{ route('tasks.free-mail', $task) }}" class="btn btn-outline-primary">
-                                        <i class="bx bx-mail-send me-2"></i>Send Free Mail
-                                    </a>
-                                    @endif --}}
-                                </div>
-                                <small class="text-muted text-center mt-2 d-block">You can also assign contractors during email preparation</small>
-
-
-                            {{-- Status: In Review After Client/Consultant Reply - Processing client feedback --}}
-                            @elseif($task->status === 'in_review_after_client_consultant_reply')
-                                <div class="alert alert-warning text-center mb-0">
-                                    <i class="bx bx-message-dots me-2"></i>
-                                    <strong>Processing Client Feedback</strong><br>
-                                    <small>Client/consultant has responded. Manager is processing the feedback.</small>
-                                </div>
-
-
-                            {{-- Status: Rejected - Task rejected --}}
-                            @elseif($task->status === 'rejected')
-                                <div class="alert alert-danger text-center mb-0">
-                                    <i class="bx bx-x-circle me-2"></i>
-                                    <strong>Task Rejected</strong><br>
-                                    <small>This task has been rejected. Please contact your manager for details.</small>
-                                </div>
-
-                            {{-- Status: Completed - Task completed --}}
-                            @elseif($task->status === 'completed')
-                                <div class="alert alert-success text-center mb-0">
-                                    <i class="bx bx-check-circle me-2"></i>
-                                    <strong>Task Completed</strong><br>
-                                    <small>Congratulations! This task has been successfully completed.</small>
-                                </div>
-
-                            {{-- Status: Pending - Not started yet --}}
-                            @elseif($task->status === 'pending')
-                                <div class="alert alert-secondary text-center mb-0">
-                                    <i class="bx bx-time me-2"></i>
-                                    <strong>Task Pending</strong><br>
-                                    <small>This task is pending assignment or approval.</small>
-                                </div>
-
-                            {{-- Status: Re-Submit Required - Manager requested changes --}}
-                            @elseif($task->status === 're_submit_required')
-                                <div class="alert alert-warning text-center mb-3">
-                                    <i class="bx bx-refresh me-2"></i>
-                                    <strong>Resubmission Required</strong><br>
-                                    <small>Manager has requested changes after client/consultant review</small>
-                                </div>
-
-                                @if($task->manager_override_notes)
-                                <div class="card mb-3">
-                                    <div class="card-body">
-                                        <h6 class="text-muted mb-2">Manager Notes:</h6>
-                                        <p class="mb-0">{{ $task->manager_override_notes }}</p>
+                                @case('submitted_for_review')
+                                    <div class="alert alert-warning text-center mb-0">
+                                        <i class="bx bx-time-five me-2"></i>
+                                        <strong>Waiting for Manager</strong><br>
+                                        <small>Task submitted for review. Manager will review and start the review process.</small>
                                     </div>
-                                </div>
-                                @endif
+                                    @break
 
-                                @if($task->combined_response_status)
-                                <div class="card mb-3">
-                                    <div class="card-body">
-                                        <h6 class="text-muted mb-2">Client/Consultant Feedback:</h6>
-                                        <span class="badge bg-info mb-2">{{ $task->combined_response_status }}</span>
-
-                                        @if($task->client_response_notes)
-                                        <div class="mt-2">
-                                            <strong>Client Notes:</strong>
-                                            <p class="mb-0 text-muted">{{ $task->client_response_notes }}</p>
-                                        </div>
-                                        @endif
-
-                                        @if($task->consultant_response_notes)
-                                        <div class="mt-2">
-                                            <strong>Consultant Notes:</strong>
-                                            <p class="mb-0 text-muted">{{ $task->consultant_response_notes }}</p>
-                                        </div>
-                                        @endif
+                                @case('in_review')
+                                    <div class="alert alert-info text-center mb-0">
+                                        <i class="bx bx-search me-2"></i>
+                                        <strong>Under Review</strong><br>
+                                        <small>Manager is currently reviewing your task.</small>
                                     </div>
-                                </div>
-                                @endif
+                                    @break
 
-                                <form action="{{ route('tasks.resubmit', $task) }}" method="POST">
-                                    @csrf
-                                    <button type="submit" class="btn btn-success w-100">
-                                        <i class="bx bx-edit me-2"></i>Start Working on Changes
-                                    </button>
-                                </form>
-                                <small class="text-muted text-center mt-2 d-block">Click to return to in-progress status and make the requested changes</small>
+                                @case('ready_for_email')
+                                    <div class="alert alert-success text-center mb-3">
+                                        <i class="bx bx-check-circle me-2"></i>
+                                        <strong>Internally Approved!</strong><br>
+                                        <small>Manager approved. Now send confirmation email to clients/consultants.</small>
+                                    </div>
+                                    <div class="d-grid gap-2">
+                                        <a href="{{ route('tasks.prepare-email', $task) }}" class="btn btn-primary">
+                                            <i class="bx bx-envelope me-2"></i>Prepare Confirmation Email
+                                        </a>
+                                    </div>
+                                    <small class="text-muted text-center mt-2 d-block">You can also assign contractors during email preparation</small>
+                                    @break
 
-                            {{-- Basic task states for non-assigned users --}}
-                            @elseif(in_array($task->status, ['pending', 'assigned', null]) && $task->assigned_to !== auth()->id())
-                                <div class="alert alert-info text-center mb-0">
-                                    <i class="bx bx-info-circle me-2"></i>
-                                    <strong>Task Assigned</strong><br>
-                                    <small>This task has been assigned to {{ $task->assignee->name ?? 'another user' }}. Waiting for them to accept and start working.</small>
-                                </div>
+                                @case('in_review_after_client_consultant_reply')
+                                    <div class="alert alert-warning text-center mb-0">
+                                        <i class="bx bx-message-dots me-2"></i>
+                                        <strong>Processing Client Feedback</strong><br>
+                                        <small>Client/consultant has responded. Manager is processing the feedback.</small>
+                                    </div>
+                                    @break
 
-                            {{-- Client/Consultant Response Tracking - Only show after email has been sent --}}
-                            @elseif($task->status === 'on_client_consultant_review' || $task->combined_response_status)
-                                {{-- Show client/consultant response forms --}}
+                                @case('rejected')
+                                    <div class="alert alert-danger text-center mb-0">
+                                        <i class="bx bx-x-circle me-2"></i>
+                                        <strong>Task Rejected</strong><br>
+                                        <small>This task has been rejected. Please contact your manager for details.</small>
+                                    </div>
+                                    @break
+
+                                @case('completed')
+                                    <div class="alert alert-success text-center mb-0">
+                                        <i class="bx bx-check-circle me-2"></i>
+                                        <strong>Task Completed</strong><br>
+                                        <small>Congratulations! This task has been successfully completed.</small>
+                                    </div>
+                                    @break
+
+                                @case('pending')
+                                    <div class="alert alert-secondary text-center mb-0">
+                                        <i class="bx bx-time me-2"></i>
+                                        <strong>Task Pending</strong><br>
+                                        <small>This task is pending assignment or approval.</small>
+                                    </div>
+                                    @break
+
+                                @case('re_submit_required')
+                                    <div class="alert alert-warning text-center mb-3">
+                                        <i class="bx bx-refresh me-2"></i>
+                                        <strong>Resubmission Required</strong><br>
+                                        <small>Manager has requested changes after client/consultant review</small>
+                                    </div>
+
+                                    @if($task->manager_override_notes)
+                                        <div class="card mb-3">
+                                            <div class="card-body">
+                                                <h6 class="text-muted mb-2">Manager Notes:</h6>
+                                                <p class="mb-0">{{ $task->manager_override_notes }}</p>
+                                            </div>
+                                        </div>
+                                    @endif
+
+                                    @if($task->combined_response_status)
+                                        <div class="card mb-3">
+                                            <div class="card-body">
+                                                <h6 class="text-muted mb-2">Client/Consultant Feedback:</h6>
+                                                <span class="badge bg-info mb-2">{{ $task->combined_response_status }}</span>
+
+                                                @if($task->client_response_notes)
+                                                    <div class="mt-2">
+                                                        <strong>Client Notes:</strong>
+                                                        <p class="mb-0 text-muted">{{ $task->client_response_notes }}</p>
+                                                    </div>
+                                                @endif
+
+                                                @if($task->consultant_response_notes)
+                                                    <div class="mt-2">
+                                                        <strong>Consultant Notes:</strong>
+                                                        <p class="mb-0 text-muted">{{ $task->consultant_response_notes }}</p>
+                                                    </div>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    @endif
+
+                                    <form action="{{ route('tasks.resubmit', $task) }}" method="POST">
+                                        @csrf
+                                        <button type="submit" class="btn btn-success w-100">
+                                            <i class="bx bx-edit me-2"></i>Start Working on Changes
+                                        </button>
+                                    </form>
+                                    <small class="text-muted text-center mt-2 d-block">Click to return to in-progress status and make the requested changes</small>
+                                    @break
+                            @endswitch
+
+                            @if(in_array($taskStatus, ['on_client_consultant_review']) || $task->combined_response_status)
                                 <div class="card border-primary mb-3">
                                     <div class="card-header bg-primary text-white">
                                         <h6 class="mb-0"><i class="bx bx-envelope me-2"></i>Client/Consultant Responses</h6>
                                     </div>
                                     <div class="card-body">
-                                        <!-- Client Response Form -->
                                         <form action="{{ route('tasks.client-response', $task) }}" method="POST" class="mb-3">
                                             @csrf
                                             <label class="form-label fw-semibold"><i class="bx bx-user me-1"></i>Client Status:</label>
@@ -1171,7 +1155,6 @@
 
                                         <hr>
 
-                                        <!-- Consultant Response Form -->
                                         <form action="{{ route('tasks.consultant-response', $task) }}" method="POST" class="mb-3">
                                             @csrf
                                             <label class="form-label fw-semibold"><i class="bx bx-user-check me-1"></i>Consultant Status:</label>
@@ -1185,13 +1168,12 @@
                                         </form>
 
                                         @if($task->combined_response_status)
-                                        <div class="alert alert-info mb-2">
-                                            <strong>Combined Status:</strong><br>
-                                            <span class="badge bg-info">{{ $task->combined_response_status }}</span>
-                                        </div>
+                                            <div class="alert alert-info mb-2">
+                                                <strong>Combined Status:</strong><br>
+                                                <span class="badge bg-info">{{ $task->combined_response_status }}</span>
+                                            </div>
                                         @endif
 
-                                        <!-- Finish Review Button - Will save both responses automatically -->
                                         <form id="finishReviewForm" action="{{ route('tasks.finish-review', $task) }}" method="POST">
                                             @csrf
                                             <button type="submit" class="btn btn-warning w-100">
@@ -1202,6 +1184,25 @@
                                     </div>
                                 </div>
                             @endif
+                        @elseif(in_array($task->status, ['pending', 'assigned', null]) && $task->assigned_to !== auth()->id())
+                            <div class="alert alert-info text-center mb-0">
+                                <i class="bx bx-info-circle me-2"></i>
+                                <strong>Task Assigned</strong><br>
+                                <small>This task has been assigned to {{ $task->assignee->name ?? 'another user' }}. Waiting for them to accept and start working.</small>
+                            </div>
+                        @elseif($task->status === 'on_client_consultant_review' || $task->combined_response_status)
+                            <div class="card border-primary mb-3">
+                                <div class="card-header bg-primary text-white">
+                                    <h6 class="mb-0"><i class="bx bx-envelope me-2"></i>Client/Consultant Responses</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="alert alert-info mb-2">
+                                        <strong>Status:</strong>
+                                        <span class="badge bg-info">{{ $task->combined_response_status ?? 'Pending Responses' }}</span>
+                                    </div>
+                                    <p class="mb-0 text-muted">Only the assigned user or manager can update responses.</p>
+                                </div>
+                            </div>
                         @endif
 
                         <!-- MANAGER ACTIONS -->
