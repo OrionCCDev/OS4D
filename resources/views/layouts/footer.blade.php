@@ -225,7 +225,7 @@
               <div class="fw-semibold text-danger">${task.due_date_for_humans || 'Not set'}</div>
             </td>
             <td>
-              <span class="badge bg-danger bg-opacity-10 text-danger px-2 py-1">${task.overdue_duration || 'N/A'}</span>
+              <span class="badge bg-danger text-white px-2 py-1 shadow-sm">${task.overdue_duration || 'N/A'}</span>
             </td>
             <td class="text-end">
               <div class="btn-group" role="group">
