@@ -50,11 +50,14 @@
                 $daysUntilStart = $now->diffInDays($startDate, false);
                 $isAccepted = in_array($task->status, ['accepted', 'in_progress', 'workingon', 'submitted_for_review',
                 'in_review', 'approved', 'completed']);
-                $isApproaching = $daysUntilStart <= 3 && $daysUntilStart>= 0;
-                    $isOverdue = $daysUntilStart < 0; // Only show overdue to start if: // 1. Task is not accepted/in
-                        progress AND // 2. Start date has passed AND // 3. Task is assigned (not pending/unassigned)
-                        $shouldShowOverdue=$isOverdue && !$isAccepted && $task->status === 'assigned';
-                        @endphp
+                $isApproaching = $daysUntilStart <= 3 && $daysUntilStart >= 0;
+                $isOverdue = $daysUntilStart < 0; /* Show overdue badge when:
+                    1) Task isn't accepted/in progress yet
+                    2) Start date has already passed
+                    3) Task status is assigned
+                */
+                $shouldShowOverdue = $isOverdue && !$isAccepted && $task->status === 'assigned';
+                @endphp
 
                         @if($shouldShowOverdue)
                         <span class="badge bg-danger fs-6 px-3 py-2">
