@@ -80,6 +80,26 @@
       }
       .avatar-zoom-seq { animation: avatarZoomInOut .9s cubic-bezier(.2,.7,.2,1) 40ms both; }
 
+      /* Overdue badge pulse */
+      .nav-pulse-badge {
+        position: absolute;
+        top: -4px;
+        right: -6px;
+        box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4);
+        animation: badgePulse 1.8s ease-out infinite;
+      }
+      @keyframes badgePulse {
+        0% {
+          box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4);
+        }
+        70% {
+          box-shadow: 0 0 0 10px rgba(220, 38, 38, 0);
+        }
+        100% {
+          box-shadow: 0 0 0 0 rgba(220, 38, 38, 0);
+        }
+      }
+
       /* Post-login full-screen overlay */
       .login-transition {
         position: fixed;
@@ -267,6 +287,15 @@
               <a href="{{ route('tasks.index') }}" class="menu-link">
                 <i class="menu-icon tf-icons bx bx-task"></i>
                 <div data-i18n="Tasks">My Tasks</div>
+              </a>
+            </li>
+
+            <!-- Overdue Tasks - All users -->
+            <li class="menu-item {{ request()->routeIs('overdue-tasks.*') ? 'active' : '' }}">
+              <a href="{{ route('overdue-tasks.index') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-error-circle text-danger"></i>
+                <div data-i18n="Overdue Tasks">{{ Auth::user()->isManager() ? 'Team Overdue' : 'My Overdue' }}</div>
+                <span class="badge rounded-pill bg-danger ms-auto" id="sidebar-overdue-count" style="display: none;">0</span>
               </a>
             </li>
 
@@ -671,6 +700,14 @@
               <!-- /Search -->
 
               <ul class="navbar-nav flex-row align-items-center ms-auto">
+                <!-- Overdue Tasks Alert -->
+                <li class="nav-item me-3">
+                  <a href="javascript:void(0);" class="nav-link position-relative text-white" id="nav-overdue-trigger" role="button" aria-label="View overdue tasks">
+                    <i class="bx bx-error-circle fs-4 text-danger"></i>
+                    <span class="badge rounded-pill bg-danger nav-pulse-badge" id="nav-overdue-count" style="display: none;">0</span>
+                  </a>
+                </li>
+
                 <!-- Email Notifications - Separate Icon -->
                 {{--  <li class="nav-item dropdown me-3">
                   <a class="nav-link dropdown-toggle hide-arrow position-relative" href="#" data-bs-toggle="dropdown" aria-expanded="false">
@@ -919,6 +956,58 @@
               </ul>
             </div>
           </nav>
+
+          <!-- Overdue Tasks Modal -->
+          <div class="modal fade" id="overdueTasksModal" tabindex="-1" aria-labelledby="overdueTasksModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-xl modal-dialog-scrollable modal-dialog-centered">
+              <div class="modal-content">
+                <div class="modal-header border-0 pb-0">
+                  <div>
+                    <h5 class="modal-title fw-semibold" id="overdueTasksModalLabel">
+                      <i class="bx bx-error-circle text-danger me-2"></i>Overdue Tasks
+                    </h5>
+                    <small class="text-muted d-block">Tasks past their due date without a sent confirmation email.</small>
+                  </div>
+                  <div class="ms-auto d-flex align-items-center gap-2">
+                    <span class="badge bg-danger bg-opacity-10 text-danger px-2 py-1" id="overdue-modal-count">0</span>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                  </div>
+                </div>
+                <div class="modal-body pt-3">
+                  <div id="overdue-modal-loading" class="text-center py-5">
+                    <div class="spinner-border text-danger" role="status">
+                      <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-3 text-muted mb-0">Loading overdue tasks...</p>
+                  </div>
+
+                  <div id="overdue-modal-message" class="alert d-none" role="alert"></div>
+
+                  <div class="table-responsive d-none" id="overdue-modal-table-wrapper">
+                    <table class="table table-hover align-middle">
+                      <thead>
+                        <tr>
+                          <th>Task</th>
+                          <th>User</th>
+                          <th>Project</th>
+                          <th>Due Date</th>
+                          <th>Overdue For</th>
+                          <th class="text-end">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody id="overdue-modal-table-body"></tbody>
+                    </table>
+                  </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                  <a href="{{ route('overdue-tasks.index') }}" class="btn btn-outline-primary">
+                    <i class="bx bx-expand me-1"></i>Open full page
+                  </a>
+                  <button type="button" class="btn btn-light" data-bs-dismiss="modal">Close</button>
+                </div>
+              </div>
+            </div>
+          </div>
 
           <!-- / Navbar -->
 

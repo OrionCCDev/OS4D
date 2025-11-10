@@ -14,6 +14,7 @@ use App\Http\Controllers\Admin\UsersController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ProjectFolderController;
 use App\Http\Controllers\TaskController;
+use App\Http\Controllers\OverdueTaskController;
 use App\Http\Controllers\ContractorController;
 use App\Http\Controllers\ProjectManagerController;
 use App\Http\Controllers\EmailTemplateController;
@@ -143,6 +144,12 @@ Route::middleware('auth')->group(function () {
     Route::get('/email-test-reply', function () {
         return view('emails.test-reply');
     })->name('email.test-reply');
+
+    // Overdue task monitoring (all authenticated users)
+    Route::get('overdue-tasks', [OverdueTaskController::class, 'index'])->name('overdue-tasks.index');
+    Route::get('overdue-tasks/summary', [OverdueTaskController::class, 'summary'])->name('overdue-tasks.summary');
+    Route::get('overdue-tasks/list', [OverdueTaskController::class, 'list'])->name('overdue-tasks.list');
+    Route::post('overdue-tasks/{task}/send-reminder', [OverdueTaskController::class, 'sendDelayEmail'])->name('overdue-tasks.send-reminder');
 
     // Live email testing page
     Route::get('/live-email-test', function () {
