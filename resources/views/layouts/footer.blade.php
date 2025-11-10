@@ -50,6 +50,8 @@
     const modalTableWrapper = document.getElementById('overdue-modal-table-wrapper');
     const modalTableBody = document.getElementById('overdue-modal-table-body');
     const modalMessage = document.getElementById('overdue-modal-message');
+    const modalSliderWrapper = document.getElementById('overdue-modal-slider-wrapper');
+    const modalSlider = document.getElementById('overdue-modal-slider');
     const csrfTokenMeta = document.querySelector('meta[name="csrf-token"]');
 
     const csrfToken = csrfTokenMeta ? csrfTokenMeta.getAttribute('content') : '';
@@ -69,6 +71,58 @@
       badgeEl.textContent = count;
       badgeEl.style.display = count > 0 ? 'inline-block' : 'none';
     }
+
+    function renderOverdueCards(container, stats) {
+      if (!container) {
+        return;
+      }
+      container.innerHTML = '';
+      stats.forEach(function (stat) {
+        const card = document.createElement('div');
+        card.className = 'overdue-card ' + (stat.badge_class || 'bg-success text-white');
+        card.innerHTML = `
+          <div class="overdue-card-content">
+            <span class="overdue-card-name">${stat.name}</span>
+            <span class="overdue-card-count">${stat.count} overdue</span>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    window.initOverdueAutoScroll = function (carousel) {
+      if (!carousel) {
+        return;
+      }
+      let autoScroll = setInterval(function () {
+        if (carousel.scrollWidth <= carousel.clientWidth) {
+          return;
+        }
+        const next = carousel.scrollLeft + carousel.clientWidth;
+        if (next >= carousel.scrollWidth) {
+          carousel.scrollTo({ left: 0, behavior: 'smooth' });
+        } else {
+          carousel.scrollTo({ left: next, behavior: 'smooth' });
+        }
+      }, 4000);
+
+      carousel.addEventListener('mouseenter', function () {
+        clearInterval(autoScroll);
+      });
+      carousel.addEventListener('mouseleave', function () {
+        autoScroll = setInterval(function () {
+          if (carousel.scrollWidth <= carousel.clientWidth) {
+            return;
+          }
+          const next = carousel.scrollLeft + carousel.clientWidth;
+          if (next >= carousel.scrollWidth) {
+            carousel.scrollTo({ left: 0, behavior: 'smooth' });
+          } else {
+            carousel.scrollTo({ left: next, behavior: 'smooth' });
+          }
+        }, 4000);
+      });
+    };
 
     function showModalMessage(type, message) {
       if (!modalMessage) {
@@ -219,6 +273,16 @@
           modalCount.textContent = data.total || 0;
         }
 
+        if (Array.isArray(data.stats) && data.stats.length > 0) {
+          if (modalSliderWrapper && modalSlider) {
+            modalSliderWrapper.classList.remove('d-none');
+            renderOverdueCards(modalSlider, data.stats);
+            window.initOverdueAutoScroll(modalSlider);
+          }
+        } else if (modalSliderWrapper) {
+          modalSliderWrapper.classList.add('d-none');
+        }
+
         if (!Array.isArray(data.data) || data.data.length === 0) {
           showModalMessage('success', '<i class="bx bx-check-circle me-2"></i>Great job! There are no overdue tasks right now.');
           return;
@@ -261,6 +325,7 @@
         }
 
         alert('Overdue reminder sent successfully.');
+        fetchOverdueSummary();
         return true;
       } catch (error) {
         console.error('Failed to send overdue reminder:', error);

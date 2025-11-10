@@ -13,12 +13,27 @@
             </small>
         </div>
         <div class="text-end">
-            <span class="badge bg-danger bg-opacity-10 text-danger px-3 py-2">
+            <span class="badge bg-danger text-white px-3 py-2 shadow-sm">
                 <i class="bx bx-timer me-1"></i>
                 Total overdue: {{ $tasks->total() }}
             </span>
         </div>
     </div>
+
+    @if($overdueStats->isNotEmpty())
+        <div class="overdue-carousel-wrapper mb-4">
+            <div class="overdue-carousel" id="overdue-page-carousel">
+                @foreach($overdueStats as $stat)
+                    <div class="overdue-card {{ $stat['badge_class'] }}">
+                        <div class="overdue-card-content">
+                            <span class="overdue-card-name">{{ $stat['name'] }}</span>
+                            <span class="overdue-card-count">{{ $stat['count'] }} overdue</span>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+    @endif
 
     <div class="card mb-4">
         <div class="card-body">
@@ -39,12 +54,15 @@
                     <label for="project" class="form-label">
                         <i class="bx bx-briefcase me-1"></i>Project
                     </label>
-                    <input type="text"
-                           class="form-control"
-                           id="project"
-                           name="project"
-                           placeholder="Filter by project name or code"
-                           value="{{ $filters['project'] ?? '' }}">
+                    <select class="form-select" id="project" name="project">
+                        <option value="">All projects</option>
+                        @foreach($projects as $project)
+                            <option value="{{ $project->name }}"
+                                @selected(($filters['project'] ?? '') === $project->name)>
+                                {{ $project->name }}
+                            </option>
+                        @endforeach
+                    </select>
                 </div>
 
                 @if($isManagerView)
@@ -133,7 +151,7 @@
                                 @endif
                             </td>
                             <td>
-                                <span class="badge bg-danger bg-opacity-10 text-danger px-2 py-1">{{ $overdueText }}</span>
+                                <span class="badge bg-danger text-white px-2 py-1 shadow-sm">{{ $overdueText }}</span>
                             </td>
                             <td class="text-end">
                                 <div class="btn-group" role="group">
@@ -175,19 +193,24 @@
     </div>
 </div>
 
-@if($isManagerView)
+@push('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            const carousel = document.getElementById('overdue-page-carousel');
+            if (carousel && typeof window.initOverdueAutoScroll === 'function') {
+                window.initOverdueAutoScroll(carousel);
+            }
+
             document.querySelectorAll('.js-send-overdue-reminder').forEach(function (btn) {
                 btn.addEventListener('click', function () {
                     const taskId = this.getAttribute('data-task-id');
-                    if (!taskId) {
+                    if (!taskId || typeof window.sendOverdueReminder !== 'function') {
                         return;
                     }
 
-                    let note = prompt('Optional message to include in the overdue reminder (leave blank for default message):');
+                    const note = prompt('Optional message to include in the overdue reminder (leave blank for default message):');
                     if (note === null) {
-                        return; // user cancelled
+                        return;
                     }
 
                     this.disabled = true;
@@ -202,6 +225,7 @@
             });
         });
     </script>
-@endif
+@endpush
+
 @endsection
 

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Mail\TaskOverdueReminderMail;
 use App\Models\Task;
 use App\Models\User;
+use App\Models\Project;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -47,6 +48,8 @@ class OverdueTaskController extends Controller
             });
         }
 
+        $stats = $this->buildOverdueStats(clone $query);
+
         $tasks = $query
             ->with(['assignee:id,name,email', 'project:id,name,short_code'])
             ->orderBy('due_date', 'asc')
@@ -65,11 +68,20 @@ class OverdueTaskController extends Controller
                 ->get(['id', 'name'])
             : collect();
 
+        $projects = $isManagerView
+            ? Project::orderBy('name')->get(['id', 'name'])
+            : Project::whereHas('tasks', function ($q) use ($user) {
+                $q->where('assigned_to', $user->id)
+                    ->whereNotNull('due_date');
+            })->select('id', 'name')->distinct()->orderBy('name')->get();
+
         return view('tasks.overdue', [
             'tasks' => $tasks,
             'filters' => $filters,
             'users' => $users,
             'isManagerView' => $isManagerView,
+            'projects' => $projects,
+            'overdueStats' => $stats,
         ]);
     }
 
@@ -101,6 +113,8 @@ class OverdueTaskController extends Controller
             ->with(['assignee:id,name,email', 'project:id,name,short_code'])
             ->orderBy('due_date', 'asc');
 
+        $stats = $this->buildOverdueStats(clone $query);
+
         /** @var LengthAwarePaginator $paginator */
         $paginator = $query->paginate($perPage);
 
@@ -131,6 +145,7 @@ class OverdueTaskController extends Controller
             'total' => $paginator->total(),
             'current_page' => $paginator->currentPage(),
             'last_page' => $paginator->lastPage(),
+            'stats' => $stats,
         ]);
     }
 
@@ -271,6 +286,45 @@ class OverdueTaskController extends Controller
         }
 
         return false;
+    }
+
+    /**
+     * Build overdue count statistics per user.
+     */
+    private function buildOverdueStats($query)
+    {
+        $raw = (clone $query)
+            ->selectRaw('assigned_to, COUNT(*) as total')
+            ->groupBy('assigned_to')
+            ->get();
+
+        if ($raw->isEmpty()) {
+            return collect();
+        }
+
+        $userIds = $raw->pluck('assigned_to')->filter()->unique();
+        $users = User::whereIn('id', $userIds)->get(['id', 'name'])->keyBy('id');
+
+        return $raw->map(function ($row) use ($users) {
+            $count = (int) $row->total;
+            $assignedId = $row->assigned_to;
+            $user = $assignedId ? $users->get($assignedId) : null;
+
+            if (!$assignedId) {
+                $backgroundClass = 'bg-secondary text-white';
+            } elseif ($count >= 3) {
+                $backgroundClass = 'bg-danger text-white';
+            } else {
+                $backgroundClass = 'bg-success text-white';
+            }
+
+            return [
+                'user_id' => $assignedId,
+                'name' => $user?->name ?? 'Unassigned',
+                'count' => $count,
+                'badge_class' => $backgroundClass,
+            ];
+        })->values();
     }
 }
 

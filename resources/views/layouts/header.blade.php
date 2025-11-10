@@ -99,6 +99,47 @@
           box-shadow: 0 0 0 0 rgba(220, 38, 38, 0);
         }
       }
+      .overdue-carousel-wrapper {
+        position: relative;
+        overflow: hidden;
+        border-radius: 14px;
+        background: linear-gradient(120deg, #fef2f2, #f8fafc);
+        border: 1px solid rgba(220, 38, 38, 0.12);
+        padding: 0.75rem 0;
+      }
+      .overdue-carousel {
+        display: flex;
+        gap: 1rem;
+        padding: 0 1rem;
+        overflow-x: auto;
+        scroll-behavior: smooth;
+      }
+      .overdue-carousel::-webkit-scrollbar {
+        display: none;
+      }
+      .overdue-card {
+        min-width: 180px;
+        border-radius: 12px;
+        padding: 0.75rem 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 10px 25px rgba(15, 23, 42, 0.15);
+      }
+      .overdue-card-content {
+        text-align: center;
+        color: #fff;
+      }
+      .overdue-card-name {
+        display: block;
+        font-weight: 600;
+        font-size: 0.95rem;
+      }
+      .overdue-card-count {
+        display: block;
+        font-weight: 500;
+        font-size: 0.85rem;
+      }
 
       /* Post-login full-screen overlay */
       .login-transition {
@@ -969,8 +1010,11 @@
                     <small class="text-muted d-block">Tasks past their due date without a sent confirmation email.</small>
                   </div>
                   <div class="ms-auto d-flex align-items-center gap-2">
-                    <span class="badge bg-danger bg-opacity-10 text-danger px-2 py-1" id="overdue-modal-count">0</span>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <span class="badge bg-danger text-white px-3 py-1 shadow-sm" id="overdue-modal-count">0</span>
+                    <button type="button" class="btn btn-sm btn-danger rounded-pill px-3 d-flex align-items-center gap-1 shadow-sm" data-bs-dismiss="modal" aria-label="Close">
+                      <i class="bx bx-x fs-5"></i>
+                      Close
+                    </button>
                   </div>
                 </div>
                 <div class="modal-body pt-3">
@@ -982,6 +1026,10 @@
                   </div>
 
                   <div id="overdue-modal-message" class="alert d-none" role="alert"></div>
+
+                  <div class="overdue-carousel-wrapper d-none mb-3" id="overdue-modal-slider-wrapper">
+                    <div class="overdue-carousel" id="overdue-modal-slider"></div>
+                  </div>
 
                   <div class="table-responsive d-none" id="overdue-modal-table-wrapper">
                     <table class="table table-hover align-middle">
