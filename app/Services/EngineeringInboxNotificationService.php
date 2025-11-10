@@ -45,7 +45,7 @@ class EngineeringInboxNotificationService
     private function notifyManagers(array $emailData, ?Task $relatedTask): void
     {
         try {
-            $managers = User::whereIn('role', ['admin', 'manager', 'sub-admin', 'sup-admin'])->get();
+            $managers = User::whereIn('role', ['admin', 'manager', 'sub-admin'])->get();
 
             if ($managers->isEmpty()) {
                 Log::warning('No managers found to notify about received email');

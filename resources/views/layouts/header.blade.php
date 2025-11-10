@@ -251,12 +251,18 @@
             </li>
             @endif
 
-            @if(in_array(Auth::user()->role, ['admin', 'sup-admin']))
+            @if(Auth::user()->role === 'admin')
             <!-- Users - Admin only -->
             <li class="menu-item {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
               <a href="{{ route('admin.users.index') }}" class="menu-link">
                 <i class="menu-icon tf-icons bx bx-user"></i>
                 <div data-i18n="Users">Users</div>
+              </a>
+            </li>
+            <li class="menu-item {{ request()->routeIs('admin.delete-requests.*') ? 'active' : '' }}">
+              <a href="{{ route('admin.delete-requests.index') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-trash"></i>
+                <div data-i18n="Delete Requests">Delete Requests</div>
               </a>
             </li>
             @endif
@@ -741,6 +747,14 @@
               <!-- /Search -->
 
               <ul class="navbar-nav flex-row align-items-center ms-auto">
+                @php
+                    $pendingDeleteRequestsCount = (Auth::user()->role === 'admin')
+                        ? \App\Models\DeleteRequest::pending()->count()
+                        : 0;
+                    $recentDeleteRequests = (Auth::user()->role === 'admin')
+                        ? \App\Models\DeleteRequest::with('requester')->pending()->latest()->take(5)->get()
+                        : collect();
+                @endphp
                 <!-- Overdue Tasks Alert -->
                 <li class="nav-item me-3">
                   <a href="javascript:void(0);" class="nav-link position-relative text-white" id="nav-overdue-trigger" role="button" aria-label="View overdue tasks">
@@ -852,6 +866,31 @@
                     </div>
                   </div>
                 </li>
+
+                @if(Auth::user()->role === 'admin')
+                <li class="nav-item dropdown me-3">
+                  <a class="nav-link dropdown-toggle hide-arrow position-relative text-white" href="#" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bx bx-trash fs-4 text-white"></i>
+                    @if($pendingDeleteRequestsCount > 0)
+                      <span class="badge rounded-pill bg-danger position-absolute" style="top: 0; right: -4px;">
+                        {{ $pendingDeleteRequestsCount }}
+                      </span>
+                    @endif
+                  </a>
+                  <div class="dropdown-menu dropdown-menu-end p-0" style="min-width: 320px; max-width: 360px;">
+                    <div class="p-3 border-bottom bg-light d-flex justify-content-between align-items-center">
+                      <div>
+                        <h6 class="mb-0"><i class="bx bx-trash me-2"></i>Delete Requests</h6>
+                        <small class="text-muted">Pending approval</small>
+                      </div>
+                      <span class="badge bg-danger">{{ $pendingDeleteRequestsCount }}</span>
+                    </div>
+                    <div class="dropdown-menu-list" style="max-height: 320px; overflow-y: auto;">
+                      @include('admin.delete-requests.popup', ['requests' => $recentDeleteRequests])
+                    </div>
+                  </div>
+                </li>
+                @endif
 
                 <!-- Task Notifications - All Users -->
                 <li class="nav-item dropdown me-3">

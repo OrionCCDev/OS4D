@@ -91,13 +91,24 @@
                         <a href="{{ route('tasks.edit', ['task' => $task, 'redirect_to' => 'project.show']) }}" class="btn btn-primary">
                             <i class="bx bx-edit me-1"></i>Edit Task
                         </a>
-                        <form action="{{ route('tasks.destroy', $task) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this task?')" class="d-inline">
-                            @csrf
-                            @method('DELETE')
-                            <button class="btn btn-outline-danger">
-                                <i class="bx bx-trash me-1"></i>Delete
-                            </button>
-                        </form>
+                        @if(Auth::user()->canDelete())
+                            <form action="{{ route('tasks.destroy', $task) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this task?')" class="d-inline">
+                                @csrf
+                                @method('DELETE')
+                                <button class="btn btn-outline-danger">
+                                    <i class="bx bx-trash me-1"></i>Delete
+                                </button>
+                            </form>
+                        @elseif(Auth::user()->isSubAdmin())
+                            @include('partials.delete-request-button', [
+                                'type' => 'task',
+                                'id' => $task->id,
+                                'label' => $task->title,
+                                'class' => 'btn btn-outline-danger',
+                                'icon' => 'bx bx-trash',
+                                'text' => 'Request Delete'
+                            ])
+                        @endif
                     @endif
                     {{-- Send Free Mail button hidden as requested --}}
                     {{-- @if(Auth::user()->id === $task->assigned_to || Auth::user()->isManager())
@@ -507,6 +518,19 @@
                                                             <span>Delete</span>
                                                         </button>
                                                     </form>
+                                                @elseif($currentUser->isManager() && $currentUser->isSubAdmin())
+                                                    <button class="action-btn delete-btn delete-request-trigger"
+                                                            type="button"
+                                                            data-bs-toggle="modal"
+                                                            data-bs-target="#deleteRequestModal"
+                                                            data-target-type="project_file"
+                                                            data-target-id="{{ $att->id }}"
+                                                            data-target-label="{{ $att->display_name ?? $att->original_name }}"
+                                                            data-redirect="{{ url()->current() }}"
+                                                            title="Request deletion">
+                                                        <i class="bx bx-trash"></i>
+                                                        <span>Request Delete</span>
+                                                    </button>
                                                 @elseif($currentUser->isManager())
                                                     <span class="action-btn delete-btn disabled" title="You do not have permission to delete attachments." aria-disabled="true">
                                                         <i class="bx bx-trash"></i>
@@ -1797,7 +1821,7 @@
                         <label class="form-label">Assign to User</label>
                         <select name="assigned_to" class="form-select" required>
                             <option value="">Select user</option>
-                            @foreach(\App\Models\User::where('id', '!=', auth()->id())->whereIn('role', ['user', 'sub-admin', 'sup-admin'])->orderBy('name')->get() as $user)
+                            @foreach(\App\Models\User::where('id', '!=', auth()->id())->whereIn('role', ['user', 'sub-admin'])->orderBy('name')->get() as $user)
                                 <option value="{{ $user->id }}">{{ $user->name }}</option>
                             @endforeach
                         </select>

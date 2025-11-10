@@ -134,17 +134,12 @@ class User extends Authenticatable
 
     public function isManager()
     {
-        return in_array($this->role, ['admin', 'manager', 'sub-admin', 'sup-admin']);
+        return in_array($this->role, ['admin', 'manager', 'sub-admin']);
     }
 
     public function isSubAdmin()
     {
         return $this->role === 'sub-admin';
-    }
-
-    public function isSupAdmin()
-    {
-        return $this->role === 'sup-admin';
     }
 
     public function isAdmin()
@@ -172,7 +167,7 @@ class User extends Authenticatable
      */
     public function canViewAll()
     {
-        return in_array($this->role, ['admin', 'manager', 'sup-admin']);
+        return in_array($this->role, ['admin', 'manager']);
     }
 
     /**
@@ -181,7 +176,7 @@ class User extends Authenticatable
      */
     public function hasFullPrivileges()
     {
-        return in_array($this->role, ['admin', 'manager', 'sub-admin', 'sup-admin']);
+        return in_array($this->role, ['admin', 'manager', 'sub-admin']);
     }
 
     /**

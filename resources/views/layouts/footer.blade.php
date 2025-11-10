@@ -12,6 +12,8 @@
 </div>
 <!-- / Layout wrapper -->
 
+@include('partials.delete-request-modal')
+
 <!-- Core JS -->
 <!-- build:js assets/vendor/js/core.js -->
 <script src="{{ asset('DAssets/assets/vendor/libs/jquery/jquery.js') }}"></script>

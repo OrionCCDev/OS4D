@@ -19,7 +19,7 @@ class StoreUserRequest extends FormRequest
             'password' => ['required', 'string', 'min:6'],
             'mobile' => ['nullable', 'string', 'max:50'],
             'position' => ['nullable', 'string', 'max:255'],
-            'role' => ['required', 'in:admin,sup-admin,manager,sub-admin,user'],
+            'role' => ['required', 'in:admin,manager,sub-admin,user'],
             'img' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
         ];
     }

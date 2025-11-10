@@ -161,14 +161,16 @@
                                                         title="Delete Folder">
                                                     <i class="bx bx-trash"></i>
                                                 </button>
-                                            @else
-                                                <button type="button"
-                                                        class="btn btn-sm btn-outline-danger disabled"
-                                                        aria-disabled="true"
-                                                        onclick="event.stopPropagation();"
-                                                        title="You do not have permission to delete folders.">
-                                                    <i class="bx bx-trash"></i>
-                                                </button>
+                                            @elseif(auth()->user()->isSubAdmin())
+                                                @include('partials.delete-request-button', [
+                                                    'type' => 'project_folder',
+                                                    'id' => $folder->id,
+                                                    'label' => $folder->name,
+                                                    'class' => 'btn btn-sm btn-outline-danger',
+                                                    'attributes' => 'onclick="event.stopPropagation();" ',
+                                                    'text' => '',
+                                                    'icon' => 'bx bx-trash'
+                                                ])
                                             @endif
                                         </div>
                                     </div>
@@ -238,14 +240,16 @@
                                                         title="Delete Folder">
                                                     <i class="bx bx-trash"></i>
                                                 </button>
-                                            @else
-                                                <button type="button"
-                                                        class="btn btn-sm btn-outline-danger disabled"
-                                                        aria-disabled="true"
-                                                        onclick="event.stopPropagation();"
-                                                        title="You do not have permission to delete folders.">
-                                                    <i class="bx bx-trash"></i>
-                                                </button>
+                                            @elseif(auth()->user()->isSubAdmin())
+                                                @include('partials.delete-request-button', [
+                                                    'type' => 'project_folder',
+                                                    'id' => $folder->id,
+                                                    'label' => $folder->name,
+                                                    'class' => 'btn btn-sm btn-outline-danger',
+                                                    'attributes' => 'onclick="event.stopPropagation();" ',
+                                                    'text' => '',
+                                                    'icon' => 'bx bx-trash'
+                                                ])
                                             @endif
                                         </div>
                                     </div>
@@ -501,10 +505,15 @@
                                                             <i class="bx bx-trash"></i>
                                                         </button>
                                                     </form>
-                                                @else
-                                                    <button type="button" class="btn btn-sm btn-outline-danger disabled" aria-disabled="true" title="You do not have permission to delete tasks.">
-                                                        <i class="bx bx-trash"></i>
-                                                    </button>
+                                                @elseif(auth()->user()->isSubAdmin())
+                                                    @include('partials.delete-request-button', [
+                                                        'type' => 'task',
+                                                        'id' => $task->id,
+                                                        'label' => $task->title,
+                                                        'class' => 'btn btn-sm btn-outline-danger',
+                                                        'text' => '',
+                                                        'icon' => 'bx bx-trash'
+                                                    ])
                                                 @endif
                                             </div>
                                 </td>
@@ -743,6 +752,7 @@
     <script>
 // Global manager status check
 const isManager = {{ Auth::user()->isManager() ? 'true' : 'false' }};
+const isSubAdmin = {{ Auth::user()->isSubAdmin() ? 'true' : 'false' }};
 const canDelete = {{ Auth::user()->canDelete() ? 'true' : 'false' }};
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -915,10 +925,22 @@ function displayFiles(files) {
         console.log('Processing file:', file.id, file.display_name || file.original_name);
         const iconClass = getFileIconClass(file.mime_type || '');
         const displayName = file.display_name || file.original_name || 'Unknown file';
+        const sanitizedLabel = displayName.replace(/"/g, '&quot;');
         const fileSize = file.human_readable_size || '0 B';
         const fileUrl = file.url || '#';
         const uploaderName = (file.uploader && file.uploader.name) || 'Unknown';
         const description = file.description || '';
+        const requestDeleteButton = `
+            <button class="btn btn-outline-danger" data-bs-toggle="modal"
+                    data-bs-target="#deleteRequestModal"
+                    data-target-type="project_file"
+                    data-target-id="${file.id}"
+                    data-target-label="${sanitizedLabel}"
+                    data-redirect="${window.location.href}"
+                    title="Request deletion">
+                <i class="bx bx-trash"></i>
+            </button>
+        `;
 
         html += `
             <div class="col-md-6 col-lg-4" data-file-id="${file.id}">
@@ -952,9 +974,9 @@ function displayFiles(files) {
                                 </button>
                                 ${canDelete ? `<button onclick="confirmDeleteFile(${file.id}, '${displayName.replace(/'/g, "\\'")}')" class="btn btn-outline-danger" title="Delete">
                                     <i class="bx bx-trash"></i>
-                                </button>` : `<button class="btn btn-outline-danger disabled" aria-disabled="true" title="You do not have permission to delete files.">
+                                </button>` : (isSubAdmin ? requestDeleteButton : `<button class="btn btn-outline-danger disabled" aria-disabled="true" title="You do not have permission to delete files.">
                                     <i class="bx bx-trash"></i>
-                                </button>`}
+                                </button>`)}
                             </div>` : `<a href="${fileUrl}" download="${displayName}" class="btn btn-sm btn-outline-primary">
                                 <i class="bx bx-download me-1"></i>Download
                             </a>`}

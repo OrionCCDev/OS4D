@@ -18,23 +18,37 @@ class TaskAccessMiddleware
     {
         $user = $request->user();
 
-        // Managers and admins have full access
-        if ($user && $user->isManager()) {
-            return $next($request);
-        }
+        if ($user) {
+            // Managers (including sub-admins) need special handling
+            if ($user->isManager()) {
+                $taskParam = $request->route('task');
 
-        // For task-related routes, check if user is assigned to the task
-        if ($request->route('task')) {
-            $task = $request->route('task');
+                if ($user->isSubAdmin() && $taskParam) {
+                    $task = $taskParam instanceof Task ? $taskParam : Task::find($taskParam);
 
-            // If task is a model instance, check assignment
-            if ($task instanceof Task) {
-                if ($task->assigned_to !== $user->id) {
+                    if ($task) {
+                        if ($task->created_by !== $user->id && $task->assigned_to !== $user->id) {
+                            abort(403, 'Access denied. Sub-admins can only access tasks they created or are assigned to.');
+                        }
+                    }
+                }
+
+                return $next($request);
+            }
+
+            // Regular users: ensure task assignment
+            if ($request->route('task')) {
+                $taskParam = $request->route('task');
+                $task = $taskParam instanceof Task ? $taskParam : Task::find($taskParam);
+
+                if ($task && $task->assigned_to !== $user->id) {
                     abort(403, 'Access denied. You can only access tasks assigned to you.');
                 }
             }
+
+            return $next($request);
         }
 
-        return $next($request);
+        abort(403, 'Access denied.');
     }
 }

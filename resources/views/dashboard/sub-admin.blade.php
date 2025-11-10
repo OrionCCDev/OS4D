@@ -53,7 +53,7 @@
                             <i class="bx bx-task text-warning fs-1"></i>
                         </div>
                         <div class="flex-grow-1 ms-3">
-                            <div class="text-muted">Total Tasks</div>
+                            <div class="text-muted">Tasks Assigned to Me</div>
                             <div class="h4 mb-0">{{ $data['totalTasks'] ?? 0 }}</div>
                         </div>
                     </div>
@@ -65,11 +65,11 @@
                 <div class="card-body">
                     <div class="d-flex align-items-center">
                         <div class="flex-shrink-0">
-                            <i class="bx bx-check-circle text-success fs-1"></i>
+                            <i class="bx bx-user-plus text-success fs-1"></i>
                         </div>
                         <div class="flex-grow-1 ms-3">
-                            <div class="text-muted">Completed Tasks</div>
-                            <div class="h4 mb-0">{{ $data['completedTasks'] ?? 0 }}</div>
+                            <div class="text-muted">Tasks I've Assigned</div>
+                            <div class="h4 mb-0">{{ $data['createdTasksCount'] ?? 0 }}</div>
                         </div>
                     </div>
                 </div>
@@ -127,7 +127,7 @@
         </div>
     </div>
 
-    <!-- Recent Projects -->
+    <!-- Recent Projects and Tasks Assigned to Me -->
     <div class="row mb-4">
         <div class="col-lg-6">
             <div class="card">
@@ -159,11 +159,11 @@
             </div>
         </div>
 
-        <!-- Recent Tasks -->
+        <!-- Recent Tasks Assigned to Me -->
         <div class="col-lg-6">
             <div class="card">
                 <div class="card-header">
-                    <h5 class="card-title mb-0">Recent Tasks</h5>
+                    <h5 class="card-title mb-0">Recent Tasks Assigned to Me</h5>
                 </div>
                 <div class="card-body">
                     @if(isset($data['recentTasks']) && count($data['recentTasks']) > 0)
@@ -185,6 +185,94 @@
                         @endforeach
                     @else
                         <p class="text-muted">No recent tasks found.</p>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tasks I've Assigned -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Recent Tasks I've Assigned</h5>
+                    <a href="{{ route('tasks.index') }}" class="btn btn-sm btn-outline-primary">View All Tasks</a>
+                </div>
+                <div class="card-body">
+                    @if(isset($data['createdTasks']) && count($data['createdTasks']) > 0)
+                        <div class="table-responsive">
+                            <table class="table table-sm mb-0">
+                                <thead>
+                                <tr>
+                                    <th>Task</th>
+                                    <th>Project</th>
+                                    <th>Assignee</th>
+                                    <th>Status</th>
+                                    <th>Due Date</th>
+                                    <th class="text-end">Actions</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                @foreach($data['createdTasks'] as $task)
+                                    <tr>
+                                        <td>{{ $task->title }}</td>
+                                        <td>{{ $task->project->name ?? 'No Project' }}</td>
+                                        <td>{{ $task->assignee->name ?? 'Unassigned' }}</td>
+                                        <td><span class="badge {{ $task->status_badge_class }}">{{ ucfirst(str_replace('_', ' ', $task->status)) }}</span></td>
+                                        <td>{{ optional($task->due_date)->format('Y-m-d') ?: '—' }}</td>
+                                        <td class="text-end">
+                                            <a href="{{ route('tasks.show', $task) }}" class="btn btn-sm btn-outline-primary">
+                                                <i class="bx bx-show"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @else
+                        <p class="text-muted mb-0">You have not assigned any tasks recently.</p>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Assignee Performance -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Assignee Performance (Tasks You Assigned)</h5>
+                    <span class="text-muted small">Top performers based on completed tasks.</span>
+                </div>
+                <div class="card-body">
+                    @if(isset($data['assignmentsRanking']) && count($data['assignmentsRanking']) > 0)
+                        <div class="table-responsive">
+                            <table class="table table-striped mb-0">
+                                <thead>
+                                <tr>
+                                    <th>Assignee</th>
+                                    <th>Total Tasks</th>
+                                    <th>Completed</th>
+                                    <th>Completion Rate</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                @foreach($data['assignmentsRanking'] as $entry)
+                                    <tr>
+                                        <td>{{ $entry->assignee->name ?? 'Unknown User' }}</td>
+                                        <td>{{ $entry->total_tasks }}</td>
+                                        <td>{{ $entry->completed_tasks }}</td>
+                                        <td>{{ $entry->completion_rate }}%</td>
+                                    </tr>
+                                @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @else
+                        <p class="text-muted mb-0">No performance data available yet. Assign tasks to team members to see statistics.</p>
                     @endif
                 </div>
             </div>

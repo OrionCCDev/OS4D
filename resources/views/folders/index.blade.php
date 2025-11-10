@@ -29,8 +29,13 @@
                                     @method('DELETE')
                                     <button class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this folder?')">Delete</button>
                                 </form>
-                            @else
-                                <button type="button" class="btn btn-sm btn-outline-danger disabled" aria-disabled="true" title="You do not have permission to delete folders.">Delete</button>
+                            @elseif(auth()->user()->isSubAdmin())
+                                @include('partials.delete-request-button', [
+                                    'type' => 'project_folder',
+                                    'id' => $folder->id,
+                                    'label' => $folder->name,
+                                    'text' => 'Request Delete'
+                                ])
                             @endif
                         </td>
                     </tr>

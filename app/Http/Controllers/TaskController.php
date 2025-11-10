@@ -41,6 +41,14 @@ class TaskController extends Controller
             if (request()->has('search') && request()->search) {
                 $query->where('title', 'like', '%' . request()->search . '%');
             }
+
+            // Sub-admins can only see tasks they created or are assigned to
+            if ($user->isSubAdmin()) {
+                $query->where(function ($q) use ($user) {
+                    $q->where('created_by', $user->id)
+                        ->orWhere('assigned_to', $user->id);
+                });
+            }
         } else {
             // Regular users only see tasks assigned to them
             $query->where('assigned_to', $user->id);
@@ -51,7 +59,7 @@ class TaskController extends Controller
 
         // Get users for filter dropdown (only for managers)
         $users = null;
-        if ($user->isManager()) {
+        if ($user->isManager() && !$user->isSubAdmin()) {
             $users = User::where('status', 'active')
                 ->where('role', '!=', 'admin')
                 ->orderBy('name')
@@ -74,7 +82,7 @@ class TaskController extends Controller
             ? ProjectFolder::where('project_id', $selectedProjectId)->orderBy('name')->get()
             : ProjectFolder::orderBy('name')->get();
         $users = User::where('id', '!=', Auth::id())
-            ->whereIn('role', ['user', 'sub-admin', 'sup-admin'])
+            ->whereIn('role', ['user', 'sub-admin'])
             ->orderBy('name')
             ->get();
 
@@ -124,6 +132,12 @@ class TaskController extends Controller
         }
 
         $validated = $request->validate($rules);
+
+        if (Auth::user()->isSubAdmin() && !empty($validated['assigned_to']) && (int)$validated['assigned_to'] === Auth::id()) {
+            return redirect()->back()
+                ->withErrors(['assigned_to' => 'Sub-admins cannot assign tasks to themselves.'])
+                ->withInput();
+        }
 
         // Custom validation: Check if task start_date is not before project start_date
         if ($request->has('start_date') && $request->start_date) {
@@ -234,6 +248,14 @@ class TaskController extends Controller
             abort(403, 'Access denied. This task is under review and cannot be edited.');
         }
 
+        if ($user->isSubAdmin() && $task->created_by !== $user->id) {
+            abort(403, 'Access denied. Sub-admins can only update tasks they created.');
+        }
+
+        if ($user->isSubAdmin() && $task->created_by !== $user->id) {
+            abort(403, 'Access denied. Sub-admins can only edit tasks they created.');
+        }
+
         // Determine redirect URL based on the redirect_to parameter
         $redirectTo = request()->query('redirect_to', 'tasks.index');
         $redirectUrl = $this->getRedirectUrl($redirectTo, $task, request());
@@ -294,6 +316,12 @@ class TaskController extends Controller
 
         // Check if task is being reassigned
         $isReassignment = $request->has('assigned_to') && $request->assigned_to != $task->assigned_to;
+
+        if ($user->isSubAdmin() && $isReassignment && (int)$request->assigned_to === $user->id) {
+            return redirect()->back()
+                ->withErrors(['assigned_to' => 'Sub-admins cannot assign tasks to themselves.'])
+                ->withInput();
+        }
         $oldAssignee = $task->assignee;
 
         $task->update($validated);
@@ -428,6 +456,20 @@ class TaskController extends Controller
             'assigned_to' => 'required|exists:users,id',
         ]);
 
+        $currentUser = Auth::user();
+
+        if ($currentUser->isSubAdmin()) {
+            if ($task->created_by !== $currentUser->id) {
+                abort(403, 'Access denied. Sub-admins can only reassign tasks they created.');
+            }
+
+            if ((int)$validated['assigned_to'] === $currentUser->id) {
+                return redirect()->back()
+                    ->withErrors(['assigned_to' => 'Sub-admins cannot assign tasks to themselves.'])
+                    ->withInput();
+            }
+        }
+
         $user = User::find($validated['assigned_to']);
         $task->assignTo($user);
 
@@ -446,6 +488,10 @@ class TaskController extends Controller
 
             if (in_array($task->status, ['submitted_for_review', 'in_review', 'approved', 'completed'])) {
                 abort(403, 'Access denied. Status changes are disabled for tasks under review. Only managers can change the status.');
+            }
+        } else {
+            if ($user->isSubAdmin() && $task->created_by !== $user->id && $task->assigned_to !== $user->id) {
+                abort(403, 'Access denied. Sub-admins can only change status for tasks they created or are assigned to.');
             }
         }
 
@@ -1293,7 +1339,7 @@ class TaskController extends Controller
     private function sendInAppNotificationsToManagers(Task $task, $emailPreparation, $user)
     {
         try {
-            $managers = User::whereIn('role', ['admin', 'manager', 'sub-admin', 'sup-admin'])->get();
+            $managers = User::whereIn('role', ['admin', 'manager', 'sub-admin'])->get();
 
             Log::info('Found ' . $managers->count() . ' managers to notify about email marked as sent for task: ' . $task->id);
 
@@ -2710,7 +2756,7 @@ private function sendApprovalEmailViaGmail(Task $task, User $approver)
             // Notify managers - send notification directly to avoid skipping
             try {
                 // Get managers first for logging
-                $managers = User::whereIn('role', ['admin', 'manager', 'sub-admin', 'sup-admin'])->get();
+                $managers = User::whereIn('role', ['admin', 'manager', 'sub-admin'])->get();
                 Log::info("Time extension: Notifying {$managers->count()} managers");
 
                 $assigneeName = $task->assignee ? $task->assignee->name : 'Unknown user';

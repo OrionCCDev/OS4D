@@ -29,8 +29,13 @@
                                     @method('DELETE')
                                     <button class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this template?')">Delete</button>
                                 </form>
-                            @else
-                                <button type="button" class="btn btn-sm btn-outline-danger disabled" aria-disabled="true" title="You do not have permission to delete templates.">Delete</button>
+                            @elseif(auth()->user()->isSubAdmin())
+                                @include('partials.delete-request-button', [
+                                    'type' => 'email_template',
+                                    'id' => $template->id,
+                                    'label' => $template->name,
+                                    'text' => 'Request Delete'
+                                ])
                             @endif
                         </td>
                     </tr>

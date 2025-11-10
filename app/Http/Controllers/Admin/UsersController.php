@@ -13,17 +13,6 @@ use Illuminate\View\View;
 
 class UsersController extends Controller
 {
-    public function __construct()
-    {
-        $this->middleware(function ($request, $next) {
-            if (Auth::user()?->isSupAdmin()) {
-                abort(403);
-            }
-
-            return $next($request);
-        })->only(['create', 'store', 'edit', 'update', 'destroy']);
-    }
-
     public function index(): View
     {
         $users = User::latest()->paginate(15);

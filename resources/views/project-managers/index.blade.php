@@ -71,10 +71,14 @@
                                                 <i class="bx bx-trash"></i>
                                             </button>
                                         </form>
-                                    @else
-                                        <button type="button" class="btn btn-sm btn-outline-danger disabled" aria-disabled="true" title="You do not have permission to delete project managers.">
-                                            <i class="bx bx-trash"></i>
-                                        </button>
+                                    @elseif(auth()->user()->isSubAdmin())
+                                        @include('partials.delete-request-button', [
+                                            'type' => 'project_manager',
+                                            'id' => $manager->id,
+                                            'label' => $manager->name,
+                                            'text' => '',
+                                            'icon' => 'bx bx-trash'
+                                        ])
                                     @endif
                                 </div>
                             </td>

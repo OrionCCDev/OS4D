@@ -65,9 +65,16 @@
                                                         <i class="bx bx-trash me-1"></i> Delete
                                                     </button>
                                                 </form>
-                                            @else
-                                                <span class="dropdown-item text-danger disabled" aria-disabled="true" title="You do not have permission to delete stakeholders.">
-                                                    <i class="bx bx-trash me-1"></i> Delete
+                                            @elseif(auth()->user()->isSubAdmin())
+                                                <span class="dropdown-item">
+                                                    @include('partials.delete-request-button', [
+                                                        'type' => 'external_stakeholder',
+                                                        'id' => $stakeholder->id,
+                                                        'label' => $stakeholder->name,
+                                                        'class' => 'btn btn-sm btn-outline-danger w-100 text-start',
+                                                        'text' => 'Request Delete',
+                                                        'icon' => 'bx bx-trash'
+                                                    ])
                                                 </span>
                                             @endif
                                         </div>

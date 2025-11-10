@@ -222,14 +222,16 @@
                                                 onclick="event.preventDefault(); event.stopPropagation(); confirmDeleteProject('{{ $project->id }}', '{{ addslashes($project->name) }}', {{ $project->tasks()->count() }}, {{ $project->folders()->count() }});">
                                             <i class="bx bx-trash"></i>
                                         </button>
-                                    @else
-                                        <button type="button"
-                                                class="btn btn-outline-danger position-relative disabled"
-                                                style="z-index: 2; cursor: not-allowed;"
-                                                aria-disabled="true"
-                                                title="You do not have permission to delete projects.">
-                                            <i class="bx bx-trash"></i>
-                                        </button>
+                                    @elseif(auth()->user()->isSubAdmin())
+                                        @include('partials.delete-request-button', [
+                                            'type' => 'project',
+                                            'id' => $project->id,
+                                            'label' => $project->name,
+                                            'class' => 'btn btn-outline-danger position-relative',
+                                            'attributes' => 'style="z-index: 2;" onclick="event.preventDefault(); event.stopPropagation();" ',
+                                            'text' => '',
+                                            'icon' => 'bx bx-trash'
+                                        ])
                                     @endif
                                 </div>
                             </div>
@@ -316,14 +318,16 @@
                                             onclick="event.preventDefault(); event.stopPropagation(); confirmDeleteProject('{{ $project->id }}', '{{ addslashes($project->name) }}', {{ $project->tasks()->count() }}, {{ $project->folders()->count() }});">
                                         <i class="bx bx-trash"></i>
                                     </button>
-                                @else
-                                    <button type="button"
-                                            class="btn btn-outline-danger btn-sm position-relative disabled"
-                                            style="z-index: 2; cursor: not-allowed;"
-                                            aria-disabled="true"
-                                            title="You do not have permission to delete projects.">
-                                        <i class="bx bx-trash"></i>
-                                    </button>
+                                @elseif(auth()->user()->isSubAdmin())
+                                    @include('partials.delete-request-button', [
+                                        'type' => 'project',
+                                        'id' => $project->id,
+                                        'label' => $project->name,
+                                        'class' => 'btn btn-outline-danger btn-sm position-relative',
+                                        'attributes' => 'style="z-index: 2;" onclick="event.preventDefault(); event.stopPropagation();" ',
+                                        'text' => '',
+                                        'icon' => 'bx bx-trash'
+                                    ])
                                 @endif
                             </div>
                         </div>

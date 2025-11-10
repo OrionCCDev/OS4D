@@ -25,6 +25,7 @@ use App\Http\Controllers\GmailOAuthController;
 use App\Http\Controllers\MailboxWebhookController;
 use App\Http\Controllers\EmailNotificationController;
 use App\Services\EmailTrackingService;
+use App\Http\Controllers\DeleteRequestController;
 
 // Mailbox webhook routes (no auth required for webhooks)
 Route::post('/mailbox/webhook', [MailboxWebhookController::class, 'handle']);
@@ -577,6 +578,17 @@ Route::middleware('auth')->group(function () {
     Route::post('/auto-emails/notifications/{id}/mark-read', [App\Http\Controllers\AutoEmailController::class, 'markAsRead'])->name('auto-emails.mark-read');
     Route::post('/auto-emails/notifications/mark-all-read', [App\Http\Controllers\AutoEmailController::class, 'markAllAsRead'])->name('auto-emails.mark-all-read');
     Route::get('/auto-emails/statistics', [App\Http\Controllers\AutoEmailController::class, 'getStatistics'])->name('auto-emails.statistics');
+
+    // Delete requests
+    Route::post('/delete-requests', [DeleteRequestController::class, 'store'])->name('delete-requests.store');
+});
+
+Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('delete-requests', [DeleteRequestController::class, 'index'])->name('delete-requests.index');
+    Route::get('delete-requests/popup', [DeleteRequestController::class, 'popup'])->name('delete-requests.popup');
+    Route::get('delete-requests/{deleteRequest}', [DeleteRequestController::class, 'show'])->name('delete-requests.show');
+    Route::post('delete-requests/{deleteRequest}/approve', [DeleteRequestController::class, 'approve'])->name('delete-requests.approve');
+    Route::post('delete-requests/{deleteRequest}/reject', [DeleteRequestController::class, 'reject'])->name('delete-requests.reject');
 });
 
 // Notification routes

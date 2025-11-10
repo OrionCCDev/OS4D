@@ -18,6 +18,11 @@ class DashboardController extends Controller
     {
         $user = Auth::user();
 
+        if ($user->isSubAdmin()) {
+            $data = $this->getSubAdminDashboardData();
+            return view('dashboard.sub-admin', compact('data'));
+        }
+
         // If user is a manager or admin, show comprehensive dashboard
         if ($user->isManager()) {
             $data = $this->getDashboardData($request);
@@ -208,6 +213,70 @@ class DashboardController extends Controller
                 'overall' => $overallRanking,
                 'monthly' => $monthlyRanking,
             ],
+        ];
+    }
+
+    public function getSubAdminDashboardData(): array
+    {
+        $user = Auth::user();
+
+        // Projects the sub-admin is involved in (created tasks or assigned tasks)
+        $projectQuery = Project::whereHas('tasks', function ($query) use ($user) {
+            $query->where('assigned_to', $user->id)
+                  ->orWhere('created_by', $user->id);
+        });
+
+        $projectsCount = (clone $projectQuery)->count();
+        $recentProjects = (clone $projectQuery)->latest()->take(5)->get();
+
+        // Tasks assigned to the sub-admin
+        $assignedTasksQuery = Task::with(['project', 'folder'])
+            ->where('assigned_to', $user->id);
+
+        $assignedTasksCount = (clone $assignedTasksQuery)->count();
+        $completedAssignedTasks = (clone $assignedTasksQuery)->where('status', 'completed')->count();
+        $overdueAssignedTasks = (clone $assignedTasksQuery)
+            ->where('due_date', '<', now())
+            ->whereNotIn('status', ['completed', 'approved'])
+            ->count();
+        $recentAssignedTasks = (clone $assignedTasksQuery)->latest()->take(5)->get();
+
+        // Tasks created by the sub-admin
+        $createdTasksQuery = Task::with(['project', 'assignee'])
+            ->where('created_by', $user->id);
+
+        $createdTasksCount = (clone $createdTasksQuery)->count();
+        $recentCreatedTasks = (clone $createdTasksQuery)->latest()->take(5)->get();
+
+        // Ranking of assignees for tasks created by the sub-admin
+        $assignmentsRanking = Task::with('assignee:id,name,email')
+            ->where('created_by', $user->id)
+            ->whereNotNull('assigned_to')
+            ->select('assigned_to')
+            ->selectRaw('COUNT(*) as total_tasks')
+            ->selectRaw('SUM(CASE WHEN status = "completed" THEN 1 ELSE 0 END) as completed_tasks')
+            ->groupBy('assigned_to')
+            ->orderByDesc('completed_tasks')
+            ->orderByDesc('total_tasks')
+            ->take(5)
+            ->get()
+            ->map(function ($task) {
+                $task->completion_rate = $task->total_tasks > 0
+                    ? round(($task->completed_tasks / $task->total_tasks) * 100, 1)
+                    : 0;
+                return $task;
+            });
+
+        return [
+            'totalProjects' => $projectsCount,
+            'totalTasks' => $assignedTasksCount,
+            'completedTasks' => $completedAssignedTasks,
+            'overdueTasks' => $overdueAssignedTasks,
+            'recentProjects' => $recentProjects,
+            'recentTasks' => $recentAssignedTasks,
+            'createdTasks' => $recentCreatedTasks,
+            'createdTasksCount' => $createdTasksCount,
+            'assignmentsRanking' => $assignmentsRanking,
         ];
     }
 

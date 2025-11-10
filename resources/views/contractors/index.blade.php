@@ -39,8 +39,13 @@
                                     @method('DELETE')
                                     <button class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this contractor?')">Delete</button>
                                 </form>
-                            @else
-                                <button type="button" class="btn btn-sm btn-outline-danger disabled" aria-disabled="true" title="You do not have permission to delete contractors.">Delete</button>
+                            @elseif(auth()->user()->isSubAdmin())
+                                @include('partials.delete-request-button', [
+                                    'type' => 'contractor',
+                                    'id' => $contractor->id,
+                                    'label' => $contractor->name,
+                                    'text' => 'Request Delete'
+                                ])
                             @endif
                         </td>
                     </tr>
