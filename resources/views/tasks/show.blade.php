@@ -5,154 +5,150 @@
     <!-- Header Section -->
     <div class="row mb-4">
         <div class="col-12">
-            <x-modern-breadcrumb
-                title="{{ $task->title }}"
-                subtitle="Task details and management"
-                icon="bx bx-task"
-                theme="tasks"
-                :breadcrumbs="[
+            <x-modern-breadcrumb title="{{ $task->title }}" subtitle="Task details and management" icon="bx bx-task"
+                theme="tasks" :breadcrumbs="[
                     ['title' => 'Dashboard', 'url' => route('dashboard'), 'icon' => 'bx bx-home'],
                     ['title' => 'Tasks', 'url' => route('tasks.index'), 'icon' => 'bx bx-list-ul'],
                     ['title' => Str::limit($task->title, 30), 'url' => '#', 'icon' => 'bx bx-task']
-                ]"
-            />
-                    <div class="d-flex align-items-center gap-3 flex-wrap">
-                        @php
-                            $statusColors = [
-                                'pending' => 'secondary',
-                                'assigned' => 'info',
-                                'accepted' => 'primary',
-                                'in_progress' => 'warning',
-                                'workingon' => 'warning',
-                                'submitted_for_review' => 'primary',
-                                'in_review' => 'primary',
-                                'approved' => 'success',
-                                'rejected' => 'danger',
-                                'completed' => 'success'
-                            ];
-                            $priorityColors = [
-                                1 => 'danger',
-                                2 => 'warning',
-                                3 => 'info',
-                                4 => 'primary',
-                                5 => 'secondary'
-                            ];
-                        @endphp
-                        <span class="badge bg-{{ $statusColors[$task->status] ?? 'secondary' }} fs-6 px-3 py-2">
-                            @if($task->status === 'submitted_for_review')
-                                For Review
-                            @else
-                                {{ ucfirst(str_replace('_', ' ', $task->status)) }}
-                            @endif
-                        </span>
-                        <span class="badge bg-{{ $priorityColors[$task->priority ?? 5] ?? 'secondary' }} fs-6 px-3 py-2">
-                            Priority {{ $task->priority ?? 5 }}
-                        </span>
-                        @if($task->start_date)
-                            @php
-                                $now = now()->startOfDay();
-                                $startDate = \Carbon\Carbon::parse($task->start_date)->startOfDay();
-                                $daysUntilStart = $now->diffInDays($startDate, false);
-                                $isAccepted = in_array($task->status, ['accepted', 'in_progress', 'workingon', 'submitted_for_review', 'in_review', 'approved', 'completed']);
-                                $isApproaching = $daysUntilStart <= 3 && $daysUntilStart >= 0;
-                                $isOverdue = $daysUntilStart < 0;
-
-                                // Only show overdue to start if:
-                                // 1. Task is not accepted/in progress AND
-                                // 2. Start date has passed AND
-                                // 3. Task is assigned (not pending/unassigned)
-                                $shouldShowOverdue = $isOverdue && !$isAccepted && $task->status === 'assigned';
-                            @endphp
-
-                            @if($shouldShowOverdue)
-                                <span class="badge bg-danger fs-6 px-3 py-2">
-                                    <i class="bx bx-time-five me-1"></i>
-                                    {{ abs($daysUntilStart) }} days overdue to start
-                                </span>
-                            @elseif($isAccepted && $daysUntilStart <= 0)
-                                {{-- Don't show anything if task is accepted and start date has passed --}}
-                            @elseif($daysUntilStart >= 0)
-                                <span class="badge bg-{{ $isApproaching && !$isAccepted ? 'warning' : 'info' }} fs-6 px-3 py-2">
-                                    <i class="bx bx-timer me-1"></i>
-                                    @if($daysUntilStart == 0)
-                                        Starts today
-                                    @elseif($daysUntilStart == 1)
-                                        Starts tomorrow
-                                    @else
-                                        {{ $daysUntilStart }} days until start
-                                    @endif
-                                </span>
-                            @endif
-                        @endif
-                    </div>
-                </div>
-                <div class="d-flex gap-2">
-                    @if(Auth::user()->isManager() || ($task->status !== 'submitted_for_review' && $task->status !== 'in_review' && $task->status !== 'approved' && $task->status !== 'completed'))
-                        <a href="{{ route('tasks.edit', ['task' => $task, 'redirect_to' => 'project.show']) }}" class="btn btn-primary">
-                            <i class="bx bx-edit me-1"></i>Edit Task
-                        </a>
-                        @if(Auth::user()->canDelete())
-                            <form action="{{ route('tasks.destroy', $task) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this task?')" class="d-inline">
-                                @csrf
-                                @method('DELETE')
-                                <button class="btn btn-outline-danger">
-                                    <i class="bx bx-trash me-1"></i>Delete
-                                </button>
-                            </form>
-                        @elseif(Auth::user()->isSubAdmin())
-                            @include('partials.delete-request-button', [
-                                'type' => 'task',
-                                'id' => $task->id,
-                                'label' => $task->title,
-                                'class' => 'btn btn-outline-danger',
-                                'icon' => 'bx bx-trash',
-                                'text' => 'Request Delete'
-                            ])
-                        @endif
+                ]" />
+            <div class="d-flex align-items-center gap-3 flex-wrap">
+                @php
+                $statusColors = [
+                'pending' => 'secondary',
+                'assigned' => 'info',
+                'accepted' => 'primary',
+                'in_progress' => 'warning',
+                'workingon' => 'warning',
+                'submitted_for_review' => 'primary',
+                'in_review' => 'primary',
+                'approved' => 'success',
+                'rejected' => 'danger',
+                'completed' => 'success'
+                ];
+                $priorityColors = [
+                1 => 'danger',
+                2 => 'warning',
+                3 => 'info',
+                4 => 'primary',
+                5 => 'secondary'
+                ];
+                @endphp
+                <span class="badge bg-{{ $statusColors[$task->status] ?? 'secondary' }} fs-6 px-3 py-2">
+                    @if($task->status === 'submitted_for_review')
+                    For Review
+                    @else
+                    {{ ucfirst(str_replace('_', ' ', $task->status)) }}
                     @endif
-                    {{-- Send Free Mail button hidden as requested --}}
-                    {{-- @if(Auth::user()->id === $task->assigned_to || Auth::user()->isManager())
-                        <a href="{{ route('tasks.free-mail', $task) }}" class="btn btn-outline-primary">
-                            <i class="bx bx-mail-send me-1"></i>Send Free Mail
-                        </a>
-                    @endif --}}
+                </span>
+                <span class="badge bg-{{ $priorityColors[$task->priority ?? 5] ?? 'secondary' }} fs-6 px-3 py-2">
+                    Priority {{ $task->priority ?? 5 }}
+                </span>
+                @if($task->start_date)
+                @php
+                $now = now()->startOfDay();
+                $startDate = \Carbon\Carbon::parse($task->start_date)->startOfDay();
+                $daysUntilStart = $now->diffInDays($startDate, false);
+                $isAccepted = in_array($task->status, ['accepted', 'in_progress', 'workingon', 'submitted_for_review',
+                'in_review', 'approved', 'completed']);
+                $isApproaching = $daysUntilStart <= 3 && $daysUntilStart>= 0;
+                    $isOverdue = $daysUntilStart < 0; // Only show overdue to start if: // 1. Task is not accepted/in
+                        progress AND // 2. Start date has passed AND // 3. Task is assigned (not pending/unassigned)
+                        $shouldShowOverdue=$isOverdue && !$isAccepted && $task->status === 'assigned';
+                        @endphp
+
+                        @if($shouldShowOverdue)
+                        <span class="badge bg-danger fs-6 px-3 py-2">
+                            <i class="bx bx-time-five me-1"></i>
+                            {{ abs($daysUntilStart) }} days overdue to start
+                        </span>
+                        @elseif($isAccepted && $daysUntilStart <= 0) {{-- Don't show anything if task is accepted and
+                            start date has passed --}} @elseif($daysUntilStart>= 0)
+                            <span
+                                class="badge bg-{{ $isApproaching && !$isAccepted ? 'warning' : 'info' }} fs-6 px-3 py-2">
+                                <i class="bx bx-timer me-1"></i>
+                                @if($daysUntilStart == 0)
+                                Starts today
+                                @elseif($daysUntilStart == 1)
+                                Starts tomorrow
+                                @else
+                                {{ $daysUntilStart }} days until start
+                                @endif
+                            </span>
+                            @endif
+                            @endif
+            </div>
+        </div>
+        <div class="d-flex gap-2">
+            @if(Auth::user()->isManager() || ($task->status !== 'submitted_for_review' && $task->status !== 'in_review'
+            && $task->status !== 'approved' && $task->status !== 'completed'))
+            <a href="{{ route('tasks.edit', ['task' => $task, 'redirect_to' => 'project.show']) }}"
+                class="btn btn-primary">
+                <i class="bx bx-edit me-1"></i>Edit Task
+            </a>
+            @if(Auth::user()->canDelete())
+            <form action="{{ route('tasks.destroy', $task) }}" method="POST"
+                onsubmit="return confirm('Are you sure you want to delete this task?')" class="d-inline">
+                @csrf
+                @method('DELETE')
+                <button class="btn btn-outline-danger">
+                    <i class="bx bx-trash me-1"></i>Delete
+                </button>
+            </form>
+            @elseif(Auth::user()->isSubAdmin())
+            @include('partials.delete-request-button', [
+            'type' => 'task',
+            'id' => $task->id,
+            'label' => $task->title,
+            'class' => 'btn btn-outline-danger',
+            'icon' => 'bx bx-trash',
+            'text' => 'Request Delete'
+            ])
+            @endif
+            @endif
+            {{-- Send Free Mail button hidden as requested --}}
+            {{-- @if(Auth::user()->id === $task->assigned_to || Auth::user()->isManager())
+            <a href="{{ route('tasks.free-mail', $task) }}" class="btn btn-outline-primary">
+                <i class="bx bx-mail-send me-1"></i>Send Free Mail
+            </a>
+            @endif --}}
+        </div>
+    </div>
+</div>
+</div>
+
+<!-- Success/Error Messages -->
+@if(session('success'))
+<div class="alert alert-success alert-dismissible fade show" role="alert">
+    <i class="bx bx-check-circle me-2"></i>
+    {{ session('success') }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+@endif
+
+@if(session('error'))
+<div class="alert alert-danger alert-dismissible fade show" role="alert">
+    <i class="bx bx-error me-2"></i>
+    {{ session('error') }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+@endif
+
+@if($task->status === 'submitted_for_review' && !Auth::user()->isManager())
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="alert alert-warning border-0 shadow-sm">
+            <div class="d-flex align-items-center">
+                <i class="bx bx-lock-alt me-3" style="font-size: 2rem;"></i>
+                <div>
+                    <h6 class="mb-1"><strong>Task Under Review</strong></h6>
+                    <p class="mb-0">This task has been submitted for review. Only managers can edit, delete, upload
+                        files, or change the status until the review is complete.</p>
                 </div>
             </div>
         </div>
     </div>
-
-    <!-- Success/Error Messages -->
-    @if(session('success'))
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="bx bx-check-circle me-2"></i>
-            {{ session('success') }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    @endif
-
-    @if(session('error'))
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <i class="bx bx-error me-2"></i>
-            {{ session('error') }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    @endif
-
-    @if($task->status === 'submitted_for_review' && !Auth::user()->isManager())
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="alert alert-warning border-0 shadow-sm">
-                    <div class="d-flex align-items-center">
-                        <i class="bx bx-lock-alt me-3" style="font-size: 2rem;"></i>
-                        <div>
-                            <h6 class="mb-1"><strong>Task Under Review</strong></h6>
-                            <p class="mb-0">This task has been submitted for review. Only managers can edit, delete, upload files, or change the status until the review is complete.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    @endif
+</div>
+@endif
 <div class="container">
 
 
@@ -205,7 +201,8 @@
                             <div class="mb-3">
                                 <div class="d-flex align-items-center mb-2">
                                     <div class="avatar avatar-sm me-2">
-                                        <span class="avatar-initial rounded-circle bg-label-primary">{{ substr($task->creator?->name ?? 'U', 0, 1) }}</span>
+                                        <span class="avatar-initial rounded-circle bg-label-primary">{{
+                                            substr($task->creator?->name ?? 'U', 0, 1) }}</span>
                                     </div>
                                     <div>
                                         <small class="text-muted">Created by</small>
@@ -215,9 +212,10 @@
                                 <div class="d-flex align-items-center">
                                     <div class="avatar avatar-sm me-2">
                                         @if($task->assignee)
-                                            <span class="avatar-initial rounded-circle bg-label-success">{{ substr($task->assignee->name, 0, 1) }}</span>
+                                        <span class="avatar-initial rounded-circle bg-label-success">{{
+                                            substr($task->assignee->name, 0, 1) }}</span>
                                         @else
-                                            <span class="avatar-initial rounded-circle bg-label-secondary">?</span>
+                                        <span class="avatar-initial rounded-circle bg-label-secondary">?</span>
                                         @endif
                                     </div>
                                     <div>
@@ -238,49 +236,49 @@
                                 <p class="mb-0 fw-semibold">{{ $task->created_at->format('M d, Y') }}</p>
                             </div>
                             @if($task->start_date)
-                                <div class="mb-2">
-                                    <small class="text-muted">Start Date</small>
-                                    <p class="mb-0 fw-semibold">{{ $task->start_date->format('M d, Y') }}</p>
-                                </div>
+                            <div class="mb-2">
+                                <small class="text-muted">Start Date</small>
+                                <p class="mb-0 fw-semibold">{{ $task->start_date->format('M d, Y') }}</p>
+                            </div>
                             @endif
                             @if($task->due_date)
-                                <div class="mb-2">
-                                    <small class="text-muted">Due Date</small>
-                                    <p class="mb-0 fw-semibold {{ $task->is_overdue ? 'text-danger' : '' }}">
-                                        {{ $task->due_date->format('M d, Y') }}
-                                    </p>
-                                </div>
+                            <div class="mb-2">
+                                <small class="text-muted">Due Date</small>
+                                <p class="mb-0 fw-semibold {{ $task->is_overdue ? 'text-danger' : '' }}">
+                                    {{ $task->due_date->format('M d, Y') }}
+                                </p>
+                            </div>
                             @endif
                             @if($task->start_date && $task->due_date)
-                                <div class="mb-2">
-                                    <small class="text-muted">Planned Duration</small>
-                                    <p class="mb-0 fw-semibold text-info">
-                                        @php
-                                            $startDate = \Carbon\Carbon::parse($task->start_date)->startOfDay();
-                                            $dueDate = \Carbon\Carbon::parse($task->due_date)->startOfDay();
-                                            $taskDuration = $startDate->diffInDays($dueDate);
-                                        @endphp
-                                        @if($taskDuration == 0)
-                                            Same day
-                                        @elseif($taskDuration == 1)
-                                            1 day
-                                        @else
-                                            {{ $taskDuration }} days
-                                        @endif
-                                    </p>
-                                </div>
+                            <div class="mb-2">
+                                <small class="text-muted">Planned Duration</small>
+                                <p class="mb-0 fw-semibold text-info">
+                                    @php
+                                    $startDate = \Carbon\Carbon::parse($task->start_date)->startOfDay();
+                                    $dueDate = \Carbon\Carbon::parse($task->due_date)->startOfDay();
+                                    $taskDuration = $startDate->diffInDays($dueDate);
+                                    @endphp
+                                    @if($taskDuration == 0)
+                                    Same day
+                                    @elseif($taskDuration == 1)
+                                    1 day
+                                    @else
+                                    {{ $taskDuration }} days
+                                    @endif
+                                </p>
+                            </div>
                             @endif
                             @if($task->start_date && $task->completed_at)
-                                <div class="mb-2">
-                                    <small class="text-muted">Actual Duration</small>
-                                    <p class="mb-0 fw-semibold text-success">{{ $task->actual_duration_formatted }}</p>
-                                </div>
+                            <div class="mb-2">
+                                <small class="text-muted">Actual Duration</small>
+                                <p class="mb-0 fw-semibold text-success">{{ $task->actual_duration_formatted }}</p>
+                            </div>
                             @endif
                             @if($task->completed_at)
-                                <div>
-                                    <small class="text-muted">Completed</small>
-                                    <p class="mb-0 fw-semibold text-success">{{ $task->completed_at->format('M d, Y') }}</p>
-                                </div>
+                            <div>
+                                <small class="text-muted">Completed</small>
+                                <p class="mb-0 fw-semibold text-success">{{ $task->completed_at->format('M d, Y') }}</p>
+                            </div>
                             @endif
                         </div>
                     </div>
@@ -317,244 +315,265 @@
 
 
             <!-- Task Files -->
-            <div class="card mb-4 border-0 shadow-lg" style="background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);">
+            <div class="card mb-4 border-0 shadow-lg"
+                style="background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);">
                 <div class="card-header bg-transparent border-0 pb-0">
-                    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center mb-4 gap-3">
+                    <div
+                        class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center mb-4 gap-3">
                         <h4 class="mb-0 fw-bold text-dark" style="font-size: 1.75rem;">
                             <i class="bx bx-folder-open me-2 text-primary"></i>Task Files
                         </h4>
-                        @if(Auth::user()->isManager() || ($task->status !== 'submitted_for_review' && $task->status !== 'in_review' && $task->status !== 'approved' && $task->status !== 'completed'))
-                            <div class="upload-section" id="uploadSection">
-                                <form action="{{ route('tasks.attachments.upload', $task) }}" method="POST" enctype="multipart/form-data" id="uploadForm">
-                                    @csrf
-                                    <div class="upload-area" id="uploadArea">
-                                        <div class="upload-content">
-                                            <div class="upload-icon">
-                                                <i class="bx bx-cloud-upload"></i>
-                                            </div>
-                                            <h6 class="upload-title">Drop files here or click to browse</h6>
-                                            <p class="upload-subtitle">Supports multiple files • All file types • Max 50MB per file</p>
+                        @if(Auth::user()->isManager() || ($task->status !== 'submitted_for_review' && $task->status !==
+                        'in_review' && $task->status !== 'approved' && $task->status !== 'completed'))
+                        <div class="upload-section" id="uploadSection">
+                            <form action="{{ route('tasks.attachments.upload', $task) }}" method="POST"
+                                enctype="multipart/form-data" id="uploadForm">
+                                @csrf
+                                <div class="upload-area" id="uploadArea">
+                                    <div class="upload-content">
+                                        <div class="upload-icon">
+                                            <i class="bx bx-cloud-upload"></i>
                                         </div>
-                                        <input type="file" name="files[]" id="fileInput" class="form-control d-none" accept="*/*" multiple required>
+                                        <h6 class="upload-title">Drop files here or click to browse</h6>
+                                        <p class="upload-subtitle">Supports multiple files • All file types • Max 50MB
+                                            per file</p>
                                     </div>
-                                    <div class="upload-actions mt-3" id="uploadActions" style="display: none;">
-                                        <div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center gap-2">
-                                            <div class="file-info-display d-flex align-items-center">
-                                                <i class="bx bx-file me-2"></i>
-                                                <span class="file-name text-primary fw-bold">No files chosen</span>
-                                                <small class="file-size text-muted ms-2"></small>
-                                            </div>
-                                            <div class="upload-buttons d-flex gap-2">
-                                                <button type="button" class="btn btn-outline-secondary btn-sm" id="changeFile">
-                                                    <i class="bx bx-refresh me-1"></i>Change
-                                                </button>
-                                                <button type="submit" class="btn btn-primary btn-sm px-3">
-                                                    <i class="bx bx-upload me-1"></i>Upload
-                                                </button>
-                                            </div>
+                                    <input type="file" name="files[]" id="fileInput" class="form-control d-none"
+                                        accept="*/*" multiple required>
+                                </div>
+                                <div class="upload-actions mt-3" id="uploadActions" style="display: none;">
+                                    <div
+                                        class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center gap-2">
+                                        <div class="file-info-display d-flex align-items-center">
+                                            <i class="bx bx-file me-2"></i>
+                                            <span class="file-name text-primary fw-bold">No files chosen</span>
+                                            <small class="file-size text-muted ms-2"></small>
+                                        </div>
+                                        <div class="upload-buttons d-flex gap-2">
+                                            <button type="button" class="btn btn-outline-secondary btn-sm"
+                                                id="changeFile">
+                                                <i class="bx bx-refresh me-1"></i>Change
+                                            </button>
+                                            <button type="submit" class="btn btn-primary btn-sm px-3">
+                                                <i class="bx bx-upload me-1"></i>Upload
+                                            </button>
                                         </div>
                                     </div>
-                                </form>
-                            </div>
+                                </div>
+                            </form>
+                        </div>
                         @else
-                            <div class="alert alert-warning alert-sm mb-0 py-2" style="background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%); border: 1px solid #ffc107;">
-                                <i class="bx bx-lock me-1"></i>
-                                <small><strong>File uploads disabled</strong> - Task is under review. Only managers can upload files.</small>
-                            </div>
+                        <div class="alert alert-warning alert-sm mb-0 py-2"
+                            style="background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%); border: 1px solid #ffc107;">
+                            <i class="bx bx-lock me-1"></i>
+                            <small><strong>File uploads disabled</strong> - Task is under review. Only managers can
+                                upload files.</small>
+                        </div>
                         @endif
                     </div>
                     @if($task->attachments->count())
-                        <div class="mb-4">
-                            <div class="input-group search-container" style="max-width: 450px;">
-                                <span class="input-group-text border-end-0" style="border: 2px solid #e2e8f0; border-radius: 12px 0 0 12px;">
-                                    <i class="bx bx-search"></i>
-                                </span>
-                                <input type="text" class="form-control border-start-0" id="fileSearch" placeholder="Search files by name..." style="border: 2px solid #e2e8f0; border-radius: 0 12px 12px 0; padding: 14px 16px; font-size: 0.95rem;">
-                                <button class="btn btn-outline-secondary border-start-0" type="button" id="clearSearch" style="border: 2px solid #e2e8f0; border-left: none; border-radius: 0 12px 12px 0; display: none;">
-                                    <i class="bx bx-x"></i>
-                                </button>
-                            </div>
-                            <div class="search-results-info mt-2" id="searchResultsInfo" style="display: none;">
-                                <small class="text-muted">
-                                    <span id="resultsCount">0</span> files found
-                                </small>
-                            </div>
+                    <div class="mb-4">
+                        <div class="input-group search-container" style="max-width: 450px;">
+                            <span class="input-group-text border-end-0"
+                                style="border: 2px solid #e2e8f0; border-radius: 12px 0 0 12px;">
+                                <i class="bx bx-search"></i>
+                            </span>
+                            <input type="text" class="form-control border-start-0" id="fileSearch"
+                                placeholder="Search files by name..."
+                                style="border: 2px solid #e2e8f0; border-radius: 0 12px 12px 0; padding: 14px 16px; font-size: 0.95rem;">
+                            <button class="btn btn-outline-secondary border-start-0" type="button" id="clearSearch"
+                                style="border: 2px solid #e2e8f0; border-left: none; border-radius: 0 12px 12px 0; display: none;">
+                                <i class="bx bx-x"></i>
+                            </button>
                         </div>
+                        <div class="search-results-info mt-2" id="searchResultsInfo" style="display: none;">
+                            <small class="text-muted">
+                                <span id="resultsCount">0</span> files found
+                            </small>
+                        </div>
+                    </div>
                     @endif
                 </div>
                 <div class="card-body pt-0">
                     @if($task->attachments->count())
-                        <div class="files-grid" id="filesContainer">
-                            @foreach($task->attachments->sortByDesc('created_at') as $att)
-                                @php
-                                    $isRecent = $att->created_at->diffInHours(now()) < 24;
-                                    $isOwnFile = $att->uploaded_by === Auth::id();
-                                    $fileExtension = strtolower(pathinfo($att->original_name, PATHINFO_EXTENSION));
-                                    $fileIcon = 'bx-file';
-                                    $fileTypeClass = 'file';
+                    <div class="files-grid" id="filesContainer">
+                        @foreach($task->attachments->sortByDesc('created_at') as $att)
+                        @php
+                        $isRecent = $att->created_at->diffInHours(now()) < 24; $isOwnFile=$att->uploaded_by ===
+                            Auth::id();
+                            $fileExtension = strtolower(pathinfo($att->original_name, PATHINFO_EXTENSION));
+                            $fileIcon = 'bx-file';
+                            $fileTypeClass = 'file';
 
-                                    if (in_array($fileExtension, ['pdf'])) {
-                                        $fileIcon = 'bx-file-blank';
-                                        $fileTypeClass = 'pdf';
-                                    } elseif (in_array($fileExtension, ['doc', 'docx'])) {
-                                        $fileIcon = 'bx-file-doc';
-                                        $fileTypeClass = 'doc';
-                                    } elseif (in_array($fileExtension, ['xls', 'xlsx'])) {
-                                        $fileIcon = 'bx-file-spreadsheet';
-                                        $fileTypeClass = 'xls';
-                                    } elseif (in_array($fileExtension, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp'])) {
-                                        $fileIcon = 'bx-image';
-                                        $fileTypeClass = 'image';
-                                    } elseif (in_array($fileExtension, ['zip', 'rar', '7z', 'tar', 'gz'])) {
-                                        $fileIcon = 'bx-archive';
-                                        $fileTypeClass = 'archive';
-                                    } elseif (in_array($fileExtension, ['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm'])) {
-                                        $fileIcon = 'bx-video';
-                                        $fileTypeClass = 'video';
-                                    } elseif (in_array($fileExtension, ['mp3', 'wav', 'flac', 'aac', 'ogg'])) {
-                                        $fileIcon = 'bx-music';
-                                        $fileTypeClass = 'music';
-                                    } elseif (in_array($fileExtension, ['txt', 'rtf'])) {
-                                        $fileIcon = 'bx-file-txt';
-                                        $fileTypeClass = 'text';
-                                    } elseif (in_array($fileExtension, ['ppt', 'pptx'])) {
-                                        $fileIcon = 'bx-file-blank';
-                                        $fileTypeClass = 'presentation';
-                                    } elseif (in_array($fileExtension, ['ai', 'eps', 'psd'])) {
-                                        $fileIcon = 'bx-paint';
-                                        $fileTypeClass = 'design';
-                                    }
-                                @endphp
-                                <div class="file-card-wrapper file-item" data-filename="{{ strtolower($att->original_name) }}">
-                                    <div class="file-card file-type-{{ $fileTypeClass }}">
-                                        <!-- Card Timestamp Header -->
-                                        <div class="card-timestamp-header">
-                                            <div class="timestamp-content">
-                                                <div class="timestamp-date">{{ $att->created_at->format('M d, Y') }}</div>
-                                                <div class="timestamp-time">{{ $att->created_at->format('H:i') }}</div>
+                            if (in_array($fileExtension, ['pdf'])) {
+                            $fileIcon = 'bx-file-blank';
+                            $fileTypeClass = 'pdf';
+                            } elseif (in_array($fileExtension, ['doc', 'docx'])) {
+                            $fileIcon = 'bx-file-doc';
+                            $fileTypeClass = 'doc';
+                            } elseif (in_array($fileExtension, ['xls', 'xlsx'])) {
+                            $fileIcon = 'bx-file-spreadsheet';
+                            $fileTypeClass = 'xls';
+                            } elseif (in_array($fileExtension, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp'])) {
+                            $fileIcon = 'bx-image';
+                            $fileTypeClass = 'image';
+                            } elseif (in_array($fileExtension, ['zip', 'rar', '7z', 'tar', 'gz'])) {
+                            $fileIcon = 'bx-archive';
+                            $fileTypeClass = 'archive';
+                            } elseif (in_array($fileExtension, ['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm'])) {
+                            $fileIcon = 'bx-video';
+                            $fileTypeClass = 'video';
+                            } elseif (in_array($fileExtension, ['mp3', 'wav', 'flac', 'aac', 'ogg'])) {
+                            $fileIcon = 'bx-music';
+                            $fileTypeClass = 'music';
+                            } elseif (in_array($fileExtension, ['txt', 'rtf'])) {
+                            $fileIcon = 'bx-file-txt';
+                            $fileTypeClass = 'text';
+                            } elseif (in_array($fileExtension, ['ppt', 'pptx'])) {
+                            $fileIcon = 'bx-file-blank';
+                            $fileTypeClass = 'presentation';
+                            } elseif (in_array($fileExtension, ['ai', 'eps', 'psd'])) {
+                            $fileIcon = 'bx-paint';
+                            $fileTypeClass = 'design';
+                            }
+                            @endphp
+                            <div class="file-card-wrapper file-item"
+                                data-filename="{{ strtolower($att->original_name) }}">
+                                <div class="file-card file-type-{{ $fileTypeClass }}">
+                                    <!-- Card Timestamp Header -->
+                                    <div class="card-timestamp-header">
+                                        <div class="timestamp-content">
+                                            <div class="timestamp-date">{{ $att->created_at->format('M d, Y') }}</div>
+                                            <div class="timestamp-time">{{ $att->created_at->format('H:i') }}</div>
+                                        </div>
+                                    </div>
+
+                                    <!-- File Card Header -->
+                                    <div class="file-card-header">
+                                        <div class="file-icon-wrapper">
+                                            <div class="file-icon">
+                                                <i class="bx {{ $fileIcon }}"></i>
+                                            </div>
+                                            <div class="file-info">
+                                                <h6 class="file-name">{{ $att->original_name }}</h6>
+                                                <div class="file-details">{{ number_format($att->size_bytes/1024,1) }}
+                                                    KB • {{ $att->mime_type }}</div>
                                             </div>
                                         </div>
+                                    </div>
 
-                                        <!-- File Card Header -->
-                                        <div class="file-card-header">
-                                            <div class="file-icon-wrapper">
-                                                <div class="file-icon">
-                                                    <i class="bx {{ $fileIcon }}"></i>
-                                                </div>
-                                                <div class="file-info">
-                                                    <h6 class="file-name">{{ $att->original_name }}</h6>
-                                                    <div class="file-details">{{ number_format($att->size_bytes/1024,1) }} KB • {{ $att->mime_type }}</div>
-                                                </div>
+                                    <!-- File Card Body -->
+                                    <div class="file-card-body">
+                                        @if(Auth::user()->isManager())
+                                        <!-- Manager Controls for Required Files -->
+                                        <div class="manager-controls mb-3">
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input required-toggle" type="checkbox"
+                                                    id="required_{{ $att->id }}" data-attachment-id="{{ $att->id }}" {{
+                                                    $att->required_for_email ? 'checked' : '' }}>
+                                                <label class="form-check-label" for="required_{{ $att->id }}">
+                                                    <strong>Required for Email</strong>
+                                                </label>
                                             </div>
                                         </div>
-
-                                        <!-- File Card Body -->
-                                        <div class="file-card-body">
-                                            @if(Auth::user()->isManager())
-                                                <!-- Manager Controls for Required Files -->
-                                                <div class="manager-controls mb-3">
-                                                    <div class="form-check form-switch">
-                                                        <input class="form-check-input required-toggle"
-                                                               type="checkbox"
-                                                               id="required_{{ $att->id }}"
-                                                               data-attachment-id="{{ $att->id }}"
-                                                               {{ $att->required_for_email ? 'checked' : '' }}>
-                                                        <label class="form-check-label" for="required_{{ $att->id }}">
-                                                            <strong>Required for Email</strong>
-                                                        </label>
-                                                    </div>
-                                                </div>
-                                            @else
-                                                <!-- User View - Show if file is required -->
-                                                @if($att->required_for_email)
-                                                    <div class="required-badge mb-2">
-                                                        <span class="badge bg-success">
-                                                            <i class="bx bx-check-circle"></i> Required for Email
-                                                        </span>
-                                                    </div>
-                                                @endif
+                                        @else
+                                        <!-- User View - Show if file is required -->
+                                        @if($att->required_for_email)
+                                        <div class="required-badge mb-2">
+                                            <span class="badge bg-success">
+                                                <i class="bx bx-check-circle"></i> Required for Email
+                                            </span>
+                                        </div>
+                                        @endif
+                                        @endif
+                                        <div class="file-meta">
+                                            <div class="meta-badge uploader-badge">
+                                                <i class="bx bx-user"></i>
+                                                <span>by {{ $att->uploader?->name }}</span>
+                                            </div>
+                                            @if($isRecent)
+                                            <div class="meta-badge recent-badge">
+                                                <i class="bx bx-time"></i>
+                                                <span>Recent</span>
+                                            </div>
                                             @endif
-                                            <div class="file-meta">
-                                                <div class="meta-badge uploader-badge">
-                                                    <i class="bx bx-user"></i>
-                                                    <span>by {{ $att->uploader?->name }}</span>
-                                                </div>
-                                                @if($isRecent)
-                                                    <div class="meta-badge recent-badge">
-                                                        <i class="bx bx-time"></i>
-                                                        <span>Recent</span>
-                                                    </div>
-                                                @endif
-                                            </div>
-                                            {{--  <div class="date-section">
-                                                <div class="date-info">
-                                                    <i class="bx bx-calendar"></i>
-                                                    <div>
-                                                        <div class="date-text">{{ $att->created_at->format('M d, Y') }}</div>
-                                                        <div class="time-text">{{ $att->created_at->format('H:i') }}</div>
-                                                    </div>
-                                                </div>
-                                            </div>  --}}
                                         </div>
+                                        {{-- <div class="date-section">
+                                            <div class="date-info">
+                                                <i class="bx bx-calendar"></i>
+                                                <div>
+                                                    <div class="date-text">{{ $att->created_at->format('M d, Y') }}
+                                                    </div>
+                                                    <div class="time-text">{{ $att->created_at->format('H:i') }}</div>
+                                                </div>
+                                            </div>
+                                        </div> --}}
+                                    </div>
 
-                                        <!-- File Card Footer -->
-                                        <div class="file-card-footer">
-                                            <div class="file-actions">
-                                                <a class="action-btn view-btn" href="{{ Storage::url($att->path) }}" target="_blank">
-                                                    <i class="bx bx-show"></i>
-                                                    <span>View</span>
-                                                </a>
-                                                <a class="action-btn download-btn" href="{{ route('tasks.attachments.download', $att) }}">
-                                                    <i class="bx bx-download"></i>
-                                                    <span>Download</span>
-                                                </a>
-                                                @php($currentUser = Auth::user())
-                                                @if(($currentUser->isManager() && $currentUser->canDelete()) || (!$currentUser->isManager() && $att->uploaded_by === $currentUser->id && $task->status !== 'submitted_for_review' && $task->status !== 'in_review' && $task->status !== 'approved' && $task->status !== 'completed'))
-                                                    <form action="{{ route('tasks.attachments.delete', [$task, $att]) }}" method="POST" onsubmit="return confirm('Delete attachment?')" class="delete-form">
-                                                        @csrf
-                                                        @method('DELETE')
-                                                        <button class="action-btn delete-btn" type="submit">
-                                                            <i class="bx bx-trash"></i>
-                                                            <span>Delete</span>
-                                                        </button>
-                                                    </form>
-                                                @elseif($currentUser->isManager() && $currentUser->isSubAdmin())
-                                                    <button class="action-btn delete-btn delete-request-trigger"
-                                                            type="button"
-                                                            data-bs-toggle="modal"
-                                                            data-bs-target="#deleteRequestModal"
-                                                            data-target-type="project_file"
-                                                            data-target-id="{{ $att->id }}"
-                                                            data-target-label="{{ $att->display_name ?? $att->original_name }}"
-                                                            data-redirect="{{ url()->current() }}"
-                                                            title="Request deletion">
-                                                        <i class="bx bx-trash"></i>
-                                                        <span>Request Delete</span>
-                                                    </button>
-                                                @elseif($currentUser->isManager())
-                                                    <span class="action-btn delete-btn disabled" title="You do not have permission to delete attachments." aria-disabled="true">
-                                                        <i class="bx bx-trash"></i>
-                                                        <span>Delete</span>
-                                                    </span>
-                                                @endif
-                                            </div>
+                                    <!-- File Card Footer -->
+                                    <div class="file-card-footer">
+                                        <div class="file-actions">
+                                            <a class="action-btn view-btn" href="{{ Storage::url($att->path) }}"
+                                                target="_blank">
+                                                <i class="bx bx-show"></i>
+                                                <span>View</span>
+                                            </a>
+                                            <a class="action-btn download-btn"
+                                                href="{{ route('tasks.attachments.download', $att) }}">
+                                                <i class="bx bx-download"></i>
+                                                <span>Download</span>
+                                            </a>
+                                            @php($currentUser = Auth::user())
+                                            @if(($currentUser->isManager() && $currentUser->canDelete()) ||
+                                            (!$currentUser->isManager() && $att->uploaded_by === $currentUser->id &&
+                                            $task->status !== 'submitted_for_review' && $task->status !== 'in_review' &&
+                                            $task->status !== 'approved' && $task->status !== 'completed'))
+                                            <form action="{{ route('tasks.attachments.delete', [$task, $att]) }}"
+                                                method="POST" onsubmit="return confirm('Delete attachment?')"
+                                                class="delete-form">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button class="action-btn delete-btn" type="submit">
+                                                    <i class="bx bx-trash"></i>
+                                                    <span>Delete</span>
+                                                </button>
+                                            </form>
+                                            @elseif($currentUser->isManager() && $currentUser->isSubAdmin())
+                                            <button class="action-btn delete-btn delete-request-trigger" type="button"
+                                                data-bs-toggle="modal" data-bs-target="#deleteRequestModal"
+                                                data-target-type="project_file" data-target-id="{{ $att->id }}"
+                                                data-target-label="{{ $att->display_name ?? $att->original_name }}"
+                                                data-redirect="{{ url()->current() }}" title="Request deletion">
+                                                <i class="bx bx-trash"></i>
+                                                <span>Request Delete</span>
+                                            </button>
+                                            @elseif($currentUser->isManager())
+                                            <span class="action-btn delete-btn disabled"
+                                                title="You do not have permission to delete attachments."
+                                                aria-disabled="true">
+                                                <i class="bx bx-trash"></i>
+                                                <span>Delete</span>
+                                            </span>
+                                            @endif
                                         </div>
                                     </div>
                                 </div>
-                            @endforeach
-                        </div>
-                    @else
-                        <div class="text-center py-5">
-                            <div class="empty-state">
-                                <div class="mb-4">
-                                    <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 120px; height: 120px;">
-                                        <i class="bx bx-file text-muted" style="font-size: 3rem;"></i>
-                                    </div>
-                                </div>
-                                <h5 class="text-muted mb-2">No files uploaded yet</h5>
-                                <p class="text-muted mb-0">Upload your first file to get started</p>
                             </div>
+                            @endforeach
+                    </div>
+                    @else
+                    <div class="text-center py-5">
+                        <div class="empty-state">
+                            <div class="mb-4">
+                                <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center"
+                                    style="width: 120px; height: 120px;">
+                                    <i class="bx bx-file text-muted" style="font-size: 3rem;"></i>
+                                </div>
+                            </div>
+                            <h5 class="text-muted mb-2">No files uploaded yet</h5>
+                            <p class="text-muted mb-0">Upload your first file to get started</p>
                         </div>
+                    </div>
                     @endif
                 </div>
             </div>
@@ -818,7 +837,9 @@
                 <div class="card-header bg-transparent border-0">
                     <div class="d-flex justify-content-between align-items-center">
                         <h5 class="mb-0">Task History</h5>
-                        <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#taskHistoryCollapse" aria-expanded="true" aria-controls="taskHistoryCollapse">
+                        <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#taskHistoryCollapse" aria-expanded="true"
+                            aria-controls="taskHistoryCollapse">
                             <i class="bx bx-chevron-down" id="historyToggleIcon"></i>
                             <span id="historyToggleText">Minimize</span>
                         </button>
@@ -827,150 +848,188 @@
                 <div class="collapse show" id="taskHistoryCollapse">
                     <div class="card-body">
                         @if($task->histories->count() > 0)
-                            <div class="timeline">
-                                @foreach($task->histories->sortByDesc('created_at') as $history)
-                                    <div class="timeline-item">
-                                        <div class="timeline-marker"></div>
-                                        <div class="timeline-content">
-                                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                                <div class="flex-grow-1">
-                                                    <h6 class="mb-1">{{ $history->description }}</h6>
-                                                    <div class="d-flex align-items-center gap-3 text-muted">
-                                                        <small>
-                                                            <i class="bx bx-user me-1"></i>{{ $history->user->name ?? 'System' }}
-                                                        </small>
-                                                        <small>
-                                                            <i class="bx bx-time me-1"></i>{{ $history->created_at->format('M d, Y g:i A') }}
-                                                        </small>
-                                                    </div>
-                                                </div>
-                                                <span class="badge bg-label-secondary">{{ ucfirst(str_replace('_', ' ', $history->action)) }}</span>
+                        <div class="timeline">
+                            @foreach($task->histories->sortByDesc('created_at') as $history)
+                            <div class="timeline-item">
+                                <div class="timeline-marker"></div>
+                                <div class="timeline-content">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <div class="flex-grow-1">
+                                            <h6 class="mb-1">{{ $history->description }}</h6>
+                                            <div class="d-flex align-items-center gap-3 text-muted">
+                                                <small>
+                                                    <i class="bx bx-user me-1"></i>{{ $history->user->name ?? 'System'
+                                                    }}
+                                                </small>
+                                                <small>
+                                                    <i class="bx bx-time me-1"></i>{{ $history->created_at->format('M d,
+                                                    Y g:i A') }}
+                                                </small>
                                             </div>
+                                        </div>
+                                        <span class="badge bg-label-secondary">{{ ucfirst(str_replace('_', ' ',
+                                            $history->action)) }}</span>
+                                    </div>
 
-                                            {{-- Show comments/notes from metadata --}}
-                                            @if($history->metadata && is_array($history->metadata))
-                                                @if(isset($history->metadata['completion_notes']))
-                                                    <div class="mt-2 p-2 bg-light rounded">
-                                                        <strong class="text-primary"><i class="bx bx-message-detail me-1"></i>Completion Notes:</strong>
-                                                        <p class="mb-0 mt-1">{{ $history->metadata['completion_notes'] }}</p>
-                                                    </div>
-                                                @endif
-                                                {{-- Only show notes in metadata if they're not already included in the description --}}
-                                                @if(isset($history->metadata['notes']) && $history->metadata['notes'] && !str_contains($history->description, $history->metadata['notes']))
-                                                    <div class="mt-2 p-2 bg-light rounded">
-                                                        <strong class="text-info"><i class="bx bx-comment-detail me-1"></i>Notes:</strong>
-                                                        <p class="mb-0 mt-1">{{ $history->metadata['notes'] }}</p>
-                                                    </div>
-                                                @endif
-                                                @if(isset($history->metadata['internal_notes']) && $history->metadata['internal_notes'])
-                                                    <div class="mt-2 p-2 bg-light rounded">
-                                                        <strong class="text-primary"><i class="bx bx-message-detail me-1"></i>Internal Notes:</strong>
-                                                        <p class="mb-0 mt-1">{{ $history->metadata['internal_notes'] }}</p>
-                                                    </div>
-                                                @endif
-                                                @if(isset($history->metadata['client_response_notes']) && $history->metadata['client_response_notes'] && !str_contains($history->description, $history->metadata['client_response_notes']))
-                                                    <div class="mt-2 p-2 bg-primary bg-opacity-10 rounded border border-primary">
-                                                        <strong class="text-primary"><i class="bx bx-user me-1"></i>Client Response:</strong>
-                                                        <p class="mb-0 mt-1">{{ $history->metadata['client_response_notes'] }}</p>
-                                                    </div>
-                                                @endif
-                                                @if(isset($history->metadata['consultant_response_notes']) && $history->metadata['consultant_response_notes'] && !str_contains($history->description, $history->metadata['consultant_response_notes']))
-                                                    <div class="mt-2 p-2 bg-info bg-opacity-10 rounded border border-info">
-                                                        <strong class="text-info"><i class="bx bx-user-check me-1"></i>Consultant Response:</strong>
-                                                        <p class="mb-0 mt-1">{{ $history->metadata['consultant_response_notes'] }}</p>
-                                                    </div>
-                                                @endif
-                                                @if(isset($history->metadata['manager_override_notes']) && $history->metadata['manager_override_notes'] && !str_contains($history->description, $history->metadata['manager_override_notes']))
-                                                    <div class="mt-2 p-2 bg-danger bg-opacity-10 rounded border border-danger">
-                                                        <strong class="text-danger"><i class="bx bx-shield-x me-1"></i>Manager Override:</strong>
-                                                        <p class="mb-0 mt-1">{{ $history->metadata['manager_override_notes'] }}</p>
-                                                    </div>
-                                                @endif
-                                                @if(isset($history->metadata['combined_response_status']))
-                                                    <div class="mt-2">
-                                                        <strong>Combined Status:</strong>
-                                                        <span class="badge bg-info">{{ $history->metadata['combined_response_status'] }}</span>
-                                                    </div>
-                                                @endif
+                                    {{-- Show comments/notes from metadata --}}
+                                    @if($history->metadata && is_array($history->metadata))
+                                    @if(isset($history->metadata['completion_notes']))
+                                    <div class="mt-2 p-2 bg-light rounded">
+                                        <strong class="text-primary"><i class="bx bx-message-detail me-1"></i>Completion
+                                            Notes:</strong>
+                                        <p class="mb-0 mt-1">{{ $history->metadata['completion_notes'] }}</p>
+                                    </div>
+                                    @endif
+                                    {{-- Only show notes in metadata if they're not already included in the description
+                                    --}}
+                                    @if(isset($history->metadata['notes']) && $history->metadata['notes'] &&
+                                    !str_contains($history->description, $history->metadata['notes']))
+                                    <div class="mt-2 p-2 bg-light rounded">
+                                        <strong class="text-info"><i
+                                                class="bx bx-comment-detail me-1"></i>Notes:</strong>
+                                        <p class="mb-0 mt-1">{{ $history->metadata['notes'] }}</p>
+                                    </div>
+                                    @endif
+                                    @if(isset($history->metadata['internal_notes']) &&
+                                    $history->metadata['internal_notes'])
+                                    <div class="mt-2 p-2 bg-light rounded">
+                                        <strong class="text-primary"><i class="bx bx-message-detail me-1"></i>Internal
+                                            Notes:</strong>
+                                        <p class="mb-0 mt-1">{{ $history->metadata['internal_notes'] }}</p>
+                                    </div>
+                                    @endif
+                                    @if(isset($history->metadata['client_response_notes']) &&
+                                    $history->metadata['client_response_notes'] && !str_contains($history->description,
+                                    $history->metadata['client_response_notes']))
+                                    <div class="mt-2 p-2 bg-primary bg-opacity-10 rounded border border-primary">
+                                        <strong class="text-primary"><i class="bx bx-user me-1"></i>Client
+                                            Response:</strong>
+                                        <p class="mb-0 mt-1">{{ $history->metadata['client_response_notes'] }}</p>
+                                    </div>
+                                    @endif
+                                    @if(isset($history->metadata['consultant_response_notes']) &&
+                                    $history->metadata['consultant_response_notes'] &&
+                                    !str_contains($history->description,
+                                    $history->metadata['consultant_response_notes']))
+                                    <div class="mt-2 p-2 bg-info bg-opacity-10 rounded border border-info">
+                                        <strong class="text-info"><i class="bx bx-user-check me-1"></i>Consultant
+                                            Response:</strong>
+                                        <p class="mb-0 mt-1">{{ $history->metadata['consultant_response_notes'] }}</p>
+                                    </div>
+                                    @endif
+                                    @if(isset($history->metadata['manager_override_notes']) &&
+                                    $history->metadata['manager_override_notes'] && !str_contains($history->description,
+                                    $history->metadata['manager_override_notes']))
+                                    <div class="mt-2 p-2 bg-danger bg-opacity-10 rounded border border-danger">
+                                        <strong class="text-danger"><i class="bx bx-shield-x me-1"></i>Manager
+                                            Override:</strong>
+                                        <p class="mb-0 mt-1">{{ $history->metadata['manager_override_notes'] }}</p>
+                                    </div>
+                                    @endif
+                                    @if(isset($history->metadata['combined_response_status']))
+                                    <div class="mt-2">
+                                        <strong>Combined Status:</strong>
+                                        <span class="badge bg-info">{{ $history->metadata['combined_response_status']
+                                            }}</span>
+                                    </div>
+                                    @endif
 
-                                                {{-- Special display for email marked sent actions --}}
-                                            @if($history->action === 'email_marked_sent' && isset($history->metadata['email_subject']))
-                                                <div class="mt-2 p-2 bg-success bg-opacity-10 rounded border border-success">
-                                                    <strong class="text-success"><i class="bx bx-check-double me-1"></i>Email Details:</strong>
-                                                    <div class="mt-1">
-                                                        <small><strong>Subject:</strong> {{ $history->metadata['email_subject'] }}</small><br>
-                                                        <small><strong>To:</strong> {{ implode(', ', $history->metadata['email_to'] ?? []) }}</small><br>
-                                                        @if(!empty($history->metadata['email_cc']))
-                                                            <small><strong>Cc:</strong> {{ implode(', ', $history->metadata['email_cc']) }}</small><br>
-                                                        @endif
-                                                        @if(!empty($history->metadata['email_bcc']))
-                                                            <small><strong>Bcc:</strong> {{ implode(', ', $history->metadata['email_bcc']) }}</small><br>
-                                                        @endif
-                                                        <small><strong>Sent Via:</strong> {{ ucfirst(str_replace('_', ' ', $history->metadata['sent_via'] ?? 'Unknown')) }}</small><br>
-                                                        @if($history->metadata['has_attachments'] ?? false)
-                                                            <small><strong>Attachments:</strong> {{ $history->metadata['attachment_count'] ?? 0 }} file(s)</small>
-                                                        @endif
-                                                    </div>
-                                                </div>
+                                    {{-- Special display for email marked sent actions --}}
+                                    @if($history->action === 'email_marked_sent' &&
+                                    isset($history->metadata['email_subject']))
+                                    <div class="mt-2 p-2 bg-success bg-opacity-10 rounded border border-success">
+                                        <strong class="text-success"><i class="bx bx-check-double me-1"></i>Email
+                                            Details:</strong>
+                                        <div class="mt-1">
+                                            <small><strong>Subject:</strong> {{ $history->metadata['email_subject']
+                                                }}</small><br>
+                                            <small><strong>To:</strong> {{ implode(', ', $history->metadata['email_to']
+                                                ?? []) }}</small><br>
+                                            @if(!empty($history->metadata['email_cc']))
+                                            <small><strong>Cc:</strong> {{ implode(', ', $history->metadata['email_cc'])
+                                                }}</small><br>
                                             @endif
-
-                                            @if($history->action === 'require_resubmit_enhanced' && isset($history->metadata['resubmit_notes']))
-                                                <div class="mt-2 p-2 bg-warning bg-opacity-10 rounded border border-warning">
-                                                    <strong class="text-warning"><i class="bx bx-refresh me-1"></i>Resubmission Instructions:</strong>
-                                                    <div class="mt-1">
-                                                        <p class="mb-2">{{ $history->metadata['resubmit_notes'] }}</p>
-                                                        <div class="row">
-                                                            <div class="col-md-6">
-                                                                <small><strong>Priority:</strong> {{ ucfirst($history->metadata['priority'] ?? 'Normal') }}</small><br>
-                                                                @if($history->metadata['due_date'])
-                                                                    <small><strong>Due Date:</strong> {{ \Carbon\Carbon::parse($history->metadata['due_date'])->format('M d, Y') }}</small><br>
-                                                                @endif
-                                                            </div>
-                                                            <div class="col-md-6">
-                                                                @if($history->metadata['file_count'] > 0)
-                                                                    <small><strong>Reference Files:</strong> {{ $history->metadata['file_count'] }} file(s) attached</small><br>
-                                                                @endif
-                                                                <small><strong>Manager:</strong> {{ $history->metadata['manager_override_by'] ?? 'Unknown' }}</small>
-                                                            </div>
-                                                        </div>
-                                                        @if(isset($history->metadata['client_notes']) || isset($history->metadata['consultant_notes']))
-                                                            <div class="mt-2 pt-2 border-top">
-                                                                <small class="text-muted">
-                                                                    <strong>Based on feedback:</strong>
-                                                                    @if($history->metadata['client_notes'])
-                                                                        Client: {{ $history->metadata['client_notes'] }}
-                                                                    @endif
-                                                                    @if($history->metadata['consultant_notes'])
-                                                                        @if($history->metadata['client_notes']) | @endif
-                                                                        Consultant: {{ $history->metadata['consultant_notes'] }}
-                                                                    @endif
-                                                                </small>
-                                                            </div>
-                                                        @endif
-                                                    </div>
-                                                </div>
+                                            @if(!empty($history->metadata['email_bcc']))
+                                            <small><strong>Bcc:</strong> {{ implode(', ',
+                                                $history->metadata['email_bcc']) }}</small><br>
                                             @endif
-                                            @endif
-
-                                            @if($history->old_value || $history->new_value)
-                                                <div class="mt-2">
-                                                    @if($history->old_value)
-                                                        <span class="badge bg-label-danger me-1">From: {{ $history->old_value }}</span>
-                                                    @endif
-                                                    @if($history->new_value)
-                                                        <span class="badge bg-label-success">To: {{ $history->new_value }}</span>
-                                                    @endif
-                                                </div>
+                                            <small><strong>Sent Via:</strong> {{ ucfirst(str_replace('_', ' ',
+                                                $history->metadata['sent_via'] ?? 'Unknown')) }}</small><br>
+                                            @if($history->metadata['has_attachments'] ?? false)
+                                            <small><strong>Attachments:</strong> {{
+                                                $history->metadata['attachment_count'] ?? 0 }} file(s)</small>
                                             @endif
                                         </div>
                                     </div>
-                                @endforeach
+                                    @endif
+
+                                    @if($history->action === 'require_resubmit_enhanced' &&
+                                    isset($history->metadata['resubmit_notes']))
+                                    <div class="mt-2 p-2 bg-warning bg-opacity-10 rounded border border-warning">
+                                        <strong class="text-warning"><i class="bx bx-refresh me-1"></i>Resubmission
+                                            Instructions:</strong>
+                                        <div class="mt-1">
+                                            <p class="mb-2">{{ $history->metadata['resubmit_notes'] }}</p>
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <small><strong>Priority:</strong> {{
+                                                        ucfirst($history->metadata['priority'] ?? 'Normal')
+                                                        }}</small><br>
+                                                    @if($history->metadata['due_date'])
+                                                    <small><strong>Due Date:</strong> {{
+                                                        \Carbon\Carbon::parse($history->metadata['due_date'])->format('M
+                                                        d, Y') }}</small><br>
+                                                    @endif
+                                                </div>
+                                                <div class="col-md-6">
+                                                    @if($history->metadata['file_count'] > 0)
+                                                    <small><strong>Reference Files:</strong> {{
+                                                        $history->metadata['file_count'] }} file(s) attached</small><br>
+                                                    @endif
+                                                    <small><strong>Manager:</strong> {{
+                                                        $history->metadata['manager_override_by'] ?? 'Unknown'
+                                                        }}</small>
+                                                </div>
+                                            </div>
+                                            @if(isset($history->metadata['client_notes']) ||
+                                            isset($history->metadata['consultant_notes']))
+                                            <div class="mt-2 pt-2 border-top">
+                                                <small class="text-muted">
+                                                    <strong>Based on feedback:</strong>
+                                                    @if($history->metadata['client_notes'])
+                                                    Client: {{ $history->metadata['client_notes'] }}
+                                                    @endif
+                                                    @if($history->metadata['consultant_notes'])
+                                                    @if($history->metadata['client_notes']) | @endif
+                                                    Consultant: {{ $history->metadata['consultant_notes'] }}
+                                                    @endif
+                                                </small>
+                                            </div>
+                                            @endif
+                                        </div>
+                                    </div>
+                                    @endif
+                                    @endif
+
+                                    @if($history->old_value || $history->new_value)
+                                    <div class="mt-2">
+                                        @if($history->old_value)
+                                        <span class="badge bg-label-danger me-1">From: {{ $history->old_value }}</span>
+                                        @endif
+                                        @if($history->new_value)
+                                        <span class="badge bg-label-success">To: {{ $history->new_value }}</span>
+                                        @endif
+                                    </div>
+                                    @endif
+                                </div>
                             </div>
+                            @endforeach
+                        </div>
                         @else
-                            <div class="text-center py-4">
-                                <i class="bx bx-history" style="font-size: 3rem; color: #d1d5db;"></i>
-                                <p class="text-muted mt-2">No history available for this task</p>
-                            </div>
+                        <div class="text-center py-4">
+                            <i class="bx bx-history" style="font-size: 3rem; color: #d1d5db;"></i>
+                            <p class="text-muted mt-2">No history available for this task</p>
+                        </div>
                         @endif
                     </div>
                 </div>
@@ -987,424 +1046,457 @@
                     <div class="d-grid gap-2">
                         <!-- USER ACTIONS -->
                         @php
-                            $viewerId = auth()->id();
-                            $isAssignee = $task->assigned_to === $viewerId;
-                            $taskStatus = $task->status;
+                        $viewerId = auth()->id();
+                        $isAssignee = $task->assigned_to === $viewerId;
+                        $taskStatus = $task->status;
                         @endphp
 
                         @if($isAssignee)
-                            {{-- Time Extension Request Button --}}
-                            @if($taskStatus !== 'completed')
-                                @php
-                                    $hasPendingRequest = $task->timeExtensionRequests()->where('status', 'pending')->exists();
-                                @endphp
-                                @if(!$hasPendingRequest)
-                                    <button class="btn btn-outline-warning w-100 mb-2" onclick="showTimeExtensionModal({{ $task->id }})">
-                                        <i class="bx bx-time me-2"></i>Request Time Extension
-                                    </button>
-                                @else
-                                    <div class="alert alert-info mb-2 p-2">
-                                        <i class="bx bx-hourglass me-2"></i>
-                                        <small>Time extension request pending review</small>
-                                    </div>
-                                @endif
-                            @endif
+                        {{-- Time Extension Request Button --}}
+                        @if($taskStatus !== 'completed')
+                        @php
+                        $hasPendingRequest = $task->timeExtensionRequests()->where('status', 'pending')->exists();
+                        @endphp
+                        @if(!$hasPendingRequest)
+                        <button class="btn btn-outline-warning w-100 mb-2"
+                            onclick="showTimeExtensionModal({{ $task->id }})">
+                            <i class="bx bx-time me-2"></i>Request Time Extension
+                        </button>
+                        @else
+                        <div class="alert alert-info mb-2 p-2">
+                            <i class="bx bx-hourglass me-2"></i>
+                            <small>Time extension request pending review</small>
+                        </div>
+                        @endif
+                        @endif
 
-                            @if($taskStatus === 'assigned')
-                                <form action="{{ route('tasks.accept', $task) }}" method="POST">
+                        @if($taskStatus === 'assigned')
+                        <form action="{{ route('tasks.accept', $task) }}" method="POST">
+                            @csrf
+                            <button type="submit" class="btn btn-success w-100">
+                                <i class="bx bx-check-circle me-2"></i>Accept Task & Start Working
+                            </button>
+                        </form>
+                        <small class="text-muted text-center">Click to accept this task and start working on it</small>
+
+                        @elseif($taskStatus === 'in_progress')
+                        <button class="btn btn-primary w-100" onclick="submitForReview({{ $task->id }})">
+                            <i class="bx bx-send me-2"></i>Submit for Review
+                        </button>
+                        <small class="text-muted text-center">Complete your work and submit it for manager
+                            review</small>
+
+                        @elseif($taskStatus === 'submitted_for_review')
+                        <div class="alert alert-warning text-center mb-0">
+                            <i class="bx bx-time-five me-2"></i>
+                            <strong>Waiting for Manager</strong><br>
+                            <small>Task submitted for review. Manager will review and start the review process.</small>
+                        </div>
+
+                        @elseif($taskStatus === 'in_review')
+                        <div class="alert alert-info text-center mb-0">
+                            <i class="bx bx-search me-2"></i>
+                            <strong>Under Review</strong><br>
+                            <small>Manager is currently reviewing your task.</small>
+                        </div>
+
+                        @elseif($taskStatus === 'ready_for_email')
+                        <div class="alert alert-success text-center mb-3">
+                            <i class="bx bx-check-circle me-2"></i>
+                            <strong>Internally Approved!</strong><br>
+                            <small>Manager approved. Now send confirmation email to clients/consultants.</small>
+                        </div>
+                        <div class="d-grid gap-2">
+                            <a href="{{ route('tasks.prepare-email', $task) }}" class="btn btn-primary">
+                                <i class="bx bx-envelope me-2"></i>Prepare Confirmation Email
+                            </a>
+                        </div>
+                        <small class="text-muted text-center mt-2 d-block">You can also assign contractors during email
+                            preparation</small>
+
+                        @elseif($taskStatus === 'in_review_after_client_consultant_reply')
+                        <div class="alert alert-warning text-center mb-0">
+                            <i class="bx bx-message-dots me-2"></i>
+                            <strong>Processing Client Feedback</strong><br>
+                            <small>Client/consultant has responded. Manager is processing the feedback.</small>
+                        </div>
+
+                        @elseif($taskStatus === 'rejected')
+                        <div class="alert alert-danger text-center mb-0">
+                            <i class="bx bx-x-circle me-2"></i>
+                            <strong>Task Rejected</strong><br>
+                            <small>This task has been rejected. Please contact your manager for details.</small>
+                        </div>
+
+                        @elseif($taskStatus === 'completed')
+                        <div class="alert alert-success text-center mb-0">
+                            <i class="bx bx-check-circle me-2"></i>
+                            <strong>Task Completed</strong><br>
+                            <small>Congratulations! This task has been successfully completed.</small>
+                        </div>
+
+                        @elseif($taskStatus === 'pending')
+                        <div class="alert alert-secondary text-center mb-0">
+                            <i class="bx bx-time me-2"></i>
+                            <strong>Task Pending</strong><br>
+                            <small>This task is pending assignment or approval.</small>
+                        </div>
+
+                        @elseif($taskStatus === 're_submit_required')
+                        <div class="alert alert-warning text-center mb-3">
+                            <i class="bx bx-refresh me-2"></i>
+                            <strong>Resubmission Required</strong><br>
+                            <small>Manager has requested changes after client/consultant review</small>
+                        </div>
+
+                        @if($task->manager_override_notes)
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <h6 class="text-muted mb-2">Manager Notes:</h6>
+                                <p class="mb-0">{{ $task->manager_override_notes }}</p>
+                            </div>
+                        </div>
+                        @endif
+
+                        @if($task->combined_response_status)
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <h6 class="text-muted mb-2">Client/Consultant Feedback:</h6>
+                                <span class="badge bg-info mb-2">{{ $task->combined_response_status }}</span>
+
+                                @if($task->client_response_notes)
+                                <div class="mt-2">
+                                    <strong>Client Notes:</strong>
+                                    <p class="mb-0 text-muted">{{ $task->client_response_notes }}</p>
+                                </div>
+                                @endif
+
+                                @if($task->consultant_response_notes)
+                                <div class="mt-2">
+                                    <strong>Consultant Notes:</strong>
+                                    <p class="mb-0 text-muted">{{ $task->consultant_response_notes }}</p>
+                                </div>
+                                @endif
+                            </div>
+                        </div>
+                        @endif
+
+                        <form action="{{ route('tasks.resubmit', $task) }}" method="POST">
+                            @csrf
+                            <button type="submit" class="btn btn-success w-100">
+                                <i class="bx bx-edit me-2"></i>Start Working on Changes
+                            </button>
+                        </form>
+                        <small class="text-muted text-center mt-2 d-block">Click to return to in-progress status and
+                            make the requested changes</small>
+
+                        @elseif($taskStatus === 'on_client_consultant_review' || $task->combined_response_status)
+                        <div class="card border-primary mb-3">
+                            <div class="card-header bg-primary text-white">
+                                <h6 class="mb-0"><i class="bx bx-envelope me-2"></i>Client/Consultant Responses</h6>
+                            </div>
+                            <div class="card-body">
+                                <form action="{{ route('tasks.client-response', $task) }}" method="POST" class="mb-3">
                                     @csrf
-                                    <button type="submit" class="btn btn-success w-100">
-                                        <i class="bx bx-check-circle me-2"></i>Accept Task & Start Working
-                                    </button>
+                                    <label class="form-label fw-semibold"><i class="bx bx-user me-1"></i>Client
+                                        Status:</label>
+                                    <select name="client_response_status" class="form-select form-select-sm mb-2">
+                                        <option value="pending" {{ ($task->client_response_status ?? 'pending') ===
+                                            'pending' ? 'selected' : '' }}>Pending</option>
+                                        <option value="approved" {{ ($task->client_response_status ?? 'pending') ===
+                                            'approved' ? 'selected' : '' }}>Approved</option>
+                                        <option value="rejected" {{ ($task->client_response_status ?? 'pending') ===
+                                            'rejected' ? 'selected' : '' }}>Rejected</option>
+                                    </select>
+                                    <textarea name="client_response_notes" class="form-control form-control-sm mb-2"
+                                        rows="2"
+                                        placeholder="Client response notes/comments...">{{ $task->client_response_notes ?? '' }}</textarea>
+                                    <button type="submit" class="btn btn-sm btn-primary w-100"><i
+                                            class="bx bx-save me-1"></i>Save Client Response</button>
                                 </form>
-                                <small class="text-muted text-center">Click to accept this task and start working on it</small>
 
-                            @elseif($taskStatus === 'in_progress')
-                                <button class="btn btn-primary w-100" onclick="submitForReview({{ $task->id }})">
-                                    <i class="bx bx-send me-2"></i>Submit for Review
-                                </button>
-                                <small class="text-muted text-center">Complete your work and submit it for manager review</small>
+                                <hr>
 
-                            @elseif($taskStatus === 'submitted_for_review')
-                                <div class="alert alert-warning text-center mb-0">
-                                    <i class="bx bx-time-five me-2"></i>
-                                    <strong>Waiting for Manager</strong><br>
-                                    <small>Task submitted for review. Manager will review and start the review process.</small>
-                                </div>
-
-                            @elseif($taskStatus === 'in_review')
-                                <div class="alert alert-info text-center mb-0">
-                                    <i class="bx bx-search me-2"></i>
-                                    <strong>Under Review</strong><br>
-                                    <small>Manager is currently reviewing your task.</small>
-                                </div>
-
-                            @elseif($taskStatus === 'ready_for_email')
-                                <div class="alert alert-success text-center mb-3">
-                                    <i class="bx bx-check-circle me-2"></i>
-                                    <strong>Internally Approved!</strong><br>
-                                    <small>Manager approved. Now send confirmation email to clients/consultants.</small>
-                                </div>
-                                <div class="d-grid gap-2">
-                                    <a href="{{ route('tasks.prepare-email', $task) }}" class="btn btn-primary">
-                                        <i class="bx bx-envelope me-2"></i>Prepare Confirmation Email
-                                    </a>
-                                </div>
-                                <small class="text-muted text-center mt-2 d-block">You can also assign contractors during email preparation</small>
-
-                            @elseif($taskStatus === 'in_review_after_client_consultant_reply')
-                                <div class="alert alert-warning text-center mb-0">
-                                    <i class="bx bx-message-dots me-2"></i>
-                                    <strong>Processing Client Feedback</strong><br>
-                                    <small>Client/consultant has responded. Manager is processing the feedback.</small>
-                                </div>
-
-                            @elseif($taskStatus === 'rejected')
-                                <div class="alert alert-danger text-center mb-0">
-                                    <i class="bx bx-x-circle me-2"></i>
-                                    <strong>Task Rejected</strong><br>
-                                    <small>This task has been rejected. Please contact your manager for details.</small>
-                                </div>
-
-                            @elseif($taskStatus === 'completed')
-                                <div class="alert alert-success text-center mb-0">
-                                    <i class="bx bx-check-circle me-2"></i>
-                                    <strong>Task Completed</strong><br>
-                                    <small>Congratulations! This task has been successfully completed.</small>
-                                </div>
-
-                            @elseif($taskStatus === 'pending')
-                                <div class="alert alert-secondary text-center mb-0">
-                                    <i class="bx bx-time me-2"></i>
-                                    <strong>Task Pending</strong><br>
-                                    <small>This task is pending assignment or approval.</small>
-                                </div>
-
-                            @elseif($taskStatus === 're_submit_required')
-                                <div class="alert alert-warning text-center mb-3">
-                                    <i class="bx bx-refresh me-2"></i>
-                                    <strong>Resubmission Required</strong><br>
-                                    <small>Manager has requested changes after client/consultant review</small>
-                                </div>
-
-                                @if($task->manager_override_notes)
-                                    <div class="card mb-3">
-                                        <div class="card-body">
-                                            <h6 class="text-muted mb-2">Manager Notes:</h6>
-                                            <p class="mb-0">{{ $task->manager_override_notes }}</p>
-                                        </div>
-                                    </div>
-                                @endif
+                                <form action="{{ route('tasks.consultant-response', $task) }}" method="POST"
+                                    class="mb-3">
+                                    @csrf
+                                    <label class="form-label fw-semibold"><i
+                                            class="bx bx-user-check me-1"></i>Consultant Status:</label>
+                                    <select name="consultant_response_status" class="form-select form-select-sm mb-2">
+                                        <option value="pending" {{ ($task->consultant_response_status ?? 'pending') ===
+                                            'pending' ? 'selected' : '' }}>Pending</option>
+                                        <option value="approved" {{ ($task->consultant_response_status ?? 'pending') ===
+                                            'approved' ? 'selected' : '' }}>Approved</option>
+                                        <option value="rejected" {{ ($task->consultant_response_status ?? 'pending') ===
+                                            'rejected' ? 'selected' : '' }}>Rejected</option>
+                                    </select>
+                                    <textarea name="consultant_response_notes" class="form-control form-control-sm mb-2"
+                                        rows="2"
+                                        placeholder="Consultant response notes/comments...">{{ $task->consultant_response_notes ?? '' }}</textarea>
+                                    <button type="submit" class="btn btn-sm btn-success w-100"><i
+                                            class="bx bx-save me-1"></i>Save Consultant Response</button>
+                                </form>
 
                                 @if($task->combined_response_status)
-                                    <div class="card mb-3">
-                                        <div class="card-body">
-                                            <h6 class="text-muted mb-2">Client/Consultant Feedback:</h6>
-                                            <span class="badge bg-info mb-2">{{ $task->combined_response_status }}</span>
-
-                                            @if($task->client_response_notes)
-                                                <div class="mt-2">
-                                                    <strong>Client Notes:</strong>
-                                                    <p class="mb-0 text-muted">{{ $task->client_response_notes }}</p>
-                                                </div>
-                                            @endif
-
-                                            @if($task->consultant_response_notes)
-                                                <div class="mt-2">
-                                                    <strong>Consultant Notes:</strong>
-                                                    <p class="mb-0 text-muted">{{ $task->consultant_response_notes }}</p>
-                                                </div>
-                                            @endif
-                                        </div>
-                                    </div>
+                                <div class="alert alert-info mb-2">
+                                    <strong>Combined Status:</strong><br>
+                                    <span class="badge bg-info">{{ $task->combined_response_status }}</span>
+                                </div>
                                 @endif
 
-                                <form action="{{ route('tasks.resubmit', $task) }}" method="POST">
+                                <form id="finishReviewForm" action="{{ route('tasks.finish-review', $task) }}"
+                                    method="POST">
                                     @csrf
-                                    <button type="submit" class="btn btn-success w-100">
-                                        <i class="bx bx-edit me-2"></i>Start Working on Changes
+                                    <button type="submit" class="btn btn-warning w-100">
+                                        <i class="bx bx-check-double me-2"></i>Finish Review & Notify Manager
                                     </button>
                                 </form>
-                                <small class="text-muted text-center mt-2 d-block">Click to return to in-progress status and make the requested changes</small>
-
-                            @elseif($taskStatus === 'on_client_consultant_review' || $task->combined_response_status)
-                                <div class="card border-primary mb-3">
-                                    <div class="card-header bg-primary text-white">
-                                        <h6 class="mb-0"><i class="bx bx-envelope me-2"></i>Client/Consultant Responses</h6>
-                                    </div>
-                                    <div class="card-body">
-                                        <form action="{{ route('tasks.client-response', $task) }}" method="POST" class="mb-3">
-                                            @csrf
-                                            <label class="form-label fw-semibold"><i class="bx bx-user me-1"></i>Client Status:</label>
-                                            <select name="client_response_status" class="form-select form-select-sm mb-2">
-                                                <option value="pending" {{ ($task->client_response_status ?? 'pending') === 'pending' ? 'selected' : '' }}>Pending</option>
-                                                <option value="approved" {{ ($task->client_response_status ?? 'pending') === 'approved' ? 'selected' : '' }}>Approved</option>
-                                                <option value="rejected" {{ ($task->client_response_status ?? 'pending') === 'rejected' ? 'selected' : '' }}>Rejected</option>
-                                            </select>
-                                            <textarea name="client_response_notes" class="form-control form-control-sm mb-2" rows="2" placeholder="Client response notes/comments...">{{ $task->client_response_notes ?? '' }}</textarea>
-                                            <button type="submit" class="btn btn-sm btn-primary w-100"><i class="bx bx-save me-1"></i>Save Client Response</button>
-                                        </form>
-
-                                        <hr>
-
-                                        <form action="{{ route('tasks.consultant-response', $task) }}" method="POST" class="mb-3">
-                                            @csrf
-                                            <label class="form-label fw-semibold"><i class="bx bx-user-check me-1"></i>Consultant Status:</label>
-                                            <select name="consultant_response_status" class="form-select form-select-sm mb-2">
-                                                <option value="pending" {{ ($task->consultant_response_status ?? 'pending') === 'pending' ? 'selected' : '' }}>Pending</option>
-                                                <option value="approved" {{ ($task->consultant_response_status ?? 'pending') === 'approved' ? 'selected' : '' }}>Approved</option>
-                                                <option value="rejected" {{ ($task->consultant_response_status ?? 'pending') === 'rejected' ? 'selected' : '' }}>Rejected</option>
-                                            </select>
-                                            <textarea name="consultant_response_notes" class="form-control form-control-sm mb-2" rows="2" placeholder="Consultant response notes/comments...">{{ $task->consultant_response_notes ?? '' }}</textarea>
-                                            <button type="submit" class="btn btn-sm btn-success w-100"><i class="bx bx-save me-1"></i>Save Consultant Response</button>
-                                        </form>
-
-                                        @if($task->combined_response_status)
-                                            <div class="alert alert-info mb-2">
-                                                <strong>Combined Status:</strong><br>
-                                                <span class="badge bg-info">{{ $task->combined_response_status }}</span>
-                                            </div>
-                                        @endif
-
-                                        <form id="finishReviewForm" action="{{ route('tasks.finish-review', $task) }}" method="POST">
-                                            @csrf
-                                            <button type="submit" class="btn btn-warning w-100">
-                                                <i class="bx bx-check-double me-2"></i>Finish Review & Notify Manager
-                                            </button>
-                                        </form>
-                                        <small class="text-muted text-center mt-2 d-block">Will automatically save current client & consultant responses</small>
-                                    </div>
-                                </div>
-                            @endif
+                                <small class="text-muted text-center mt-2 d-block">Will automatically save current
+                                    client & consultant responses</small>
+                            </div>
+                        </div>
+                        @endif
                         @else
-                            @if(in_array($taskStatus, ['pending', 'assigned', null]))
-                                <div class="alert alert-info text-center mb-0">
-                                    <i class="bx bx-info-circle me-2"></i>
-                                    <strong>Task Assigned</strong><br>
-                                    <small>This task has been assigned to {{ $task->assignee->name ?? 'another user' }}. Waiting for them to accept and start working.</small>
+                        @if(in_array($taskStatus, ['pending', 'assigned', null]))
+                        <div class="alert alert-info text-center mb-0">
+                            <i class="bx bx-info-circle me-2"></i>
+                            <strong>Task Assigned</strong><br>
+                            <small>This task has been assigned to {{ $task->assignee->name ?? 'another user' }}. Waiting
+                                for them to accept and start working.</small>
+                        </div>
+                        @elseif($taskStatus === 'on_client_consultant_review' || $task->combined_response_status)
+                        <div class="card border-primary mb-3">
+                            <div class="card-header bg-primary text-white">
+                                <h6 class="mb-0"><i class="bx bx-envelope me-2"></i>Client/Consultant Responses</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="alert alert-info mb-2">
+                                    <strong>Status:</strong>
+                                    <span class="badge bg-info">{{ $task->combined_response_status ?? 'Pending
+                                        Responses' }}</span>
                                 </div>
-                            @elseif($taskStatus === 'on_client_consultant_review' || $task->combined_response_status)
-                                <div class="card border-primary mb-3">
-                                    <div class="card-header bg-primary text-white">
-                                        <h6 class="mb-0"><i class="bx bx-envelope me-2"></i>Client/Consultant Responses</h6>
-                                    </div>
-                                    <div class="card-body">
-                                        <div class="alert alert-info mb-2">
-                                            <strong>Status:</strong>
-                                            <span class="badge bg-info">{{ $task->combined_response_status ?? 'Pending Responses' }}</span>
-                                        </div>
-                                        <p class="mb-0 text-muted">Only the assigned user or manager can update responses.</p>
-                                    </div>
-                                </div>
-                            @endif
+                                <p class="mb-0 text-muted">Only the assigned user or manager can update responses.</p>
+                            </div>
+                        </div>
+                        @endif
                         @endif
 
                         <!-- MANAGER ACTIONS -->
                         @if(auth()->user()->isManager())
-                            {{-- Check for pending time extension requests --}}
-                            @php
-                                $pendingExtensionRequests = $task->timeExtensionRequests()->where('status', 'pending')->get();
-                            @endphp
+                        {{-- Check for pending time extension requests --}}
+                        @php
+                        $pendingExtensionRequests = $task->timeExtensionRequests()->where('status', 'pending')->get();
+                        @endphp
 
-                            @if($pendingExtensionRequests->count() > 0)
-                                <div class="card border-warning mb-3">
-                                    <div class="card-header bg-warning">
-                                        <h6 class="mb-0">
-                                            <i class="bx bx-time me-2"></i>Pending Time Extension Requests ({{ $pendingExtensionRequests->count() }})
-                                        </h6>
+                        @if($pendingExtensionRequests->count() > 0)
+                        <div class="card border-warning mb-3">
+                            <div class="card-header bg-warning">
+                                <h6 class="mb-0">
+                                    <i class="bx bx-time me-2"></i>Pending Time Extension Requests ({{
+                                    $pendingExtensionRequests->count() }})
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                @foreach($pendingExtensionRequests as $request)
+                                <div class="alert alert-light mb-3">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <div>
+                                            <strong>{{ $request->requester->name }}</strong> requested
+                                            <span class="badge bg-warning">{{ $request->requested_days }} days</span>
+                                        </div>
+                                        <small class="text-muted">{{ $request->created_at->diffForHumans() }}</small>
                                     </div>
-                                    <div class="card-body">
-                                        @foreach($pendingExtensionRequests as $request)
-                                            <div class="alert alert-light mb-3">
-                                                <div class="d-flex justify-content-between align-items-start mb-2">
-                                                    <div>
-                                                        <strong>{{ $request->requester->name }}</strong> requested
-                                                        <span class="badge bg-warning">{{ $request->requested_days }} days</span>
-                                                    </div>
-                                                    <small class="text-muted">{{ $request->created_at->diffForHumans() }}</small>
-                                                </div>
-                                                <p class="mb-3"><strong>Reason:</strong> {{ $request->reason }}</p>
+                                    <p class="mb-3"><strong>Reason:</strong> {{ $request->reason }}</p>
 
-                                                <form onsubmit="reviewTimeExtension(event, {{ $task->id }}, {{ $request->id }})">
-                                                    <div class="mb-3">
-                                                        <label class="form-label fw-semibold">Decision:</label>
-                                                        <div class="btn-group w-100" role="group">
-                                                            <input type="radio" class="btn-check" name="action_{{ $request->id }}"
-                                                                   id="approve_{{ $request->id }}" value="approve" checked>
-                                                            <label class="btn btn-outline-success" for="approve_{{ $request->id }}">Approve</label>
+                                    <form onsubmit="reviewTimeExtension(event, {{ $task->id }}, {{ $request->id }})">
+                                        <div class="mb-3">
+                                            <label class="form-label fw-semibold">Decision:</label>
+                                            <div class="btn-group w-100" role="group">
+                                                <input type="radio" class="btn-check" name="action_{{ $request->id }}"
+                                                    id="approve_{{ $request->id }}" value="approve" checked>
+                                                <label class="btn btn-outline-success"
+                                                    for="approve_{{ $request->id }}">Approve</label>
 
-                                                            <input type="radio" class="btn-check" name="action_{{ $request->id }}"
-                                                                   id="reject_{{ $request->id }}" value="reject">
-                                                            <label class="btn btn-outline-danger" for="reject_{{ $request->id }}">Reject</label>
-                                                        </div>
-                                                    </div>
-
-                                                    <div class="mb-3" id="approve_inputs_{{ $request->id }}">
-                                                        <label class="form-label">Days to Approve:</label>
-                                                        <input type="number" class="form-control" name="approved_days_{{ $request->id }}"
-                                                               value="{{ $request->requested_days }}" min="1" max="365">
-                                                    </div>
-
-                                                    <div class="mb-3">
-                                                        <label class="form-label">Manager Notes:</label>
-                                                        <textarea class="form-control" name="manager_notes_{{ $request->id }}" rows="2"
-                                                                  placeholder="Optional notes for the user..."></textarea>
-                                                    </div>
-
-                                                    <button type="submit" class="btn btn-primary w-100">
-                                                        <i class="bx bx-check me-1"></i>Submit Decision
-                                                    </button>
-                                                </form>
+                                                <input type="radio" class="btn-check" name="action_{{ $request->id }}"
+                                                    id="reject_{{ $request->id }}" value="reject">
+                                                <label class="btn btn-outline-danger"
+                                                    for="reject_{{ $request->id }}">Reject</label>
                                             </div>
-                                        @endforeach
-                                    </div>
-                                </div>
-                            @endif
+                                        </div>
 
-                            {{-- Status: Submitted for Review - Manager can start review --}}
-                            @if($task->status === 'submitted_for_review')
-                                <div class="alert alert-primary text-center mb-3">
-                                    <i class="bx bx-clipboard me-2"></i>
-                                    <strong>Task Submitted for Review</strong><br>
-                                    <small>User: {{ $task->assignee->name ?? 'Unknown' }}</small>
+                                        <div class="mb-3" id="approve_inputs_{{ $request->id }}">
+                                            <label class="form-label">Days to Approve:</label>
+                                            <input type="number" class="form-control"
+                                                name="approved_days_{{ $request->id }}"
+                                                value="{{ $request->requested_days }}" min="1" max="365">
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label class="form-label">Manager Notes:</label>
+                                            <textarea class="form-control" name="manager_notes_{{ $request->id }}"
+                                                rows="2" placeholder="Optional notes for the user..."></textarea>
+                                        </div>
+
+                                        <button type="submit" class="btn btn-primary w-100">
+                                            <i class="bx bx-check me-1"></i>Submit Decision
+                                        </button>
+                                    </form>
                                 </div>
-                                @if($task->completion_notes)
-                                <div class="card mb-3">
-                                    <div class="card-body">
-                                        <h6 class="text-muted mb-2">Completion Notes:</h6>
-                                        <p class="mb-0">{{ $task->completion_notes }}</p>
-                                    </div>
-                                </div>
-                                @endif
-                                <form action="{{ route('tasks.start-review', $task) }}" method="POST">
+                                @endforeach
+                            </div>
+                        </div>
+                        @endif
+
+                        {{-- Status: Submitted for Review - Manager can start review --}}
+                        @if($task->status === 'submitted_for_review')
+                        <div class="alert alert-primary text-center mb-3">
+                            <i class="bx bx-clipboard me-2"></i>
+                            <strong>Task Submitted for Review</strong><br>
+                            <small>User: {{ $task->assignee->name ?? 'Unknown' }}</small>
+                        </div>
+                        @if($task->completion_notes)
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <h6 class="text-muted mb-2">Completion Notes:</h6>
+                                <p class="mb-0">{{ $task->completion_notes }}</p>
+                            </div>
+                        </div>
+                        @endif
+                        <form action="{{ route('tasks.start-review', $task) }}" method="POST">
+                            @csrf
+                            <button type="submit" class="btn btn-info w-100">
+                                <i class="bx bx-play-circle me-2"></i>Start Review
+                            </button>
+                        </form>
+                        <small class="text-muted text-center">Click to begin reviewing this task</small>
+
+                        {{-- Status: In Review - Manager can approve internally --}}
+                        @elseif($task->status === 'in_review')
+                        <div class="card border-warning mb-3">
+                            <div class="card-header bg-warning">
+                                <h6 class="mb-0"><i class="bx bx-search me-2"></i>Internal Approval</h6>
+                            </div>
+                            <div class="card-body">
+                                <form action="{{ route('tasks.internal-approval', $task) }}" method="POST">
                                     @csrf
-                                    <button type="submit" class="btn btn-info w-100">
-                                        <i class="bx bx-play-circle me-2"></i>Start Review
+                                    <label class="form-label fw-semibold">Decision:</label>
+                                    <select name="internal_status" class="form-select mb-2" required>
+                                        <option value="approved">Approve</option>
+                                        <option value="rejected">Reject</option>
+                                    </select>
+                                    <textarea name="internal_notes" class="form-control mb-2" rows="3"
+                                        placeholder="Internal approval notes/feedback..." required></textarea>
+                                    <button type="submit" class="btn btn-success w-100">
+                                        <i class="bx bx-check-circle me-2"></i>Submit Internal Approval
                                     </button>
                                 </form>
-                                <small class="text-muted text-center">Click to begin reviewing this task</small>
+                                <small class="text-muted text-center mt-2 d-block">Approve = Ready for client email |
+                                    Reject = Back to user</small>
+                            </div>
+                        </div>
 
-                            {{-- Status: In Review - Manager can approve internally --}}
-                            @elseif($task->status === 'in_review')
-                                <div class="card border-warning mb-3">
-                                    <div class="card-header bg-warning">
-                                        <h6 class="mb-0"><i class="bx bx-search me-2"></i>Internal Approval</h6>
-                                    </div>
-                                    <div class="card-body">
-                                        <form action="{{ route('tasks.internal-approval', $task) }}" method="POST">
-                                            @csrf
-                                            <label class="form-label fw-semibold">Decision:</label>
-                                            <select name="internal_status" class="form-select mb-2" required>
-                                                <option value="approved">Approve</option>
-                                                <option value="rejected">Reject</option>
-                                            </select>
-                                            <textarea name="internal_notes" class="form-control mb-2" rows="3" placeholder="Internal approval notes/feedback..." required></textarea>
-                                            <button type="submit" class="btn btn-success w-100">
-                                                <i class="bx bx-check-circle me-2"></i>Submit Internal Approval
-                                            </button>
-                                        </form>
-                                        <small class="text-muted text-center mt-2 d-block">Approve = Ready for client email | Reject = Back to user</small>
-                                    </div>
-                                </div>
+                        {{-- Status: Ready for Email - Waiting for user to send --}}
+                        @elseif($task->status === 'ready_for_email')
+                        <div class="alert alert-info text-center mb-0">
+                            <i class="bx bx-envelope me-2"></i>
+                            <strong>Ready for Email</strong><br>
+                            <small>Waiting for user to prepare and send confirmation email.</small>
+                        </div>
 
-                            {{-- Status: Ready for Email - Waiting for user to send --}}
-                            @elseif($task->status === 'ready_for_email')
-                                <div class="alert alert-info text-center mb-0">
-                                    <i class="bx bx-envelope me-2"></i>
-                                    <strong>Ready for Email</strong><br>
-                                    <small>Waiting for user to prepare and send confirmation email.</small>
-                                </div>
+                        {{-- Status: In Review After Client/Consultant Reply - Manager can complete or request resubmit
+                        --}}
+                        @elseif($task->status === 'in_review_after_client_consultant_reply')
+                        <div class="alert alert-info text-center mb-3">
+                            <i class="bx bx-clipboard me-2"></i>
+                            <strong>Client/Consultant Review Completed</strong><br>
+                            <small>Review feedback collected from client and consultant</small>
+                        </div>
 
-                            {{-- Status: In Review After Client/Consultant Reply - Manager can complete or request resubmit --}}
-                            @elseif($task->status === 'in_review_after_client_consultant_reply')
-                                <div class="alert alert-info text-center mb-3">
-                                    <i class="bx bx-clipboard me-2"></i>
-                                    <strong>Client/Consultant Review Completed</strong><br>
-                                    <small>Review feedback collected from client and consultant</small>
-                                </div>
+                        @if($task->combined_response_status)
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <h6 class="text-muted mb-2">Combined Response Status:</h6>
+                                <span class="badge bg-info mb-2">{{ $task->combined_response_status }}</span>
 
-                                @if($task->combined_response_status)
-                                <div class="card mb-3">
-                                    <div class="card-body">
-                                        <h6 class="text-muted mb-2">Combined Response Status:</h6>
-                                        <span class="badge bg-info mb-2">{{ $task->combined_response_status }}</span>
-
-                                        @if($task->client_response_notes)
-                                        <div class="mt-2">
-                                            <strong>Client Notes:</strong>
-                                            <p class="mb-0 text-muted">{{ $task->client_response_notes }}</p>
-                                        </div>
-                                        @endif
-
-                                        @if($task->consultant_response_notes)
-                                        <div class="mt-2">
-                                            <strong>Consultant Notes:</strong>
-                                            <p class="mb-0 text-muted">{{ $task->consultant_response_notes }}</p>
-                                        </div>
-                                        @endif
-                                    </div>
+                                @if($task->client_response_notes)
+                                <div class="mt-2">
+                                    <strong>Client Notes:</strong>
+                                    <p class="mb-0 text-muted">{{ $task->client_response_notes }}</p>
                                 </div>
                                 @endif
 
-                                <div class="d-grid gap-2">
-                                    <!-- Mark as Completed Button -->
-                                    <button class="btn btn-success w-100" onclick="markAsCompleted({{ $task->id }})">
-                                        <i class="bx bx-check-circle me-2"></i>Mark as Completed
-                                    </button>
-                                    <small class="text-muted text-center">Task meets requirements - mark as complete</small>
-
-                                    <hr>
-
-                                    <!-- Require Resubmit Button -->
-                                    <button class="btn btn-warning w-100" data-bs-toggle="modal" data-bs-target="#requireResubmitModal">
-                                        <i class="bx bx-refresh me-2"></i>Request Resubmission
-                                    </button>
-                                    <small class="text-muted text-center">Task needs changes - send back to user</small>
+                                @if($task->consultant_response_notes)
+                                <div class="mt-2">
+                                    <strong>Consultant Notes:</strong>
+                                    <p class="mb-0 text-muted">{{ $task->consultant_response_notes }}</p>
                                 </div>
+                                @endif
+                            </div>
+                        </div>
+                        @endif
 
-                            {{-- Manager Override Options --}}
-                            @elseif($task->combined_response_status)
-                                <div class="card border-danger mb-3">
-                                    <div class="card-header bg-danger text-white">
-                                        <h6 class="mb-0"><i class="bx bx-shield me-2"></i>Manager Override</h6>
-                                    </div>
-                                    <div class="card-body">
-                                        <div class="alert alert-warning mb-3">
-                                            <strong>Combined Status:</strong><br>
-                                            <span class="badge bg-info">{{ $task->combined_response_status }}</span>
-                                        </div>
-                                        <form action="{{ route('tasks.manager-override', $task) }}" method="POST">
-                                            @csrf
-                                            <label class="form-label fw-semibold">Override Action:</label>
-                                            <select name="manager_override_status" class="form-select mb-2" required>
-                                                <option value="reject">Reject Task</option>
-                                                <option value="reset_for_review">Reset for Review</option>
-                                            </select>
-                                            <textarea name="manager_override_notes" class="form-control mb-2" rows="3" placeholder="Reason for override..." required></textarea>
-                                            <button type="submit" class="btn btn-danger w-100">
-                                                <i class="bx bx-shield-x me-2"></i>Apply Override
-                                            </button>
-                                        </form>
-                                        <small class="text-muted text-center mt-2 d-block">Override will send task back to user</small>
-                                    </div>
+                        <div class="d-grid gap-2">
+                            <!-- Mark as Completed Button -->
+                            <button class="btn btn-success w-100" onclick="markAsCompleted({{ $task->id }})">
+                                <i class="bx bx-check-circle me-2"></i>Mark as Completed
+                            </button>
+                            <small class="text-muted text-center">Task meets requirements - mark as complete</small>
+
+                            <hr>
+
+                            <!-- Require Resubmit Button -->
+                            <button class="btn btn-warning w-100" data-bs-toggle="modal"
+                                data-bs-target="#requireResubmitModal">
+                                <i class="bx bx-refresh me-2"></i>Request Resubmission
+                            </button>
+                            <small class="text-muted text-center">Task needs changes - send back to user</small>
+                        </div>
+
+                        {{-- Manager Override Options --}}
+                        @elseif($task->combined_response_status)
+                        <div class="card border-danger mb-3">
+                            <div class="card-header bg-danger text-white">
+                                <h6 class="mb-0"><i class="bx bx-shield me-2"></i>Manager Override</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="alert alert-warning mb-3">
+                                    <strong>Combined Status:</strong><br>
+                                    <span class="badge bg-info">{{ $task->combined_response_status }}</span>
                                 </div>
-                            @endif
+                                <form action="{{ route('tasks.manager-override', $task) }}" method="POST">
+                                    @csrf
+                                    <label class="form-label fw-semibold">Override Action:</label>
+                                    <select name="manager_override_status" class="form-select mb-2" required>
+                                        <option value="reject">Reject Task</option>
+                                        <option value="reset_for_review">Reset for Review</option>
+                                    </select>
+                                    <textarea name="manager_override_notes" class="form-control mb-2" rows="3"
+                                        placeholder="Reason for override..." required></textarea>
+                                    <button type="submit" class="btn btn-danger w-100">
+                                        <i class="bx bx-shield-x me-2"></i>Apply Override
+                                    </button>
+                                </form>
+                                <small class="text-muted text-center mt-2 d-block">Override will send task back to
+                                    user</small>
+                            </div>
+                        </div>
+                        @endif
 
-                            {{-- Manager can assign unassigned tasks --}}
-                            @if(!$task->assigned_to)
-                                <button class="btn btn-info w-100" onclick="assignTask({{ $task->id }})">
-                                    <i class="bx bx-user-plus me-2"></i>Assign Task
-                                </button>
-                            @endif
+                        {{-- Manager can assign unassigned tasks --}}
+                        @if(!$task->assigned_to)
+                        <button class="btn btn-info w-100" onclick="assignTask({{ $task->id }})">
+                            <i class="bx bx-user-plus me-2"></i>Assign Task
+                        </button>
+                        @endif
                         @endif
 
                         <!-- Status change for managers (override) -->
                         @if(Auth::user()->isManager())
-                            <hr>
-                            <button class="btn btn-outline-secondary w-100" onclick="changeTaskStatus({{ $task->id }})">
-                                <i class="bx bx-edit me-2"></i>Manual Status Change
-                                <span class="badge bg-warning ms-1">Manager</span>
-                            </button>
+                        <hr>
+                        <button class="btn btn-outline-secondary w-100" onclick="changeTaskStatus({{ $task->id }})">
+                            <i class="bx bx-edit me-2"></i>Manual Status Change
+                            <span class="badge bg-warning ms-1">Manager</span>
+                        </button>
                         @endif
                     </div>
                 </div>
@@ -1420,7 +1512,8 @@
                     @foreach($task->contractors as $contractor)
                     <div class="d-flex align-items-center mb-2 p-2 bg-light rounded">
                         <div class="avatar avatar-sm me-2">
-                            <span class="avatar-initial rounded-circle bg-label-primary">{{ substr($contractor->name, 0, 1) }}</span>
+                            <span class="avatar-initial rounded-circle bg-label-primary">{{ substr($contractor->name, 0,
+                                1) }}</span>
                         </div>
                         <div class="flex-grow-1">
                             <h6 class="mb-0">{{ $contractor->name }}</h6>
@@ -1475,20 +1568,24 @@
                     <div class="row">
                         <div class="col-6">
                             <strong>Client:</strong><br>
-                            <span class="badge bg-{{ ($task->client_response_status ?? 'pending') === 'approved' ? 'success' : (($task->client_response_status ?? 'pending') === 'rejected' ? 'danger' : 'secondary') }}">
+                            <span
+                                class="badge bg-{{ ($task->client_response_status ?? 'pending') === 'approved' ? 'success' : (($task->client_response_status ?? 'pending') === 'rejected' ? 'danger' : 'secondary') }}">
                                 {{ ucfirst($task->client_response_status ?? 'pending') }}
                             </span>
                             @if($task->client_response_notes)
-                            <p class="mb-0 mt-1"><small class="text-muted">{{ $task->client_response_notes }}</small></p>
+                            <p class="mb-0 mt-1"><small class="text-muted">{{ $task->client_response_notes }}</small>
+                            </p>
                             @endif
                         </div>
                         <div class="col-6">
                             <strong>Consultant:</strong><br>
-                            <span class="badge bg-{{ ($task->consultant_response_status ?? 'pending') === 'approved' ? 'success' : (($task->consultant_response_status ?? 'pending') === 'rejected' ? 'danger' : 'secondary') }}">
+                            <span
+                                class="badge bg-{{ ($task->consultant_response_status ?? 'pending') === 'approved' ? 'success' : (($task->consultant_response_status ?? 'pending') === 'rejected' ? 'danger' : 'secondary') }}">
                                 {{ ucfirst($task->consultant_response_status ?? 'pending') }}
                             </span>
                             @if($task->consultant_response_notes)
-                            <p class="mb-0 mt-1"><small class="text-muted">{{ $task->consultant_response_notes }}</small></p>
+                            <p class="mb-0 mt-1"><small class="text-muted">{{ $task->consultant_response_notes
+                                    }}</small></p>
                             @endif
                         </div>
                     </div>
@@ -1518,7 +1615,8 @@
                     @if($task->managerOverrideBy)
                     <div>
                         <strong>By:</strong> {{ $task->managerOverrideBy->name }}<br>
-                        <small class="text-muted">{{ $task->manager_override_updated_at?->format('M d, Y H:i') }}</small>
+                        <small class="text-muted">{{ $task->manager_override_updated_at?->format('M d, Y H:i')
+                            }}</small>
                     </div>
                     @endif
                 </div>
@@ -1542,30 +1640,31 @@
                         <div class="col-6">
                             <div class="bg-light rounded p-3">
                                 @if($task->start_date && $task->due_date)
-                                    @php
-                                        $startDate = \Carbon\Carbon::parse($task->start_date)->startOfDay();
-                                        $dueDate = \Carbon\Carbon::parse($task->due_date)->startOfDay();
-                                        $taskDuration = $startDate->diffInDays($dueDate);
-                                    @endphp
-                                    <h4 class="mb-1 text-info">{{ $taskDuration }}</h4>
-                                    <small class="text-muted">Task Duration (Days)</small>
+                                @php
+                                $startDate = \Carbon\Carbon::parse($task->start_date)->startOfDay();
+                                $dueDate = \Carbon\Carbon::parse($task->due_date)->startOfDay();
+                                $taskDuration = $startDate->diffInDays($dueDate);
+                                @endphp
+                                <h4 class="mb-1 text-info">{{ $taskDuration }}</h4>
+                                <small class="text-muted">Task Duration (Days)</small>
                                 @else
-                                    <h4 class="mb-1 text-muted">N/A</h4>
-                                    <small class="text-muted">Duration Not Set</small>
+                                <h4 class="mb-1 text-muted">N/A</h4>
+                                <small class="text-muted">Duration Not Set</small>
                                 @endif
                             </div>
                         </div>
                     </div>
 
                     @php
-                        $taskScoreData = $task->getTaskScore($task->assignee);
-                        $taskScore = $taskScoreData['score'];
-                        $scoreExplanations = $task->getTaskScoreExplanation($task->assignee);
+                    $taskScoreData = $task->getTaskScore($task->assignee);
+                    $taskScore = $taskScoreData['score'];
+                    $scoreExplanations = $task->getTaskScoreExplanation($task->assignee);
                     @endphp
 
                     <div class="row g-3 align-items-stretch">
                         <div class="col-12 col-md-5">
-                            <div class="bg-light rounded p-3 h-100 d-flex flex-column justify-content-center text-center">
+                            <div
+                                class="bg-light rounded p-3 h-100 d-flex flex-column justify-content-center text-center">
                                 <div class="mb-1 text-muted">Current Task Score</div>
                                 <div class="display-6 fw-bold text-primary">{{ $taskScore }}</div>
                             </div>
@@ -1574,81 +1673,82 @@
                             <div class="border rounded p-3 h-100">
                                 <div class="fw-semibold mb-2">Score Breakdown</div>
                                 @if(!empty($scoreExplanations))
-                                    <ul class="mb-0 ps-3">
-                                        @foreach($scoreExplanations as $explanation)
-                                            <li class="mb-1">{!! $explanation !!}</li>
-                                        @endforeach
-                                    </ul>
+                                <ul class="mb-0 ps-3">
+                                    @foreach($scoreExplanations as $explanation)
+                                    <li class="mb-1">{!! $explanation !!}</li>
+                                    @endforeach
+                                </ul>
                                 @else
-                                    <div class="text-muted">No score components yet.</div>
+                                <div class="text-muted">No score components yet.</div>
                                 @endif
                             </div>
                         </div>
                     </div>
 
                     @if($task->completion_time)
-                        <div class="bg-light rounded p-3 text-center mb-3">
-                            <h4 class="mb-1 text-success">{{ $task->completion_time }}</h4>
-                            <small class="text-muted">Days to Complete</small>
-                        </div>
+                    <div class="bg-light rounded p-3 text-center mb-3">
+                        <h4 class="mb-1 text-success">{{ $task->completion_time }}</h4>
+                        <small class="text-muted">Days to Complete</small>
+                    </div>
                     @endif
 
                     <div class="timeline-dates">
                         @if($task->assigned_at)
-                            <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
-                                <small class="text-muted">Assigned</small>
-                                <span class="fw-semibold">{{ $task->assigned_at->format('M d, Y') }}</span>
-                            </div>
+                        <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                            <small class="text-muted">Assigned</small>
+                            <span class="fw-semibold">{{ $task->assigned_at->format('M d, Y') }}</span>
+                        </div>
                         @endif
 
                         @if($task->started_at)
-                            <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
-                                <small class="text-muted">Started</small>
-                                <div class="text-end">
-                                    <span class="fw-semibold">{{ $task->started_at->format('M d, Y') }}</span>
-                                    @if($task->assigned_at)
-                                        @php
-                                            $assignedToStarted = $task->assigned_at->diffInDays($task->started_at);
-                                        @endphp
-                                        <br><small class="text-info">+{{ $assignedToStarted }}d from assignment</small>
-                                    @endif
-                                </div>
+                        <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                            <small class="text-muted">Started</small>
+                            <div class="text-end">
+                                <span class="fw-semibold">{{ $task->started_at->format('M d, Y') }}</span>
+                                @if($task->assigned_at)
+                                @php
+                                $assignedToStarted = $task->assigned_at->diffInDays($task->started_at);
+                                @endphp
+                                <br><small class="text-info">+{{ $assignedToStarted }}d from assignment</small>
+                                @endif
                             </div>
+                        </div>
                         @endif
 
                         @if($task->completed_at)
-                            <div class="d-flex justify-content-between align-items-center py-2">
-                                <small class="text-muted">Completed</small>
-                                <div class="text-end">
-                                    <span class="fw-semibold text-success">{{ $task->completed_at->format('M d, Y') }}</span>
-                                    @if($task->started_at)
-                                        @php
-                                            $startedToCompleted = $task->started_at->diffInDays($task->completed_at);
-                                        @endphp
-                                        <br><small class="text-success">+{{ $startedToCompleted }}d from start</small>
-                                    @endif
-                                    @if($task->assigned_at)
-                                        @php
-                                            $totalDuration = $task->assigned_at->diffInDays($task->completed_at);
-                                        @endphp
-                                        <br><small class="text-primary"><strong>Total: {{ $totalDuration }}d</strong></small>
-                                    @endif
-                                </div>
+                        <div class="d-flex justify-content-between align-items-center py-2">
+                            <small class="text-muted">Completed</small>
+                            <div class="text-end">
+                                <span class="fw-semibold text-success">{{ $task->completed_at->format('M d, Y')
+                                    }}</span>
+                                @if($task->started_at)
+                                @php
+                                $startedToCompleted = $task->started_at->diffInDays($task->completed_at);
+                                @endphp
+                                <br><small class="text-success">+{{ $startedToCompleted }}d from start</small>
+                                @endif
+                                @if($task->assigned_at)
+                                @php
+                                $totalDuration = $task->assigned_at->diffInDays($task->completed_at);
+                                @endphp
+                                <br><small class="text-primary"><strong>Total: {{ $totalDuration }}d</strong></small>
+                                @endif
                             </div>
+                        </div>
                         @elseif($task->started_at)
-                            {{-- Show current duration for in-progress tasks --}}
-                            <div class="d-flex justify-content-between align-items-center py-2">
-                                <small class="text-muted">Current Duration</small>
-                                <div class="text-end">
-                                    @if($task->assigned_at)
-                                        @php
-                                            $currentDuration = $task->assigned_at->diffInDays(now());
-                                        @endphp
-                                        <span class="fw-semibold text-warning">{{ $currentDuration }}d</span>
-                                        <br><small class="text-muted">since assignment</small>
-                                    @endif
-                                </div>
+                        {{-- Show current duration for in-progress tasks --}}
+                        <div class="d-flex justify-content-between align-items-center py-2">
+                            <small class="text-muted">Current Duration</small>
+                            <div class="text-end">
+                                @if($task->assigned_at)
+                                @php
+                                $currentDuration = $task->assigned_at->diffInDays(now());
+                                @endphp
+                                <span class="fw-semibold text-warning">{{ $currentDuration }}d</span>
+                                <br><small class="text-muted">since assignment</small>
+                                @endif
                             </div>
+                        </div>
                         @endif
                     </div>
                 </div>
@@ -1659,21 +1759,24 @@
 </div>
 
 <!-- Require Resubmission Modal -->
-<div class="modal fade" id="requireResubmitModal" tabindex="-1" aria-labelledby="requireResubmitModalLabel" aria-hidden="true">
+<div class="modal fade" id="requireResubmitModal" tabindex="-1" aria-labelledby="requireResubmitModalLabel"
+    aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header bg-warning text-white">
                 <h5 class="modal-title" id="requireResubmitModalLabel">
                     <i class="bx bx-refresh me-2"></i>Request Task Resubmission
                 </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                    aria-label="Close"></button>
             </div>
             <form id="requireResubmitForm" enctype="multipart/form-data">
                 @csrf
                 <div class="modal-body">
                     <div class="alert alert-info">
                         <i class="bx bx-info-circle me-2"></i>
-                        <strong>Task Control:</strong> You are taking control of this task to request changes from the user. The task will be returned to the user for resubmission.
+                        <strong>Task Control:</strong> You are taking control of this task to request changes from the
+                        user. The task will be returned to the user for resubmission.
                     </div>
 
                     <!-- Task Information -->
@@ -1687,9 +1790,10 @@
                             <div class="d-flex align-items-center justify-content-between">
                                 <p class="form-control-plaintext mb-0">{{ $task->assignee->name ?? 'Unassigned' }}</p>
                                 @if(auth()->user()->role === 'manager' || auth()->user()->role === 'admin')
-                                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="showReassignModal()">
-                                        <i class="bx bx-transfer me-1"></i>Reassign
-                                    </button>
+                                <button type="button" class="btn btn-sm btn-outline-primary"
+                                    onclick="showReassignModal()">
+                                    <i class="bx bx-transfer me-1"></i>Reassign
+                                </button>
                                 @endif
                             </div>
                         </div>
@@ -1701,7 +1805,7 @@
                         <div class="d-flex align-items-center">
                             <span class="badge bg-info me-2">{{ ucfirst(str_replace('_', ' ', $task->status)) }}</span>
                             @if($task->combined_response_status)
-                                <span class="badge bg-secondary">{{ $task->combined_response_status }}</span>
+                            <span class="badge bg-secondary">{{ $task->combined_response_status }}</span>
                             @endif
                         </div>
                     </div>
@@ -1734,11 +1838,14 @@
                     <!-- Resubmission Notes -->
                     <div class="mb-3">
                         <label for="resubmit_notes" class="form-label fw-semibold">
-                            <i class="bx bx-message-detail me-1"></i>Resubmission Instructions <span class="text-danger">*</span>
+                            <i class="bx bx-message-detail me-1"></i>Resubmission Instructions <span
+                                class="text-danger">*</span>
                         </label>
                         <textarea class="form-control" id="resubmit_notes" name="resubmit_notes" rows="4"
-                                  placeholder="Explain what changes are needed. Be specific about requirements, corrections, or improvements..." required></textarea>
-                        <div class="form-text">Provide clear instructions for the user on what needs to be changed or improved.</div>
+                            placeholder="Explain what changes are needed. Be specific about requirements, corrections, or improvements..."
+                            required></textarea>
+                        <div class="form-text">Provide clear instructions for the user on what needs to be changed or
+                            improved.</div>
                     </div>
 
                     <!-- File Uploads -->
@@ -1746,9 +1853,10 @@
                         <label for="resubmit_attachments" class="form-label fw-semibold">
                             <i class="bx bx-paperclip me-1"></i>Attach Files (Optional)
                         </label>
-                        <input type="file" class="form-control" id="resubmit_attachments" name="resubmit_attachments[]" multiple
-                               accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.jpg,.jpeg,.png,.gif,.zip,.rar">
-                        <div class="form-text">Upload reference files, examples, or documents that will help the user understand the requirements.</div>
+                        <input type="file" class="form-control" id="resubmit_attachments" name="resubmit_attachments[]"
+                            multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.jpg,.jpeg,.png,.gif,.zip,.rar">
+                        <div class="form-text">Upload reference files, examples, or documents that will help the user
+                            understand the requirements.</div>
                     </div>
 
                     <!-- Priority Level -->
@@ -1770,8 +1878,9 @@
                             <i class="bx bx-calendar me-1"></i>Resubmission Due Date (Optional)
                         </label>
                         <input type="date" class="form-control" id="resubmit_due_date" name="resubmit_due_date"
-                               min="{{ date('Y-m-d') }}">
-                        <div class="form-text">Set a specific due date for the resubmission. Leave empty for no specific deadline.</div>
+                            min="{{ date('Y-m-d') }}">
+                        <div class="form-text">Set a specific due date for the resubmission. Leave empty for no specific
+                            deadline.</div>
                     </div>
 
                     <!-- Action Summary -->
@@ -1783,7 +1892,8 @@
                             <li>Task status will change to <strong>"Re-submit Required"</strong></li>
                             <li>User will be notified to make the requested changes</li>
                             <li>User will be able to upload new files and resubmit</li>
-                            <li>Task will return to <strong>"Submitted for Review"</strong> status after resubmission</li>
+                            <li>Task will return to <strong>"Submitted for Review"</strong> status after resubmission
+                            </li>
                             <li>All actions will be recorded in task history</li>
                         </ul>
                     </div>
@@ -1816,8 +1926,9 @@
                         <label class="form-label">Assign to User</label>
                         <select name="assigned_to" class="form-select" required>
                             <option value="">Select user</option>
-                            @foreach(\App\Models\User::where('id', '!=', auth()->id())->whereIn('role', ['user', 'sub-admin'])->orderBy('name')->get() as $user)
-                                <option value="{{ $user->id }}">{{ $user->name }}</option>
+                            @foreach(\App\Models\User::where('id', '!=', auth()->id())->whereIn('role', ['user',
+                            'sub-admin'])->orderBy('name')->get() as $user)
+                            <option value="{{ $user->id }}">{{ $user->name }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -1855,15 +1966,16 @@
                             <option value="completed">Completed</option>
                         </select>
                         @if(Auth::user()->isManager())
-                            <div class="form-text text-warning">
-                                <i class="bx bx-info-circle me-1"></i>
-                                As a manager, you can change the status of any task at any time.
-                            </div>
+                        <div class="form-text text-warning">
+                            <i class="bx bx-info-circle me-1"></i>
+                            As a manager, you can change the status of any task at any time.
+                        </div>
                         @endif
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Notes (Optional)</label>
-                        <textarea name="notes" class="form-control" rows="3" placeholder="Add any notes about this status change..."></textarea>
+                        <textarea name="notes" class="form-control" rows="3"
+                            placeholder="Add any notes about this status change..."></textarea>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -1876,120 +1988,143 @@
 </div>
 
 <style>
-/* Manager Controls Styling */
-.manager-controls {
-    background: #f8f9fa;
-    border: 1px solid #e9ecef;
-    border-radius: 8px;
-    padding: 12px;
-    margin-bottom: 12px;
-}
+    /* Manager Controls Styling */
+    .manager-controls {
+        background: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        padding: 12px;
+        margin-bottom: 12px;
+    }
 
-.manager-controls .form-check-label {
-    font-weight: 600;
-    color: #495057;
-    margin-left: 8px;
-    font-size: 0.9rem;
-}
+    .manager-controls .form-check-label {
+        font-weight: 600;
+        color: #495057;
+        margin-left: 8px;
+        font-size: 0.9rem;
+    }
 
-.manager-controls .form-check-input:checked {
-    background-color: #28a745;
-    border-color: #28a745;
-}
+    .manager-controls .form-check-input:checked {
+        background-color: #28a745;
+        border-color: #28a745;
+    }
 
-.manager-controls .form-check-input {
-    transform: scale(1.1);
-}
+    .manager-controls .form-check-input {
+        transform: scale(1.1);
+    }
 
-/* Required Badge Styling */
-.required-badge .badge {
-    font-size: 0.8rem;
-    padding: 6px 10px;
-}
+    /* Required Badge Styling */
+    .required-badge .badge {
+        font-size: 0.8rem;
+        padding: 6px 10px;
+    }
 
-/* Toast Container */
-.toast-container {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    z-index: 1055;
-}
+    /* Toast Container */
+    .toast-container {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 1055;
+    }
 
-.timeline {
-    position: relative;
-    padding-left: 30px;
-}
+    .timeline {
+        position: relative;
+        padding-left: 30px;
+    }
 
-.timeline-item {
-    position: relative;
-    margin-bottom: 20px;
-}
+    .timeline-item {
+        position: relative;
+        margin-bottom: 20px;
+    }
 
-.timeline-item:not(:last-child)::before {
-    content: '';
-    position: absolute;
-    left: -24px;
-    top: 20px;
-    bottom: -20px;
-    width: 2px;
-    background: #e9ecef;
-}
+    .timeline-item:not(:last-child)::before {
+        content: '';
+        position: absolute;
+        left: -24px;
+        top: 20px;
+        bottom: -20px;
+        width: 2px;
+        background: #e9ecef;
+    }
 
-.timeline-marker {
-    position: absolute;
-    left: -30px;
-    top: 5px;
-    width: 12px;
-    height: 12px;
-    background: #696cff;
-    border-radius: 50%;
-    border: 3px solid #fff;
-    box-shadow: 0 0 0 3px #e7e7ff;
-    z-index: 1;
-}
+    .timeline-marker {
+        position: absolute;
+        left: -30px;
+        top: 5px;
+        width: 12px;
+        height: 12px;
+        background: #696cff;
+        border-radius: 50%;
+        border: 3px solid #fff;
+        box-shadow: 0 0 0 3px #e7e7ff;
+        z-index: 1;
+    }
 
-.timeline-content {
-    background: #f8f9fa;
-    border-radius: 12px;
-    padding: 20px;
-    border-left: 3px solid #696cff;
-    transition: all 0.2s ease;
-}
+    .timeline-content {
+        background: #f8f9fa;
+        border-radius: 12px;
+        padding: 20px;
+        border-left: 3px solid #696cff;
+        transition: all 0.2s ease;
+    }
 
-.timeline-content:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-}
+    .timeline-content:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
 
-.card {
-    transition: all 0.2s ease;
-}
+    .card {
+        transition: all 0.2s ease;
+    }
 
-.card:hover {
-    transform: translateY(-2px);
-}
+    .card:hover {
+        transform: translateY(-2px);
+    }
 
-.avatar {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 600;
-}
+    .avatar {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+    }
 
-.bg-label-primary { background-color: rgba(105, 108, 255, 0.1) !important; color: #696cff !important; }
-.bg-label-info { background-color: rgba(67, 89, 126, 0.1) !important; color: #43597e !important; }
-.bg-label-success { background-color: rgba(114, 225, 40, 0.1) !important; color: #72e128 !important; }
-.bg-label-warning { background-color: rgba(255, 193, 7, 0.1) !important; color: #ffc107 !important; }
-.bg-label-danger { background-color: rgba(220, 53, 69, 0.1) !important; color: #dc3545 !important; }
-.bg-label-secondary { background-color: rgba(108, 117, 125, 0.1) !important; color: #6c757d !important; }
+    .bg-label-primary {
+        background-color: rgba(105, 108, 255, 0.1) !important;
+        color: #696cff !important;
+    }
 
-.timeline-dates .border-bottom:last-child {
-    border-bottom: none !important;
-}
+    .bg-label-info {
+        background-color: rgba(67, 89, 126, 0.1) !important;
+        color: #43597e !important;
+    }
+
+    .bg-label-success {
+        background-color: rgba(114, 225, 40, 0.1) !important;
+        color: #72e128 !important;
+    }
+
+    .bg-label-warning {
+        background-color: rgba(255, 193, 7, 0.1) !important;
+        color: #ffc107 !important;
+    }
+
+    .bg-label-danger {
+        background-color: rgba(220, 53, 69, 0.1) !important;
+        color: #dc3545 !important;
+    }
+
+    .bg-label-secondary {
+        background-color: rgba(108, 117, 125, 0.1) !important;
+        color: #6c757d !important;
+    }
+
+    .timeline-dates .border-bottom:last-child {
+        border-bottom: none !important;
+    }
 </style>
 
 <script>
-// Task assignment
+    // Task assignment
 function assignTask(taskId) {
     document.getElementById('assignTaskForm').action = `/tasks/${taskId}/assign`;
     new bootstrap.Modal(document.getElementById('assignTaskModal')).show();
@@ -2588,7 +2723,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="modal-body">
                     <div class="mb-3">
                         <label class="form-label">Completion Notes</label>
-                        <textarea name="completion_notes" class="form-control" rows="4" placeholder="Describe what was completed, any challenges faced, or additional information..."></textarea>
+                        <textarea name="completion_notes" class="form-control" rows="4"
+                            placeholder="Describe what was completed, any challenges faced, or additional information..."></textarea>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -2613,11 +2749,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="modal-body">
                     <div class="alert alert-success">
                         <i class="bx bx-check-circle me-2"></i>
-                        Are you sure you want to approve this task? This will mark it as completed and notify all stakeholders.
+                        Are you sure you want to approve this task? This will mark it as completed and notify all
+                        stakeholders.
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Approval Notes (Optional)</label>
-                        <textarea name="approval_notes" class="form-control" rows="3" placeholder="Any additional comments or feedback..."></textarea>
+                        <textarea name="approval_notes" class="form-control" rows="3"
+                            placeholder="Any additional comments or feedback..."></textarea>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -2642,11 +2780,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="modal-body">
                     <div class="alert alert-warning">
                         <i class="bx bx-error me-2"></i>
-                        Please provide feedback on why this task is being rejected. The assigned user will need to address these issues and resubmit.
+                        Please provide feedback on why this task is being rejected. The assigned user will need to
+                        address these issues and resubmit.
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Rejection Reason <span class="text-danger">*</span></label>
-                        <textarea name="rejection_notes" class="form-control" rows="4" placeholder="Please explain why this task is being rejected and what needs to be improved..." required></textarea>
+                        <textarea name="rejection_notes" class="form-control" rows="4"
+                            placeholder="Please explain why this task is being rejected and what needs to be improved..."
+                            required></textarea>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -2659,7 +2800,7 @@ document.addEventListener('DOMContentLoaded', function() {
 </div>
 
 <script>
-// Auto-save client and consultant responses when finishing review
+    // Auto-save client and consultant responses when finishing review
 document.addEventListener('DOMContentLoaded', function() {
     const finishReviewForm = document.getElementById('finishReviewForm');
 
@@ -2783,7 +2924,8 @@ document.getElementById('reassignTaskForm').addEventListener('submit', function(
 </script>
 
 <!-- Reassign Task Modal -->
-<div class="modal fade" id="reassignTaskModal" tabindex="-1" aria-labelledby="reassignTaskModalLabel" aria-hidden="true">
+<div class="modal fade" id="reassignTaskModal" tabindex="-1" aria-labelledby="reassignTaskModalLabel"
+    aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
@@ -2801,10 +2943,11 @@ document.getElementById('reassignTaskForm').addEventListener('submit', function(
                         </label>
                         <select class="form-select" id="new_assignee_id" name="new_assignee_id" required>
                             <option value="">Select a user...</option>
-                            @foreach(\App\Models\User::where('status', 'active')->where('role', '!=', 'admin')->orderBy('name')->get() as $user)
-                                @if($user->id !== $task->assignee_id)
-                                    <option value="{{ $user->id }}">{{ $user->name }} ({{ $user->email }})</option>
-                                @endif
+                            @foreach(\App\Models\User::where('status', 'active')->where('role', '!=',
+                            'admin')->orderBy('name')->get() as $user)
+                            @if($user->id !== $task->assignee_id)
+                            <option value="{{ $user->id }}">{{ $user->name }} ({{ $user->email }})</option>
+                            @endif
                             @endforeach
                         </select>
                     </div>
@@ -2813,7 +2956,7 @@ document.getElementById('reassignTaskForm').addEventListener('submit', function(
                             Reason for Reassignment
                         </label>
                         <textarea class="form-control" id="reassignment_reason" name="reassignment_reason" rows="3"
-                                  placeholder="Optional: Explain why this task is being reassigned"></textarea>
+                            placeholder="Optional: Explain why this task is being reassigned"></textarea>
                     </div>
                     <div class="alert alert-info">
                         <i class="bx bx-info-circle me-2"></i>
@@ -2832,34 +2975,33 @@ document.getElementById('reassignTaskForm').addEventListener('submit', function(
 </div>
 
 <!-- Mark as Completed Modal -->
-<div class="modal fade" id="markCompletedModal" tabindex="-1" aria-labelledby="markCompletedModalLabel" aria-hidden="true">
+<div class="modal fade" id="markCompletedModal" tabindex="-1" aria-labelledby="markCompletedModalLabel"
+    aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header bg-success text-white">
                 <h5 class="modal-title" id="markCompletedModalLabel">
                     <i class="bx bx-check-circle me-2"></i>Mark Task as Completed
                 </h5>
-                <button type="button" class="btn-close btn-close-white" onclick="closeMarkCompletedModal()" aria-label="Close"></button>
+                <button type="button" class="btn-close btn-close-white" onclick="closeMarkCompletedModal()"
+                    aria-label="Close"></button>
             </div>
             <form id="markCompletedForm">
                 <div class="modal-body">
                     <div class="alert alert-info">
                         <i class="bx bx-info-circle me-2"></i>
-                        <strong>Task Completion:</strong> You are about to mark this task as completed. This action will finalize the task and notify all stakeholders.
+                        <strong>Task Completion:</strong> You are about to mark this task as completed. This action will
+                        finalize the task and notify all stakeholders.
                     </div>
 
                     <div class="mb-3">
                         <label for="completion_notes" class="form-label">
                             <i class="bx bx-note me-1"></i>Completion Notes (Optional)
                         </label>
-                        <textarea
-                            class="form-control"
-                            id="completion_notes"
-                            name="completion_notes"
-                            rows="4"
-                            placeholder="Add any final notes about the task completion..."
-                        ></textarea>
-                        <div class="form-text">These notes will be recorded in the task history and visible to all team members.</div>
+                        <textarea class="form-control" id="completion_notes" name="completion_notes" rows="4"
+                            placeholder="Add any final notes about the task completion..."></textarea>
+                        <div class="form-text">These notes will be recorded in the task history and visible to all team
+                            members.</div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -2876,7 +3018,8 @@ document.getElementById('reassignTaskForm').addEventListener('submit', function(
 </div>
 
 <!-- Time Extension Request Modal -->
-<div class="modal fade" id="timeExtensionModal" tabindex="-1" aria-labelledby="timeExtensionModalLabel" aria-hidden="true">
+<div class="modal fade" id="timeExtensionModal" tabindex="-1" aria-labelledby="timeExtensionModalLabel"
+    aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header bg-warning">
@@ -2890,15 +3033,16 @@ document.getElementById('reassignTaskForm').addEventListener('submit', function(
                 <div class="modal-body">
                     <div class="alert alert-info">
                         <i class="bx bx-info-circle me-2"></i>
-                        <strong>Note:</strong> Your request will be sent to managers for review. Please provide a detailed explanation for the extension needed.
+                        <strong>Note:</strong> Your request will be sent to managers for review. Please provide a
+                        detailed explanation for the extension needed.
                     </div>
 
                     <div class="mb-3">
                         <label for="requested_days" class="form-label">
                             Number of Days <span class="text-danger">*</span>
                         </label>
-                        <input type="number" class="form-control" id="requested_days" name="requested_days"
-                               min="1" max="365" value="3" required>
+                        <input type="number" class="form-control" id="requested_days" name="requested_days" min="1"
+                            max="365" value="3" required>
                         <div class="form-text">Enter the number of additional days you need (1-365)</div>
                     </div>
 
@@ -2907,8 +3051,9 @@ document.getElementById('reassignTaskForm').addEventListener('submit', function(
                             Reason for Extension <span class="text-danger">*</span>
                         </label>
                         <textarea class="form-control" id="reason" name="reason" rows="4"
-                                  placeholder="Please explain why you need this time extension..." required></textarea>
-                        <div class="form-text">Provide a detailed explanation to help managers understand your request.</div>
+                            placeholder="Please explain why you need this time extension..." required></textarea>
+                        <div class="form-text">Provide a detailed explanation to help managers understand your request.
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -2925,7 +3070,7 @@ document.getElementById('reassignTaskForm').addEventListener('submit', function(
 </div>
 
 <script>
-// Time Extension Request
+    // Time Extension Request
 let currentTaskId = null;
 
 function showTimeExtensionModal(taskId) {
