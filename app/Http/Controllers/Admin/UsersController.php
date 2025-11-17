@@ -7,6 +7,7 @@ use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -346,12 +347,25 @@ class UsersController extends Controller
      */
     public function forceDelete(User $user): RedirectResponse
     {
+        \Log::info("===== FORCE DELETE METHOD CALLED =====");
+        \Log::info("User ID from route: {$user->id}");
+        \Log::info("User Name: {$user->name}");
+        \Log::info("User Email: {$user->email}");
+        \Log::info("Current Auth User ID: " . Auth::id());
+        \Log::info("Current Auth User Name: " . (Auth::user() ? Auth::user()->name : 'NULL'));
+        \Log::info("Request Method: " . request()->method());
+        \Log::info("Request URL: " . request()->fullUrl());
+        \Log::info("Request All: " . json_encode(request()->all()));
+        \Log::info("CSRF Token Present: " . (request()->has('_token') ? 'YES' : 'NO'));
+
         if (!Auth::user()->canDelete()) {
+            \Log::warning("Force delete blocked: User does not have delete permission");
             return redirect()->route('admin.users.index')->with('error', 'You do not have permission to force delete users.');
         }
 
         // Prevent force deleting yourself
         if ($user->id === Auth::id()) {
+            \Log::warning("Force delete blocked: User trying to delete themselves");
             return redirect()->route('admin.users.index')->with('error', 'You cannot force delete yourself.');
         }
 

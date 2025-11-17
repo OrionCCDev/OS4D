@@ -158,14 +158,23 @@ function confirmReactivate(userId, userName) {
 }
 
 function confirmForceDelete(userId, userName) {
+    console.log('=== FORCE DELETE INITIATED ===');
+    console.log('User ID:', userId);
+    console.log('User Name:', userName);
+
     if (confirm('⚠️ WARNING: Force Delete User\n\nAre you absolutely sure you want to PERMANENTLY DELETE user "' + userName + '"?\n\nThis action:\n- CANNOT be undone\n- Will permanently delete the user and ALL related data\n- Bypasses all safety checks\n- May leave orphaned records in some tables\n\nType "DELETE" in the next prompt to confirm.')) {
         var confirmation = prompt('Type "DELETE" (all caps) to confirm force deletion:');
+        console.log('Confirmation entered:', confirmation);
 
         if (confirmation === 'DELETE') {
             // Get the form
             var form = document.getElementById('force-delete-user-form-' + userId);
+            console.log('Form element:', form);
 
             if (form) {
+                console.log('Form action:', form.action);
+                console.log('Form method:', form.method);
+                console.log('Form has CSRF token:', form.querySelector('input[name="_token"]') ? 'YES' : 'NO');
                 console.log('Submitting force delete form for user ' + userId);
 
                 // Disable the button to prevent double-clicks
@@ -176,7 +185,9 @@ function confirmForceDelete(userId, userName) {
                 });
 
                 // Submit the form
+                console.log('About to submit form...');
                 form.submit();
+                console.log('Form submitted');
             } else {
                 console.error('Form not found for user ' + userId);
                 alert('Error: Could not find force delete form. Please refresh the page and try again.');
