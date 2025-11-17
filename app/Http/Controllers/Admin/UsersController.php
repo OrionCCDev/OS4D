@@ -117,52 +117,129 @@ class UsersController extends Controller
         try {
             \DB::beginTransaction();
 
-            // Step 1: Handle tasks created by or assigned to this user
-            // For tasks created by this user, reassign to admin or delete
+            \Log::info("Starting deletion of user {$user->id} ({$user->name})");
+
+            // Step 1: Detach Spatie roles and permissions
+            \DB::table('model_has_roles')
+                ->where('model_id', $user->id)
+                ->where('model_type', 'App\Models\User')
+                ->delete();
+
+            \DB::table('model_has_permissions')
+                ->where('model_id', $user->id)
+                ->where('model_type', 'App\Models\User')
+                ->delete();
+
+            \Log::info("Deleted Spatie roles and permissions for user {$user->id}");
+
+            // Step 2: Handle tasks created by this user
             $tasksCreatedByUser = \App\Models\Task::where('created_by', $user->id)->get();
             foreach ($tasksCreatedByUser as $task) {
-                // Option 1: Reassign to an admin user
                 $adminUser = User::where('role', 'admin')->first();
-                if ($adminUser) {
+                if ($adminUser && $adminUser->id !== $user->id) {
                     $task->created_by = $adminUser->id;
                     $task->save();
                 } else {
-                    // Option 2: If no admin exists, force delete the task
-                    $task->forceDelete();
+                    // Find another admin or manager
+                    $altAdmin = User::whereIn('role', ['admin', 'manager'])
+                        ->where('id', '!=', $user->id)
+                        ->first();
+                    if ($altAdmin) {
+                        $task->created_by = $altAdmin->id;
+                        $task->save();
+                    } else {
+                        $task->forceDelete();
+                    }
                 }
             }
 
-            // For tasks assigned to this user, set assigned_to to null
+            // Tasks assigned to this user - set to null (already has onDelete('set null'))
             \App\Models\Task::where('assigned_to', $user->id)->update(['assigned_to' => null]);
 
-            // Step 2: Handle projects owned by this user
-            // Reassign projects to admin or delete them
+            // Tasks with internal approval by this user - set to null
+            \App\Models\Task::where('internal_approved_by', $user->id)->update(['internal_approved_by' => null]);
+
+            // Tasks with manager override by this user - set to null
+            \App\Models\Task::where('manager_override_by', $user->id)->update(['manager_override_by' => null]);
+
+            // Tasks closed by this user - set to null (already has nullOnDelete)
+            \App\Models\Task::where('closed_by', $user->id)->update(['closed_by' => null]);
+
+            \Log::info("Handled task relationships for user {$user->id}");
+
+            // Step 3: Handle projects owned by this user
             $projectsOwnedByUser = \App\Models\Project::where('owner_id', $user->id)->get();
             foreach ($projectsOwnedByUser as $project) {
-                // Option 1: Reassign to an admin user
                 $adminUser = User::where('role', 'admin')->first();
-                if ($adminUser) {
+                if ($adminUser && $adminUser->id !== $user->id) {
                     $project->owner_id = $adminUser->id;
                     $project->save();
                 } else {
-                    // Option 2: If no admin exists, delete the project (this will cascade delete tasks)
-                    $project->delete();
+                    // Find another admin or manager
+                    $altAdmin = User::whereIn('role', ['admin', 'manager'])
+                        ->where('id', '!=', $user->id)
+                        ->first();
+                    if ($altAdmin) {
+                        $project->owner_id = $altAdmin->id;
+                        $project->save();
+                    } else {
+                        $project->delete();
+                    }
                 }
             }
 
-            // Step 3: Detach user from projects (many-to-many relationship)
+            \Log::info("Handled project ownership for user {$user->id}");
+
+            // Step 4: Detach user from projects (many-to-many relationship)
             $user->projects()->detach();
 
-            // Step 4: Handle other relationships
-            // Delete custom notifications
+            // Step 5: Delete employee evaluations where this user was the evaluator
+            // (user_id will cascade, but evaluated_by will not)
+            \DB::table('employee_evaluations')
+                ->where('evaluated_by', $user->id)
+                ->delete();
+
+            \Log::info("Deleted employee evaluations by user {$user->id}");
+
+            // Step 6: Handle delete requests
+            \DB::table('delete_requests')
+                ->where('reviewed_by', $user->id)
+                ->update(['reviewed_by' => null]);
+
+            // Step 7: Delete custom notifications
             $user->customNotifications()->delete();
             $user->unifiedNotifications()->delete();
 
-            // Delete task histories
+            // Step 8: Delete task histories
             $user->taskHistories()->delete();
 
-            // Step 5: Remove stored image if not default
-            // Never delete default.png, default.jpg, 1.png, default_user.jpg, or default-user.jpg
+            // Step 9: Delete time tracking entries (will cascade)
+            // Step 10: Delete user preferences (will cascade)
+            // Step 11: Delete performance metrics (will cascade)
+            // These will be handled by cascade delete
+
+            \Log::info("Deleted notifications and histories for user {$user->id}");
+
+            // Step 12: Handle task email preparations
+            // These have cascadeOnDelete, but let's be explicit
+            \DB::table('task_email_preparations')
+                ->where('prepared_by', $user->id)
+                ->delete();
+
+            // Step 13: Handle task time extension requests
+            \DB::table('task_time_extension_requests')
+                ->where('reviewed_by', $user->id)
+                ->update(['reviewed_by' => null]);
+
+            // Step 14: Handle activity logs (nullable)
+            // Already has nullOnDelete, but let's be safe
+            \DB::table('activity_logs')
+                ->where('user_id', $user->id)
+                ->update(['user_id' => null]);
+
+            \Log::info("Cleaned up additional relationships for user {$user->id}");
+
+            // Step 15: Remove stored image if not default
             $old = $user->img;
             if ($old && !in_array($old, ['default.png', 'default.jpg', '1.png', 'default_user.jpg', 'default-user.jpg'])) {
                 $oldPath = public_path('uploads/users/'.$old);
@@ -171,15 +248,26 @@ class UsersController extends Controller
                 }
             }
 
-            // Step 6: Finally, delete the user
+            // Step 16: Finally, delete the user
             $user->delete();
 
+            \Log::info("Successfully deleted user {$user->id}");
+
             \DB::commit();
-            return redirect()->route('admin.users.index')->with('status', 'User deleted successfully');
+
+            return redirect()->route('admin.users.index')
+                ->with('status', 'User deleted successfully');
+
         } catch (\Exception $e) {
             \DB::rollBack();
-            \Log::error('Error deleting user: ' . $e->getMessage());
-            return redirect()->route('admin.users.index')->with('error', 'Failed to delete user: ' . $e->getMessage());
+            \Log::error('Error deleting user: ' . $e->getMessage(), [
+                'user_id' => $user->id ?? null,
+                'exception' => $e,
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return redirect()->route('admin.users.index')
+                ->with('error', 'Failed to delete user: ' . $e->getMessage());
         }
     }
 }
