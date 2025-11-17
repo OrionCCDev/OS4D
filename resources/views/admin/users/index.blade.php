@@ -33,7 +33,7 @@
             <th>Mobile</th>
             <th>Position</th>
             <th>Role</th>
-            <th>Actions</th>
+            <th class="text-center">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -57,7 +57,7 @@
               @endif
             </td>
             <td>
-              <div class="d-flex align-items-center justify-content-end gap-2 flex-wrap">
+              <div class="d-flex align-items-center justify-content-center gap-2 flex-wrap">
                 <a href="{{ route('admin.users.edit', $user) }}" class="btn btn-sm btn-outline-secondary">
                   <i class="bx bx-edit"></i> Edit
                 </a>
@@ -79,7 +79,6 @@
                   @endif
                   <form id="force-delete-user-form-{{ $user->id }}" action="{{ route('admin.users.force-delete', $user) }}" method="POST" class="d-inline">
                     @csrf
-                    @method('DELETE')
                     <button type="button" class="btn btn-sm btn-outline-danger" onclick="confirmForceDelete({{ $user->id }}, '{{ addslashes($user->name) }}')">
                       <i class="bx bx-trash"></i> Force Delete
                     </button>
@@ -161,7 +160,7 @@ function confirmReactivate(userId, userName) {
 function confirmForceDelete(userId, userName) {
     if (confirm('⚠️ WARNING: Force Delete User\n\nAre you absolutely sure you want to PERMANENTLY DELETE user "' + userName + '"?\n\nThis action:\n- CANNOT be undone\n- Will permanently delete the user and ALL related data\n- Bypasses all safety checks\n- May leave orphaned records in some tables\n\nType "DELETE" in the next prompt to confirm.')) {
         var confirmation = prompt('Type "DELETE" (all caps) to confirm force deletion:');
-        
+
         if (confirmation === 'DELETE') {
             // Get the form
             var form = document.getElementById('force-delete-user-form-' + userId);
