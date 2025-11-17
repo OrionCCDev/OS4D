@@ -274,6 +274,60 @@ class Task extends Model
         return $this->hasMany(TaskHistory::class);
     }
 
+    /**
+     * Scope: Tasks for a specific period (month/quarter)
+     * Includes tasks that were:
+     * 1. Assigned in the period (assigned_at)
+     * 2. OR have a due date in the period (due_date)
+     *
+     * This ensures we capture all tasks relevant to the period
+     */
+    public function scopeForPeriod($query, $startDate, $endDate)
+    {
+        return $query->where(function($q) use ($startDate, $endDate) {
+            // Tasks assigned in the period
+            $q->whereBetween('assigned_at', [$startDate, $endDate])
+              // OR tasks with due date in the period
+              ->orWhereBetween('due_date', [$startDate, $endDate]);
+        });
+    }
+
+    /**
+     * Scope: Tasks for a specific month
+     * Includes tasks assigned OR due in that month
+     */
+    public function scopeForMonth($query, $year, $month)
+    {
+        $startDate = \Carbon\Carbon::create($year, $month, 1)->startOfMonth();
+        $endDate = $startDate->copy()->endOfMonth();
+
+        return $query->forPeriod($startDate, $endDate);
+    }
+
+    /**
+     * Scope: Tasks for a specific quarter
+     * Includes tasks assigned OR due in that quarter
+     */
+    public function scopeForQuarter($query, $year, $quarter)
+    {
+        $startDate = \Carbon\Carbon::create($year, ($quarter - 1) * 3 + 1, 1)->startOfMonth();
+        $endDate = $startDate->copy()->addMonths(2)->endOfMonth();
+
+        return $query->forPeriod($startDate, $endDate);
+    }
+
+    /**
+     * Scope: Tasks for a specific year
+     * Includes tasks assigned OR due in that year
+     */
+    public function scopeForYear($query, $year)
+    {
+        $startDate = \Carbon\Carbon::create($year, 1, 1)->startOfYear();
+        $endDate = $startDate->copy()->endOfYear();
+
+        return $query->forPeriod($startDate, $endDate);
+    }
+
     public function attachments()
     {
         return $this->hasMany(TaskAttachment::class);

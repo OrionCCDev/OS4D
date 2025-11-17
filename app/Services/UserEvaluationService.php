@@ -13,14 +13,15 @@ class UserEvaluationService
      * Calculate comprehensive and fair evaluation for a user
      * Ensures equality by normalizing scores against team averages
      */
-    public function calculateUserEvaluation(User $user, $period = 'month')
+    public function calculateUserEvaluation(User $user, $period = 'month', $customDates = null)
     {
-        $periodDates = $this->getPeriodDates($period);
+        $periodDates = $customDates ?? $this->getPeriodDates($period);
         $now = now();
-        
+
         // Get user's tasks for the period
+        // FIXED: Now includes tasks assigned OR due in the period
         $userTasks = $user->assignedTasks()
-            ->whereBetween('created_at', $periodDates)
+            ->forPeriod($periodDates['start'], $periodDates['end'])
             ->get();
 
         if ($userTasks->isEmpty()) {
@@ -200,8 +201,11 @@ class UserEvaluationService
         $teamScores = collect([]);
         
         foreach ($allUsers as $user) {
-            $tasks = $user->assignedTasks()->whereBetween('created_at', $periodDates)->get();
-            
+            // FIXED: Use forPeriod scope to include tasks assigned OR due in period
+            $tasks = $user->assignedTasks()
+                ->forPeriod($periodDates['start'], $periodDates['end'])
+                ->get();
+
             if ($tasks->isEmpty()) continue;
             
             $metrics = [

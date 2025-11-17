@@ -175,4 +175,146 @@ class TaskScoringService
 
         return $explanations;
     }
+
+    /**
+     * Calculate aggregated task scores for a user in a specific period
+     * This is for monthly/quarterly evaluations
+     *
+     * @param User $user
+     * @param string $startDate
+     * @param string $endDate
+     * @return array
+     */
+    public function calculatePeriodScore($user, $startDate, $endDate)
+    {
+        // Get all tasks for this user in the period (assigned OR due in period)
+        $tasks = $user->assignedTasks()
+            ->forPeriod($startDate, $endDate)
+            ->get();
+
+        if ($tasks->isEmpty()) {
+            return [
+                'total_score' => 0,
+                'average_score' => 0,
+                'task_count' => 0,
+                'completed_count' => 0,
+                'task_scores' => [],
+                'score_breakdown' => [
+                    'total_base_score' => 0,
+                    'total_priority_bonus' => 0,
+                    'total_quality_bonus' => 0,
+                    'total_penalties' => 0,
+                ],
+            ];
+        }
+
+        $taskScores = [];
+        $totalScore = 0;
+        $completedCount = 0;
+
+        // Track breakdown totals
+        $totalBaseScore = 0;
+        $totalPriorityBonus = 0;
+        $totalQualityBonus = 0;
+        $totalPenalties = 0;
+
+        foreach ($tasks as $task) {
+            // Use final_score if task was closed by admin, otherwise calculate
+            if ($task->final_score !== null) {
+                $score = $task->final_score;
+                $scoreData = [
+                    'score' => $score,
+                    'breakdown' => ['admin_closed' => $score],
+                    'status' => $task->status,
+                ];
+            } else {
+                $scoreData = $this->calculateTaskScore($task, $user);
+                $score = $scoreData['score'];
+            }
+
+            $totalScore += $score;
+
+            if ($task->status === 'completed') {
+                $completedCount++;
+            }
+
+            // Aggregate breakdown components
+            if (isset($scoreData['breakdown'])) {
+                $breakdown = $scoreData['breakdown'];
+
+                if (isset($breakdown['completed'])) $totalBaseScore += $breakdown['completed'];
+                if (isset($breakdown['in_progress'])) $totalBaseScore += $breakdown['in_progress'];
+                if (isset($breakdown['priority_bonus'])) $totalPriorityBonus += $breakdown['priority_bonus'];
+                if (isset($breakdown['quality_bonus'])) $totalQualityBonus += $breakdown['quality_bonus'];
+
+                // Penalties (negative values)
+                if (isset($breakdown['overdue_penalty'])) $totalPenalties += $breakdown['overdue_penalty'];
+                if (isset($breakdown['rejection_penalty'])) $totalPenalties += $breakdown['rejection_penalty'];
+                if (isset($breakdown['late_email_penalty'])) $totalPenalties += $breakdown['late_email_penalty'];
+            }
+
+            $taskScores[] = [
+                'task_id' => $task->id,
+                'task_title' => $task->title,
+                'score' => $score,
+                'status' => $task->status,
+                'priority' => $task->priority,
+                'is_overdue' => $task->is_overdue,
+                'was_admin_closed' => $task->final_score !== null,
+            ];
+        }
+
+        $averageScore = $totalScore / $tasks->count();
+
+        return [
+            'total_score' => round($totalScore, 2),
+            'average_score' => round($averageScore, 2),
+            'task_count' => $tasks->count(),
+            'completed_count' => $completedCount,
+            'completion_rate' => round(($completedCount / $tasks->count()) * 100, 2),
+            'task_scores' => $taskScores,
+            'score_breakdown' => [
+                'total_base_score' => round($totalBaseScore, 2),
+                'total_priority_bonus' => round($totalPriorityBonus, 2),
+                'total_quality_bonus' => round($totalQualityBonus, 2),
+                'total_penalties' => round($totalPenalties, 2),
+            ],
+            'period' => [
+                'start' => $startDate,
+                'end' => $endDate,
+            ],
+        ];
+    }
+
+    /**
+     * Calculate monthly task scores for a user
+     *
+     * @param User $user
+     * @param int $year
+     * @param int $month
+     * @return array
+     */
+    public function calculateMonthlyScore($user, $year, $month)
+    {
+        $startDate = \Carbon\Carbon::create($year, $month, 1)->startOfMonth();
+        $endDate = $startDate->copy()->endOfMonth();
+
+        return $this->calculatePeriodScore($user, $startDate, $endDate);
+    }
+
+    /**
+     * Calculate quarterly task scores for a user
+     *
+     * @param User $user
+     * @param int $year
+     * @param int $quarter (1-4)
+     * @return array
+     */
+    public function calculateQuarterlyScore($user, $year, $quarter)
+    {
+        $startDate = \Carbon\Carbon::create($year, ($quarter - 1) * 3 + 1, 1)->startOfMonth();
+        $endDate = $startDate->copy()->addMonths(2)->endOfMonth();
+
+        return $this->calculatePeriodScore($user, $startDate, $endDate);
+    }
 }

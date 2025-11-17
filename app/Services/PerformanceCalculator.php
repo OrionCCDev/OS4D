@@ -159,11 +159,12 @@ class PerformanceCalculator
 
     /**
      * Get user tasks for a specific period
+     * FIXED: Now includes tasks assigned OR due in the period
      */
     private function getUserTasksForPeriod($userId, $startDate, $endDate)
     {
         return Task::where('assigned_to', $userId)
-            ->whereBetween('created_at', [$startDate, $endDate])
+            ->forPeriod($startDate, $endDate)
             ->get();
     }
 
