@@ -9,7 +9,17 @@
   </div>
 
   @if(session('status'))
-    <div class="alert alert-success">{{ session('status') }}</div>
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+      {{ session('status') }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  @endif
+
+  @if(session('error'))
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+      {{ session('error') }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
   @endif
 
   <div class="card">
@@ -55,10 +65,12 @@
                 <i class="bx bx-edit"></i> Edit
               </a>
               @if($currentUser?->canDelete())
-                <form action="{{ route('admin.users.destroy', $user) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete this user?')">
+                <form id="delete-user-form-{{ $user->id }}" action="{{ route('admin.users.destroy', $user) }}" method="POST" class="d-inline">
                   @csrf
                   @method('DELETE')
-                  <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                  <button type="button" class="btn btn-sm btn-outline-danger" onclick="confirmDelete({{ $user->id }}, '{{ addslashes($user->name) }}')">
+                    <i class="bx bx-trash"></i> Delete
+                  </button>
                 </form>
               @elseif($currentUser?->isSubAdmin())
                 @include('partials.delete-request-button', [
@@ -79,6 +91,32 @@
     </div>
   </div>
 </div>
+
+<script>
+function confirmDelete(userId, userName) {
+    if (confirm('Are you sure you want to delete user "' + userName + '"?\n\nThis action cannot be undone and will:\n- Delete all user data\n- Reassign their tasks and projects\n- Remove all associated records\n\nClick OK to confirm deletion.')) {
+        // Get the form
+        var form = document.getElementById('delete-user-form-' + userId);
+
+        if (form) {
+            console.log('Submitting delete form for user ' + userId);
+
+            // Disable the button to prevent double-clicks
+            var buttons = form.querySelectorAll('button');
+            buttons.forEach(function(btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Deleting...';
+            });
+
+            // Submit the form
+            form.submit();
+        } else {
+            console.error('Form not found for user ' + userId);
+            alert('Error: Could not find delete form. Please refresh the page and try again.');
+        }
+    } else {
+        console.log('User cancelled deletion of user ' + userId);
+    }
+}
+</script>
 @endsection
-
-
