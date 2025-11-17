@@ -64,8 +64,22 @@ DELETE FROM contractor_emails WHERE sent_by = @USER_ID;
 
 -- Step 5: Update project relationships
 SELECT 'Step 5: Updating project relationships...' AS Step;
+-- IMPORTANT: owner_id has CASCADE DELETE constraint, so we can't set it to NULL
+-- Option 1: Reassign projects to replacement user (RECOMMENDED - preserves projects)
+-- Option 2: Let CASCADE delete projects when user is deleted (will delete all projects owned by this user)
+
 DELETE FROM project_user WHERE user_id = @USER_ID;
-UPDATE projects SET owner_id = NULL WHERE owner_id = @USER_ID;
+
+-- Use the same replacement user found in Step 2
+SELECT CONCAT('Replacement user for projects: ', IFNULL(@REPLACEMENT_USER, 'NONE')) AS ProjectReplacementInfo;
+
+-- OPTION 1: Reassign projects to replacement user (UNCOMMENT to use this option)
+-- This preserves all projects owned by the user
+-- UPDATE projects SET owner_id = @REPLACEMENT_USER WHERE owner_id = @USER_ID;
+
+-- OPTION 2: Delete projects owned by this user (UNCOMMENT to use this option)
+-- WARNING: This will delete ALL projects where owner_id = @USER_ID
+-- DELETE FROM projects WHERE owner_id = @USER_ID;
 
 -- Step 6: Delete evaluations and performance
 SELECT 'Step 6: Deleting evaluations and performance...' AS Step;

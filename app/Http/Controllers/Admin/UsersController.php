@@ -445,7 +445,16 @@ class UsersController extends Controller
             if (Schema::hasTable('project_user')) {
                 DB::table('project_user')->where('user_id', $userId)->delete();
             }
-            DB::table('projects')->where('owner_id', $userId)->update(['owner_id' => null]);
+            
+            // Note: owner_id has CASCADE DELETE constraint, so we need to reassign or let CASCADE handle it
+            if ($replacementAdmin) {
+                // Reassign projects to replacement admin/manager
+                DB::table('projects')->where('owner_id', $userId)->update(['owner_id' => $replacementAdmin->id]);
+                \Log::info("Reassigned projects owned by user {$userId} to user {$replacementAdmin->id}");
+            } else {
+                // No replacement found, projects will be deleted by CASCADE when user is deleted
+                \Log::warning("No replacement admin/manager found. Projects with owner_id = {$userId} will be CASCADE deleted.");
+            }
 
             // STEP 6: Evaluations and performance
             \Log::info("Step 6: Evaluations and performance");
