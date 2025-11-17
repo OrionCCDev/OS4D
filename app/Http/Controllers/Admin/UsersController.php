@@ -403,7 +403,11 @@ class UsersController extends Controller
             DB::table('tasks')->where('assigned_to', $userId)->update(['assigned_to' => null]);
             DB::table('tasks')->where('internal_approved_by', $userId)->update(['internal_approved_by' => null]);
             DB::table('tasks')->where('manager_override_by', $userId)->update(['manager_override_by' => null]);
-            DB::table('tasks')->where('closed_by', $userId)->update(['closed_by' => null]);
+            
+            // Update closed_by only if column exists
+            if (Schema::hasColumn('tasks', 'closed_by')) {
+                DB::table('tasks')->where('closed_by', $userId)->update(['closed_by' => null]);
+            }
 
             // STEP 3: Task cascading tables
             \Log::info("Step 3: Task cascade tables");

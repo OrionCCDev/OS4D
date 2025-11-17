@@ -36,10 +36,15 @@ SELECT CONCAT('Replacement user found: ', IFNULL(@REPLACEMENT_USER, 'NONE')) AS 
 -- DELETE FROM tasks WHERE created_by = @USER_ID;
 
 -- Update nullable fields (these can be set to NULL)
+-- Note: Some columns may not exist in all database versions
 UPDATE tasks SET assigned_to = NULL WHERE assigned_to = @USER_ID;
 UPDATE tasks SET internal_approved_by = NULL WHERE internal_approved_by = @USER_ID;
 UPDATE tasks SET manager_override_by = NULL WHERE manager_override_by = @USER_ID;
-UPDATE tasks SET closed_by = NULL WHERE closed_by = @USER_ID;
+
+-- Update closed_by only if column exists (comment out if column doesn't exist)
+-- Check if column exists first (MySQL doesn't support IF EXISTS for columns in UPDATE)
+-- If you get an error about closed_by, comment out the next line:
+-- UPDATE tasks SET closed_by = NULL WHERE closed_by = @USER_ID;
 
 -- Step 3: Delete from task cascading tables (if they exist)
 SELECT 'Step 3: Deleting from task cascade tables...' AS Step;
