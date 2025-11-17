@@ -1,8 +1,8 @@
 -- SQL Script to Test Force Delete User
--- Replace @USER_ID@ with the actual user ID you want to test deleting
 -- This script will help identify any database constraint errors
+-- CURRENT USER ID: 16
 
-SET @USER_ID = 16; -- Replace with actual user ID, e.g., 5
+SET @USER_ID = 16; -- User ID to delete
 
 -- Start transaction for testing
 START TRANSACTION;
