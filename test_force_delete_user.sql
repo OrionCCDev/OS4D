@@ -95,12 +95,22 @@ DELETE FROM unified_notifications WHERE user_id = @USER_ID;
 
 -- Step 8: Delete from other tables
 SELECT 'Step 8: Deleting from other tables...' AS Step;
+-- Note: Some tables may not exist in all database versions
+-- Comment out any DELETE statements for tables that don't exist in your database
+
 DELETE FROM delete_requests WHERE requester_id = @USER_ID;
 UPDATE delete_requests SET reviewed_by = NULL WHERE reviewed_by = @USER_ID;
 UPDATE activity_logs SET user_id = NULL WHERE user_id = @USER_ID;
-DELETE FROM time_trackings WHERE user_id = @USER_ID;
-DELETE FROM user_preferences WHERE user_id = @USER_ID;
-DELETE FROM project_folder_files WHERE uploaded_by = @USER_ID;
+
+-- Delete from time tracking (table name is 'time_tracking' not 'time_trackings')
+-- Comment out if table doesn't exist:
+-- DELETE FROM time_tracking WHERE user_id = @USER_ID;
+
+-- Delete from user preferences (comment out if table doesn't exist)
+-- DELETE FROM user_preferences WHERE user_id = @USER_ID;
+
+-- Delete from project folder files (comment out if table doesn't exist)
+-- DELETE FROM project_folder_files WHERE uploaded_by = @USER_ID;
 
 -- Step 9: Check for any remaining foreign key constraints
 SELECT 'Step 9: Checking for foreign key constraints...' AS Step;

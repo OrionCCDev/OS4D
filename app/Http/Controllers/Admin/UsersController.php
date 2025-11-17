@@ -223,8 +223,8 @@ class UsersController extends Controller
             if (Schema::hasTable('activity_logs')) {
                 DB::table('activity_logs')->where('user_id', $userId)->update(['user_id' => null]);
             }
-            if (Schema::hasTable('time_trackings')) {
-                DB::table('time_trackings')->where('user_id', $userId)->delete();
+            if (Schema::hasTable('time_tracking')) {
+                DB::table('time_tracking')->where('user_id', $userId)->delete();
             }
             if (Schema::hasTable('user_preferences')) {
                 DB::table('user_preferences')->where('user_id', $userId)->delete();
@@ -487,8 +487,8 @@ class UsersController extends Controller
             if (Schema::hasTable('activity_logs')) {
                 DB::table('activity_logs')->where('user_id', $userId)->update(['user_id' => null]);
             }
-            if (Schema::hasTable('time_trackings')) {
-                DB::table('time_trackings')->where('user_id', $userId)->delete();
+            if (Schema::hasTable('time_tracking')) {
+                DB::table('time_tracking')->where('user_id', $userId)->delete();
             }
             if (Schema::hasTable('user_preferences')) {
                 DB::table('user_preferences')->where('user_id', $userId)->delete();
