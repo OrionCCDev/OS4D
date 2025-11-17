@@ -382,9 +382,24 @@ class UsersController extends Controller
             DB::table('model_has_roles')->where('model_id', $userId)->where('model_type', 'App\\Models\\User')->delete();
             DB::table('model_has_permissions')->where('model_id', $userId)->where('model_type', 'App\\Models\\User')->delete();
 
-            // STEP 2: Task relationships - set to null or delete
+            // STEP 2: Task relationships
             \Log::info("Step 2: Task relationships");
-            DB::table('tasks')->where('created_by', $userId)->update(['created_by' => null]);
+            // Note: created_by has CASCADE DELETE constraint, so we need to reassign or delete tasks
+            // Find replacement admin/manager to reassign tasks
+            $replacementAdmin = User::whereIn('role', ['admin', 'manager'])
+                ->where('id', '!=', $userId)
+                ->first();
+            
+            if ($replacementAdmin) {
+                // Reassign tasks to replacement admin/manager
+                DB::table('tasks')->where('created_by', $userId)->update(['created_by' => $replacementAdmin->id]);
+                \Log::info("Reassigned tasks created by user {$userId} to user {$replacementAdmin->id}");
+            } else {
+                // No replacement found, tasks will be deleted by CASCADE when user is deleted
+                \Log::warning("No replacement admin/manager found. Tasks with created_by = {$userId} will be CASCADE deleted.");
+            }
+            
+            // Update nullable fields
             DB::table('tasks')->where('assigned_to', $userId)->update(['assigned_to' => null]);
             DB::table('tasks')->where('internal_approved_by', $userId)->update(['internal_approved_by' => null]);
             DB::table('tasks')->where('manager_override_by', $userId)->update(['manager_override_by' => null]);

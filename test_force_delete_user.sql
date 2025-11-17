@@ -16,9 +16,26 @@ SELECT 'Step 1: Deleting Spatie permissions...' AS Step;
 DELETE FROM model_has_roles WHERE model_id = @USER_ID AND model_type = 'App\\Models\\User';
 DELETE FROM model_has_permissions WHERE model_id = @USER_ID AND model_type = 'App\\Models\\User';
 
--- Step 2: Update task relationships (set to NULL)
+-- Step 2: Update task relationships
 SELECT 'Step 2: Updating task relationships...' AS Step;
-UPDATE tasks SET created_by = NULL WHERE created_by = @USER_ID;
+-- IMPORTANT: created_by has CASCADE DELETE constraint, so we can't set it to NULL
+-- Option 1: Reassign tasks to another admin/manager (RECOMMENDED - preserves tasks)
+-- Option 2: Let CASCADE delete tasks when user is deleted (will delete all tasks created by this user)
+
+-- Find a replacement admin/manager to reassign tasks
+SET @REPLACEMENT_USER = (SELECT id FROM users WHERE role IN ('admin', 'manager') AND id != @USER_ID LIMIT 1);
+
+SELECT CONCAT('Replacement user found: ', IFNULL(@REPLACEMENT_USER, 'NONE')) AS ReplacementInfo;
+
+-- OPTION 1: Reassign tasks to replacement user (UNCOMMENT to use this option)
+-- This preserves all tasks created by the user
+-- UPDATE tasks SET created_by = @REPLACEMENT_USER WHERE created_by = @USER_ID;
+
+-- OPTION 2: Delete tasks created by this user (UNCOMMENT to use this option)
+-- WARNING: This will delete ALL tasks where created_by = @USER_ID
+-- DELETE FROM tasks WHERE created_by = @USER_ID;
+
+-- Update nullable fields (these can be set to NULL)
 UPDATE tasks SET assigned_to = NULL WHERE assigned_to = @USER_ID;
 UPDATE tasks SET internal_approved_by = NULL WHERE internal_approved_by = @USER_ID;
 UPDATE tasks SET manager_override_by = NULL WHERE manager_override_by = @USER_ID;
@@ -82,6 +99,9 @@ WHERE
 
 -- Step 10: Finally delete the user
 SELECT 'Step 10: Deleting user record...' AS Step;
+-- Note: If you chose OPTION 1 (reassign tasks), tasks are preserved
+-- If you chose OPTION 2 or neither, tasks with created_by = @USER_ID will be CASCADE deleted
+
 DELETE FROM users WHERE id = @USER_ID;
 
 -- Verify deletion
