@@ -51,12 +51,12 @@
             <td>{{ $user->position }}</td>
             <td>
               <span class="badge bg-label-{{ $user->role === 'admin' ? 'primary' : 'secondary' }}">{{ ucfirst($user->role) }}</span>
-              @if(isset($user->status))
-                @if($user->status === 'inactive')
-                  <span class="badge bg-warning ms-1">Inactive</span>
-                @elseif($user->status === 'resigned')
-                  <span class="badge bg-danger ms-1">Resigned</span>
-                @endif
+              @if($user->status === 'inactive')
+                <span class="badge bg-warning ms-1">Inactive</span>
+              @elseif($user->status === 'resigned')
+                <span class="badge bg-danger ms-1">Resigned</span>
+              @elseif($user->status === 'active')
+                <span class="badge bg-success ms-1">Active</span>
               @endif
             </td>
             <td>{{ $user->created_at->format('Y-m-d') }}</td>
@@ -64,20 +64,28 @@
               <a href="{{ route('admin.users.edit', $user) }}" class="btn btn-sm btn-outline-secondary">
                 <i class="bx bx-edit"></i> Edit
               </a>
-              @if($currentUser?->canDelete())
-                <form id="delete-user-form-{{ $user->id }}" action="{{ route('admin.users.destroy', $user) }}" method="POST" class="d-inline">
-                  @csrf
-                  @method('DELETE')
-                  <button type="button" class="btn btn-sm btn-outline-danger" onclick="confirmDelete({{ $user->id }}, '{{ addslashes($user->name) }}')">
-                    <i class="bx bx-trash"></i> Delete
-                  </button>
-                </form>
+              @if($currentUser?->canDelete() && $user->id !== $currentUser->id)
+                @if($user->status === 'active')
+                  <form id="deactivate-user-form-{{ $user->id }}" action="{{ route('admin.users.deactivate', $user) }}" method="POST" class="d-inline">
+                    @csrf
+                    <button type="button" class="btn btn-sm btn-outline-warning" onclick="confirmDeactivate({{ $user->id }}, '{{ addslashes($user->name) }}')">
+                      <i class="bx bx-user-x"></i> Deactivate
+                    </button>
+                  </form>
+                @else
+                  <form id="reactivate-user-form-{{ $user->id }}" action="{{ route('admin.users.reactivate', $user) }}" method="POST" class="d-inline">
+                    @csrf
+                    <button type="button" class="btn btn-sm btn-outline-success" onclick="confirmReactivate({{ $user->id }}, '{{ addslashes($user->name) }}')">
+                      <i class="bx bx-user-check"></i> Reactivate
+                    </button>
+                  </form>
+                @endif
               @elseif($currentUser?->isSubAdmin())
                 @include('partials.delete-request-button', [
                     'type' => 'user',
                     'id' => $user->id,
                     'label' => $user->name,
-                    'text' => 'Request Delete'
+                    'text' => 'Request Deactivate'
                 ])
               @endif
             </td>
@@ -93,29 +101,55 @@
 </div>
 
 <script>
-function confirmDelete(userId, userName) {
-    if (confirm('Are you sure you want to delete user "' + userName + '"?\n\nThis action cannot be undone and will:\n- Delete all user data\n- Reassign their tasks and projects\n- Remove all associated records\n\nClick OK to confirm deletion.')) {
+function confirmDeactivate(userId, userName) {
+    if (confirm('Are you sure you want to deactivate user "' + userName + '"?\n\nThis will:\n- Prevent the user from logging in\n- Preserve all their historical data\n- Keep all tasks and projects intact\n- Allow reactivation later if needed\n\nClick OK to confirm deactivation.')) {
         // Get the form
-        var form = document.getElementById('delete-user-form-' + userId);
+        var form = document.getElementById('deactivate-user-form-' + userId);
 
         if (form) {
-            console.log('Submitting delete form for user ' + userId);
+            console.log('Submitting deactivate form for user ' + userId);
 
             // Disable the button to prevent double-clicks
             var buttons = form.querySelectorAll('button');
             buttons.forEach(function(btn) {
                 btn.disabled = true;
-                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Deleting...';
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Deactivating...';
             });
 
             // Submit the form
             form.submit();
         } else {
             console.error('Form not found for user ' + userId);
-            alert('Error: Could not find delete form. Please refresh the page and try again.');
+            alert('Error: Could not find deactivate form. Please refresh the page and try again.');
         }
     } else {
-        console.log('User cancelled deletion of user ' + userId);
+        console.log('User cancelled deactivation of user ' + userId);
+    }
+}
+
+function confirmReactivate(userId, userName) {
+    if (confirm('Are you sure you want to reactivate user "' + userName + '"?\n\nThis will:\n- Allow the user to log in again\n- Restore full access to their account\n- Maintain all their historical data\n\nClick OK to confirm reactivation.')) {
+        // Get the form
+        var form = document.getElementById('reactivate-user-form-' + userId);
+
+        if (form) {
+            console.log('Submitting reactivate form for user ' + userId);
+
+            // Disable the button to prevent double-clicks
+            var buttons = form.querySelectorAll('button');
+            buttons.forEach(function(btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Reactivating...';
+            });
+
+            // Submit the form
+            form.submit();
+        } else {
+            console.error('Form not found for user ' + userId);
+            alert('Error: Could not find reactivate form. Please refresh the page and try again.');
+        }
+    } else {
+        console.log('User cancelled reactivation of user ' + userId);
     }
 }
 </script>

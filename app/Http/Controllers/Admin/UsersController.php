@@ -263,4 +263,78 @@ class UsersController extends Controller
                 ->with('error', "Failed to delete user: {$e->getMessage()}");
         }
     }
+
+    /**
+     * Deactivate a user instead of deleting to preserve historical data
+     */
+    public function deactivate(User $user): RedirectResponse
+    {
+        if (!Auth::user()->canDelete()) {
+            return redirect()->route('admin.users.index')->with('error', 'You do not have permission to deactivate users.');
+        }
+
+        // Prevent deactivating yourself
+        if ($user->id === Auth::id()) {
+            return redirect()->route('admin.users.index')->with('error', 'You cannot deactivate yourself.');
+        }
+
+        // Prevent deactivating the last admin/manager
+        if (in_array($user->role, ['admin', 'manager'])) {
+            $remainingAdmins = User::whereIn('role', ['admin', 'manager'])
+                ->where('status', 'active')
+                ->where('id', '!=', $user->id)
+                ->count();
+
+            if ($remainingAdmins === 0) {
+                return redirect()->route('admin.users.index')
+                    ->with('error', 'Cannot deactivate the last active admin/manager.');
+            }
+        }
+
+        try {
+            $user->update([
+                'status' => 'inactive',
+                'deactivated_at' => now(),
+                'deactivation_reason' => 'Deactivated by ' . Auth::user()->name,
+            ]);
+
+            \Log::info("User {$user->id} ({$user->name}) deactivated by admin " . Auth::id());
+
+            return redirect()->route('admin.users.index')
+                ->with('status', "User '{$user->name}' has been deactivated successfully. All historical data is preserved.");
+        } catch (\Exception $e) {
+            \Log::error("Failed to deactivate user {$user->id}: {$e->getMessage()}");
+
+            return redirect()->route('admin.users.index')
+                ->with('error', "Failed to deactivate user: {$e->getMessage()}");
+        }
+    }
+
+    /**
+     * Reactivate a deactivated user
+     */
+    public function reactivate(User $user): RedirectResponse
+    {
+        if (!Auth::user()->canDelete()) {
+            return redirect()->route('admin.users.index')->with('error', 'You do not have permission to reactivate users.');
+        }
+
+        try {
+            $user->update([
+                'status' => 'active',
+                'deactivated_at' => null,
+                'deactivation_reason' => null,
+            ]);
+
+            \Log::info("User {$user->id} ({$user->name}) reactivated by admin " . Auth::id());
+
+            return redirect()->route('admin.users.index')
+                ->with('status', "User '{$user->name}' has been reactivated successfully.");
+        } catch (\Exception $e) {
+            \Log::error("Failed to reactivate user {$user->id}: {$e->getMessage()}");
+
+            return redirect()->route('admin.users.index')
+                ->with('error', "Failed to reactivate user: {$e->getMessage()}");
+        }
+    }
 }

@@ -17,6 +17,11 @@ return Application::configure(basePath: dirname(__DIR__))
             'manager.or.admin' => \App\Http\Middleware\ManagerOrAdminMiddleware::class,
             'task.access' => \App\Http\Middleware\TaskAccessMiddleware::class,
         ]);
+
+        // Add EnsureUserIsActive to web middleware group to check on every request
+        $middleware->web(append: [
+            \App\Http\Middleware\EnsureUserIsActive::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

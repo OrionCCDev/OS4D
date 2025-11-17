@@ -205,6 +205,8 @@ Route::middleware('auth')->group(function () {
     // Admin: Users CRUD
     Route::middleware('admin')->prefix('admin')->name('admin.')->group(function () {
         Route::resource('users', UsersController::class)->except(['show']);
+        Route::post('users/{user}/deactivate', [UsersController::class, 'deactivate'])->name('users.deactivate');
+        Route::post('users/{user}/reactivate', [UsersController::class, 'reactivate'])->name('users.reactivate');
 
         // Queue Monitor Routes (managers only)
         Route::get('/queue-monitor', [App\Http\Controllers\QueueMonitorController::class, 'index'])->name('queue.monitor');
