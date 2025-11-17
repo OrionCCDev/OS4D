@@ -449,6 +449,37 @@ class TaskController extends Controller
         return redirect()->route('tasks.index')->with('success', 'Task deleted');
     }
 
+    /**
+     * Admin closes or cancels a task
+     * - If task is overdue, it will be cancelled
+     * - Otherwise, it will be completed
+     * - The task score is calculated and stored before closing
+     */
+    public function adminClose(Request $request, Task $task)
+    {
+        // Only admins and managers can close tasks
+        if (!Auth::user()->canDelete()) {
+            abort(403, 'Access denied. Only admins and managers can close tasks.');
+        }
+
+        $validated = $request->validate([
+            'closure_notes' => 'nullable|string|max:1000',
+        ]);
+
+        try {
+            $task->adminCloseTask($validated['closure_notes'] ?? null);
+
+            $message = $task->status === 'cancelled'
+                ? 'Task cancelled successfully (was overdue). Final score: ' . $task->final_score
+                : 'Task closed successfully. Final score: ' . $task->final_score;
+
+            return redirect()->back()->with('success', $message);
+        } catch (\Exception $e) {
+            Log::error('Error closing task: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Failed to close task: ' . $e->getMessage());
+        }
+    }
+
     // Task assignment methods
     public function assign(Request $request, Task $task)
     {

@@ -61,6 +61,10 @@ class Task extends Model
         'manager_override_updated_at',
         'manager_override_by',
         'combined_approval_status',
+        'final_score',
+        'closed_by',
+        'closed_at',
+        'closure_notes',
     ];
 
     protected $appends = [
@@ -89,6 +93,7 @@ class Task extends Model
         'client_response_updated_at' => 'datetime',
         'consultant_response_updated_at' => 'datetime',
         'manager_override_updated_at' => 'datetime',
+        'closed_at' => 'datetime',
     ];
 
     /**
@@ -257,6 +262,11 @@ class Task extends Model
     public function managerOverrideBy()
     {
         return $this->belongsTo(User::class, 'manager_override_by');
+    }
+
+    public function closedBy()
+    {
+        return $this->belongsTo(User::class, 'closed_by');
     }
 
     public function histories()
@@ -1723,6 +1733,102 @@ private function notifyManagerAboutReviewFinish()
             'attachments' => [],
             'status' => 'draft',
         ]);
+    }
+
+    /**
+     * Admin closes or cancels a task
+     * - If task is overdue, it will be cancelled
+     * - Otherwise, it will be completed
+     * - The task score is calculated and stored before closing
+     */
+    public function adminCloseTask(?string $notes = null, ?User $admin = null)
+    {
+        // Get the admin user (from parameter or auth)
+        $admin = $admin ?? Auth::user();
+
+        // Only admins and managers can close tasks
+        if (!$admin || !$admin->canDelete()) {
+            throw new \Exception('Only admins and managers can close tasks');
+        }
+
+        // Calculate and store the task score before closing
+        $scoringService = new TaskScoringService();
+        $scoreData = $scoringService->calculateTaskScore($this, $this->assignee);
+        $finalScore = $scoreData['score'];
+
+        // Determine if task should be cancelled (if overdue) or completed
+        $isOverdue = $this->is_overdue;
+        $newStatus = $isOverdue ? 'cancelled' : 'completed';
+        $action = $isOverdue ? 'cancelled_by_admin_overdue' : 'closed_by_admin';
+
+        // Update the task
+        $this->update([
+            'status' => $newStatus,
+            'final_score' => $finalScore,
+            'closed_by' => $admin->id,
+            'closed_at' => now(),
+            'closure_notes' => $notes,
+            'completed_at' => $newStatus === 'completed' ? now() : $this->completed_at,
+        ]);
+
+        // Create history record
+        $description = $isOverdue
+            ? "Task cancelled by admin {$admin->name} due to being overdue. Final score: {$finalScore}"
+            : "Task closed by admin {$admin->name}. Final score: {$finalScore}";
+
+        if ($notes) {
+            $description .= ". Notes: {$notes}";
+        }
+
+        $this->histories()->create([
+            'user_id' => $admin->id,
+            'action' => $action,
+            'old_value' => $this->getOriginal('status'),
+            'new_value' => $newStatus,
+            'description' => $description,
+            'metadata' => [
+                'final_score' => $finalScore,
+                'score_breakdown' => $scoreData['breakdown'],
+                'was_overdue' => $isOverdue,
+                'closure_notes' => $notes,
+                'closed_at' => now(),
+                'admin_id' => $admin->id,
+                'admin_name' => $admin->name,
+            ]
+        ]);
+
+        // Notify the assigned user if exists
+        if ($this->assignee) {
+            $notificationType = $isOverdue ? 'task_cancelled_overdue' : 'task_closed_by_admin';
+            $notificationTitle = $isOverdue ? 'Task Cancelled (Overdue)' : 'Task Closed by Admin';
+            $notificationMessage = $isOverdue
+                ? "Your task '{$this->title}' was cancelled by {$admin->name} because it was overdue. Final score: {$finalScore}"
+                : "Your task '{$this->title}' was closed by {$admin->name}. Final score: {$finalScore}";
+
+            if ($notes) {
+                $notificationMessage .= ". Notes: {$notes}";
+            }
+
+            $this->sendNotification($this->assignee, $notificationType, $notificationTitle, $notificationMessage);
+        }
+
+        // Notify other managers
+        $this->notifyManagers(
+            $isOverdue ? 'task_cancelled_overdue' : 'task_closed_by_admin',
+            $isOverdue ? 'Task Cancelled (Overdue)' : 'Task Closed',
+            "Task '{$this->title}' was " . ($isOverdue ? 'cancelled (overdue)' : 'closed') . " by {$admin->name}. Final score: {$finalScore}"
+        );
+
+        Log::info("Task {$this->id} {$newStatus} by admin {$admin->id}", [
+            'task_id' => $this->id,
+            'task_title' => $this->title,
+            'final_score' => $finalScore,
+            'was_overdue' => $isOverdue,
+            'new_status' => $newStatus,
+            'admin_id' => $admin->id,
+        ]);
+
+        return $this;
     }
 
     /**

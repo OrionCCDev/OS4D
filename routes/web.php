@@ -406,6 +406,7 @@ Route::middleware('auth')->group(function () {
     // Task destroy - Manager only
     Route::middleware(['manager', 'task.access'])->group(function () {
         Route::delete('tasks/{task}', [TaskController::class, 'destroy'])->name('tasks.destroy');
+        Route::post('tasks/{task}/admin-close', [TaskController::class, 'adminClose'])->name('tasks.admin-close');
     });
 
     // Task attachment download - Available to assigned users and managers
