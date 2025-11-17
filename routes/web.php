@@ -207,6 +207,7 @@ Route::middleware('auth')->group(function () {
         Route::resource('users', UsersController::class)->except(['show']);
         Route::post('users/{user}/deactivate', [UsersController::class, 'deactivate'])->name('users.deactivate');
         Route::post('users/{user}/reactivate', [UsersController::class, 'reactivate'])->name('users.reactivate');
+        Route::delete('users/{user}/force-delete', [UsersController::class, 'forceDelete'])->name('users.force-delete');
 
         // Queue Monitor Routes (managers only)
         Route::get('/queue-monitor', [App\Http\Controllers\QueueMonitorController::class, 'index'])->name('queue.monitor');

@@ -27,21 +27,18 @@
       <table class="table table-striped mb-0">
         <thead>
           <tr>
-            <th>#</th>
             <th>Avatar</th>
             <th>Name</th>
             <th>Email</th>
             <th>Mobile</th>
             <th>Position</th>
             <th>Role</th>
-            <th>Created</th>
-            <th class="text-end">Actions</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
           @foreach($users as $user)
           <tr>
-            <td>{{ $user->id }}</td>
             <td>
               <img src="{{ asset('uploads/users/' . ($user->img ?: 'default.png')) }}" alt="{{ $user->name }}" class="rounded-circle" width="36" height="36" style="object-fit: cover;">
             </td>
@@ -59,35 +56,43 @@
                 <span class="badge bg-success ms-1">Active</span>
               @endif
             </td>
-            <td>{{ $user->created_at->format('Y-m-d') }}</td>
-            <td class="text-end">
-              <a href="{{ route('admin.users.edit', $user) }}" class="btn btn-sm btn-outline-secondary">
-                <i class="bx bx-edit"></i> Edit
-              </a>
-              @if($currentUser?->canDelete() && $user->id !== $currentUser->id)
-                @if($user->status === 'active')
-                  <form id="deactivate-user-form-{{ $user->id }}" action="{{ route('admin.users.deactivate', $user) }}" method="POST" class="d-inline">
+            <td>
+              <div class="d-flex align-items-center justify-content-end gap-2 flex-wrap">
+                <a href="{{ route('admin.users.edit', $user) }}" class="btn btn-sm btn-outline-secondary">
+                  <i class="bx bx-edit"></i> Edit
+                </a>
+                @if($currentUser?->canDelete() && $user->id !== $currentUser->id)
+                  @if($user->status === 'active')
+                    <form id="deactivate-user-form-{{ $user->id }}" action="{{ route('admin.users.deactivate', $user) }}" method="POST" class="d-inline">
+                      @csrf
+                      <button type="button" class="btn btn-sm btn-outline-warning" onclick="confirmDeactivate({{ $user->id }}, '{{ addslashes($user->name) }}')">
+                        <i class="bx bx-user-x"></i> Deactivate
+                      </button>
+                    </form>
+                  @else
+                    <form id="reactivate-user-form-{{ $user->id }}" action="{{ route('admin.users.reactivate', $user) }}" method="POST" class="d-inline">
+                      @csrf
+                      <button type="button" class="btn btn-sm btn-outline-success" onclick="confirmReactivate({{ $user->id }}, '{{ addslashes($user->name) }}')">
+                        <i class="bx bx-user-check"></i> Reactivate
+                      </button>
+                    </form>
+                  @endif
+                  <form id="force-delete-user-form-{{ $user->id }}" action="{{ route('admin.users.force-delete', $user) }}" method="POST" class="d-inline">
                     @csrf
-                    <button type="button" class="btn btn-sm btn-outline-warning" onclick="confirmDeactivate({{ $user->id }}, '{{ addslashes($user->name) }}')">
-                      <i class="bx bx-user-x"></i> Deactivate
+                    @method('DELETE')
+                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="confirmForceDelete({{ $user->id }}, '{{ addslashes($user->name) }}')">
+                      <i class="bx bx-trash"></i> Force Delete
                     </button>
                   </form>
-                @else
-                  <form id="reactivate-user-form-{{ $user->id }}" action="{{ route('admin.users.reactivate', $user) }}" method="POST" class="d-inline">
-                    @csrf
-                    <button type="button" class="btn btn-sm btn-outline-success" onclick="confirmReactivate({{ $user->id }}, '{{ addslashes($user->name) }}')">
-                      <i class="bx bx-user-check"></i> Reactivate
-                    </button>
-                  </form>
+                @elseif($currentUser?->isSubAdmin())
+                  @include('partials.delete-request-button', [
+                      'type' => 'user',
+                      'id' => $user->id,
+                      'label' => $user->name,
+                      'text' => 'Request Deactivate'
+                  ])
                 @endif
-              @elseif($currentUser?->isSubAdmin())
-                @include('partials.delete-request-button', [
-                    'type' => 'user',
-                    'id' => $user->id,
-                    'label' => $user->name,
-                    'text' => 'Request Deactivate'
-                ])
-              @endif
+              </div>
             </td>
           </tr>
           @endforeach
@@ -150,6 +155,39 @@ function confirmReactivate(userId, userName) {
         }
     } else {
         console.log('User cancelled reactivation of user ' + userId);
+    }
+}
+
+function confirmForceDelete(userId, userName) {
+    if (confirm('⚠️ WARNING: Force Delete User\n\nAre you absolutely sure you want to PERMANENTLY DELETE user "' + userName + '"?\n\nThis action:\n- CANNOT be undone\n- Will permanently delete the user and ALL related data\n- Bypasses all safety checks\n- May leave orphaned records in some tables\n\nType "DELETE" in the next prompt to confirm.')) {
+        var confirmation = prompt('Type "DELETE" (all caps) to confirm force deletion:');
+        
+        if (confirmation === 'DELETE') {
+            // Get the form
+            var form = document.getElementById('force-delete-user-form-' + userId);
+
+            if (form) {
+                console.log('Submitting force delete form for user ' + userId);
+
+                // Disable the button to prevent double-clicks
+                var buttons = form.querySelectorAll('button');
+                buttons.forEach(function(btn) {
+                    btn.disabled = true;
+                    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Deleting...';
+                });
+
+                // Submit the form
+                form.submit();
+            } else {
+                console.error('Form not found for user ' + userId);
+                alert('Error: Could not find force delete form. Please refresh the page and try again.');
+            }
+        } else {
+            console.log('User cancelled force deletion of user ' + userId + ' (confirmation text did not match)');
+            alert('Force deletion cancelled. Confirmation text did not match.');
+        }
+    } else {
+        console.log('User cancelled force deletion of user ' + userId);
     }
 }
 </script>

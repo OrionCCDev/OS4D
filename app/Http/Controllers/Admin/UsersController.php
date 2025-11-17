@@ -17,7 +17,9 @@ class UsersController extends Controller
 {
     public function index(): View
     {
-        $users = User::latest()->paginate(15);
+        $users = User::orderByRaw("CASE WHEN status = 'active' THEN 0 ELSE 1 END")
+            ->orderBy('created_at', 'desc')
+            ->paginate(15);
         return view('admin.users.index', compact('users'));
     }
 
@@ -335,6 +337,155 @@ class UsersController extends Controller
 
             return redirect()->route('admin.users.index')
                 ->with('error', "Failed to reactivate user: {$e->getMessage()}");
+        }
+    }
+
+    /**
+     * Force delete a user - bypasses all safety checks
+     * WARNING: This permanently deletes the user and all related data
+     */
+    public function forceDelete(User $user): RedirectResponse
+    {
+        if (!Auth::user()->canDelete()) {
+            return redirect()->route('admin.users.index')->with('error', 'You do not have permission to force delete users.');
+        }
+
+        // Prevent force deleting yourself
+        if ($user->id === Auth::id()) {
+            return redirect()->route('admin.users.index')->with('error', 'You cannot force delete yourself.');
+        }
+
+        try {
+            DB::beginTransaction();
+
+            \Log::warning("===== FORCE DELETION of user {$user->id} ({$user->name}, role: {$user->role}) by admin " . Auth::id() . " =====");
+
+            $userId = $user->id;
+            $userName = $user->name;
+
+            // STEP 1: Spatie permissions (polymorphic)
+            \Log::info("Step 1: Spatie permissions");
+            DB::table('model_has_roles')->where('model_id', $userId)->where('model_type', 'App\\Models\\User')->delete();
+            DB::table('model_has_permissions')->where('model_id', $userId)->where('model_type', 'App\\Models\\User')->delete();
+
+            // STEP 2: Task relationships - set to null or delete
+            \Log::info("Step 2: Task relationships");
+            DB::table('tasks')->where('created_by', $userId)->update(['created_by' => null]);
+            DB::table('tasks')->where('assigned_to', $userId)->update(['assigned_to' => null]);
+            DB::table('tasks')->where('internal_approved_by', $userId)->update(['internal_approved_by' => null]);
+            DB::table('tasks')->where('manager_override_by', $userId)->update(['manager_override_by' => null]);
+            DB::table('tasks')->where('closed_by', $userId)->update(['closed_by' => null]);
+
+            // STEP 3: Task cascading tables
+            \Log::info("Step 3: Task cascade tables");
+            if (Schema::hasTable('task_assignees')) {
+                DB::table('task_assignees')->where('user_id', $userId)->delete();
+            }
+            if (Schema::hasTable('task_status_changes')) {
+                DB::table('task_status_changes')->where('changed_by', $userId)->delete();
+            }
+            if (Schema::hasTable('task_approvals')) {
+                DB::table('task_approvals')->where('reviewer_id', $userId)->delete();
+            }
+            if (Schema::hasTable('task_comments')) {
+                DB::table('task_comments')->where('user_id', $userId)->delete();
+            }
+            if (Schema::hasTable('task_histories')) {
+                DB::table('task_histories')->where('user_id', $userId)->delete();
+            }
+            if (Schema::hasTable('task_email_preparations')) {
+                DB::table('task_email_preparations')->where('prepared_by', $userId)->delete();
+            }
+            if (Schema::hasTable('task_time_extension_requests')) {
+                DB::table('task_time_extension_requests')->where('requested_by', $userId)->delete();
+                DB::table('task_time_extension_requests')->where('reviewed_by', $userId)->update(['reviewed_by' => null]);
+            }
+
+            // STEP 4: Contractor emails
+            \Log::info("Step 4: Contractor emails");
+            if (Schema::hasTable('contractor_emails')) {
+                DB::table('contractor_emails')->where('sent_by', $userId)->delete();
+            }
+
+            // STEP 5: Project relationships
+            \Log::info("Step 5: Project relationships");
+            if (Schema::hasTable('project_user')) {
+                DB::table('project_user')->where('user_id', $userId)->delete();
+            }
+            DB::table('projects')->where('owner_id', $userId)->update(['owner_id' => null]);
+
+            // STEP 6: Evaluations and performance
+            \Log::info("Step 6: Evaluations and performance");
+            if (Schema::hasTable('employee_evaluations')) {
+                DB::table('employee_evaluations')->where('user_id', $userId)->delete();
+                DB::table('employee_evaluations')->where('evaluated_by', $userId)->delete();
+            }
+            if (Schema::hasTable('performance_metrics')) {
+                DB::table('performance_metrics')->where('user_id', $userId)->delete();
+            }
+            if (Schema::hasTable('report_templates')) {
+                DB::table('report_templates')->where('created_by', $userId)->delete();
+            }
+
+            // STEP 7: Notifications
+            \Log::info("Step 7: Notifications");
+            if (Schema::hasTable('custom_notifications')) {
+                DB::table('custom_notifications')->where('user_id', $userId)->delete();
+            }
+            if (Schema::hasTable('unified_notifications')) {
+                DB::table('unified_notifications')->where('user_id', $userId)->delete();
+            }
+
+            // STEP 8: Other tables
+            \Log::info("Step 8: Other tables");
+            if (Schema::hasTable('delete_requests')) {
+                DB::table('delete_requests')->where('requester_id', $userId)->delete();
+                DB::table('delete_requests')->where('reviewed_by', $userId)->update(['reviewed_by' => null]);
+            }
+            if (Schema::hasTable('activity_logs')) {
+                DB::table('activity_logs')->where('user_id', $userId)->update(['user_id' => null]);
+            }
+            if (Schema::hasTable('time_trackings')) {
+                DB::table('time_trackings')->where('user_id', $userId)->delete();
+            }
+            if (Schema::hasTable('user_preferences')) {
+                DB::table('user_preferences')->where('user_id', $userId)->delete();
+            }
+            if (Schema::hasTable('project_folder_files')) {
+                DB::table('project_folder_files')->where('uploaded_by', $userId)->delete();
+            }
+
+            // STEP 9: Remove profile image
+            \Log::info("Step 9: Profile image");
+            $old = $user->img;
+            if ($old && !in_array($old, ['default.png', 'default.jpg', '1.png', 'default_user.jpg', 'default-user.jpg'])) {
+                $oldPath = public_path('uploads/users/'.$old);
+                if (is_file($oldPath)) {
+                    @unlink($oldPath);
+                }
+            }
+
+            // STEP 10: Force delete user record
+            \Log::info("Step 10: Force deleting user record");
+            DB::table('users')->where('id', $userId)->delete();
+
+            \Log::warning("===== Successfully FORCE DELETED user {$userId} ({$userName}) =====");
+
+            DB::commit();
+
+            return redirect()->route('admin.users.index')
+                ->with('status', "User '{$userName}' has been permanently deleted (force delete).");
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            \Log::error("===== FAILED to force delete user =====");
+            \Log::error("Error: {$e->getMessage()}");
+            \Log::error("File: {$e->getFile()}:{$e->getLine()}");
+            \Log::error("Trace: " . $e->getTraceAsString());
+
+            return redirect()->route('admin.users.index')
+                ->with('error', "Failed to force delete user: {$e->getMessage()}");
         }
     }
 }
