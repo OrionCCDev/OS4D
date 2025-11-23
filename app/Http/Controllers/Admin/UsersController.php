@@ -18,7 +18,8 @@ class UsersController extends Controller
 {
     public function index(): View
     {
-        $users = User::orderByRaw("CASE WHEN status = 'active' THEN 0 ELSE 1 END")
+        $users = User::where('email', '!=', 'a.sayed@orioncc.com')
+            ->orderByRaw("CASE WHEN status = 'active' THEN 0 ELSE 1 END")
             ->orderBy('created_at', 'desc')
             ->paginate(15);
         return view('admin.users.index', compact('users'));

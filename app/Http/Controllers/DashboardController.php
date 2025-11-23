@@ -24,8 +24,7 @@ class DashboardController extends Controller
         }
 
         // If user is a manager or admin, show comprehensive dashboard
-        // Exclude specific email from manager dashboard access
-        if ($user->isManager() && $user->email !== 'a.sayed@orioncc.com') {
+        if ($user->isManager()) {
             $data = $this->getDashboardData($request);
             return view('dashboard.manager', compact('data'));
         }
